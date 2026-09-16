@@ -665,6 +665,64 @@ tests prove the lookup *returns* the late registration, the component tests
 prove the screen *renders* the warning. Neither alone would have caught the
 bug.
 
+### Registering a birth from a browser
+
+`/records/new`, plus `GET /api/BirthRecords/registration-rules`. The first
+screen that writes to the register.
+
+**A browser is not a facility device, and the difference decides the design.**
+A device holds a block of BRNs granted in advance precisely so it can register
+with no connectivity; a browser has neither block nor enrolment, and
+`POST /register` requires a BRN. Rather than inventing a number or asking the
+registrar to type one, the form draws a block of **exactly one** from the
+facility's own pre-approved range, through the same endpoint and the same
+`[ConcurrencyCheck]` counter that grants device blocks. Design decision #2
+stays intact rather than being worked around: the number comes from the
+facility's range, the counter advances atomically, and it can never collide
+with a block granted to a device next month.
+
+**The number is drawn once and held across retries.** A BRN is scarce and
+permanent, and drawing one advances the counter for good — so a registrar
+fixing three validation errors would otherwise burn three numbers and leave
+three gaps nobody could account for. Extracted to `brnDraw.ts` and tested
+directly, because the rule is stateful across submissions and is much better
+pinned as logic than inferred from a rendered form. A number is still lost if
+the form is abandoned after a refusal: a gap in a sequence, not a collision,
+and the price of not asking the centre to reserve numbers it cannot tell are
+still wanted.
+
+**The statutory window is published rather than copied.** The form must know
+whether to collect evidence *before* submitting, and the window is set in law
+and held as server configuration — so nothing outside the server knew it. The
+two bad options were hardcoding the number, which drifts silently the day the
+Act is amended, and submitting blind to be refused, which asks a registrar to
+fill the form twice. That second cost lands hardest where late registration is
+the *ordinary* route rather than the exception. `registration-rules` closes it,
+and the device app will need it more urgently still — it must decide whether to
+collect evidence while offline and unable to ask anything.
+
+The late-registration section reads as the next step in a normal process, not
+as a refusal: the registration stands and the child gets a number; only the
+certificate waits for a second registrar. Evidence is *not* sent for an on-time
+birth, which the API refuses rather than ignores — the two disagreeing about
+the date is worth surfacing.
+
+Blank measurements stay blank all the way to the wire. A village post with no
+scale records no weight, and coercing that to 0 would put a 0g baby into the
+national low-birth-weight figure, where nobody reading it could tell.
+
+Dependencies: `react-hook-form`, `zod`, `@hookform/resolvers`, approved before
+any were added. The zod schema mirrors the server's validator and never
+replaces it — nothing in it is stricter than the server, only faster, so a
+registrar finds a typo before submitting twenty fields rather than getting a
+second opinion about what the register accepts.
+
+**Not verified end to end:** the repository has no `WebApplicationFactory`
+harness, so that `registration-rules` resolves ahead of `{brn}` rests on
+ASP.NET's literal-over-parameter route precedence rather than on a test. Both
+paths appear distinctly in the generated document, which rules out a template
+collision but is not the same thing.
+
 ### W2 as built
 
 `GET /api/facilities` and `GET /api/facilities/{facilityId}`, plus the
@@ -1235,7 +1293,7 @@ rationalised as JSON round-tripping rather than investigated. It was a
 regression.
 - [x] Record detail: identity, status, certificate state, provisional identifier, annulment block — PR pending
 - [x] Amendment history timeline, showing previous values — PR pending
-- [ ] Online registration form, incl. late-registration evidence when the window has passed
+- [x] Online registration form, incl. late-registration evidence when the window has passed — PR pending
 - [ ] Request a correction, with the two-track outcome made visible: applied now vs queued for approval (the 202 case must not look like a failure)
 
 ### Phase 3 — The review queues

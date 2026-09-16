@@ -290,3 +290,20 @@ public record ApiErrorResponse(
     string Title,
     IReadOnlyList<ApiError> Errors
 );
+
+/// <summary>
+/// The rules a client needs in hand before it collects a registration.
+///
+/// Published because the alternative is every client hardcoding a number that
+/// is set in law. When the Act is amended, a hardcoded client does not fail —
+/// it quietly stops asking for evidence on births that now need it, or starts
+/// asking on births that do not, and nothing says so.
+/// </summary>
+public record RegistrationRulesResponse(
+    /// <summary>
+    /// Days from birth within which a registration is on time. Outside it, a
+    /// registration needs coded evidence and a declarant, and its certificate
+    /// is withheld until a second registrar verifies them.
+    /// </summary>
+    int StatutoryWindowDays
+);

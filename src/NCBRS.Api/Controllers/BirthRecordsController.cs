@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using NCBRS.Data;
 using NCBRS.Events;
 using NCBRS.Kafka;
@@ -19,7 +20,8 @@ public class BirthRecordsController(
     BirthRegistrationService registrations,
     AmendmentService amendments,
     CurrentRegistrarService currentRegistrar,
-    DistrictLookup districts) : ControllerBase
+    DistrictLookup districts,
+    IOptions<StatutoryRegistrationOptions> statutory) : ControllerBase
 {
     /// <summary>
     /// An account that authenticated but has no registrar record was never
@@ -30,6 +32,31 @@ public class BirthRecordsController(
         => ApiErrors.Result(ApiErrors.Single(
             StatusCodes.Status403Forbidden, "Account not provisioned.",
             "registrar", "This account is not linked to a registrar in the registry."));
+
+    /// <summary>
+    /// The rules a client needs before it can collect a registration, rather
+    /// than after it has tried one.
+    ///
+    /// **The statutory window is set in law and is therefore configuration**
+    /// (draft 4.1) — which meant, until now, that nothing outside the server
+    /// knew it. A client had two bad options: hardcode the number, and drift
+    /// silently the day the Act is amended; or submit, be refused with
+    /// "evidence required", and ask the registrar to fill the form a second
+    /// time. The second is worse where it lands hardest — late registration is
+    /// the *ordinary* route for a large share of rural births, not an
+    /// exception.
+    ///
+    /// The facility device app needs this for the same reason and more
+    /// urgently: it must decide whether to collect evidence while it is
+    /// offline and cannot ask anything.
+    ///
+    /// Literal route segment, so it is matched ahead of <c>{brn}</c>.
+    /// </summary>
+    [HttpGet("registration-rules", Name = "GetRegistrationRules")]
+    [ProducesResponseType(typeof(RegistrationRulesResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    public ActionResult<RegistrationRulesResponse> GetRegistrationRules()
+        => new RegistrationRulesResponse(statutory.Value.WindowDays);
 
     /// <summary>
     /// Registers a live birth. Mirrors the workflow in Section 5.1/5.2 of the

@@ -58,7 +58,6 @@ export const navigation: NavGroup[] = [
         to: '/records/new',
         icon: ScrollText,
         policy: 'CanRegisterBirths',
-        pending: true,
       },
     ],
   },
