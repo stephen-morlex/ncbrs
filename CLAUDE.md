@@ -811,6 +811,38 @@ Three things worth keeping in mind before changing any of it:
 A restore is only a recovery if the controls come back with the data — the
 drill checks the triggers are enforcing afterwards, not just that rows exist.
 
+## The generated contract (WS-W8)
+Both HTTP services generate an OpenAPI document at build time, committed to
+`web/openapi/`, and the web client's types are generated from it. CI fails if
+either is stale. The generated client is why React was chosen over Blazor, so
+a document that misdescribes the service costs that decision its value.
+
+- **Neither document may say a number might be a string.** ASP.NET's web JSON
+  defaults set `JsonNumberHandling.AllowReadingFromString`, and the generator
+  reports it as `{"type":["integer","string"]}`. One component schema
+  describes both directions, so every number a service *returns* inherits it
+  and types as `number | string` in the client.
+- **The two services close this differently and deliberately — do not unify
+  them.** The API has request bodies and chooses to be forgiving about them,
+  so it keeps the leniency and corrects the document
+  (`NumberSchemaTransformer`). The consumer has **no request bodies at all** —
+  every endpoint is a GET — so it is simply not lenient
+  (`JsonNumberHandling.Strict`), and its document states what it does rather
+  than describing a leniency away. Copying the transformer to the consumer
+  would document a behaviour it has no use for.
+- **Nullability is not the same widening and must survive.** `["null","number"]`
+  is correct and load-bearing: a §10 indicator reports null rather than a
+  misleading zero, and that has to reach the contract to reach a dashboard.
+  Only the `string` alternative is dropped.
+- **`OpenApiNumberTypingTests` pins this over both documents.** The CI drift
+  check fails on any contract change, which catches a regression only if
+  whoever reads the diff recognises the widening as a fault — it looks like a
+  harmless generator detail, and it was rationalised rather than diagnosed
+  once already here.
+- The generator reads `Microsoft.AspNetCore.Http.Json.JsonOptions`, **not**
+  MVC's `Mvc.JsonOptions`. The API configures both through one method so they
+  cannot drift; without the former, every enum documents as a bare `integer`.
+
 ## Environment notes
 - Local dev DB: SQLite by default (`ncbrs.db` at the repo root; the services
   point at it via a relative path). `docker compose up postgres` plus

@@ -579,6 +579,51 @@ registering an existing transformer on a second service, but it retypes the
 whole consumer contract, so it wants its own PR and its own before/after diff
 rather than riding along inside a feature.
 
+> Closed — see *Numbers are numbers* below. It did **not** want the
+> transformer: the consumer has no request bodies, so it needed to stop being
+> lenient rather than to describe its leniency away.
+
+### Numbers are numbers
+
+`JsonNumberHandling.Strict` on the consumer's HTTP JSON options, and a test
+pinning both contracts.
+
+The plan above assumed the fix was to register the API's
+`NumberSchemaTransformer` on a second service. **Checking the premise first
+changed the answer**, which is now the third time that has paid here.
+
+The widening exists because ASP.NET's web JSON defaults set
+`AllowReadingFromString`, so the serializer accepts `"42"` as well as `42`
+*on the way in*. One component schema describes both directions, so every
+number the service returns inherits it.
+
+**Every consumer endpoint is a GET.** It has no request bodies at all, so the
+leniency buys it nothing — there is nothing to be lenient about. The API's
+transformer is the right answer for the API, which takes bodies and chooses to
+be forgiving; copying it here would have corrected the description of a
+leniency this service does not want and cannot use. Turning it off instead
+makes the document state what the service does rather than understate it.
+
+Checkably inert at runtime, which is why this is safe: `AllowReadingFromString`
+affects reading, this service only ever writes through the HTTP JSON pipeline,
+and the Kafka projector deserialises with `JsonSerializer.Deserialize` passing
+no options — so it uses `JsonSerializerOptions.Default` and never sees the
+setting.
+
+Result: 184 lines out of the document, 42 in. All 30 widenings and every
+generated `pattern` gone; the client types `measured` as `number` and the
+medians as `null | number`. **Nullability survives** — `["null","number"]`, not
+`number` — which matters, because an indicator reporting null rather than a
+misleading zero is the rule this projection is built on, and it has to reach
+the contract to reach a dashboard.
+
+Pinned by `OpenApiNumberTypingTests` over both documents rather than left to
+the CI drift check. The drift check fails on any contract change, so it
+catches a regression only if whoever reads the diff recognises the widening as
+a fault — and **it was rationalised rather than diagnosed once already in this
+repo**, in PR #10. The test was proved non-vacuous by running it against the
+pre-fix document, where it fails.
+
 ### W2 as built
 
 `GET /api/facilities` and `GET /api/facilities/{facilityId}`, plus the
