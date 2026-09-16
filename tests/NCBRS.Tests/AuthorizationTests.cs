@@ -6,6 +6,7 @@ using NCBRS.Data;
 using NCBRS.Middleware;
 using NCBRS.Models;
 using NCBRS.Services;
+using NCBRS.Web;
 using Xunit;
 
 namespace NCBRS.Tests;
@@ -166,7 +167,7 @@ public class KeycloakRoleClaimsTransformationTests
 
         if (realmAccessJson is not null)
         {
-            claims.Add(new Claim(KeycloakRoleClaimsTransformation.RealmAccessClaim, realmAccessJson));
+            claims.Add(new Claim(KeycloakRealmRoles.RealmAccessClaim, realmAccessJson));
         }
 
         return new ClaimsPrincipal(new ClaimsIdentity(claims, "Test", ClaimTypes.Name, ClaimTypes.Role));

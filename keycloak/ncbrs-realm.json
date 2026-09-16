@@ -51,7 +51,26 @@
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "http://localhost:5173/*##http://127.0.0.1:5173/*"
       },
-      "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "basic", "email"]
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "basic",
+        "email"
+      ],
+      "protocolMappers": [
+        {
+          "name": "ncbrs-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.custom.audience": "ncbrs-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
     },
     {
       "clientId": "ncbrs-device",
@@ -62,8 +81,12 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
-      "redirectUris": ["*"],
-      "webOrigins": ["*"],
+      "redirectUris": [
+        "*"
+      ],
+      "webOrigins": [
+        "*"
+      ],
       "attributes": {
         "post.logout.redirect.uris": "+"
       },
@@ -91,9 +114,15 @@
       "enabled": true,
       "emailVerified": true,
       "credentials": [
-        { "type": "password", "value": "password", "temporary": false }
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
       ],
-      "realmRoles": ["facility-registrar"]
+      "realmRoles": [
+        "facility-registrar"
+      ]
     },
     {
       "id": "22222222-2222-4222-8222-222222222222",
@@ -104,9 +133,15 @@
       "enabled": true,
       "emailVerified": true,
       "credentials": [
-        { "type": "password", "value": "password", "temporary": false }
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
       ],
-      "realmRoles": ["facility-registrar"]
+      "realmRoles": [
+        "facility-registrar"
+      ]
     },
     {
       "id": "33333333-3333-4333-8333-333333333333",
@@ -117,9 +152,15 @@
       "enabled": true,
       "emailVerified": true,
       "credentials": [
-        { "type": "password", "value": "password", "temporary": false }
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
       ],
-      "realmRoles": ["district-officer"]
+      "realmRoles": [
+        "district-officer"
+      ]
     },
     {
       "id": "44444444-4444-4444-8444-444444444444",
@@ -130,9 +171,15 @@
       "enabled": true,
       "emailVerified": true,
       "credentials": [
-        { "type": "password", "value": "password", "temporary": false }
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
       ],
-      "realmRoles": ["ministry-admin"]
+      "realmRoles": [
+        "ministry-admin"
+      ]
     }
   ]
 }

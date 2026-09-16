@@ -4,7 +4,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using NCBRS.Consumer.Data;
 using NCBRS.Consumer.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using NCBRS.Kafka;
+using NCBRS.Middleware;
+using NCBRS.Services;
 using NCBRS.Web;
 
 // The consumer side, deployed on its own.
@@ -19,6 +22,11 @@ using NCBRS.Web;
 // that registers births -- the exact thing plan F1 exists to prevent -- and
 // a second process writing this schema would undo the single-writer property
 // the projection relies on.
+// The consumer has one policy: everything it serves beyond the liveness
+// probe is reporting data, and reporting data is a district officer's and
+// the Ministry's to read.
+const string ReportingPolicy = "ncbrs-reporting";
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<KafkaOptions>(builder.Configuration.GetSection(KafkaOptions.SectionName));
@@ -61,6 +69,55 @@ builder.Services.AddCors(cors => cors.AddPolicy(WebClientCorsOptions.PolicyName,
         .AllowAnyHeader()
         .AllowAnyMethod();
 }));
+// W9. These endpoints had no authentication at all: GET
+// /api/dashboard/districts returned national vital statistics to an
+// anonymous caller — including districts with a single live birth, which is
+// precisely the small-cell disclosure the DHIS2 export goes to lengths to
+// suppress. The export withheld that district; the dashboard handed it over.
+//
+// Same realm, same audience and the same role names as the registration API,
+// shared through NCBRS.Core rather than restated here. A second service with
+// its own idea of who a district officer is would drift, and the way it
+// drifts is that one of them stops enforcing.
+var keycloak = builder.Configuration.GetSection(KeycloakOptions.SectionName).Get<KeycloakOptions>()
+               ?? new KeycloakOptions();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(jwt =>
+    {
+        jwt.Authority = keycloak.Authority;
+        jwt.Audience = keycloak.Audience;
+        jwt.RequireHttpsMetadata = keycloak.RequireHttpsMetadata;
+
+        jwt.TokenValidationParameters.ValidateIssuer = true;
+        jwt.TokenValidationParameters.ValidateAudience = true;
+        jwt.TokenValidationParameters.ValidateLifetime = true;
+
+        jwt.Events = new JwtBearerEvents
+        {
+            // Keycloak nests realm roles in a JSON claim that ASP.NET's role
+            // machinery cannot read. Without this, RequireRole matches
+            // nothing and every authorised caller is refused — and a policy
+            // that matches nothing looks exactly like one that works.
+            OnTokenValidated = context =>
+            {
+                if (context.Principal is not null)
+                {
+                    KeycloakRealmRoles.Apply(context.Principal);
+                }
+
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+// The dashboard is a district officer's and the Ministry's view. A facility
+// registrar's work is a record at a time, and national figures are not theirs
+// to read — the web plan's role table says as much.
+builder.Services.AddAuthorization(authorization =>
+    authorization.AddPolicy(ReportingPolicy, policy =>
+        policy.RequireRole(NcbrsRoles.DistrictOfficer, NcbrsRoles.MinistryAdmin)));
+
 builder.Services.AddHostedService<BirthRecordDashboardConsumer>();
 
 // Enums as names, matching the central API. A dashboard branching on a
@@ -79,10 +136,15 @@ var app = builder.Build();
 
 app.UseCors(WebClientCorsOptions.PolicyName);
 
+// After CORS, before the endpoints: a preflight is an unauthenticated
+// OPTIONS and must not be challenged.
+app.UseAuthentication();
+app.UseAuthorization();
+
 // Served at /openapi/v1.json, and Development only — matching the
 // registration API, which gates Swagger the same way. A published document is
-// a map of the whole surface, and this service has no authentication on it
-// yet (see NCBRS-Web-Plan.md W9), so there is no reason to hand one out.
+// a map of the whole surface, and handing one to unauthenticated callers
+// gives away more than it helps.
 //
 // The client generator runs the service in Development, so this costs it
 // nothing. Note the API publishes its own document at
@@ -139,7 +201,8 @@ app.MapGet("/api/dashboard/summary", async (
 })
 .WithName("GetDashboardSummary")
 .Produces<DashboardSummary>()
-.Produces<ApiError>(StatusCodes.Status400BadRequest);
+.Produces<ApiError>(StatusCodes.Status400BadRequest)
+.RequireAuthorization(ReportingPolicy);
 
 app.MapGet("/api/dashboard/districts", async (
     DateTime? from,
@@ -155,7 +218,8 @@ app.MapGet("/api/dashboard/districts", async (
 })
 .WithName("GetDashboardDistricts")
 .Produces<IReadOnlyList<DistrictSummary>>()
-.Produces<ApiError>(StatusCodes.Status400BadRequest);
+.Produces<ApiError>(StatusCodes.Status400BadRequest)
+.RequireAuthorization(ReportingPolicy);
 
 // E4. Anonymised aggregate only: the unit of this payload is a
 // district-month, never a person. See Dhis2ExportService for the three
@@ -176,7 +240,8 @@ app.MapGet("/api/exports/dhis2", async (
 })
 .WithName("GetDhis2Export")
 .Produces<Dhis2Export>()
-.Produces<ApiError>(StatusCodes.Status400BadRequest);
+.Produces<ApiError>(StatusCodes.Status400BadRequest)
+.RequireAuthorization(ReportingPolicy);
 
 app.MapGet("/api/dashboard/devices/silent", async (
     int? silentForDays,
@@ -192,7 +257,8 @@ app.MapGet("/api/dashboard/devices/silent", async (
 })
 .WithName("GetSilentDevices")
 .Produces<IReadOnlyList<SilentDevice>>()
-.Produces<ApiError>(StatusCodes.Status400BadRequest);
+.Produces<ApiError>(StatusCodes.Status400BadRequest)
+.RequireAuthorization(ReportingPolicy);
 
 app.Run();
 
