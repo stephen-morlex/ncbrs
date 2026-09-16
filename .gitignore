@@ -43,6 +43,10 @@ appsettings.*.local.json
 .env.*
 secrets.json
 
+# ...but the template must be committed, or a fresh clone cannot start the
+# stack at all: compose refuses to run without the variables it names.
+!.env.example
+
 # OS noise
 .DS_Store
 Thumbs.db
@@ -52,3 +56,17 @@ desktop.ini
 *.dump
 *.bak
 backup/
+
+# Front end (web/)
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Generated API client — regenerated from OpenAPI in CI.
+# Not ignored: it is checked in deliberately, so a contract change shows up
+# as a reviewable diff rather than as a silent difference between two
+# machines. Delete this note, not the rule, if that decision is revisited.

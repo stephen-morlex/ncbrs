@@ -17,6 +17,9 @@ just what it does:
 - `NCBRS-Web-Plan.md` — the central management web front end: its plan, the
   backend gaps it forces (search, facilities, registrars, audit, CORS,
   pagination) and the phased to-do list.
+- `CONTRIBUTING.md` — the delivery workflow: branch, test, review, commit,
+  PR, merge, and the approval gates. CLAUDE.md carries the design rules;
+  CONTRIBUTING carries the process ones.
 
 ## Key design decisions already made (don't relitigate these without reason)
 
