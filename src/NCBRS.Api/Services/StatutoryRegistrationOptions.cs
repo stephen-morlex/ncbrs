@@ -35,7 +35,10 @@ public class StatutoryRegistrationOptions
     /// direction; the backward direction is bounded by the birth date itself.
     /// The residual -- a device claiming a capture time between the birth and
     /// now -- is why the capture time is stored alongside the server's own
-    /// receipt time, so the gap is visible to an auditor.
+    /// receipt time (BirthRecord.RegisteredAtUtc and CreatedAtUtc), so the
+    /// gap is visible to an auditor. Where that gap is what kept a
+    /// registration out of the late process, the registration succeeds and
+    /// the fact is written to the audit trail.
     /// </summary>
     public TimeSpan ClockSkewTolerance { get; set; } = TimeSpan.FromHours(12);
 }

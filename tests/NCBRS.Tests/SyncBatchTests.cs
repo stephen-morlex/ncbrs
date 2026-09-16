@@ -640,4 +640,34 @@ public class SyncBatchTests : IDisposable
         Assert.Equal(response.Status, stored.Status);
         Assert.NotEqual(SyncBatchStatus.Processing, stored.Status);
     }
+
+    /// <summary>
+    /// The capture time survives the offline path, which is the only path
+    /// where it differs from the arrival time.
+    ///
+    /// It reaches the register through the same BirthRegistrationService the
+    /// online endpoint uses, so in principle it cannot drift -- but "in
+    /// principle" is the assumption worth checking here rather than asserting,
+    /// because this is the tier the whole column exists for.
+    /// </summary>
+    [Fact]
+    public async Task ASyncedRecord_KeepsTheTimeTheDeviceRegisteredIt()
+    {
+        var capturedAt = new DateTime(2026, 9, 11, 6, 15, 0, DateTimeKind.Utc);
+
+        var response = await SubmitAsync(Batch(
+            Record("100001") with { RegisteredAtUtc = capturedAt }));
+
+        Assert.Equal(SyncBatchStatus.Reconciled, response.Status);
+
+        await using var db = NewDb();
+        var stored = await db.BirthRecords.SingleAsync(record => record.Brn == "100001");
+
+        Assert.Equal(capturedAt, stored.RegisteredAtUtc);
+
+        // Not the arrival time, which is what the register kept before and
+        // what it would have fallen back to if the value had been dropped
+        // anywhere between the batch and the row.
+        Assert.NotEqual(stored.CreatedAtUtc, stored.RegisteredAtUtc);
+    }
 }

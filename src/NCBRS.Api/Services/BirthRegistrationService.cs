@@ -131,6 +131,14 @@ public class BirthRegistrationService(
         var daysLate = (int)(capturedAt.Date - request.DateOfBirth.Date).TotalDays;
         var isLate = daysLate > _statutory.WindowDays;
 
+        // The same question answered against the centre's own clock. Not used
+        // to decide anything -- deciding on arrival is exactly what would
+        // push the offline tier into the late process -- but the two answers
+        // disagreeing is the residual StatutoryRegistrationOptions names as
+        // the thing an auditor needs to be able to see.
+        var daysLateOnArrival = (int)(receivedAt.Date - request.DateOfBirth.Date).TotalDays;
+        var deviceTimeAvoidedTheLateProcess = !isLate && daysLateOnArrival > _statutory.WindowDays;
+
         if (isLate && request.LateRegistration is null)
         {
             return new RegistrationResult(
@@ -177,7 +185,13 @@ public class BirthRegistrationService(
             GestationalAgeWeeks = request.GestationalAgeWeeks,
             Plurality = request.Plurality,
             BirthOrder = request.BirthOrder,
-            Status = RecordStatus.Provisional
+            Status = RecordStatus.Provisional,
+
+            // Kept, not just consulted. This is the timestamp the statutory
+            // decision below is made on, and a decision whose input has been
+            // discarded cannot be explained to the family it was made about.
+            RegisteredAtUtc = capturedAt,
+            StatutoryWindowDays = _statutory.WindowDays
         };
 
         // A device that exhausted its block offline sends a provisional
@@ -222,6 +236,34 @@ public class BirthRegistrationService(
                 Action = isProvisional
                     ? "ProvisionalIdentifierAccepted"
                     : $"BrnUnconfirmed:{reconciliation.Outcome}",
+                UserId = registrar.RegistrarId,
+                DeviceId = request.DeviceId,
+                TransactionId = transactionId
+            });
+        }
+
+        // The registration is correct and stays correct -- this records that
+        // it rested on the device's word.
+        //
+        // Backdating is the fraud the late process deters, and the cheapest
+        // way to commit it is a device clock that says the birth was captured
+        // inside the window when it reached the centre outside it. Nothing
+        // here refuses that: the honest case is the whole point of the
+        // offline tier, and a post genuinely out of contact for months is
+        // indistinguishable, request by request, from a dishonest one.
+        //
+        // It is only distinguishable *in aggregate*, which needs the
+        // individual occurrences to have been written down at the one moment
+        // anybody could tell -- this one. A device doing it once is a village
+        // post; a device doing it every time is a finding.
+        if (deviceTimeAvoidedTheLateProcess)
+        {
+            db.AuditLogs.Add(new AuditLog
+            {
+                EntityType = nameof(BirthRecord),
+                DistrictId = facility.DistrictId,
+                EntityId = request.Brn,
+                Action = $"StatutoryWindowMetOnDeviceTime:{daysLate}/{daysLateOnArrival}",
                 UserId = registrar.RegistrarId,
                 DeviceId = request.DeviceId,
                 TransactionId = transactionId

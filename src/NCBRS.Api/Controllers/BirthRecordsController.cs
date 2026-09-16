@@ -75,7 +75,9 @@ public class BirthRecordsController(
                 Annulment: null,
                 RegisteredByRegistrarId: record.RegisteredByRegistrarId,
                 RegisteredByRegistrarName: registrar?.DisplayName,
-                ReceivedAtUtc: record.CreatedAtUtc));
+                ReceivedAtUtc: record.CreatedAtUtc,
+                RegisteredAtUtc: record.RegisteredAtUtc,
+                StatutoryWindowDays: record.StatutoryWindowDays));
     }
 
     /// <summary>
@@ -150,7 +152,9 @@ public class BirthRecordsController(
                     record.Annulment.AnnulledAtUtc),
             RegisteredByRegistrarId: record.RegisteredByRegistrarId,
             RegisteredByRegistrarName: record.RegisteredByRegistrar?.DisplayName,
-            ReceivedAtUtc: record.CreatedAtUtc);
+            ReceivedAtUtc: record.CreatedAtUtc,
+            RegisteredAtUtc: record.RegisteredAtUtc,
+            StatutoryWindowDays: record.StatutoryWindowDays);
     }
 
     /// <summary>

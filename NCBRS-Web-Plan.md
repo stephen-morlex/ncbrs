@@ -468,6 +468,10 @@ compare afterwards. There is currently nothing to compare: a backdating
 attempt that passes validation leaves no trace of what was claimed. Closing
 it is a column on `BirthRecord` and a migration on both providers.
 
+> Closed — see *The capture time, kept* below. It was two columns, not one:
+> the window the record was judged against has to travel with the timestamp
+> or the decision still cannot be reproduced.
+
 **`BirthRecords → Registrars` cascades on delete.** Deleting a registrar
 deletes every birth they ever filed. Nobody chose this — it is EF's default
 for a required relationship — but in a register where an annulment keeps the
@@ -476,6 +480,54 @@ is the one delete that was never intended. `ReferentialAction.Restrict` is
 the obvious correction; it needs a migration on both providers.
 
 The cascade is pinned down by a test rather than left to be rediscovered.
+
+### The capture time, kept
+
+`BirthRecord.RegisteredAtUtc` and `BirthRecord.StatutoryWindowDays`, plus both
+timestamps on the record screen.
+
+**The register was making a legal decision on a number it then threw away.**
+The statutory window is measured to the moment a birth was captured on the
+device, and failing it withholds the certificate until a district registrar
+verifies evidence. The service computed that moment, bounds-checked it
+against the birth date and the server clock, decided on it — and discarded it.
+A family told their registration was late could not be shown why, because the
+value the finding rested on existed nowhere, and recomputing it from the
+arrival time gives a different answer for every record the offline tier has
+ever produced.
+
+**It was two columns, not one.** Storing the timestamp alone makes lateness
+*recomputable*, and a recomputation against a changed law gives a confidently
+wrong answer — the window is set in law and is configuration for exactly that
+reason. So the window applied is stored with it. That is the same rule already
+applied one layer out, where `BirthRegisteredEvent.WithinStatutoryWindow`
+carries the decision rather than the timestamps; the registry itself had
+neither. Note `LateRegistration.WindowDaysAtFiling` already kept the window —
+but only for records that were late, which is the asymmetry: the on-time
+majority, where a later dispute is *about* whether they were on time, kept
+nothing.
+
+**Nulls mean absence, never a default.** Rows written before the column keep
+null rather than a backfill from `CreatedAtUtc`, which would assert that every
+offline record was captured at the moment it arrived — the one claim that is
+false for precisely the tier this system exists to serve. On an online
+registration the two are equal, and that is a fact about the record rather
+than a missing value; the distinction is the same one the dashboard makes
+when it reports null and says why instead of reporting zero.
+
+**The residual is audited at the one moment anyone can see it.** A device
+claiming a capture time inside the window on a birth that arrived outside it
+is the cheapest way to commit the backdating the late process exists to deter.
+Nothing refuses it — a post genuinely out of contact for months is
+indistinguishable, request by request, from a dishonest one, and refusing
+would close the offline tier. It is only distinguishable *in aggregate*, which
+needs the individual occurrences written down: `StatutoryWindowMetOnDeviceTime:{byDevice}/{byArrival}`.
+One is a village post; every time is a finding. The negative is tested too —
+an ordinary registration writes no such row, or the queue would be noise.
+
+The screen shows both dates together and badges the gap, because "received 3
+October" on a birth in June reads as a filing three months late, which is the
+exact conclusion measuring to the device's clock was meant to prevent.
 
 ### W2 as built
 

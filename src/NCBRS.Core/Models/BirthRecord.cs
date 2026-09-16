@@ -135,7 +135,62 @@ public class BirthRecord
     /// </summary>
     public Guid? ConfirmedBySyncBatchId { get; set; }
 
+    /// <summary>
+    /// When the centre received this registration. **Not** when the birth was
+    /// registered — see <see cref="RegisteredAtUtc"/>, which is the one the
+    /// law is measured against.
+    ///
+    /// For a record synced from a post that was offline for three weeks these
+    /// two are three weeks apart, and which of them a piece of code reaches
+    /// for decides whether it is describing the registry's behaviour or the
+    /// country's mobile coverage.
+    /// </summary>
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// When the birth was registered on the device, as the device says.
+    ///
+    /// This is the timestamp the statutory window is measured to (WS-C1), so
+    /// it is the input to the decision that withholds a certificate until a
+    /// district registrar has verified evidence. It was previously computed
+    /// at registration, bounds-checked, used to make that decision, and
+    /// discarded — leaving the register unable to say why any particular
+    /// record had been treated as late, and unable to reproduce the finding
+    /// if a family disputed it.
+    ///
+    /// **Equal to <see cref="CreatedAtUtc"/> for an online registration**,
+    /// where the two really are the same instant and the device sends
+    /// nothing. That is a fact about the record, not a missing value.
+    ///
+    /// Null means something different and narrower: the record was written
+    /// before this column existed, and its capture time is not recoverable —
+    /// it was never kept anywhere. Backfilling those from
+    /// <see cref="CreatedAtUtc"/> would assert that every offline record was
+    /// captured at the moment it arrived, which is exactly the claim that is
+    /// false for the tier this system exists to serve.
+    /// </summary>
+    public DateTime? RegisteredAtUtc { get; set; }
+
+    /// <summary>
+    /// The statutory window, in days, that this registration was actually
+    /// judged against.
+    ///
+    /// Stored because <see cref="RegisteredAtUtc"/> alone is not enough to
+    /// reconstruct the decision. The window is set in law and is therefore
+    /// configuration (see StatutoryRegistrationOptions); the draft offers 30,
+    /// 60 and 90 as candidates and Phase 0 picks one. If the Act is later
+    /// amended, recomputing lateness from the capture time and the *current*
+    /// window would silently restate what was on time years ago — the same
+    /// failure that put the decision rather than the timestamps on
+    /// BirthRegisteredEvent.WithinStatutoryWindow.
+    ///
+    /// Keeping the window applied, rather than a bool, records the decision
+    /// and its reason together: a reader can see both that the record was on
+    /// time and what "on time" meant that year.
+    ///
+    /// Null on rows written before this column existed.
+    /// </summary>
+    public int? StatutoryWindowDays { get; set; }
 
     // Navigation to the two possible follow-on outcomes. Both are nullable
     // relationships kept in their own tables (see NeonatalOutcome /
