@@ -47,15 +47,18 @@ public class AuditController(
     ///   against it whoever acted. Gated on the record being in the caller's
     ///   district, which is the same boundary that governs seeing the record
     ///   at all.
-    /// - **"What have my people done?"** — without a `brn`, entries whose
-    ///   actor is a registrar in the caller's district.
+    /// - **"What is my district accountable for?"** — without a `brn`,
+    ///   entries carrying the caller's district, which names the district
+    ///   whose register changed rather than the district of whoever changed
+    ///   it. A ministry admin annulling a record here produces a row this
+    ///   district can read.
     ///
-    /// The second is a real limitation worth naming: an action taken on a
-    /// district's records by someone outside it will not appear in that
-    /// district's unfiltered view. Closing it properly needs a district on
-    /// the row itself, which cannot be backfilled — the table is append-only
-    /// and enforced so at the database, so existing rows can never be given
-    /// one.
+    /// Rows written before `AuditLog.DistrictId` existed fall back to the
+    /// actor's district, which is the best that can be said of them. They can
+    /// never be given one — the table is append-only and enforced so at the
+    /// database — so for that era an act on this district's records by
+    /// someone outside it remains invisible. That gap is closed for
+    /// everything written since, and is permanent for what came before.
     /// </summary>
     [HttpGet(Name = "GetAuditTrail")]
     [ProducesResponseType(typeof(Page<AuditEntryResponse>), StatusCodes.Status200OK)]
@@ -136,13 +139,26 @@ public class AuditController(
         }
         else if (scope.Scope.DistrictId is { } district)
         {
-            // Actor-scoped. See the remark above about what this cannot see.
+            // Rows written since the district column exists carry it, and it
+            // is the accurate answer: it names the district whose register
+            // changed, not the district of whoever changed it.
+            //
+            // Rows written before it fall back to the actor's district, which
+            // is the best that can be said of them. They can never be given a
+            // district retroactively -- AuditLogs is append-only and enforced
+            // so at the database -- so the fallback is permanent for that
+            // era, and misses acts performed on this district's records by
+            // someone outside it.
             var actors = db.Registrars
                 .Where(registrar =>
                     registrar.Facility != null && registrar.Facility.DistrictId == district)
                 .Select(registrar => registrar.RegistrarId);
 
-            query = query.Where(entry => entry.UserId != null && actors.Contains(entry.UserId.Value));
+            query = query.Where(entry =>
+                entry.DistrictId == district
+                || (entry.DistrictId == AuditLog.Unknown
+                    && entry.UserId != null
+                    && actors.Contains(entry.UserId.Value)));
         }
 
         if (actorId is { } actor)
@@ -228,6 +244,7 @@ public class AuditController(
                 entry.AuditLogId,
                 entry.EntityType,
                 entry.EntityId,
+                entry.DistrictId,
                 entry.Action,
                 entry.UserId,
                 entry.UserId is { } id && names.TryGetValue(id, out var name) ? name : null,
@@ -268,7 +285,8 @@ public class AuditController(
         db.AuditLogs.Add(new AuditLog
         {
             EntityType = "AuditTrail",
-            EntityId = scope.DistrictId ?? "national",
+            EntityId = scope.DistrictId ?? AuditLog.Unattributed,
+            DistrictId = scope.DistrictId ?? AuditLog.Unattributed,
             Action = $"Read:{(filters.Count > 0 ? string.Join(",", filters) : "all")};"
                      + $"returned={returned};total={total}",
             UserId = caller.RegistrarId,
@@ -291,6 +309,14 @@ public record AuditEntryResponse(
     Guid AuditLogId,
     string EntityType,
     string EntityId,
+
+    /// <summary>
+    /// The district this act belongs to. Empty for rows written before the
+    /// column existed, which can never be given one -- see AuditLog.Unknown.
+    /// Mostly of interest to the Ministry, who read across districts; a
+    /// district officer sees their own on every row that has one.
+    /// </summary>
+    string DistrictId,
     string Action,
     Guid? ActorId,
     string? ActorName,

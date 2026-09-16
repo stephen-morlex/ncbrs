@@ -66,7 +66,7 @@ public class AuditQueryTests : IDisposable
         db.AuditLogs.AddRange(
             Entry("BirthRecord", CentralBrn, "Create", NurseId, Earlier),
             Entry("BirthRecord", CentralBrn, "Amend", OfficerId, Later),
-            Entry("BirthRecord", LusakaBrn, "Create", LusakaNurseId, Later),
+            Entry("BirthRecord", LusakaBrn, "Create", LusakaNurseId, Later, LusakaDistrict),
             Entry("BirthRecordSearch", CentralDistrict, "Search:name=Banda;returned=2;total=2", NurseId, Later),
             // Nobody did this: a sweep raised it. The actor name must come
             // back null rather than blank.
@@ -213,6 +213,67 @@ public class AuditQueryTests : IDisposable
         Assert.Contains("name=Banda", entry.Action);
     }
 
+// ---- the district column ---------------------------------------------
+
+    [Fact]
+    public async Task A_row_written_before_the_column_existed_still_reaches_its_district()
+    {
+        // Those rows carry AuditLog.Unknown and can never be given a district
+        // -- the table is append-only and enforced so at the database. The
+        // actor's district is the best that can be said of them, and losing
+        // them from the district's view entirely would be worse than an
+        // approximation.
+        await using (var seed = new NcbrsDbContext(_options))
+        {
+            seed.AuditLogs.Add(Entry("BirthRecord", CentralBrn, "LegacyAct", NurseId, Later,
+                AuditLog.Unknown));
+
+            await seed.SaveChangesAsync();
+        }
+
+        var page = Ok(await GetAsync(OfficerSubject, [NcbrsRoles.DistrictOfficer]));
+
+        Assert.Contains(page.Items, entry => entry.Action == "LegacyAct");
+    }
+
+    [Fact]
+    public async Task A_legacy_row_by_an_outsider_stays_invisible()
+    {
+        // The permanent hole, asserted so it is not mistaken for a bug later:
+        // an act on this district's records by someone outside it, written
+        // before the column existed, cannot be attributed and does not appear.
+        await using (var seed = new NcbrsDbContext(_options))
+        {
+            seed.AuditLogs.Add(Entry("BirthRecord", CentralBrn, "LegacyOutsiderAct",
+                LusakaNurseId, Later, AuditLog.Unknown));
+
+            await seed.SaveChangesAsync();
+        }
+
+        var page = Ok(await GetAsync(OfficerSubject, [NcbrsRoles.DistrictOfficer]));
+
+        Assert.DoesNotContain(page.Items, entry => entry.Action == "LegacyOutsiderAct");
+    }
+
+    [Fact]
+    public async Task A_new_row_by_an_outsider_does_reach_the_district()
+    {
+        // What the column buys. A ministry admin acting on this district's
+        // record produces a row the district can now see -- which under
+        // actor-scoping alone it never could.
+        await using (var seed = new NcbrsDbContext(_options))
+        {
+            seed.AuditLogs.Add(Entry("BirthRecord", CentralBrn, "AnnulByMinistry",
+                MinistryId, Later, CentralDistrict));
+
+            await seed.SaveChangesAsync();
+        }
+
+        var page = Ok(await GetAsync(OfficerSubject, [NcbrsRoles.DistrictOfficer]));
+
+        Assert.Contains(page.Items, entry => entry.Action == "AnnulByMinistry");
+    }
+
     // ---- filtering and ordering -------------------------------------------
 
     [Fact]
@@ -280,11 +341,13 @@ public class AuditQueryTests : IDisposable
     }
 
     private static AuditLog Entry(
-        string entityType, string entityId, string action, Guid? actor, DateTime at)
+        string entityType, string entityId, string action, Guid? actor, DateTime at,
+        string district = CentralDistrict)
         => new()
         {
             EntityType = entityType,
             EntityId = entityId,
+            DistrictId = district,
             Action = action,
             UserId = actor,
             DeviceId = "web",

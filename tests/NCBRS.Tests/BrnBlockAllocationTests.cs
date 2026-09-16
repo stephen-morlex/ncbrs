@@ -92,10 +92,11 @@ public class BrnBlockAllocationTests
         return new BirthRecordsController(
             db,
             new BirthRegistrationService(db, publisher, currentRegistrar,
-                new DuplicateDetectionService(db, new DuplicateMatcher(), new CertificateRevocationRecorder(db), NullLogger<DuplicateDetectionService>.Instance),
+                new DuplicateDetectionService(db, new DuplicateMatcher(), new CertificateRevocationRecorder(db), NullLogger<DuplicateDetectionService>.Instance, new DistrictLookup(db)),
                 Options.Create(new StatutoryRegistrationOptions())),
-            new AmendmentService(db, publisher, new CertificateRevocationRecorder(db), currentRegistrar),
-            currentRegistrar)
+            new AmendmentService(db, publisher, new CertificateRevocationRecorder(db), currentRegistrar, new DistrictLookup(db)),
+            currentRegistrar,
+            new DistrictLookup(db))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };

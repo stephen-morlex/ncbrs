@@ -45,7 +45,8 @@ public record MaternalStatisticsOutcome(
 /// </summary>
 public class MaternalStatisticsService(
     NcbrsDbContext db,
-    CurrentRegistrarService currentRegistrar)
+    CurrentRegistrarService currentRegistrar,
+    DistrictLookup districts)
 {
     /// <summary>WHO's 2016 antenatal care model recommends a minimum of eight contacts.</summary>
     public const int WhoAntenatalMinimumContacts = 8;
@@ -121,6 +122,7 @@ public class MaternalStatisticsService(
         {
             EntityType = nameof(MaternalStatistics),
             EntityId = brn,
+            DistrictId = await districts.ForBrnAsync(brn, cancellationToken),
             Action = revised ? "ReviseMaternalStatistics" : "RecordMaternalStatistics",
             UserId = registrar.RegistrarId,
             DeviceId = deviceId,

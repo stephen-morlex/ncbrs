@@ -52,10 +52,30 @@ is more expensive than a question.
 
 Never commit directly to `main`. Branch from the current `origin/main`.
 
+**A branch is a feature, not a change.** It opens when a capability is
+started and closes when that capability is usable by the person it is for —
+not when the first piece of it compiles. A backend endpoint with no screen,
+or a column with nothing reading it, is half a feature; it belongs on the
+branch, not in its own pull request.
+
+The test is whether the PR title could be read by someone who does not work
+here. "A district can read its own audit trail" is a feature. "Add
+DistrictId to AuditLogs" is a step towards one.
+
+Commit as the work lands — commits are cheap, reversible, and are how the
+reasoning stays attached to the change. The approval gate is at the **pull
+request**, once the feature is whole.
+
+Two exceptions, where a change stands alone and should not wait:
+
+- **A fix to something already released.** It is complete by itself.
+- **A change that blocks other work**, such as a contract or generator fix
+  that every subsequent branch would otherwise carry.
+
 ```
-feat/record-search
+feat/audit-trail            a district can read its own trail
+feat/record-search          backend, UI and the audit it writes
 fix/amendment-drift-check
-refactor/device-enrolment-service
 chore/web-cors
 ```
 
@@ -139,7 +159,9 @@ authorisation** — someone else's work may be on that branch.
 Title, summary, the problem being solved, implementation notes, testing
 performed, related issue, and any risk or breaking change.
 
-> **Approval gate.** Ask before opening.
+> **Approval gate.** Ask before opening — and open only once the feature is
+> whole (§3). This is the gate that matters; the commits leading to it do not
+> each need one.
 
 Never merge automatically.
 

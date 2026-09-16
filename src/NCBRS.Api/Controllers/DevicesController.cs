@@ -22,7 +22,8 @@ namespace NCBRS.Controllers;
 [Produces("application/json")]
 public class DevicesController(
     NcbrsDbContext db,
-    CurrentRegistrarService currentRegistrar) : ControllerBase
+    CurrentRegistrarService currentRegistrar,
+    DistrictLookup districts) : ControllerBase
 {
     /// <summary>
     /// The district's queue of devices that have gone quiet (plan F4).
@@ -116,6 +117,7 @@ public class DevicesController(
         db.AuditLogs.Add(new AuditLog
         {
             EntityType = nameof(DeviceAlert),
+            DistrictId = alert.DistrictId,
             EntityId = alert.DeviceId,
             Action = "AcknowledgeDeviceAlert",
             UserId = registrar.RegistrarId,
@@ -209,6 +211,7 @@ public class DevicesController(
         db.AuditLogs.Add(new AuditLog
         {
             EntityType = nameof(Device),
+            DistrictId = await districts.ForFacilityAsync(device.FacilityId, HttpContext.RequestAborted),
             EntityId = device.DeviceId,
             Action = "EnrolDevice",
             UserId = registrar.RegistrarId,
@@ -368,6 +371,7 @@ public class DevicesController(
         db.AuditLogs.Add(new AuditLog
         {
             EntityType = nameof(Device),
+            DistrictId = await districts.ForFacilityAsync(device.FacilityId, HttpContext.RequestAborted),
             EntityId = device.DeviceId,
             Action = action,
             UserId = registrar.RegistrarId,

@@ -31,7 +31,8 @@ public record LateRegistrationReviewOutcome(
 /// </summary>
 public class LateRegistrationService(
     NcbrsDbContext db,
-    CurrentRegistrarService currentRegistrar)
+    CurrentRegistrarService currentRegistrar,
+    DistrictLookup districts)
 {
     /// <summary>
     /// The queue a district registrar works from, oldest first.
@@ -148,6 +149,7 @@ public class LateRegistrationService(
         {
             EntityType = nameof(LateRegistration),
             EntityId = late.BirthRecord.Brn,
+            DistrictId = await districts.ForRecordAsync(late.BirthRecord, cancellationToken),
             Action = approve ? "ApproveLateRegistration" : "RejectLateRegistration",
             UserId = reviewer.RegistrarId,
             DeviceId = "review",

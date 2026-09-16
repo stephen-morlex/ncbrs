@@ -94,6 +94,10 @@ namespace NCBRS.Migrations.Postgres
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("DistrictId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("EntityId")
                         .IsRequired()
                         .HasColumnType("text");

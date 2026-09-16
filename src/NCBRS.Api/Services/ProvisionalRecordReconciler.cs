@@ -40,7 +40,7 @@ public record ProvisionalReconciliationResult(
 /// certificates for no gain. What must never happen is the record quietly
 /// entering the register as though it had always had a proper number.
 /// </summary>
-public class ProvisionalRecordReconciler(NcbrsDbContext db)
+public class ProvisionalRecordReconciler(NcbrsDbContext db, DistrictLookup districts)
 {
     /// <summary>
     /// Matches the retry count used when granting BRN blocks: the same
@@ -116,6 +116,7 @@ public class ProvisionalRecordReconciler(NcbrsDbContext db)
             {
                 EntityType = nameof(BirthRecord),
                 EntityId = brn,
+                DistrictId = await districts.ForBrnAsync(brn, cancellationToken),
                 // Names the identifier it replaced, so the audit trail links
                 // the provisional slip to the number that superseded it.
                 Action = $"ReconcileProvisional:{record.ProvisionalIdentifier}",

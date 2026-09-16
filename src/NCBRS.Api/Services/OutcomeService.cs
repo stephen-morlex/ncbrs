@@ -45,7 +45,8 @@ public record OutcomeOutcome<T>(OutcomeResult Result, T? Response = default, str
 public class OutcomeService(
     NcbrsDbContext db,
     IEventPublisher eventPublisher,
-    CurrentRegistrarService currentRegistrar)
+    CurrentRegistrarService currentRegistrar,
+    DistrictLookup districts)
 {
     /// <summary>WHO: a neonatal death occurs within 28 completed days of a live birth.</summary>
     public const int NeonatalWindowDays = 28;
@@ -122,6 +123,7 @@ public class OutcomeService(
         {
             EntityType = nameof(NeonatalOutcome),
             EntityId = brn,
+            DistrictId = await districts.ForBrnAsync(brn, cancellationToken),
             Action = "RecordNeonatalOutcome",
             UserId = registrar.RegistrarId,
             DeviceId = request.DeviceId,
@@ -202,6 +204,7 @@ public class OutcomeService(
         {
             EntityType = nameof(MaternalOutcome),
             EntityId = brn,
+            DistrictId = await districts.ForBrnAsync(brn, cancellationToken),
             Action = "RecordMaternalOutcome",
             UserId = registrar.RegistrarId,
             DeviceId = request.DeviceId,

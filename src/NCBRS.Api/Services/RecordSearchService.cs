@@ -190,7 +190,8 @@ public class RecordSearchService(NcbrsDbContext db, TimeProvider clock)
             // The register, scoped. Keeps "every search in this district"
             // answerable without overloading the column that everywhere else
             // holds a record's own identifier.
-            EntityId = scope.DistrictId ?? "national",
+            EntityId = scope.DistrictId ?? AuditLog.Unattributed,
+            DistrictId = scope.DistrictId ?? AuditLog.Unattributed,
 
             Action = $"Search:{criteria.Describe()};returned={returned};total={total}",
             UserId = audit.RegistrarId,

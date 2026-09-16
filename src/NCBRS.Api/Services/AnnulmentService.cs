@@ -46,7 +46,8 @@ public class AnnulmentService(
     NcbrsDbContext db,
     IEventPublisher eventPublisher,
     CertificateRevocationRecorder revocations,
-    CurrentRegistrarService currentRegistrar)
+    CurrentRegistrarService currentRegistrar,
+    DistrictLookup districts)
 {
     public async Task<AnnulmentOutcome> AnnulAsync(
         string brn,
@@ -133,6 +134,7 @@ public class AnnulmentService(
         {
             EntityType = nameof(BirthRecord),
             EntityId = brn,
+            DistrictId = await districts.ForBrnAsync(brn, cancellationToken),
             Action = "Annul",
             UserId = registrar.RegistrarId,
             DeviceId = "annulment",

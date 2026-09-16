@@ -87,7 +87,7 @@ public class OutcomeTests : IDisposable
         var currentRegistrar = AuthTestContext.RegistrarService(db, http);
         var registrar = db.Registrars.Single(r => r.RegistrarId == RegistrarId);
 
-        return (new OutcomeService(db, new NoOpEventPublisher(), currentRegistrar), registrar);
+        return (new OutcomeService(db, new NoOpEventPublisher(), currentRegistrar, new DistrictLookup(db)), registrar);
     }
 
     private static RecordNeonatalOutcomeRequest Neonatal(int daysAfterBirth, IcdPmTiming timing = IcdPmTiming.Neonatal)

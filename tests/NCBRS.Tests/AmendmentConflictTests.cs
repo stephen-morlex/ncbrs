@@ -109,7 +109,8 @@ public class AmendmentConflictTests : IDisposable
         var registrar = db.Registrars.Single(r => r.RegistrarId == registrarId);
 
         return await new AmendmentService(
-                db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db), current)
+                db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db), current,
+                new DistrictLookup(db))
             .AmendAsync(Brn, request, registrar, Guid.CreateVersion7());
     }
 
@@ -129,7 +130,8 @@ public class AmendmentConflictTests : IDisposable
 
         var page = await new AmendmentService(
                 db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db),
-                AuthTestContext.RegistrarService(db, http))
+                AuthTestContext.RegistrarService(db, http),
+                new DistrictLookup(db))
             .ConflictsAsync(null, new PageRequest());
 
         return page.Items;
@@ -326,7 +328,8 @@ public class AmendmentConflictTests : IDisposable
         var reviewer = db.Registrars.Single(r => r.RegistrarId == ReviewerId);
 
         return await new AmendmentService(
-                db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db), current)
+                db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db), current,
+                new DistrictLookup(db))
             .ReviewConflictAsync(conflictId, uphold, "Checked against the ward register.",
                 reviewer, Guid.CreateVersion7());
     }

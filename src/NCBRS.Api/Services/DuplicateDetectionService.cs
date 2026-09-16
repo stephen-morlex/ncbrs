@@ -30,7 +30,8 @@ public class DuplicateDetectionService(
     NcbrsDbContext db,
     DuplicateMatcher matcher,
     CertificateRevocationRecorder revocations,
-    ILogger<DuplicateDetectionService> logger)
+    ILogger<DuplicateDetectionService> logger,
+    DistrictLookup districts)
 {
     /// <summary>
     /// Compares a newly registered birth against existing records and
@@ -232,6 +233,7 @@ public class DuplicateDetectionService(
             {
                 EntityType = nameof(BirthRecord),
                 EntityId = superseded.Brn,
+                DistrictId = await districts.ForBrnAsync(superseded.Brn, cancellationToken),
                 Action = "SupersededAsDuplicate",
                 UserId = reviewer.RegistrarId,
                 DeviceId = "review",
@@ -243,6 +245,9 @@ public class DuplicateDetectionService(
         {
             EntityType = nameof(DuplicateCandidate),
             EntityId = duplicateCandidateId.ToString(),
+            // The record under review, which exists whichever way the
+            // decision goes -- `superseded` only exists on the confirm path.
+            DistrictId = await districts.ForRecordAsync(link.BirthRecord!, cancellationToken),
             Action = isDuplicate ? "ConfirmDuplicate" : "DismissDuplicate",
             UserId = reviewer.RegistrarId,
             DeviceId = "review",
