@@ -68,9 +68,30 @@ builder.Services.AddHostedService<BirthRecordDashboardConsumer>();
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
+// W8. Without a document these endpoints cannot be part of the generated web
+// client, and the generated client is the reason React was chosen over Blazor
+// (NCBRS-Web-Plan.md §2). Hand-written types for the dashboard would be
+// exactly the drift that decision existed to prevent, in the part of the
+// system whose numbers a Ministry acts on.
+builder.Services.AddOpenApi();
+
 var app = builder.Build();
 
 app.UseCors(WebClientCorsOptions.PolicyName);
+
+// Served at /openapi/v1.json, and Development only — matching the
+// registration API, which gates Swagger the same way. A published document is
+// a map of the whole surface, and this service has no authentication on it
+// yet (see NCBRS-Web-Plan.md W9), so there is no reason to hand one out.
+//
+// The client generator runs the service in Development, so this costs it
+// nothing. Note the API publishes its own document at
+// /swagger/v1/swagger.json: two services, two documents, and the generator
+// reads both.
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
 
 // This service owns the read model outright -- one writer, no other schema
 // on it -- so unlike the registry there is nothing to race with.
@@ -90,18 +111,18 @@ app.MapGet("/health", async (ReadModelDbContext db, CancellationToken cancellati
         .Select(processed => (DateTime?)processed.ProcessedAtUtc)
         .FirstOrDefaultAsync(cancellationToken);
 
-    return Results.Ok(new
-    {
-        status = "ok",
-        lastEventProcessedAtUtc = lastEvent,
-        registrations = await db.RegistrationFacts.CountAsync(cancellationToken),
+    return Results.Ok(new ProjectionHealth(
+        "ok",
+        lastEvent,
+        await db.RegistrationFacts.CountAsync(cancellationToken),
 
         // Events waiting on a registration that has not arrived. Persistently
         // non-zero means the projection is missing registrations, which no
         // total on the dashboard would reveal on its own.
-        heldAwaitingRegistration = await db.PendingEvents.CountAsync(cancellationToken)
-    });
-});
+        await db.PendingEvents.CountAsync(cancellationToken)));
+})
+.WithName("GetProjectionHealth")
+.Produces<ProjectionHealth>();
 
 app.MapGet("/api/dashboard/summary", async (
     DateTime? from,
@@ -113,9 +134,12 @@ app.MapGet("/api/dashboard/summary", async (
     var (fromUtc, toUtc) = Range(from, to);
 
     return toUtc <= fromUtc
-        ? Results.BadRequest(new { error = "'to' must be after 'from'." })
+        ? Results.BadRequest(new ApiError("'to' must be after 'from'."))
         : Results.Ok(await dashboard.SummaryAsync(fromUtc, toUtc, districtId, cancellationToken));
-});
+})
+.WithName("GetDashboardSummary")
+.Produces<DashboardSummary>()
+.Produces<ApiError>(StatusCodes.Status400BadRequest);
 
 app.MapGet("/api/dashboard/districts", async (
     DateTime? from,
@@ -126,9 +150,12 @@ app.MapGet("/api/dashboard/districts", async (
     var (fromUtc, toUtc) = Range(from, to);
 
     return toUtc <= fromUtc
-        ? Results.BadRequest(new { error = "'to' must be after 'from'." })
+        ? Results.BadRequest(new ApiError("'to' must be after 'from'."))
         : Results.Ok(await dashboard.DistrictsAsync(fromUtc, toUtc, cancellationToken));
-});
+})
+.WithName("GetDashboardDistricts")
+.Produces<IReadOnlyList<DistrictSummary>>()
+.Produces<ApiError>(StatusCodes.Status400BadRequest);
 
 // E4. Anonymised aggregate only: the unit of this payload is a
 // district-month, never a person. See Dhis2ExportService for the three
@@ -144,9 +171,12 @@ app.MapGet("/api/exports/dhis2", async (
     }
     catch (ArgumentException invalid)
     {
-        return Results.BadRequest(new { error = invalid.Message });
+        return Results.BadRequest(new ApiError(invalid.Message));
     }
-});
+})
+.WithName("GetDhis2Export")
+.Produces<Dhis2Export>()
+.Produces<ApiError>(StatusCodes.Status400BadRequest);
 
 app.MapGet("/api/dashboard/devices/silent", async (
     int? silentForDays,
@@ -157,9 +187,12 @@ app.MapGet("/api/dashboard/devices/silent", async (
     var days = silentForDays ?? 7;
 
     return days < 1
-        ? Results.BadRequest(new { error = "'silentForDays' must be at least 1." })
+        ? Results.BadRequest(new ApiError("'silentForDays' must be at least 1."))
         : Results.Ok(await dashboard.SilentDevicesAsync(days, districtId, cancellationToken));
-});
+})
+.WithName("GetSilentDevices")
+.Produces<IReadOnlyList<SilentDevice>>()
+.Produces<ApiError>(StatusCodes.Status400BadRequest);
 
 app.Run();
 

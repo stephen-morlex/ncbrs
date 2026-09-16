@@ -142,3 +142,26 @@ public record DashboardSummary(
     IReadOnlyList<string> NotAvailable);
 
 public record DistrictSummary(string DistrictId, int LiveBirths, int Annulled, decimal? WithinWindowShare);
+
+/// <summary>
+/// The error shape these endpoints return on a bad request.
+///
+/// A named record rather than an anonymous object, because an anonymous one
+/// serialises fine and documents as nothing — leaving the generated client
+/// with no type for the half of the contract that reports failure.
+/// </summary>
+public record ApiError(string Error);
+
+/// <summary>
+/// Whether the projection is keeping up.
+///
+/// Named for the same reason: a dashboard served from a consumer that stalled
+/// three days ago looks exactly like a dashboard of a country where nothing
+/// happened, so this is a contract worth generating a client for rather than
+/// an ad hoc blob.
+/// </summary>
+public record ProjectionHealth(
+    string Status,
+    DateTime? LastEventProcessedAtUtc,
+    int Registrations,
+    int HeldAwaitingRegistration);
