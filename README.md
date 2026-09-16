@@ -44,8 +44,15 @@ take the registration API down with it.
 Requires .NET 10 SDK and Docker.
 
 ```bash
+cp .env.example .env
+```
+
+```bash
 docker compose up -d
 ```
+
+Compose refuses to start without the variables `.env` supplies rather than
+falling back to defaults — a default password is a password everyone has.
 
 Then each service in its own terminal:
 
@@ -92,13 +99,23 @@ NCBRS_TEST_PROVIDER=Postgres dotnet test
 
 ## Development credentials
 
-The imported Keycloak realm creates `nurse.banda`, `dr.tembo`,
-`district.officer` and `ministry.admin`, all with the password `password`.
+Infrastructure credentials — PostgreSQL and the Keycloak admin — come from
+`.env`, which is not committed. `.env.example` is the template.
 
-**These are development-only**, as are the PostgreSQL password in
-`docker-compose.yml` and the ephemeral certificate signing key. Nothing here
-is a production credential, and the platform refuses to start outside
-Development without a real signing key configured.
+The four registrar accounts (`nurse.banda`, `dr.tembo`, `district.officer`,
+`ministry.admin`, all with the password `password`) are **committed** in
+`keycloak/ncbrs-realm.json`. They are not in `.env` because Keycloak's realm
+import does not substitute environment variables — that was tested, and a
+placeholder becomes the literal password, which looks secured while being
+trivially guessable.
+
+> **This realm is development fixture data and must never be imported into a
+> Keycloak that anyone else can reach.** Compose runs it with `start-dev`, on
+> an in-memory database over plain HTTP, which is not a production mode in any
+> case.
+
+Nothing here is a production credential, and the platform refuses to start
+outside Development without a real certificate signing key configured.
 
 ## Licence
 

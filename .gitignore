@@ -43,6 +43,10 @@ appsettings.*.local.json
 .env.*
 secrets.json
 
+# ...but the template must be committed, or a fresh clone cannot start the
+# stack at all: compose refuses to run without the variables it names.
+!.env.example
+
 # OS noise
 .DS_Store
 Thumbs.db

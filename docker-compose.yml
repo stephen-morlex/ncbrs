@@ -17,12 +17,12 @@ services:
       # problem that does not exist.
       - "5433:5432"
     environment:
-      POSTGRES_DB: ncbrs
-      POSTGRES_USER: ncbrs
+      POSTGRES_DB: ${POSTGRES_DB:-ncbrs}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env (copy .env.example)}
       # Development only. The central tier takes its credentials from a
       # secret store, never from a compose file -- the same rule the
       # certificate signing key follows.
-      POSTGRES_PASSWORD: ncbrs-dev
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (copy .env.example)}
     # Continuous archiving (WS-A6). Without it the only recovery point is the
     # last dump, so a nightly schedule means losing up to a day of births --
     # and a birth that was registered and then lost is worse than one never
@@ -58,7 +58,11 @@ services:
       # what puts the audit trail beyond a database owner's reach (WS-A2).
       - ncbrs-postgres-archive:/var/lib/postgresql/archive
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ncbrs -d ncbrs"]
+      # Resolved inside the container ($$ escapes it from compose), so
+      # changing POSTGRES_USER in .env cannot leave the healthcheck probing a
+      # user that no longer exists -- which presents as a container that never
+      # becomes healthy and a stack that hangs on startup.
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -104,8 +108,8 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
-      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+      - KC_BOOTSTRAP_ADMIN_USERNAME=${KEYCLOAK_ADMIN_USER:?Set KEYCLOAK_ADMIN_USER in .env (copy .env.example)}
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD:?Set KEYCLOAK_ADMIN_PASSWORD in .env (copy .env.example)}
       - KC_HEALTH_ENABLED=true
     volumes:
       # Imported on startup so every developer gets the same realm, roles and
