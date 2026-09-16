@@ -87,6 +87,10 @@ builder.Services.AddScoped<DuplicateDetectionService>();
 // the caller's district, ministry exempt, and every search audited.
 builder.Services.AddScoped<RecordSearchService>();
 
+// One place deciding which district a caller may see. Two would drift, and
+// the way they drift is that one endpoint stops enforcing the boundary.
+builder.Services.AddScoped<DistrictScopeResolver>();
+
 // The signing key is loaded once and held for the process: it is the most
 // sensitive secret here, and re-reading it per request would multiply the
 // places it can leak.

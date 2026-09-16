@@ -29,7 +29,8 @@ namespace NCBRS.Controllers;
 public class RecordSearchController(
     NcbrsDbContext db,
     RecordSearchService search,
-    CurrentRegistrarService currentRegistrar) : ControllerBase
+    CurrentRegistrarService currentRegistrar,
+    DistrictScopeResolver scopes) : ControllerBase
 {
     /// <summary>
     /// Searches within the caller's district, or nationally for the Ministry.
@@ -95,18 +96,20 @@ public class RecordSearchController(
                 "'bornTo' must not be earlier than 'bornFrom'."));
         }
 
-        var scopeResult = await ResolveScopeAsync(registrar, districtId);
+        var scope = await scopes.ResolveAsync(
+            User, registrar, districtId, HttpContext.RequestAborted);
 
-        if (scopeResult.Refusal is { } refusal)
+        if (!scope.IsAllowed)
         {
-            return refusal;
+            return ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status403Forbidden, scope.Title, scope.Field, scope.Message));
         }
 
         var page = new PageRequest { Limit = limit, After = after };
 
         var results = await search.SearchAsync(
             criteria,
-            scopeResult.Scope,
+            scope.Scope,
             page,
             new AuditContext(
                 registrar.RegistrarId,
@@ -124,56 +127,4 @@ public class RecordSearchController(
         return results;
     }
 
-    /// <summary>
-    /// The scope, from the token.
-    ///
-    /// Never from the query string for anyone but the Ministry: a district id
-    /// a caller can type is a district id a caller can change.
-    /// </summary>
-    private async Task<(SearchScope Scope, ActionResult? Refusal)> ResolveScopeAsync(
-        Registrar registrar,
-        string? requestedDistrictId)
-    {
-        var isMinistry = User.IsInRole(NcbrsRoles.MinistryAdmin);
-
-        if (isMinistry)
-        {
-            // The Ministry may narrow to a district, or search nationally by
-            // naming none. Oversight of the whole register is their function.
-            return (string.IsNullOrWhiteSpace(requestedDistrictId)
-                ? SearchScope.National
-                : SearchScope.District(requestedDistrictId), null);
-        }
-
-        var district = await db.Facilities
-            .Where(facility => facility.FacilityId == registrar.FacilityId)
-            .Select(facility => facility.DistrictId)
-            .FirstOrDefaultAsync(HttpContext.RequestAborted);
-
-        if (string.IsNullOrWhiteSpace(district))
-        {
-            return (default, ApiErrors.Result(ApiErrors.Single(
-                StatusCodes.Status403Forbidden,
-                "No district for this account.",
-                string.Empty,
-                "This account's facility has no district, so a search cannot be scoped.")));
-        }
-
-        // Refused rather than silently narrowed. A caller who believes they
-        // searched a neighbouring district and actually searched their own
-        // reads an empty result as "no such child" -- which is a worse answer
-        // than being told they cannot look there.
-        if (!string.IsNullOrWhiteSpace(requestedDistrictId)
-            && !string.Equals(requestedDistrictId, district, StringComparison.OrdinalIgnoreCase))
-        {
-            return (default, ApiErrors.Result(ApiErrors.Single(
-                StatusCodes.Status403Forbidden,
-                "Searching another district is not permitted.",
-                "districtId",
-                "A search is confined to your own district. A family who moved districts "
-                + "is a referral to the Ministry.")));
-        }
-
-        return (SearchScope.District(district), null);
-    }
 }
