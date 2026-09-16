@@ -1003,7 +1003,7 @@ namespace NCBRS.Migrations
                     b.HasOne("NCBRS.Models.Facility", "Facility")
                         .WithMany()
                         .HasForeignKey("FacilityId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("NCBRS.Models.Person", "FatherPerson")
@@ -1019,7 +1019,7 @@ namespace NCBRS.Migrations
                     b.HasOne("NCBRS.Models.Registrar", "RegisteredByRegistrar")
                         .WithMany()
                         .HasForeignKey("RegisteredByRegistrarId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("ChildPerson");
@@ -1159,13 +1159,13 @@ namespace NCBRS.Migrations
                     b.HasOne("NCBRS.Models.BirthRecord", "BirthRecord")
                         .WithOne("MaternalOutcome")
                         .HasForeignKey("NCBRS.Models.MaternalOutcome", "BirthRecordId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("NCBRS.Models.Registrar", "RecordedByRegistrar")
                         .WithMany()
                         .HasForeignKey("RecordedByRegistrarId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("BirthRecord");
@@ -1178,7 +1178,7 @@ namespace NCBRS.Migrations
                     b.HasOne("NCBRS.Models.BirthRecord", "BirthRecord")
                         .WithOne("MaternalStatistics")
                         .HasForeignKey("NCBRS.Models.MaternalStatistics", "BirthRecordId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("NCBRS.Models.Registrar", "RecordedByRegistrar")
@@ -1197,13 +1197,13 @@ namespace NCBRS.Migrations
                     b.HasOne("NCBRS.Models.BirthRecord", "BirthRecord")
                         .WithOne("NeonatalOutcome")
                         .HasForeignKey("NCBRS.Models.NeonatalOutcome", "BirthRecordId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("NCBRS.Models.Registrar", "RecordedByRegistrar")
                         .WithMany()
                         .HasForeignKey("RecordedByRegistrarId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("BirthRecord");
@@ -1235,7 +1235,7 @@ namespace NCBRS.Migrations
                     b.HasOne("NCBRS.Models.Facility", "Facility")
                         .WithMany()
                         .HasForeignKey("FacilityId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Facility");
@@ -1246,7 +1246,7 @@ namespace NCBRS.Migrations
                     b.HasOne("NCBRS.Models.Facility", "Facility")
                         .WithMany()
                         .HasForeignKey("FacilityId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Facility");

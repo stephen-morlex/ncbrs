@@ -368,6 +368,56 @@ public class NcbrsDbContext(DbContextOptions<NcbrsDbContext> options) : DbContex
         modelBuilder.Entity<Registrar>().Property(r => r.Role).HasConversion<string>();
         modelBuilder.Entity<NeonatalOutcome>().Property(n => n.IcdPmTiming).HasConversion<string>();
         modelBuilder.Entity<SyncBatch>().Property(s => s.Status).HasConversion<string>();
+
+        NothingCascadesIntoADelete(modelBuilder);
+    }
+
+    /// <summary>
+    /// No relationship in the registry deletes anything on its parent's
+    /// behalf.
+    ///
+    /// **This is the register's own rule, finally enforced by the database.**
+    /// An annulment keeps the record; a duplicate supersession keeps both; a
+    /// revoked certificate keeps its revocation; the audit trail cannot be
+    /// rewritten at all. A schema that quietly removes births when a row
+    /// upstream goes away contradicts every one of those.
+    ///
+    /// Most relationships already said <c>Restrict</c> individually, which is
+    /// what makes the ones that did not so easy to miss: they were never
+    /// decided, they were left to EF's convention, and EF's convention for a
+    /// required relationship is <c>Cascade</c>. That left six paths that
+    /// destroy legal records —
+    ///
+    /// <list type="bullet">
+    /// <item>deleting a facility deleted every birth registered there;</item>
+    /// <item>deleting a facility deleted its registrars, which then cascaded
+    /// again into their birth records;</item>
+    /// <item>deleting a registrar deleted the births they filed, and the
+    /// maternal and neonatal deaths they recorded;</item>
+    /// <item>deleting a facility deleted its sync history.</item>
+    /// </list>
+    ///
+    /// Applied as a sweep rather than relationship by relationship, for the
+    /// same reason <c>AuditLog.DistrictId</c> is <c>required</c>: naming each
+    /// one works only while somebody remembers, and the failure of
+    /// remembering is silent. A relationship added next year is safe without
+    /// anyone thinking about it, and a genuine need to cascade now has to be
+    /// argued for here rather than arrived at by omission.
+    ///
+    /// The consequence is that removing a facility or a registrar who has
+    /// touched the register now fails at the database. That is the intended
+    /// outcome: they cannot be removed, because what they did cannot be
+    /// unmade. Withdrawing someone's access is a Keycloak act, not a delete.
+    /// </summary>
+    private static void NothingCascadesIntoADelete(ModelBuilder modelBuilder)
+    {
+        foreach (var relationship in modelBuilder.Model
+                     .GetEntityTypes()
+                     .SelectMany(entity => entity.GetForeignKeys())
+                     .Where(foreignKey => foreignKey.DeleteBehavior == DeleteBehavior.Cascade))
+        {
+            relationship.DeleteBehavior = DeleteBehavior.Restrict;
+        }
     }
 
     /// <summary>
