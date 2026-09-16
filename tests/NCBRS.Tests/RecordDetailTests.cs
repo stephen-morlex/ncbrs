@@ -174,6 +174,24 @@ public class RecordDetailTests : IDisposable
         Assert.Equal(Born.AddDays(60), record.Certificate.IssuedAtUtc);
     }
 
+    [Theory]
+    [InlineData(30)]
+    [InlineData(90)]
+    [InlineData(180)]
+    public async Task TheStatutoryWindowIsPublished_FromConfigurationAndNotAConstant(int windowDays)
+    {
+        // A client that hardcodes this does not fail when the Act is amended —
+        // it quietly stops asking for evidence on births that now need it, and
+        // nothing says so. Published so the form can ask instead of assuming,
+        // and parameterised so a constant slipped in here would fail.
+        await using var db = new NcbrsDbContext(_options);
+        var http = AuthTestContext.HttpContextFor();
+
+        var rules = Controller(db, http, windowDays).GetRegistrationRules();
+
+        Assert.Equal(windowDays, rules.Value!.StatutoryWindowDays);
+    }
+
     private void GivenARecord(string? provisionalIdentifier = null)
     {
         using var db = new NcbrsDbContext(_options);
@@ -224,7 +242,8 @@ public class RecordDetailTests : IDisposable
                    $"Looking up '{brn}' did not return a record: {result.Result}");
     }
 
-    private static BirthRecordsController Controller(NcbrsDbContext db, HttpContext http)
+    private static BirthRecordsController Controller(
+        NcbrsDbContext db, HttpContext http, int windowDays = 90)
     {
         var current = AuthTestContext.RegistrarService(db, http);
         var districts = new DistrictLookup(db);
@@ -241,11 +260,12 @@ public class RecordDetailTests : IDisposable
                     new CertificateRevocationRecorder(db),
                     NullLogger<DuplicateDetectionService>.Instance,
                     districts),
-                Options.Create(new StatutoryRegistrationOptions())),
+                Options.Create(new StatutoryRegistrationOptions { WindowDays = windowDays })),
             new AmendmentService(
                 db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db), current, districts),
             current,
-            districts)
+            districts,
+            Options.Create(new StatutoryRegistrationOptions { WindowDays = windowDays }))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };

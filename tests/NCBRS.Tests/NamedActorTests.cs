@@ -219,7 +219,8 @@ public class NamedActorTests : IDisposable
             new AmendmentService(
                 db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db), current, districts),
             current,
-            districts)
+            districts,
+            Microsoft.Extensions.Options.Options.Create(new StatutoryRegistrationOptions()))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };

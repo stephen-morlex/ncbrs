@@ -96,7 +96,8 @@ public class BrnBlockAllocationTests
                 Options.Create(new StatutoryRegistrationOptions())),
             new AmendmentService(db, publisher, new CertificateRevocationRecorder(db), currentRegistrar, new DistrictLookup(db)),
             currentRegistrar,
-            new DistrictLookup(db))
+            new DistrictLookup(db),
+            Options.Create(new StatutoryRegistrationOptions()))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };

@@ -37,6 +37,10 @@ const RecordSearch = lazy(() =>
   import('@/records/RecordSearch').then((module) => ({ default: module.RecordSearch })),
 )
 
+const RegisterBirth = lazy(() =>
+  import('@/records/RegisterBirth').then((module) => ({ default: module.RegisterBirth })),
+)
+
 const Facilities = lazy(() =>
   import('@/facilities/Facilities').then((module) => ({ default: module.Facilities })),
 )
@@ -82,6 +86,17 @@ export default function App() {
         <Route path="/" element={<Navigate to="/records" replace />} />
         <Route path="/records" element={<RecordLookup />} />
         <Route path="/records/search" element={<RecordSearch />} />
+
+        {/* Gated by the same policy its navigation entry names, so the guard
+            and the nav cannot disagree about who may file a registration. */}
+        <Route
+          path="/records/new"
+          element={
+            <RequireAuth policy="CanRegisterBirths">
+              <RegisterBirth />
+            </RequireAuth>
+          }
+        />
         <Route path="/facilities" element={<Facilities />} />
 
         <Route
