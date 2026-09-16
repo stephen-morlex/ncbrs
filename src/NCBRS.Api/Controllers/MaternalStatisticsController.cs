@@ -32,7 +32,7 @@ public class MaternalStatisticsController(
     /// approval workflow — a corrected statistic is simply a better
     /// statistic, unlike a correction to the legal record.
     /// </summary>
-    [HttpPut]
+    [HttpPut(Name = "SaveMaternalStatistics")]
     [ProducesResponseType(typeof(MaternalStatisticsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MaternalStatisticsResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
@@ -86,7 +86,7 @@ public class MaternalStatisticsController(
         };
     }
 
-    [HttpGet]
+    [HttpGet(Name = "GetMaternalStatistics")]
     [ProducesResponseType(typeof(MaternalStatisticsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]

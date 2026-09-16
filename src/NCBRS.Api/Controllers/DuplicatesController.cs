@@ -24,7 +24,7 @@ public class DuplicatesController(
     CurrentRegistrarService currentRegistrar) : ControllerBase
 {
     /// <summary>Potential duplicates awaiting a decision, most likely first.</summary>
-    [HttpGet("pending")]
+    [HttpGet("pending", Name = "GetPendingDuplicates")]
     [ProducesResponseType(typeof(Page<DuplicateCandidateResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
@@ -57,7 +57,7 @@ public class DuplicatesController(
     /// Records a decision. Confirming marks the later registration as
     /// superseded by the earlier one; nothing is deleted.
     /// </summary>
-    [HttpPost("{duplicateCandidateId:guid}/review")]
+    [HttpPost("{duplicateCandidateId:guid}/review", Name = "ReviewDuplicateCandidate")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]

@@ -37,7 +37,7 @@ public class BirthRecordsController(
     /// offline) -- this endpoint validates and reconciles it centrally,
     /// it does not generate the BRN itself.
     /// </summary>
-    [HttpPost("register")]
+    [HttpPost("register", Name = "RegisterBirth")]
     [Authorize(Policy = NcbrsRoles.CanRegisterBirths)]
     [ProducesResponseType(typeof(BirthRecordResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
@@ -107,7 +107,7 @@ public class BirthRecordsController(
                 "data", result.Detail ?? "The registration could not be completed."))
         };
 
-    [HttpGet("{brn}")]
+    [HttpGet("{brn}", Name = "GetBirthRecord")]
     [ProducesResponseType(typeof(BirthRecordResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
@@ -160,7 +160,7 @@ public class BirthRecordsController(
     /// pending answers <strong>202 Accepted</strong>, not 200 -- the record
     /// has not changed yet, and a device must not tell a family otherwise.
     /// </summary>
-    [HttpPatch("{brn}")]
+    [HttpPatch("{brn}", Name = "AmendBirthRecord")]
     [Authorize(Policy = NcbrsRoles.CanRegisterBirths)]
     [ProducesResponseType(typeof(AmendBirthRecordResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(AmendBirthRecordResponse), StatusCodes.Status202Accepted)]
@@ -224,7 +224,7 @@ public class BirthRecordsController(
     /// a reviewer turned down is part of a record's history too, and often
     /// the part a dispute turns on.
     /// </summary>
-    [HttpGet("{brn}/amendments")]
+    [HttpGet("{brn}/amendments", Name = "GetBirthRecordAmendments")]
     [ProducesResponseType(typeof(IReadOnlyList<AmendmentHistoryEntry>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
@@ -279,7 +279,7 @@ public class BirthRecordsController(
     /// separate, not-yet-implemented central-registry process (see
     /// CLAUDE.md's "central dedup check" item).
     /// </summary>
-    [HttpPost("{facilityId:guid}/request-brn-block")]
+    [HttpPost("{facilityId:guid}/request-brn-block", Name = "RequestBrnBlock")]
     [Authorize(Policy = NcbrsRoles.CanRegisterBirths)]
     [ProducesResponseType(typeof(BrnBlockResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]

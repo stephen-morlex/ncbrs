@@ -18,7 +18,7 @@ public class CertificatesController(
     /// Issues the birth certificate for a registered live birth, signing it
     /// with the Ministry's X.509 key.
     /// </summary>
-    [HttpPost]
+    [HttpPost(Name = "IssueCertificate")]
     [ProducesResponseType(typeof(CertificateResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -47,7 +47,7 @@ public class CertificatesController(
             : MapFailure(result);
     }
 
-    [HttpGet]
+    [HttpGet(Name = "GetCertificate")]
     [ProducesResponseType(typeof(CertificateResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
@@ -67,7 +67,7 @@ public class CertificatesController(
     /// purpose: reprints are counted and audited, because a certificate
     /// reprinted repeatedly is worth being able to notice.
     /// </summary>
-    [HttpPost("reprint")]
+    [HttpPost("reprint", Name = "ReprintCertificate")]
     [ProducesResponseType(typeof(CertificateResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
@@ -153,7 +153,7 @@ public class CertificateVerificationController(
     /// list. A signature alone only proves the document was once issued --
     /// it cannot know the register was corrected afterwards.
     /// </summary>
-    [HttpPost("verify")]
+    [HttpPost("verify", Name = "VerifyCertificate")]
     [ProducesResponseType(typeof(VerifyCertificateResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<VerifyCertificateResponse>> Verify(
@@ -176,7 +176,7 @@ public class CertificateVerificationController(
     /// Safe to serve anonymously, and to cache or mirror: every entry is an
     /// opaque digest, so the list names no child, no BRN and no facility.
     /// </summary>
-    [HttpGet("revocations")]
+    [HttpGet("revocations", Name = "GetCertificateRevocations")]
     [ProducesResponseType(typeof(CertificateRevocationList), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<CertificateRevocationList>> GetRevocations(
@@ -201,7 +201,7 @@ public class CertificateVerificationController(
     /// holding a list it has no key for, or a key newer than its list --
     /// and it would find out only once it was already offline.
     /// </summary>
-    [HttpGet("offline-bundle")]
+    [HttpGet("offline-bundle", Name = "GetOfflineVerificationBundle")]
     [ProducesResponseType(typeof(OfflineVerificationBundle), StatusCodes.Status200OK)]
     public async Task<ActionResult<OfflineVerificationBundle>> OfflineBundle()
         => new OfflineVerificationBundle(
@@ -216,7 +216,7 @@ public class CertificateVerificationController(
     /// once and then check certificates entirely offline -- which is the
     /// situation a rural district office is usually in.
     /// </summary>
-    [HttpGet("signing-key")]
+    [HttpGet("signing-key", Name = "GetCertificateSigningKeys")]
     [ProducesResponseType(typeof(SigningKeyResponse), StatusCodes.Status200OK)]
     public ActionResult<SigningKeyResponse> SigningKey()
         => new SigningKeyResponse(

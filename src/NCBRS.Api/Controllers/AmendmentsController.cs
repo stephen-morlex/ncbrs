@@ -28,7 +28,7 @@ public class AmendmentsController(
     /// sitting here is a family holding a certificate that the register
     /// already knows is wrong, so age is the thing worth seeing.
     /// </summary>
-    [HttpGet("pending")]
+    [HttpGet("pending", Name = "GetPendingAmendments")]
     [ProducesResponseType(typeof(Page<PendingAmendmentResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
@@ -49,7 +49,7 @@ public class AmendmentsController(
     /// measures how long a possibly-wrong value has been standing on a legal
     /// record.
     /// </summary>
-    [HttpGet("conflicts")]
+    [HttpGet("conflicts", Name = "GetAmendmentConflicts")]
     [ProducesResponseType(typeof(Page<AmendmentConflictResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
@@ -69,7 +69,7 @@ public class AmendmentsController(
     /// keeping it on that path means one piece of code stays responsible for
     /// previous values, approval rules and certificate withdrawal.
     /// </summary>
-    [HttpPost("conflicts/{amendmentConflictId:guid}/review")]
+    [HttpPost("conflicts/{amendmentConflictId:guid}/review", Name = "ReviewAmendmentConflict")]
     [ProducesResponseType(typeof(ReviewAmendmentConflictResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -128,7 +128,7 @@ public class AmendmentsController(
     /// contradicts is withdrawn. Until then the record reads exactly as it
     /// did, which is why nothing downstream was told about it.
     /// </summary>
-    [HttpPost("{amendmentRequestId:guid}/review")]
+    [HttpPost("{amendmentRequestId:guid}/review", Name = "ReviewAmendment")]
     [ProducesResponseType(typeof(ReviewAmendmentResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]

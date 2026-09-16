@@ -397,7 +397,7 @@ needs it.
 
 **Contract**
 - [x] Align both services on one OpenAPI generator — PR #8
-- [ ] Give every controller action an `operationId` (see below)
+- [x] Give every controller action an `operationId` — verb-first, matching the consumer — PR #9
 - [ ] Generate the typed API client from the OpenAPI document into `src/api/generated/`
 - [ ] Wire generation into CI so a drifting contract fails the build rather than production
 - [ ] Wrap the request/response envelope once, centrally (`{envelope, data}` out, `{meta, data}` back), including the transaction id header
@@ -439,14 +439,29 @@ have caught:
    the old: 3.0 could not express it and Swashbuckle claimed those three
    fields were always strings.
 
-**Still open, and it blocks good client output: no operation has an
-`operationId`.** Swashbuckle did not emit one and neither does the built-in
-generator, so a generator invents method names from the path —
-`apiBirthRecordsRegisterPost` — and they change whenever a route changes.
-The consumer's endpoints have them, from `.WithName(...)`. The API needs
-`[EndpointName]` on all 36 actions, and it has to happen **before** the
-client is generated: afterwards, renaming them means touching every call
-site in the web app.
+**Resolved in PR #9.** All 36 operations are named, verb-first
+(`RegisterBirth`, `GetBirthRecord`, `IssueCertificate`), matching the
+consumer's existing `GetDashboardSummary` so the generated client reads the
+same way across both services.
+
+Two details worth keeping:
+
+- **`[EndpointName]` does not work on MVC actions** — it produced no
+  `operationId` at all. The name has to go on the HTTP attribute itself,
+  `[HttpGet("{brn}", Name = "GetBirthRecord")]`, which is what ApiExplorer
+  reads.
+- **`GetCertificateSigningKeys` is plural although the route says
+  `signing-key`.** The endpoint publishes the whole set, retired keys
+  included, and a client method called `GetSigningKey` would invite callers
+  to assume there is only ever one — which is exactly the assumption that
+  makes a device reject every certificate issued before the last rotation.
+
+Naming the routes makes them *named* routes, which put the two
+`CreatedAtAction` calls at risk of losing their `Location` header. The test
+suite cannot see this: it constructs controllers directly and asserts on the
+status code of the result object, so no URL is ever generated. Verified
+instead with a real request against the running service — `POST /api/devices`
+returned `201` with `Location: .../api/devices/{deviceId}`.
 
 **Auth (§4)**
 - [ ] `oidc-client-ts` + `react-oidc-context` against `ncbrs-web`; authorization code + PKCE

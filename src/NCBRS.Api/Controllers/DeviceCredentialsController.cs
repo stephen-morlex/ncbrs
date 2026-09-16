@@ -33,7 +33,7 @@ public class DeviceCredentialsController(
     /// would hand an attacker an oracle to brute-force a six-digit secret
     /// over the network.
     /// </summary>
-    [HttpPut("me/device-pin")]
+    [HttpPut("me/device-pin", Name = "SetOwnDevicePin")]
     [ProducesResponseType(typeof(SetDevicePinResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -93,7 +93,7 @@ public class DeviceCredentialsController(
     /// audited so a bundle pulled by a compromised account is visible after
     /// the fact.
     /// </summary>
-    [HttpGet("facilities/{facilityId:guid}/device-credentials")]
+    [HttpGet("facilities/{facilityId:guid}/device-credentials", Name = "GetFacilityDeviceCredentials")]
     [Authorize(Policy = NcbrsRoles.CanRegisterBirths)]
     [ProducesResponseType(typeof(DeviceCredentialBundle), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
