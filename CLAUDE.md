@@ -14,6 +14,9 @@ just what it does:
   sequenced build plan (workstreams WS-A…WS-H). **Its gap analysis (§12) and
   sequencing (§15) are the plan of record for what to build next** — prefer
   it over the "Not yet done" list below, which is only a summary.
+- `NCBRS-Web-Plan.md` — the central management web front end: its plan, the
+  backend gaps it forces (search, facilities, registrars, audit, CORS,
+  pagination) and the phased to-do list.
 
 ## Key design decisions already made (don't relitigate these without reason)
 
