@@ -77,7 +77,8 @@ public class BirthRecordsController(
                 RegisteredByRegistrarName: registrar?.DisplayName,
                 ReceivedAtUtc: record.CreatedAtUtc,
                 RegisteredAtUtc: record.RegisteredAtUtc,
-                StatutoryWindowDays: record.StatutoryWindowDays));
+                StatutoryWindowDays: record.StatutoryWindowDays,
+                ProvisionalIdentifier: record.ProvisionalIdentifier));
     }
 
     /// <summary>
@@ -130,6 +131,11 @@ public class BirthRecordsController(
             // afterwards: a disputed record is read once, and the name is
             // part of what makes it answerable.
             .Include(b => b.RegisteredByRegistrar)
+            // Whether a certificate can be issued at all, and whether one
+            // already was. Both are things a registrar is asked about while
+            // the family is standing there.
+            .Include(b => b.LateRegistration)
+            .Include(b => b.Certificates)
             .FirstOrDefaultAsync(b => b.Brn == brn || b.ProvisionalIdentifier == brn);
 
         if (record is null || record.ChildPerson is null)
@@ -142,6 +148,18 @@ public class BirthRecordsController(
         return new BirthRecordResponse(
             record.BirthRecordId, record.Brn, record.ChildPerson.FullName,
             record.DateOfBirth, record.Sex, record.Status,
+            // Was never populated here, only on the registration response --
+            // so a record looked up afterwards showed no sign it had been
+            // registered late, and no sign its certificate was being withheld
+            // pending verification. That is precisely the thing a family must
+            // not be sent away without being told.
+            LateRegistration: record.LateRegistration is null
+                ? null
+                : new LateRegistrationSummary(
+                    record.LateRegistration.DaysLate,
+                    record.LateRegistration.WindowDaysAtFiling,
+                    record.LateRegistration.Status,
+                    record.LateRegistration.EvidenceType),
             ConfirmedAtUtc: record.ConfirmedAtUtc,
             Annulment: record.Annulment is null
                 ? null
@@ -154,7 +172,33 @@ public class BirthRecordsController(
             RegisteredByRegistrarName: record.RegisteredByRegistrar?.DisplayName,
             ReceivedAtUtc: record.CreatedAtUtc,
             RegisteredAtUtc: record.RegisteredAtUtc,
-            StatutoryWindowDays: record.StatutoryWindowDays);
+            StatutoryWindowDays: record.StatutoryWindowDays,
+            ProvisionalIdentifier: record.ProvisionalIdentifier,
+            Certificate: CertificateStateOf(record));
+    }
+
+    /// <summary>
+    /// The current certificate, if any.
+    ///
+    /// A record accumulates certificates over time — an amendment withdraws
+    /// the one it contradicts and a replacement is issued — so the latest by
+    /// issue date is the one a family is being asked about. The withdrawn
+    /// predecessors are history, and belong in the amendment trail rather than
+    /// on the record header.
+    /// </summary>
+    private static CertificateState? CertificateStateOf(BirthRecord record)
+    {
+        var certificate = record.Certificates
+            .OrderByDescending(issued => issued.IssueDateUtc)
+            .FirstOrDefault();
+
+        return certificate is null
+            ? null
+            : new CertificateState(
+                certificate.IssueDateUtc,
+                certificate.WithdrawnAtUtc,
+                certificate.WithdrawnReason,
+                certificate.ReprintCount);
     }
 
     /// <summary>

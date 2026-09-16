@@ -1,9 +1,9 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
-import { CircleAlert, FileSearch, History, Search, TriangleAlert } from 'lucide-react'
+import { useSearchParams } from 'react-router'
+import { CircleAlert, FileSearch, Search, TriangleAlert } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import {
   Empty,
   EmptyContent,
@@ -13,16 +13,14 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty'
 import { Input } from '@/components/ui/input'
-import { Item, ItemContent, ItemDescription, ItemGroup, ItemTitle } from '@/components/ui/item'
 import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/spinner'
 import type { components } from '@/api/generated/api'
 import { type NcbrsError, messagesFor, toNcbrsError, unreachableError } from '@/api/errors'
 import { useApiClient } from '@/api/useApi'
 import { PageHeader } from '@/shell/PageHeader'
-import { heldDays } from './held'
+import { RecordDetail } from './RecordDetail'
 
 type BirthRecord = components['schemas']['BirthRecordResponse']
 
@@ -163,7 +161,7 @@ export function RecordLookup() {
 
       {!searching && error && fieldMessages.length === 0 ? <Failure error={error} /> : null}
 
-      {!searching && record ? <RecordCard record={record} /> : null}
+      {!searching && record ? <RecordDetail record={record} /> : null}
 
       {!searching && !error && !record && searched ? (
         <Empty className="border">
@@ -222,122 +220,3 @@ function Failure({ error }: { error: NcbrsError }) {
   )
 }
 
-function RecordCard({ record }: { record: BirthRecord }) {
-  const held = heldDays(record.registeredAtUtc, record.receivedAtUtc)
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="space-y-1">
-            <CardTitle className="text-xl">{record.childFullName ?? 'Name not recorded'}</CardTitle>
-            <CardDescription className="font-mono">{record.brn}</CardDescription>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            <Badge variant={record.annulment ? 'destructive' : 'secondary'}>{record.status}</Badge>
-            {/* Confirmed means the centre reconciled the BRN against the block
-                it actually granted. Unconfirmed is not an error -- the birth
-                happened and the number may already be printed on a slip in a
-                family's hands. */}
-            {record.confirmedAtUtc ? null : <Badge variant="outline">BRN unconfirmed</Badge>}
-            {record.lateRegistration ? <Badge variant="outline">late registration</Badge> : null}
-            {/* The at-a-glance version of the two dates below. Shown only
-                when the record actually waited, so an online registration --
-                where the two timestamps are the same instant -- carries no
-                badge saying nothing happened. */}
-            {held > 0 ? (
-              <Badge variant="outline">reached the centre {held} days later</Badge>
-            ) : null}
-          </div>
-        </div>
-
-        {/* Reachable from the record, which is where a dispute starts. Shown
-            to everyone; the API refuses it to anyone without the policy, and
-            hiding the link would leave a facility registrar unable to tell
-            the history exists at all. */}
-        <Button asChild variant="outline" size="sm" className="mt-2 w-fit">
-          <Link to={`/audit?brn=${encodeURIComponent(record.brn)}`}>
-            <History />
-            This record's history
-          </Link>
-        </Button>
-      </CardHeader>
-
-      <CardContent className="space-y-4">
-        {/* An annulled record still resolves and still shows why: a number
-            that has circulated must keep answering with an explanation
-            rather than falling silent. */}
-        {record.annulment ? (
-          <>
-            <Item variant="outline" className="border-destructive/50">
-              <ItemContent>
-                <ItemTitle className="text-destructive">This registration was annulled</ItemTitle>
-                <ItemDescription>
-                  The register records no such birth. The number is kept so it keeps resolving.
-                </ItemDescription>
-              </ItemContent>
-            </Item>
-            <Separator />
-          </>
-        ) : null}
-
-        <ItemGroup>
-          <Detail label="Date of birth" value={formatDate(record.dateOfBirth)} />
-          <Detail label="Sex" value={record.sex ?? 'Not recorded'} />
-          <Detail
-            label="Registered by"
-            value={record.registeredByRegistrarName ?? 'Not recorded'}
-          />
-          {/* The two are one fact and are shown together deliberately. On
-              their own, "received 3 October" on a birth in June reads as a
-              registration filed three months late -- the exact conclusion the
-              statutory window was measured to avoid drawing. */}
-          <Detail
-            label="Registered on the device"
-            value={formatDate(record.registeredAtUtc ?? undefined)}
-          />
-          <Detail
-            label="Received by the centre"
-            value={formatDate(record.receivedAtUtc ?? undefined)}
-          />
-          <Detail
-            label="BRN confirmed"
-            value={
-              record.confirmedAtUtc
-                ? formatDate(record.confirmedAtUtc)
-                : 'Not yet reconciled against the facility’s block'
-            }
-          />
-        </ItemGroup>
-      </CardContent>
-    </Card>
-  )
-}
-
-function Detail({ label, value }: { label: string; value: string }) {
-  return (
-    <Item variant="outline">
-      <ItemContent>
-        <ItemTitle className="text-muted-foreground text-xs font-normal uppercase tracking-wide">
-          {label}
-        </ItemTitle>
-        <ItemDescription className="text-foreground text-sm">{value}</ItemDescription>
-      </ItemContent>
-    </Item>
-  )
-}
-
-/**
- * A date of birth is a calendar date, not an instant. Rendering it in the
- * viewer's timezone would shift it a day either way depending on where they
- * are sitting, and a date of birth decides school entry and age of majority.
- */
-function formatDate(value: string | undefined): string {
-  if (!value) {
-    return 'Not recorded'
-  }
-
-  const [date] = value.split('T')
-
-  return date ?? value
-}

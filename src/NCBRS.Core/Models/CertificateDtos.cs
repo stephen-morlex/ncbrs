@@ -31,6 +31,48 @@ public record CertificateResponse(
     int ReprintCount
 );
 
+/// <summary>
+/// Whether a record has a certificate, and whether it still stands — as much
+/// as a screen showing the record needs, and no more.
+///
+/// **Carried on the record rather than fetched separately so that issuance
+/// and withdrawal cannot be rendered apart.** A certificate is valid only if
+/// signed *and* not revoked (draft 6.6); a screen that showed "issued 3 March"
+/// without showing it had been withdrawn would state something false about a
+/// legal document, and would do it to the person a family is standing in
+/// front of. One payload makes that particular mistake impossible.
+///
+/// Deliberately **not** the QR payload or the signature. Those are what
+/// actually verifies a certificate, they are the sensitive half, and they stay
+/// behind the certificate endpoint's own policy. What is here is state: does
+/// one exist, does it still stand, how many times has it been reprinted.
+/// </summary>
+public record CertificateState(
+    DateTime IssuedAtUtc,
+
+    /// <summary>
+    /// Set when the register was corrected in a way the printed document
+    /// contradicts. The paper in the family's hands does not change, which is
+    /// why this has to be visible to whoever is being asked about it.
+    /// </summary>
+    DateTime? WithdrawnAtUtc,
+
+    string? WithdrawnReason,
+
+    /// <summary>
+    /// Reprints are counted because a certificate reprinted repeatedly is
+    /// worth being able to notice.
+    /// </summary>
+    int ReprintCount)
+{
+    /// <summary>
+    /// Derived here rather than left to each caller. "Issued and not
+    /// withdrawn" is the rule, and a client that reimplemented it could
+    /// reimplement it wrongly in one screen out of five.
+    /// </summary>
+    public bool IsValid => WithdrawnAtUtc is null;
+}
+
 /// <summary>What a scanner sends back to have a certificate checked.</summary>
 public record VerifyCertificateRequest
 {

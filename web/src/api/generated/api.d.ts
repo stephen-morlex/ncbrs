@@ -846,6 +846,8 @@ export interface components {
             registeredAtUtc?: null | string;
             /** Format: int32 */
             statutoryWindowDays?: null | number;
+            provisionalIdentifier?: null | string;
+            certificate?: null | components["schemas"]["CertificateState"];
         };
         BirthRecordSearchHit: {
             brn: string;
@@ -920,6 +922,16 @@ export interface components {
             count: number;
             entries: components["schemas"]["RevocationEntry"][];
             signature: string;
+        };
+        CertificateState: {
+            /** Format: date-time */
+            issuedAtUtc: string;
+            /** Format: date-time */
+            withdrawnAtUtc: null | string;
+            withdrawnReason: null | string;
+            /** Format: int32 */
+            reprintCount: number;
+            isValid?: boolean;
         };
         ChangeDeviceStatusRequest: {
             reason?: string;
