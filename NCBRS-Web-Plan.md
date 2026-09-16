@@ -242,7 +242,8 @@ and they are the ones most likely to be underestimated:
 | **W4** | **Audit log query** — by record, actor, device, date | The audit trail is legally load-bearing and currently readable only by SQL. |
 | **W5** | **CORS** on both services | Nothing in the browser works without it. |
 | **W6** | **SPA Keycloak client** with redirect URIs and PKCE | As above. |
-| **W7** | **Pagination contract** across all list endpoints | Every queue endpoint returns an unbounded list today. At national volume that is a denial of service against the Ministry's own dashboard. |
+| **W7** | **Pagination contract** across all list endpoints — **done** | Every queue endpoint returned an unbounded list. At national volume that is a denial of service against the Ministry's own dashboard. |
+| **W8** | **OpenAPI for `NCBRS.Consumer`** | Found by the Phase 0 audit: the dashboard and export endpoints have no document, so the generated client cannot cover them — and the generated client is why React was chosen over Blazor. |
 
 ### W1's privacy decision — decided
 
@@ -278,11 +279,55 @@ content depends on the stack chosen in §2.
 *No UI yet. Everything here is backend and realm configuration, and none of
 it is visible — which is exactly why it gets skipped and then blocks Phase 1.*
 
-- [ ] **W5** Add CORS to `NCBRS.Api` and `NCBRS.Consumer`; allowed origins from configuration, no wildcard, credentials off (the token travels in the `Authorization` header, not a cookie)
-- [ ] **W6** Add the `ncbrs-web` public client to `keycloak/ncbrs-realm.json` per §4: standard flow on, direct access grants **off**, PKCE `S256` required, exact redirect/post-logout URIs and web origins
-- [ ] Verify the realm import still works from a clean `docker compose down -v && up`
-- [ ] **W7** Agree and implement a pagination envelope for list endpoints; apply to the four existing queues
-- [ ] Confirm the OpenAPI document covers every endpoint, enum and the `{meta, data}` envelope accurately — it is about to become a build input, not just documentation
+- [x] **W5** CORS on `NCBRS.Api` and `NCBRS.Consumer`; origins from configuration, no wildcard, credentials off — PR #2
+- [x] **W6** `ncbrs-web` public client: standard flow on, direct access grants **off**, PKCE `S256`, exact redirect URIs — PR #2
+- [x] Realm import verified from a recreated container
+- [x] **W7** Cursor paging on the four review queues — PR #3
+- [x] OpenAPI audit — see below
+- [ ] **W8** Give `NCBRS.Consumer` an OpenAPI document (found by the audit)
+
+#### OpenAPI audit — result
+
+Audited against the running service, not read off the source.
+
+**`NCBRS.Api` passes.** Nothing needed fixing:
+
+| Check | Result |
+|---|---|
+| Coverage | 36 of 36 endpoints documented |
+| `{meta, data}` envelope | Documented on every response, not just the inner type |
+| Enums | 18 as strings, 0 as integers |
+| Paging | `Page<T>` schemas generated for all four queues; `limit` and `after` documented |
+| Correlation headers | `X-Transaction-Id` and `X-Client-Id` documented as parameters |
+| Security | `bearer` scheme declared and applied globally |
+| Errors | 400/401/403/404/409 documented per operation |
+
+The envelope was the one most likely to be wrong — `[ProducesResponseType]`
+declares the *inner* type while `MetaEnvelopeFilter` wraps the response at
+runtime, so the schema could easily have described a shape the API never
+returns. It does not; the document is accurate.
+
+**`NCBRS.Consumer` has no OpenAPI document at all.** That is W8. Five
+endpoints are undocumented, and four of them are what Phase 6's dashboard is
+built on:
+
+```
+/health
+/api/dashboard/summary
+/api/dashboard/districts
+/api/dashboard/devices/silent
+/api/exports/dhis2
+```
+
+This matters more than it looks. §2 decided React over Blazor on the strength
+of a generated client, and a generated client can only cover the half of the
+surface that has a document. The dashboard would otherwise be hand-written
+types — precisely the drift the decision was meant to prevent, appearing in
+the part of the system whose numbers a Ministry acts on.
+
+Closing it needs the `Microsoft.AspNetCore.OpenApi` package added to
+`NCBRS.Consumer`. It is already used by `NCBRS.Api`, but adding a package to
+a project is a dependency change and needs sign-off.
 
 ### Phase 1 — Skeleton that proves the risky parts
 *Ends with one screen. The point is not the screen; it is that auth, the
