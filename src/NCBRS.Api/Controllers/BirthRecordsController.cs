@@ -71,7 +71,11 @@ public class BirthRecordsController(
             new BirthRecordResponse(
                 record.BirthRecordId, record.Brn, envelope.Data.ChildFullName,
                 record.DateOfBirth, record.Sex, record.Status, result.LateRegistration,
-                record.ConfirmedAtUtc));
+                record.ConfirmedAtUtc,
+                Annulment: null,
+                RegisteredByRegistrarId: record.RegisteredByRegistrarId,
+                RegisteredByRegistrarName: registrar?.DisplayName,
+                ReceivedAtUtc: record.CreatedAtUtc));
     }
 
     /// <summary>
@@ -120,6 +124,10 @@ public class BirthRecordsController(
         var record = await db.BirthRecords
             .Include(b => b.ChildPerson)
             .Include(b => b.Annulment)
+            // Who filed it. Loaded with the record rather than looked up
+            // afterwards: a disputed record is read once, and the name is
+            // part of what makes it answerable.
+            .Include(b => b.RegisteredByRegistrar)
             .FirstOrDefaultAsync(b => b.Brn == brn || b.ProvisionalIdentifier == brn);
 
         if (record is null || record.ChildPerson is null)
@@ -139,7 +147,10 @@ public class BirthRecordsController(
                     record.Annulment.Reason,
                     record.Annulment.Justification,
                     record.Annulment.AuthorityReference,
-                    record.Annulment.AnnulledAtUtc));
+                    record.Annulment.AnnulledAtUtc),
+            RegisteredByRegistrarId: record.RegisteredByRegistrarId,
+            RegisteredByRegistrarName: record.RegisteredByRegistrar?.DisplayName,
+            ReceivedAtUtc: record.CreatedAtUtc);
     }
 
     /// <summary>

@@ -10593,6 +10593,26 @@
                 "$ref": "#/components/schemas/AnnulmentSummary"
               }
             ]
+          },
+          "registeredByRegistrarId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "registeredByRegistrarName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "receivedAtUtc": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -10901,6 +10921,8 @@
           "daysSilentWhenRaised",
           "thresholdDays",
           "acknowledgedAtUtc",
+          "acknowledgedByRegistrarId",
+          "acknowledgedByRegistrarName",
           "acknowledgementNote",
           "resolvedAtUtc"
         ],
@@ -10951,6 +10973,19 @@
               "string"
             ],
             "format": "date-time"
+          },
+          "acknowledgedByRegistrarId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "acknowledgedByRegistrarName": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "acknowledgementNote": {
             "type": [

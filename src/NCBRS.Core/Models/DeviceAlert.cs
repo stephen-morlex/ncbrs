@@ -113,5 +113,23 @@ public record DeviceAlertResponse(
     int DaysSilentWhenRaised,
     int ThresholdDays,
     DateTime? AcknowledgedAtUtc,
+
+    /// <summary>
+    /// Who said they were dealing with it.
+    ///
+    /// The id was stored from the start and never published, which left the
+    /// queue able to say a dead tablet had been acknowledged but not by whom.
+    /// That undercuts the point of the acknowledgement: **acknowledging is
+    /// not resolving** (WS-F4) — it says "I know, I am driving out there
+    /// Thursday" — and an undertaking nobody is named for is one nobody can
+    /// be asked about on Friday.
+    ///
+    /// The name is null where the registrar cannot be resolved; the id is
+    /// returned regardless, because an unresolvable attribution is still an
+    /// attribution.
+    /// </summary>
+    Guid? AcknowledgedByRegistrarId,
+    string? AcknowledgedByRegistrarName,
+
     string? AcknowledgementNote,
     DateTime? ResolvedAtUtc);

@@ -275,6 +275,14 @@ function RecordCard({ record }: { record: BirthRecord }) {
           <Detail label="Date of birth" value={formatDate(record.dateOfBirth)} />
           <Detail label="Sex" value={record.sex ?? 'Not recorded'} />
           <Detail
+            label="Registered by"
+            value={record.registeredByRegistrarName ?? 'Not recorded'}
+          />
+          <Detail
+            label="Received by the centre"
+            value={formatDate(record.receivedAtUtc ?? undefined)}
+          />
+          <Detail
             label="BRN confirmed"
             value={
               record.confirmedAtUtc
