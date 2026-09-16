@@ -158,7 +158,8 @@ public class BrnConfirmationTests : IDisposable
         var service = new BirthRegistrationService(
             db, new NoOpEventPublisher(), current,
             new DuplicateDetectionService(db, new DuplicateMatcher(),
-                new CertificateRevocationRecorder(db), NullLogger<DuplicateDetectionService>.Instance),
+                new CertificateRevocationRecorder(db), NullLogger<DuplicateDetectionService>.Instance,
+                new DistrictLookup(db)),
             Options.Create(new StatutoryRegistrationOptions()));
 
         return await service.RegisterAsync(
@@ -293,7 +294,8 @@ public class BrnConfirmationTests : IDisposable
             var registrar = amend.Registrars.Single(r => r.RegistrarId == RegistrarId);
 
             var outcome = await new AmendmentService(
-                    amend, new NoOpEventPublisher(), new CertificateRevocationRecorder(amend), current)
+                    amend, new NoOpEventPublisher(), new CertificateRevocationRecorder(amend), current,
+                    new DistrictLookup(amend))
                 .AmendAsync("100004", new AmendBirthRecordRequest
                 {
                     BirthWeightGrams = 3250,

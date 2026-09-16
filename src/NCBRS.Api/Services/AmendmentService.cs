@@ -75,7 +75,8 @@ public class AmendmentService(
     NcbrsDbContext db,
     IEventPublisher eventPublisher,
     CertificateRevocationRecorder revocations,
-    CurrentRegistrarService currentRegistrar)
+    CurrentRegistrarService currentRegistrar,
+    DistrictLookup districts)
 {
     /// <summary>
     /// Fields the certificate's signature covers. Changing any of them means
@@ -127,6 +128,10 @@ public class AmendmentService(
             return new AmendmentOutcome(AmendmentResult.NotPermitted,
                 Detail: "You are not permitted to amend records for this facility.");
         }
+
+        // The record's district, so the district whose register changes can
+        // read the trail of it -- not the district of whoever did the changing.
+        var district = await districts.ForRecordAsync(record, cancellationToken);
 
         // A record that should never have existed cannot be corrected into
         // one that should. Annulment is terminal.
@@ -230,6 +235,7 @@ public class AmendmentService(
         {
             EntityType = nameof(BirthRecord),
             EntityId = brn,
+            DistrictId = district,
             Action = immediate.Count == 0 ? "AmendSubmitted" : "Amend",
             UserId = registrar.RegistrarId,
             DeviceId = request.DeviceId,
@@ -242,6 +248,7 @@ public class AmendmentService(
             {
                 EntityType = nameof(AmendmentConflict),
                 EntityId = brn,
+                DistrictId = district,
                 Action = $"AmendmentConflict:{string.Join(",", stale.Select(conflict => conflict.Field))}",
                 UserId = registrar.RegistrarId,
                 DeviceId = request.DeviceId,
@@ -338,7 +345,7 @@ public class AmendmentService(
                 row.ReviewNote = note;
             }
 
-            Audit(record.Brn, "RejectAmendment", reviewer, transactionId);
+            await AuditAsync(record.Brn, "RejectAmendment", reviewer, transactionId, cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
 
             // No event: nothing about the register changed, and publishing a
@@ -395,7 +402,7 @@ public class AmendmentService(
         Publish(record, record.Brn, approvedChanges, pending[0].Reason,
             submitter, certificateInvalidated, reviewedAt, transactionId);
 
-        Audit(record.Brn, "ApproveAmendment", reviewer, transactionId);
+        await AuditAsync(record.Brn, "ApproveAmendment", reviewer, transactionId, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
 
         return new AmendmentReviewOutcome(
@@ -586,8 +593,9 @@ public class AmendmentService(
         conflict.ReviewedAtUtc = DateTime.UtcNow;
         conflict.ReviewNote = note;
 
-        Audit(conflict.BirthRecord.Brn,
-            uphold ? "UpholdAmendmentConflict" : "CorrectAmendmentConflict", reviewer, transactionId);
+        await AuditAsync(conflict.BirthRecord.Brn,
+            uphold ? "UpholdAmendmentConflict" : "CorrectAmendmentConflict", reviewer, transactionId,
+            cancellationToken);
 
         await db.SaveChangesAsync(cancellationToken);
 
@@ -659,11 +667,17 @@ public class AmendmentService(
             .Include(r => r.Facility)
             .FirstOrDefaultAsync(r => r.Brn == brn, cancellationToken);
 
-    private void Audit(string brn, string action, Registrar actor, Guid? transactionId)
+    // The record's district, not the reviewer's. A ministry admin ruling on
+    // an amendment in another district produces a row that district must be
+    // able to see, and the Ministry's own facility has nothing to do with it.
+    private async Task AuditAsync(
+        string brn, string action, Registrar actor, Guid? transactionId,
+        CancellationToken cancellationToken)
         => db.AuditLogs.Add(new AuditLog
         {
             EntityType = nameof(BirthRecord),
             EntityId = brn,
+            DistrictId = await districts.ForBrnAsync(brn, cancellationToken),
             Action = action,
             UserId = actor.RegistrarId,
             DeviceId = "review",

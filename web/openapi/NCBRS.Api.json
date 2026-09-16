@@ -10060,6 +10060,7 @@
           "auditLogId",
           "entityType",
           "entityId",
+          "districtId",
           "action",
           "actorId",
           "actorName",
@@ -10077,6 +10078,9 @@
             "type": "string"
           },
           "entityId": {
+            "type": "string"
+          },
+          "districtId": {
             "type": "string"
           },
           "action": {

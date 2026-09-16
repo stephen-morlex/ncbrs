@@ -779,6 +779,7 @@ export interface components {
             auditLogId: string;
             entityType: string;
             entityId: string;
+            districtId: string;
             action: string;
             /** Format: uuid */
             actorId: null | string;

@@ -113,7 +113,7 @@ public class CertificateRevocationTests : IDisposable
         var current = AuthTestContext.RegistrarService(db, http);
         var registrar = db.Registrars.Single(r => r.RegistrarId == RegistrarId);
 
-        var result = await new CertificateService(db, _signer, current)
+        var result = await new CertificateService(db, _signer, current, new DistrictLookup(db))
             .IssueAsync(brn, registrar, "TABLET-07", Guid.CreateVersion7());
 
         Assert.True(result.Succeeded);
@@ -136,7 +136,8 @@ public class CertificateRevocationTests : IDisposable
             var registrar = db.Registrars.Single(r => r.RegistrarId == RegistrarId);
 
             var outcome = await new AmendmentService(
-                    db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db), current)
+                    db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db), current,
+                    new DistrictLookup(db))
                 .AmendAsync(brn, new AmendBirthRecordRequest
                 {
                     ChildFullName = newName,
@@ -155,7 +156,8 @@ public class CertificateRevocationTests : IDisposable
             var reviewer = db.Registrars.Single(r => r.RegistrarId == ReviewerId);
 
             var review = await new AmendmentService(
-                    db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db), current)
+                    db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db), current,
+                    new DistrictLookup(db))
                 .ReviewAsync(requestId, approve: true, reviewer, "Verified.", Guid.CreateVersion7());
 
             Assert.True(review.Succeeded);
@@ -296,7 +298,8 @@ public class CertificateRevocationTests : IDisposable
 
             var outcome = await new DuplicateDetectionService(
                     review, new DuplicateMatcher(), new CertificateRevocationRecorder(review),
-                    NullLogger<DuplicateDetectionService>.Instance)
+                    NullLogger<DuplicateDetectionService>.Instance,
+                    new DistrictLookup(review))
                 .ReviewAsync(candidate.DuplicateCandidateId, isDuplicate: true, reviewer, "confirmed", null);
 
             Assert.True(outcome.Succeeded);

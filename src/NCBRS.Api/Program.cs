@@ -91,6 +91,10 @@ builder.Services.AddScoped<RecordSearchService>();
 // the way they drift is that one endpoint stops enforcing the boundary.
 builder.Services.AddScoped<DistrictScopeResolver>();
 
+// Resolves the district an audited act belongs to. Scoped and memoised: one
+// registration writes three audit rows against the same facility.
+builder.Services.AddScoped<DistrictLookup>();
+
 // The signing key is loaded once and held for the process: it is the most
 // sensitive secret here, and re-reading it per request would multiply the
 // places it can leak.

@@ -4,6 +4,7 @@ import {
   FileSearch,
   GitCompareArrows,
   Hash,
+  History,
   Hourglass,
   ScrollText,
   Search,
@@ -105,6 +106,14 @@ export const navigation: NavGroup[] = [
         icon: Smartphone,
         policy: 'CanEnrolDevices',
         pending: true,
+      },
+      // Under Oversight rather than beside the register: reading the trail
+      // is checking on the work, not doing it.
+      {
+        label: 'Audit trail',
+        to: '/audit',
+        icon: History,
+        policy: 'CanReadAuditTrail',
       },
       {
         label: 'Dashboard',

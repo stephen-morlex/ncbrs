@@ -1,6 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router'
-import { CircleAlert, FileSearch, Search, TriangleAlert } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router'
+import { CircleAlert, FileSearch, History, Search, TriangleAlert } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -240,6 +240,17 @@ function RecordCard({ record }: { record: BirthRecord }) {
             {record.lateRegistration ? <Badge variant="outline">late registration</Badge> : null}
           </div>
         </div>
+
+        {/* Reachable from the record, which is where a dispute starts. Shown
+            to everyone; the API refuses it to anyone without the policy, and
+            hiding the link would leave a facility registrar unable to tell
+            the history exists at all. */}
+        <Button asChild variant="outline" size="sm" className="mt-2 w-fit">
+          <Link to={`/audit?brn=${encodeURIComponent(record.brn)}`}>
+            <History />
+            This record's history
+          </Link>
+        </Button>
       </CardHeader>
 
       <CardContent className="space-y-4">

@@ -75,7 +75,7 @@ public class OutboxTests : IDisposable
             db,
             new OutboxEventPublisher(db, KafkaSettings()),
             current,
-            new DuplicateDetectionService(db, new DuplicateMatcher(), new CertificateRevocationRecorder(db), NullLogger<DuplicateDetectionService>.Instance),
+            new DuplicateDetectionService(db, new DuplicateMatcher(), new CertificateRevocationRecorder(db), NullLogger<DuplicateDetectionService>.Instance, new DistrictLookup(db)),
                 Options.Create(new StatutoryRegistrationOptions()));
     }
 

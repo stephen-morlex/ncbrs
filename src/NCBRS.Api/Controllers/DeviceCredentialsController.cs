@@ -23,7 +23,8 @@ namespace NCBRS.Controllers;
 public class DeviceCredentialsController(
     NcbrsDbContext db,
     DevicePinHasher hasher,
-    CurrentRegistrarService currentRegistrar) : ControllerBase
+    CurrentRegistrarService currentRegistrar,
+    DistrictLookup districts) : ControllerBase
 {
     /// <summary>
     /// Sets or replaces the caller's own offline PIN.
@@ -70,6 +71,7 @@ public class DeviceCredentialsController(
         db.AuditLogs.Add(new AuditLog
         {
             EntityType = nameof(Registrar),
+            DistrictId = await districts.ForRegistrarAsync(registrar, HttpContext.RequestAborted),
             EntityId = registrar.RegistrarId.ToString(),
             Action = isFirstPin ? "SetDevicePin" : "ChangeDevicePin",
             UserId = registrar.RegistrarId,
@@ -137,6 +139,7 @@ public class DeviceCredentialsController(
         db.AuditLogs.Add(new AuditLog
         {
             EntityType = nameof(Facility),
+            DistrictId = await districts.ForFacilityAsync(facilityId, HttpContext.RequestAborted),
             EntityId = facilityId.ToString(),
             Action = "IssueDeviceCredentials",
             UserId = registrar.RegistrarId,

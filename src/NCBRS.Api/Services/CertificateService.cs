@@ -59,7 +59,8 @@ public record CertificateOutcome(
 public class CertificateService(
     NcbrsDbContext db,
     CertificateSigner signer,
-    CurrentRegistrarService currentRegistrar)
+    CurrentRegistrarService currentRegistrar,
+    DistrictLookup districts)
 {
     public const string CanonicalVersion = "v1";
 
@@ -168,7 +169,8 @@ public class CertificateService(
         };
 
         db.Certificates.Add(certificate);
-        Audit(brn, isReplacement ? "ReissueCertificate" : "IssueCertificate", registrar, deviceId, transactionId);
+        await AuditAsync(brn, isReplacement ? "ReissueCertificate" : "IssueCertificate", registrar,
+            deviceId, transactionId, cancellationToken);
 
         await db.SaveChangesAsync(cancellationToken);
 
@@ -231,7 +233,7 @@ public class CertificateService(
         }
 
         certificate.ReprintCount++;
-        Audit(brn, "ReprintCertificate", registrar, deviceId, transactionId);
+        await AuditAsync(brn, "ReprintCertificate", registrar, deviceId, transactionId, cancellationToken);
 
         await db.SaveChangesAsync(cancellationToken);
 
@@ -276,11 +278,17 @@ public class CertificateService(
             .Include(r => r.Facility)
             .FirstOrDefaultAsync(r => r.Brn == brn, cancellationToken);
 
-    private void Audit(string brn, string action, Registrar registrar, string deviceId, Guid? transactionId)
+    // The record's district, not the issuing registrar's. A certificate is
+    // issued against a record, and the district whose register it certifies
+    // is the one that must be able to read the trail of it.
+    private async Task AuditAsync(
+        string brn, string action, Registrar registrar, string deviceId, Guid? transactionId,
+        CancellationToken cancellationToken)
         => db.AuditLogs.Add(new AuditLog
         {
             EntityType = nameof(Certificate),
             EntityId = brn,
+            DistrictId = await districts.ForBrnAsync(brn, cancellationToken),
             Action = action,
             UserId = registrar.RegistrarId,
             DeviceId = deviceId,

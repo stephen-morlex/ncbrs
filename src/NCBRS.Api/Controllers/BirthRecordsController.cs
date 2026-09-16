@@ -18,7 +18,8 @@ public class BirthRecordsController(
     NcbrsDbContext db,
     BirthRegistrationService registrations,
     AmendmentService amendments,
-    CurrentRegistrarService currentRegistrar) : ControllerBase
+    CurrentRegistrarService currentRegistrar,
+    DistrictLookup districts) : ControllerBase
 {
     /// <summary>
     /// An account that authenticated but has no registrar record was never
@@ -338,6 +339,7 @@ public class BirthRecordsController(
             db.AuditLogs.Add(new AuditLog
             {
                 EntityType = nameof(Facility),
+                DistrictId = await districts.ForFacilityAsync(facilityId, HttpContext.RequestAborted),
                 EntityId = facilityId.ToString(),
                 Action = "BrnBlockGranted",
                 // The endpoint doesn't currently require the caller to

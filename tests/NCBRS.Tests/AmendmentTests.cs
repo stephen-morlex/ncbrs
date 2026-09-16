@@ -111,7 +111,7 @@ public class AmendmentServiceTests : IDisposable
     private NcbrsDbContext NewDb() => new(_options);
 
     private static AmendmentService Service(NcbrsDbContext db, CurrentRegistrarService current, NoOpEventPublisher publisher)
-        => new(db, publisher, new CertificateRevocationRecorder(db), current);
+        => new(db, publisher, new CertificateRevocationRecorder(db), current, new DistrictLookup(db));
 
     private async Task<(AmendmentOutcome Outcome, NoOpEventPublisher Publisher)> AmendAsync(
         AmendBirthRecordRequest request,
@@ -636,7 +636,7 @@ public class AmendmentServiceTests : IDisposable
         var current = AuthTestContext.RegistrarService(db, http);
         var registrar = db.Registrars.Single(r => r.RegistrarId == RegistrarId);
 
-        var result = await new CertificateService(db, _signer, current)
+        var result = await new CertificateService(db, _signer, current, new DistrictLookup(db))
             .IssueAsync(brn, registrar, "TABLET-07", Guid.CreateVersion7());
 
         Assert.True(result.Succeeded);
@@ -796,7 +796,8 @@ public class AmendmentServiceTests : IDisposable
                 new NCBRS.Kafka.OutboxEventPublisher(
                     db, Options.Create(new NCBRS.Kafka.KafkaOptions { BootstrapServers = "unused" })),
                 new CertificateRevocationRecorder(db),
-                current)
+                current,
+                new DistrictLookup(db))
             .AmendAsync(Brn, Amendment(birthWeightGrams: 3250), registrar, Guid.CreateVersion7());
 
         await using var verify = NewDb();
