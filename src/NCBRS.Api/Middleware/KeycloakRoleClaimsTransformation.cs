@@ -1,74 +1,28 @@
 using System.Security.Claims;
-using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
+using NCBRS.Web;
 
 namespace NCBRS.Middleware;
 
 /// <summary>
-/// Flattens Keycloak's realm roles into ordinary role claims.
+/// Flattens Keycloak's realm roles into ordinary role claims for every
+/// authenticated request.
 ///
-/// Keycloak nests them inside a JSON object claim -- {"realm_access":
-/// {"roles":["facility-registrar"]}} -- which ASP.NET's role machinery does
-/// not understand, so [Authorize(Roles = ...)] and role policies would
-/// silently match nothing without this. Silent authorization failure being
-/// the dangerous kind, this runs for every authenticated request rather than
-/// being left to per-endpoint handling.
+/// The reading itself lives in <see cref="KeycloakRealmRoles"/>, shared with
+/// `NCBRS.Consumer` — two copies of "how we read roles from a token" is two
+/// things that can disagree, and the way they disagree is that one service
+/// silently stops enforcing.
+///
+/// Run as a transformation rather than left to per-endpoint handling because
+/// silent authorization failure is the dangerous kind: a role policy that
+/// matches nothing looks exactly like one that is working.
 /// </summary>
 public class KeycloakRoleClaimsTransformation : IClaimsTransformation
 {
-    public const string RealmAccessClaim = "realm_access";
-
     public Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
     {
-        var identity = principal.Identity as ClaimsIdentity;
-
-        if (identity is null || !identity.IsAuthenticated)
-        {
-            return Task.FromResult(principal);
-        }
-
-        var realmAccess = principal.FindFirst(RealmAccessClaim)?.Value;
-        if (string.IsNullOrWhiteSpace(realmAccess))
-        {
-            return Task.FromResult(principal);
-        }
-
-        foreach (var role in ReadRoles(realmAccess))
-        {
-            // TransformAsync can run more than once per request in some
-            // pipelines; adding a duplicate role claim is harmless but noisy.
-            if (!principal.IsInRole(role))
-            {
-                identity.AddClaim(new Claim(identity.RoleClaimType, role));
-            }
-        }
+        KeycloakRealmRoles.Apply(principal);
 
         return Task.FromResult(principal);
-    }
-
-    private static IEnumerable<string> ReadRoles(string realmAccessJson)
-    {
-        try
-        {
-            using var document = JsonDocument.Parse(realmAccessJson);
-
-            if (!document.RootElement.TryGetProperty("roles", out var roles)
-                || roles.ValueKind != JsonValueKind.Array)
-            {
-                return [];
-            }
-
-            return roles.EnumerateArray()
-                .Where(role => role.ValueKind == JsonValueKind.String)
-                .Select(role => role.GetString()!)
-                .Where(role => !string.IsNullOrWhiteSpace(role))
-                .ToList();
-        }
-        catch (JsonException)
-        {
-            // A malformed claim means no roles, never a crash: the request
-            // then fails authorization, which is the safe direction.
-            return [];
-        }
     }
 }
