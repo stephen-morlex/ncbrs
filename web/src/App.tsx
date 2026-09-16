@@ -1,3 +1,4 @@
+import { Suspense, lazy } from 'react'
 import { Navigate, Route, Routes } from 'react-router'
 import { Construction } from 'lucide-react'
 import {
@@ -7,13 +8,38 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty'
+import { Spinner } from '@/components/ui/spinner'
 import { AuthCallback } from '@/auth/AuthCallback'
 import { RequireAuth } from '@/auth/RequireAuth'
-import { AppLayout } from '@/shell/AppLayout'
 import { navigation } from '@/shell/navigation'
-import { RecordLookup } from '@/records/RecordLookup'
-import { RecordSearch } from '@/records/RecordSearch'
-import { AuditTrail } from '@/audit/AuditTrail'
+
+/**
+ * Pages are fetched when they are opened, not when the app starts.
+ *
+ * A village clinic on a slow link should not download the audit trail to type
+ * a registration number into a search box, and the cost of not splitting
+ * grows with every screen Phases 3 to 6 add.
+ *
+ * `AuthCallback` and `RequireAuth` are deliberately **not** lazy. They run
+ * before any route renders, so deferring them would put a chunk fetch in
+ * front of the app even deciding whether the user is signed in — a round trip
+ * added to the one path every single visit takes.
+ */
+const AppLayout = lazy(() =>
+  import('@/shell/AppLayout').then((module) => ({ default: module.AppLayout })),
+)
+
+const RecordLookup = lazy(() =>
+  import('@/records/RecordLookup').then((module) => ({ default: module.RecordLookup })),
+)
+
+const RecordSearch = lazy(() =>
+  import('@/records/RecordSearch').then((module) => ({ default: module.RecordSearch })),
+)
+
+const AuditTrail = lazy(() =>
+  import('@/audit/AuditTrail').then((module) => ({ default: module.AuditTrail })),
+)
 
 /**
  * Routing for the shell.
@@ -39,7 +65,13 @@ export default function App() {
       <Route
         element={
           <RequireAuth>
-            <AppLayout />
+            {/* One boundary around the layout covers the pages inside it: on
+                a cold visit both chunks are in flight together, and a nested
+                boundary would flash a second spinner inside a shell that had
+                only just appeared. */}
+            <Suspense fallback={<LoadingPage />}>
+              <AppLayout />
+            </Suspense>
           </RequireAuth>
         }
       >
@@ -71,6 +103,29 @@ export default function App() {
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
+  )
+}
+
+/**
+ * Shown while a page's chunk is fetched.
+ *
+ * Matches the sign-in wait on purpose. To the person watching, "fetching the
+ * page" and "checking who you are" are the same event — a pause before the
+ * thing they asked for — and two different-looking pauses in a row read as
+ * something going wrong.
+ */
+function LoadingPage() {
+  return (
+    <main className="flex min-h-svh items-center justify-center p-6">
+      <Empty className="max-w-md">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <Spinner />
+          </EmptyMedia>
+          <EmptyTitle>Loading…</EmptyTitle>
+        </EmptyHeader>
+      </Empty>
+    </main>
   )
 }
 

@@ -316,6 +316,44 @@ projection — which is different from a blank name.
 `CanReadAuditTrail` is its own policy rather than borrowed from another
 oversight role, and is mirrored in the web client's policy table.
 
+#### Bundle splitting — PR #18
+
+One 525 kB chunk became a vendor chunk, an application chunk, the shell and a
+chunk per page.
+
+| | before | after |
+|---|---|---|
+| First paint | 525 kB / 162 kB gz | 378 kB / 118 kB gz |
+| **Repeat visit after a deploy** | 525 kB / 162 kB gz | **49 kB / 19 kB gz** |
+| Vendor (cached across deploys) | — | 329 kB / 100 kB gz |
+| Shell | — | 116 kB / 37 kB gz |
+| Each page | — | 5–11 kB |
+
+**The recurring cost is the one that matters here.** Total bytes on a first
+cold visit barely moved — the shell is needed the moment sign-in returns. What
+changed is that a district office opening this daily re-downloads 19 kB
+gzipped rather than 162 kB, because application code changes on every deploy
+and React, the router and the OIDC client do not.
+
+`AuthCallback` and `RequireAuth` are deliberately **not** lazy. They run
+before any route renders, so deferring them would put a chunk fetch in front
+of the app even deciding whether the user is signed in — a round trip added
+to the one path every visit takes.
+
+One `Suspense` boundary around the layout rather than one per page: on a cold
+visit both chunks are in flight together, and a nested boundary would flash a
+second spinner inside a shell that had only just appeared.
+
+Verified against the **production build**, not the dev server, which serves
+modules individually and would have proved nothing. Opening `/records`
+fetched the entry, vendor, shell and that page; `AuditTrail` and
+`RecordSearch` were absent. Navigating to `/records/search` then fetched
+`RecordSearch` and `table` on demand, and `AuditTrail` still never arrived.
+
+Note `sonner` and `next-themes` are in `package.json` but imported nowhere, so
+they are already tree-shaken out of the bundle. They are manifest weight
+rather than payload, and should go when something confirms nothing needs them.
+
 #### The screen — PR #17
 
 `/audit`, under **Oversight** rather than beside the register: reading the
