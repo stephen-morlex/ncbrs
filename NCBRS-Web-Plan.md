@@ -101,13 +101,38 @@ target normally dies.
 a PostCSS config. That is a styling decision made by accepting shadcn, not a
 separate one, and it should be recorded as such.
 
-Two conventions to set on day one, while there is nothing to migrate:
+Three conventions to set on day one, while there is nothing to migrate:
 
+- **Search the registry before writing a component.** shadcn is the default
+  and a hand-written component is the exception that has to be argued for.
+  The registry is much wider than the well-known handful — `empty`,
+  `spinner`, `alert`, `pagination`, `sidebar` and `breadcrumb` are all in it,
+  and each is one somebody would otherwise write badly from scratch. Check
+  with `npx shadcn@latest search @shadcn -q <term>` and read it with
+  `npx shadcn@latest view @shadcn/<name>`.
+
+  This is not a style preference. Every hand-rolled control is one more place
+  to get focus traps, `aria-*` wiring and keyboard order wrong, and §7's
+  WCAG 2.2 AA obligation is assessed against the whole site, not against the
+  parts that happened to use the library. A custom component is justified by
+  domain meaning — `BirthRecordCard`, `ConflictDiff` — never by a control the
+  registry already ships.
 - **Components under `src/components/ui/` are treated as vendored source.**
   Edit them deliberately, and note what was changed, so a future port of an
   upstream fix can tell our changes from theirs.
 - **Domain components never live there.** `BirthRecordCard` is ours;
   `button.tsx` is vendored. Mixing them makes the first rule unenforceable.
+
+The shadcn MCP server exposes this same registry to an assistant directly,
+and `.mcp.json` at the repo root configures it for everyone. It is
+**pinned** — `shadcn@4.21.0`, matching `web/package-lock.json`, not
+`@latest` as `shadcn mcp init` writes it. `@latest` resolves and executes
+whatever npm serves at the moment it runs, on every machine that opens this
+repo; that is the same reasoning as `npm ci` in CI, applied to tooling.
+Bump it with the lockfile, not separately.
+
+The server is a convenience either way: `npx shadcn@latest search` reaches
+the identical registry, and MCP config is only read when a session starts.
 
 ---
 
@@ -284,7 +309,8 @@ it is visible — which is exactly why it gets skipped and then blocks Phase 1.*
 - [x] Realm import verified from a recreated container
 - [x] **W7** Cursor paging on the four review queues — PR #3
 - [x] OpenAPI audit — see below
-- [ ] **W8** Give `NCBRS.Consumer` an OpenAPI document (found by the audit)
+- [x] **W8** Give `NCBRS.Consumer` an OpenAPI document (found by the audit) — PR #5
+- [x] **W9** Authenticate the consumer's reporting endpoints — they served national vital statistics anonymously — PR #6
 
 #### OpenAPI audit — result
 
@@ -334,14 +360,40 @@ a project is a dependency change and needs sign-off.
 envelope, error handling and the generated client are proven together before
 anything is built on them.*
 
-**Scaffold**
-- [ ] `npm create vite@latest web -- --template react-ts` under a new top-level `web/` directory
-- [ ] `npm install tailwindcss @tailwindcss/vite` and replace `src/index.css` with `@import "tailwindcss";`
-- [ ] `npm install -D @types/node`; add `baseUrl` and the `@/*` → `./src/*` path alias to **both** `tsconfig.json` and `tsconfig.app.json`
-- [ ] Add the matching `resolve.alias` for `@` and the `tailwindcss()` plugin to `vite.config.ts` — the alias must be set in both places or the editor and the build disagree
-- [ ] `npx shadcn@latest init`, then add components as needed (`npx shadcn@latest add button table dialog form …`)
-- [ ] Commit `components.json` and treat `src/components/ui/` as vendored source per §2
-- [ ] ESLint, Prettier, and a CI job running lint, typecheck, build and tests
+**Scaffold** — PR #7
+- [x] `npm create vite@latest web -- --template react-ts` under a new top-level `web/` directory
+- [x] `npm install tailwindcss @tailwindcss/vite` and replace `src/index.css` with `@import "tailwindcss";`
+- [x] The `@/*` → `./src/*` path alias in **both** `tsconfig.json` and `tsconfig.app.json`
+- [x] Add the matching `resolve.alias` for `@` and the `tailwindcss()` plugin to `vite.config.ts` — the alias must be set in both places or the editor and the build disagree
+- [x] `npx shadcn@latest init`, then add components as needed — 14 installed: `button` `card` `input` `label` `table` `dialog` `dropdown-menu` `badge` `separator` `skeleton` `sonner` `empty` `spinner` `alert`
+- [x] Commit `components.json` and treat `src/components/ui/` as vendored source per §2
+- [x] A CI job running lint, typecheck and build
+
+Four things about the live tooling differ from what this plan assumed when
+it was written, and each changes an instruction above rather than the intent
+behind it:
+
+- **The Vite template ships `oxlint`, not ESLint.** So the ESLint step is
+  gone and `npm run lint` is oxlint, with `--deny-warnings` in CI. **No
+  Prettier** — it is not in the template and adding a formatter is a
+  dependency change of its own. Worth revisiting before several people are
+  editing this at once, because a formatting disagreement shows up as noise
+  in every diff.
+- **`@types/node` is already in the template**, so that install is a no-op.
+- **`baseUrl` is gone.** shadcn's install guide still pairs one with
+  `paths`, but TypeScript 6 deprecates it (TS5101) and it fails the build
+  today. `paths` alone resolves relative to the config file, which is what
+  was wanted anyway.
+- **shadcn's CLI now asks for a *base* and a *preset*.** Chosen: `radix` and
+  `nova` (Lucide icons, Geist). Note it no longer generates a `cn` helper —
+  `src/lib/utils.ts` re-exports one from the `cn` package
+  (`github.com/shadcn-ui/cn`, the same org), replacing `clsx` +
+  `tailwind-merge`.
+
+`form` is deliberately **not** installed yet: it pulls `react-hook-form` and
+`zod`, and nothing in this PR uses them. It arrives with Phase 2's
+registration form, where the dependency is justified by something that
+needs it.
 
 **Contract**
 - [ ] Generate the typed API client from the OpenAPI document into `src/api/generated/`
@@ -359,7 +411,7 @@ anything is built on them.*
 - [ ] App layout: navigation, header with signed-in user and role, sign-out
 - [ ] Role-aware navigation, so a facility registrar is not shown four empty review queues
 - [ ] Error surface that renders the API's `errors[]` against the right form fields — the API returns field paths, so the UI should never show a bare "something went wrong"
-- [ ] Loading, empty and failure states as shared components, decided once
+- [ ] Loading, empty and failure states, decided once — `spinner`/`skeleton`, `empty` and `alert` from the registry, not written by hand (§2)
 - [ ] **Vertical slice: look up a BRN and display the record**
 
 ### Phase 2 — The register

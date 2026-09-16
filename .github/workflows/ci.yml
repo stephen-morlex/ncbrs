@@ -94,3 +94,44 @@ jobs:
 
       - name: Test against PostgreSQL
         run: dotnet test --no-build --configuration Release --verbosity normal
+
+  # The central management site. Separate from the .NET jobs because it fails
+  # for entirely different reasons and a contributor touching only the API
+  # should not wait on npm, nor read a red tick that has nothing to do with
+  # their change.
+  #
+  # Lint, typecheck and build, in that order: the cheapest check that can
+  # fail runs first. `--deny-warnings` because a warning nobody is made to
+  # fix is a warning that accumulates until the output is scrolled past.
+  web:
+    name: Build (web)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      # `ci` rather than `install`: it installs the lockfile exactly and
+      # fails if package.json and the lockfile disagree. `install` would
+      # quietly resolve a different tree in CI than the one that was
+      # reviewed.
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint -- --deny-warnings
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
