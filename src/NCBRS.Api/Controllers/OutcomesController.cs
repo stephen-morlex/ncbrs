@@ -27,7 +27,7 @@ public class OutcomesController(
     /// Records a death within 28 days of a live birth, classified per WHO
     /// ICD-PM.
     /// </summary>
-    [HttpPost("neonatal-outcome")]
+    [HttpPost("neonatal-outcome", Name = "RecordNeonatalOutcome")]
     [ProducesResponseType(typeof(NeonatalOutcomeResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -60,7 +60,7 @@ public class OutcomesController(
     /// Records a maternal death linked to this birth event, classified per
     /// WHO ICD-MM.
     /// </summary>
-    [HttpPost("maternal-outcome")]
+    [HttpPost("maternal-outcome", Name = "RecordMaternalOutcome")]
     [ProducesResponseType(typeof(MaternalOutcomeResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]

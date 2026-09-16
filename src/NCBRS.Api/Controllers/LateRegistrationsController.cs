@@ -29,7 +29,7 @@ public class LateRegistrationsController(
     /// Late registrations awaiting verification, oldest first. Each one is a
     /// family without a certificate, so age is the thing worth seeing.
     /// </summary>
-    [HttpGet("pending")]
+    [HttpGet("pending", Name = "GetPendingLateRegistrations")]
     [ProducesResponseType(typeof(Page<PendingLateRegistrationResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
@@ -46,7 +46,7 @@ public class LateRegistrationsController(
     /// uncertifiable, and is kept so the same claim cannot simply be refiled
     /// as though it had never been seen.
     /// </summary>
-    [HttpPost("{lateRegistrationId:guid}/review")]
+    [HttpPost("{lateRegistrationId:guid}/review", Name = "ReviewLateRegistration")]
     [ProducesResponseType(typeof(ReviewLateRegistrationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]

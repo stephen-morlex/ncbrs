@@ -33,7 +33,7 @@ public class DevicesController(
     /// going dark is the signal behind replacing hardware rather than
     /// rebooting it.
     /// </summary>
-    [HttpGet("alerts")]
+    [HttpGet("alerts", Name = "GetDeviceAlerts")]
     [ProducesResponseType(typeof(IReadOnlyList<DeviceAlertResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<IReadOnlyList<DeviceAlertResponse>>> Alerts(
@@ -75,7 +75,7 @@ public class DevicesController(
     /// could empty its queue without a single device coming back — which is
     /// exactly the reporting gap this feature exists to surface.
     /// </summary>
-    [HttpPost("alerts/{deviceAlertId:guid}/acknowledge")]
+    [HttpPost("alerts/{deviceAlertId:guid}/acknowledge", Name = "AcknowledgeDeviceAlert")]
     [ProducesResponseType(typeof(DeviceAlertResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
@@ -129,7 +129,7 @@ public class DevicesController(
     }
 
     /// <summary>Enrols a device against a facility.</summary>
-    [HttpPost]
+    [HttpPost(Name = "EnrolDevice")]
     [ProducesResponseType(typeof(DeviceResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
@@ -221,7 +221,7 @@ public class DevicesController(
         return CreatedAtAction(nameof(Get), new { deviceId = device.DeviceId }, Response(device));
     }
 
-    [HttpGet("{deviceId}")]
+    [HttpGet("{deviceId}", Name = "GetDevice")]
     [ProducesResponseType(typeof(DeviceResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<DeviceResponse>> Get(string deviceId)
@@ -239,7 +239,7 @@ public class DevicesController(
     /// that failed silently: the post looks like a quiet area rather than a
     /// broken one, and this is the only place that distinction is visible.
     /// </summary>
-    [HttpGet]
+    [HttpGet(Name = "GetDevices")]
     [ProducesResponseType(typeof(IReadOnlyList<DeviceResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<IReadOnlyList<DeviceResponse>>> List([FromQuery] Guid? facilityId = null)
@@ -279,7 +279,7 @@ public class DevicesController(
     /// usually reappears and a district that must re-enrol every time will
     /// stop reporting them missing.
     /// </summary>
-    [HttpPost("{deviceId}/suspend")]
+    [HttpPost("{deviceId}/suspend", Name = "SuspendDevice")]
     [ProducesResponseType(typeof(DeviceResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
@@ -288,7 +288,7 @@ public class DevicesController(
         => ChangeStatusAsync(deviceId, DeviceStatus.Suspended, envelope.Data.Reason, "SuspendDevice");
 
     /// <summary>Returns a suspended device to service.</summary>
-    [HttpPost("{deviceId}/reinstate")]
+    [HttpPost("{deviceId}/reinstate", Name = "ReinstateDevice")]
     [ProducesResponseType(typeof(DeviceResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
@@ -301,7 +301,7 @@ public class DevicesController(
     /// was revoked in error the remedy is a fresh enrolment with a fresh
     /// key, which leaves both acts visible.
     /// </summary>
-    [HttpPost("{deviceId}/revoke")]
+    [HttpPost("{deviceId}/revoke", Name = "RevokeDevice")]
     [ProducesResponseType(typeof(DeviceResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]

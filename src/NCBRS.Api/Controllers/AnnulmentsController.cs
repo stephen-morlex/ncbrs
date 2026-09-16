@@ -31,7 +31,7 @@ public class AnnulmentsController(
     /// Any valid certificate is revoked and published to the revocation list,
     /// so a verifier checking the printed document will refuse it.
     /// </summary>
-    [HttpPost]
+    [HttpPost(Name = "AnnulBirthRecord")]
     [ProducesResponseType(typeof(AnnulRecordResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]

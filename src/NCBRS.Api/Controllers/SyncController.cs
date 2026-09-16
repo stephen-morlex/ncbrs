@@ -60,7 +60,7 @@ public class SyncController(
     /// so re-uploading an outbox the device wasn't sure had landed replays
     /// the original answer rather than reprocessing anything.
     /// </summary>
-    [HttpPost("batches")]
+    [HttpPost("batches", Name = "UploadSyncBatch")]
     [ProducesResponseType(typeof(SyncBatchResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
