@@ -252,6 +252,7 @@ builder.Services.AddOpenApi(openApi =>
     openApi.AddOperationTransformer<TransactionHeaderTransformer>();
     openApi.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
     openApi.AddSchemaTransformer<EnumSchemaTransformer>();
+    openApi.AddSchemaTransformer<NumberSchemaTransformer>();
 });
 
 // SQLite here matches the district/facility tier from the NCBRS draft

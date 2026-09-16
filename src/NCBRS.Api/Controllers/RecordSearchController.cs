@@ -21,6 +21,11 @@ namespace NCBRS.Controllers;
 [ApiController]
 [Route("api/birthrecords/search")]
 [Authorize]
+// Matches every other controller. Without it ApiExplorer also advertises
+// text/plain and text/json, which this endpoint never returns -- and the
+// generated client picks a content type off that list, so the document
+// misdescribing the wire format reaches the browser as a wrong type.
+[Produces("application/json")]
 public class RecordSearchController(
     NcbrsDbContext db,
     RecordSearchService search,

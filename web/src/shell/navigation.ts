@@ -3,6 +3,7 @@ import {
   BarChart3,
   FileSearch,
   GitCompareArrows,
+  Hash,
   Hourglass,
   ScrollText,
   Search,
@@ -41,7 +42,15 @@ export const navigation: NavGroup[] = [
   {
     label: 'Register',
     items: [
-      { label: 'Find a record', to: '/records', icon: Search, policy: null },
+      { label: 'Find by number', to: '/records', icon: Hash, policy: null },
+
+      // A separate destination, not a mode of the lookup above. Looking up a
+      // number a family is holding and searching the register by name are
+      // different acts under different rules -- the second is confined to
+      // the caller's district and recorded in the audit trail. One box that
+      // quietly switched between them would hide that difference from the
+      // person it applies to.
+      { label: 'Search the register', to: '/records/search', icon: Search, policy: null },
       {
         label: 'Register a birth',
         to: '/records/new',

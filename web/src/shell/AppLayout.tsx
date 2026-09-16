@@ -40,8 +40,12 @@ export function AppLayout() {
               <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
               <Breadcrumb>
                 <BreadcrumbList>
+                  {/* Keyed by position, not by `to`. Both crumbs point at the
+                      same destination -- the group and the page within it --
+                      so keying on the href gives React two identical keys and
+                      it keeps a stale crumb from the previous route. */}
                   {trail.map((crumb, index) => (
-                    <Fragment key={crumb.to}>
+                    <Fragment key={`${index}:${crumb.label}`}>
                       {index > 0 ? <BreadcrumbSeparator /> : null}
                       <BreadcrumbItem>
                         {index === trail.length - 1 ? (
@@ -77,15 +81,22 @@ export function AppLayout() {
 function useBreadcrumbs(): { label: string; to: string }[] {
   const { pathname } = useLocation()
 
-  for (const group of navigation) {
-    const match = group.items.find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))
+  // Longest match wins. `/records/search` is a prefix match for `/records`
+  // too, and taking the first hit would label the search page "Find by
+  // number" -- naming the wrong act on the page whose whole point is that it
+  // is a different one.
+  const candidates = navigation
+    .flatMap((group) => group.items.map((item) => ({ group: group.label, item })))
+    .filter(({ item }) => pathname === item.to || pathname.startsWith(`${item.to}/`))
+    .sort((a, b) => b.item.to.length - a.item.to.length)
 
-    if (match) {
-      return [
-        { label: group.label, to: match.to },
-        { label: match.label, to: match.to },
-      ]
-    }
+  const best = candidates[0]
+
+  if (best) {
+    return [
+      { label: best.group, to: best.item.to },
+      { label: best.item.label, to: best.item.to },
+    ]
   }
 
   return [{ label: 'NCBRS', to: '/records' }]

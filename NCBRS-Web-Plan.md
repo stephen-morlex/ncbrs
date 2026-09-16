@@ -713,7 +713,65 @@ status, facility, district, provisional identifier. No parents, no weights: a
 result list that carried them would spread them across every search that
 happened to match.
 
-- [ ] Search UI and results
+- [x] Search UI and results — PR #14
+
+#### The search screen
+
+`/records/search`, a **separate destination** from the BRN lookup rather than
+a mode of it. Looking up a number a family is holding and searching the
+register by name are different acts under different rules — the second is
+confined to the caller's district and written to the audit trail. One box
+that quietly switched between them would hide that from the person it applies
+to.
+
+Two things the screen does because of how W1 refuses:
+
+- **The scope is stated before anyone searches**, not after a disappointing
+  result. A registrar who does not know results stop at the district boundary
+  reads an empty page as "this child is not registered" — which for a family
+  who moved is exactly wrong.
+- **A 403 is explained as the boundary, not rendered as an empty result.**
+  The API refuses a cross-district search outright rather than narrowing it,
+  precisely so nobody is told "no such child" about a district they were
+  never allowed to ask about. Swallowing that into an empty table would undo
+  the refusal.
+
+The total is shown as "N of M **in your district**", never a bare M.
+
+Verified against the running stack, signed in as a district officer: a search
+for a name present in two districts returned only the three records in the
+caller's own, and the trail recorded
+`Search:name=Amara;returned=3;total=3` against `D-CENTRAL-07`. A search with
+no criteria was refused and wrote **no** audit row.
+
+Two bugs found and fixed while verifying, neither visible from the code:
+
+- **A stale breadcrumb.** Both crumbs keyed on the same `to`, so React could
+  not tell them apart across a route change and kept one from the previous
+  page. Only reproducible by navigating between two pages in the same group.
+- **`[Produces("application/json")]` was missing** on the search controller,
+  which every other controller carries. Without it ApiExplorer advertised
+  `text/plain` and `text/json` as well — content types the endpoint never
+  returns, and which a client generator picks from.
+
+#### Contract regression fixed here too
+
+The generator swap in PR #8 quietly widened **35 integer properties** across
+the API to `["integer","string"]`. ASP.NET's web JSON defaults set
+`AllowReadingFromString`, so the serializer will accept `"42"` on input; the
+generator reported that faithfully, and because one component schema
+describes both directions, every integer the API *returns* inherited it. The
+typed client had `Page.total` and every error `status` as `number | string`.
+
+Swashbuckle documented all 41 as plain integers. `NumberSchemaTransformer`
+restores that. The document then understates what a request will tolerate,
+which is the right direction to be wrong in: a generated client sends
+numbers, the API accepts numbers, and nothing advertises a leniency callers
+should not rely on.
+
+This was visible in PR #10 — `errors.ts` handled `status` as either — and was
+rationalised as JSON round-tripping rather than investigated. It was a
+regression.
 - [ ] Record detail: identity, status, certificate state, provisional identifier, annulment block
 - [ ] Amendment history timeline, showing previous values
 - [ ] Online registration form, incl. late-registration evidence when the window has passed
