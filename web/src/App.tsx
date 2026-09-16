@@ -1,24 +1,32 @@
-import { Route, Routes } from 'react-router'
-import { useAuth } from 'react-oidc-context'
-import { Construction, LogOut } from 'lucide-react'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
-import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from '@/components/ui/item'
+import { Navigate, Route, Routes } from 'react-router'
+import { Construction } from 'lucide-react'
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty'
 import { AuthCallback } from '@/auth/AuthCallback'
-import { AuthStatus } from '@/auth/AuthStatus'
 import { RequireAuth } from '@/auth/RequireAuth'
-import { displayName, realmRoles } from '@/auth/claims'
+import { AppLayout } from '@/shell/AppLayout'
+import { navigation } from '@/shell/navigation'
+import { RecordLookup } from '@/records/RecordLookup'
 
 /**
- * Routes so far. The shell -- navigation, header, the review queues -- is the
- * next PR; this exists to prove the session end to end: sign in against
- * Keycloak, read the roles the API will read, and refuse a page the account
- * is not entitled to.
+ * Routing for the shell.
+ *
+ * Every page beyond the callback sits inside `RequireAuth` and the layout, so
+ * there is no arrangement of routes that renders a page without a session.
+ * The destinations not yet built are still routed, gated by the same policy
+ * as their navigation entry -- so the guards and the 403 screen are exercised
+ * against the real policy list rather than a single example.
  */
 export default function App() {
+  const pending = navigation.flatMap((group) =>
+    group.items.filter((item) => item.pending).map((item) => ({ ...item, group: group.label })),
+  )
+
   return (
     <Routes>
       {/* Must match oidcConfig's redirect_uri and the realm's redirectUris.
@@ -27,107 +35,60 @@ export default function App() {
       <Route path="/auth/callback" element={<AuthCallback />} />
 
       <Route
-        path="/"
         element={
           <RequireAuth>
-            <SignedIn />
+            <AppLayout />
           </RequireAuth>
         }
-      />
+      >
+        <Route path="/" element={<Navigate to="/records" replace />} />
+        <Route path="/records" element={<RecordLookup />} />
 
-      {/* Deliberately gated on the one policy only the ministry satisfies, so
-          the 403 screen is reachable by signing in as a district officer
-          rather than only in theory. */}
-      <Route
-        path="/annulments"
-        element={
-          <RequireAuth policy="CanAnnulRegistrations">
-            <Placeholder title="Annulments" />
-          </RequireAuth>
-        }
-      />
+        {pending.map((item) => (
+          <Route
+            key={item.to}
+            path={item.to}
+            element={
+              <RequireAuth policy={item.policy ?? undefined}>
+                <NotBuiltYet title={item.label} />
+              </RequireAuth>
+            }
+          />
+        ))}
+
+        <Route path="*" element={<NotFound />} />
+      </Route>
     </Routes>
   )
 }
 
-function SignedIn() {
-  const auth = useAuth()
-  const roles = realmRoles(auth.user)
-  const name = displayName(auth.user) ?? 'Unknown user'
-
+function NotBuiltYet({ title }: { title: string }) {
   return (
-    <main className="mx-auto flex min-h-svh max-w-2xl flex-col justify-center p-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>National Civil Birth Registration System</CardTitle>
-          <CardDescription>
-            The session is live. Navigation and the register arrive with the shell.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Item variant="outline">
-            <ItemMedia>
-              <Avatar>
-                <AvatarFallback>{initials(name)}</AvatarFallback>
-              </Avatar>
-            </ItemMedia>
-            <ItemContent>
-              <ItemTitle>{name}</ItemTitle>
-              <ItemDescription>
-                <span className="flex flex-wrap gap-1.5">
-                  {roles.length > 0 ? (
-                    roles.map((role) => (
-                      <Badge key={role} variant="secondary">
-                        {role}
-                      </Badge>
-                    ))
-                  ) : (
-                    // Distinct from "not signed in": the account is genuine
-                    // and Keycloak issued a token, but no realm role was
-                    // assigned, so every endpoint will refuse it. Saying so
-                    // here turns a page of 403s into one answerable question.
-                    <Badge variant="destructive">no roles assigned</Badge>
-                  )}
-                </span>
-              </ItemDescription>
-            </ItemContent>
-            <ItemActions>
-              {/* signoutRedirect ends the Keycloak session too, so the next
-                  visit is a real sign-in. Clearing only local state would
-                  leave the SSO cookie standing and sign the user straight
-                  back in -- which on a shared facility terminal is the
-                  opposite of signing out. */}
-              <Button variant="outline" size="sm" onClick={() => void auth.signoutRedirect()}>
-                <LogOut />
-                Sign out
-              </Button>
-            </ItemActions>
-          </Item>
-        </CardContent>
-      </Card>
-    </main>
-  )
-}
-
-function Placeholder({ title }: { title: string }) {
-  return (
-    <AuthStatus>
+    <Empty className="border">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <Construction />
         </EmptyMedia>
         <EmptyTitle>{title}</EmptyTitle>
-        <EmptyDescription>Not built yet.</EmptyDescription>
+        <EmptyDescription>
+          Routed and gated, but not built yet. The navigation shows it so the shape of the system
+          is legible before every part of it exists.
+        </EmptyDescription>
       </EmptyHeader>
-    </AuthStatus>
+    </Empty>
   )
 }
 
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('')
+function NotFound() {
+  return (
+    <Empty className="border">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <Construction />
+        </EmptyMedia>
+        <EmptyTitle>No such page</EmptyTitle>
+        <EmptyDescription>Check the address, or use the navigation.</EmptyDescription>
+      </EmptyHeader>
+    </Empty>
+  )
 }
