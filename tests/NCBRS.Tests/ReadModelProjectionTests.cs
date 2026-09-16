@@ -635,4 +635,49 @@ public class ReadModelProjectionTests : IDisposable
         await using var verify = NewDb();
         Assert.Empty(await verify.ProcessedEvents.ToListAsync());
     }
+
+    /// <summary>
+    /// The projection keeps the device's registration time and the centre's
+    /// publish time apart.
+    ///
+    /// They were one column called `RegisteredAtUtc` that actually held the
+    /// publish time, which is how the offline tier's sync lag stayed
+    /// invisible: every delay looked like a family being slow.
+    /// </summary>
+    [Fact]
+    public async Task ARegistrationCarriesBothTheDeviceTimeAndThePublishTime()
+    {
+        var registeredOnDevice = new DateTime(2026, 9, 11, 6, 0, 0, DateTimeKind.Utc);
+        var publishedByTheCentre = new DateTime(2026, 10, 3, 9, 30, 0, DateTimeKind.Utc);
+
+        await ApplyAsync(RegisteredTopic, Guid.CreateVersion7(),
+            Registered() with
+            {
+                EventTimestampUtc = publishedByTheCentre,
+                RegisteredAtUtc = registeredOnDevice
+            });
+
+        await using var db = NewDb();
+        var fact = await db.RegistrationFacts.SingleAsync();
+
+        Assert.Equal(registeredOnDevice, fact.RegisteredAtUtc);
+        Assert.Equal(publishedByTheCentre, fact.PublishedAtUtc);
+    }
+
+    /// <summary>
+    /// An event from before the field existed leaves it null rather than
+    /// falling back to the publish time, which would report a post that was
+    /// offline for three weeks as having synced instantly.
+    /// </summary>
+    [Fact]
+    public async Task AnEventWithoutTheDeviceTime_LeavesItNull()
+    {
+        await ApplyAsync(RegisteredTopic, Guid.CreateVersion7(), Registered());
+
+        await using var db = NewDb();
+        var fact = await db.RegistrationFacts.SingleAsync();
+
+        Assert.Null(fact.RegisteredAtUtc);
+        Assert.NotEqual(default, fact.PublishedAtUtc);
+    }
 }

@@ -78,6 +78,7 @@ public class DashboardQueryService(ReadModelDbContext db, TimeProvider clock)
             Counts(births, annulled),
             Window(births),
             Confirmation(births),
+            Delay(births),
             MortalityOf(neonatal, maternal, liveBirths),
             SyncOf(syncs),
             DuplicatesOf(syncs, births.Count),
@@ -237,6 +238,59 @@ public class DashboardQueryService(ReadModelDbContext db, TimeProvider clock)
             births.Count - confirmed.Count,
             Median(confirmed.Select(DaysToConfirmation)),
             byTier);
+    }
+
+    /// <summary>
+    /// Splits the delay between a birth and the centre knowing about it into
+    /// the two questions it actually contains: how long the family took to
+    /// reach a registrar, and how long the record then took to reach the
+    /// centre.
+    ///
+    /// TimeToConfirmation above spans both and cannot separate them. For a
+    /// hospital that hardly matters; for the offline tier the second term can
+    /// be most of the total, and reading it as the first would say families
+    /// near a village post are slow to register when they are not.
+    /// </summary>
+    private static RegistrationDelay Delay(List<RegistrationFact> births)
+    {
+        var measured = births.Where(fact => fact.RegisteredAtUtc.HasValue).ToList();
+
+        var byTier = measured
+            .GroupBy(fact => fact.FacilityTier ?? "Unknown")
+            .Select(group => new TierRegistrationDelay(
+                group.Key,
+                group.Count(),
+                Median(group.Select(DaysBirthToRegistration)),
+                Median(group.Select(DaysRegistrationToCentre))))
+            .OrderBy(tier => tier.FacilityTier)
+            .ToList();
+
+        return new RegistrationDelay(
+            measured.Count,
+            births.Count - measured.Count,
+            Median(measured.Select(DaysBirthToRegistration)),
+            Median(measured.Select(DaysRegistrationToCentre)),
+            byTier);
+    }
+
+    /// <summary>How long the family took to reach a registrar.</summary>
+    private static decimal DaysBirthToRegistration(RegistrationFact fact)
+        => (decimal)(fact.RegisteredAtUtc!.Value - fact.DateOfBirth).TotalDays;
+
+    /// <summary>
+    /// How long the record then waited for a link.
+    ///
+    /// Floored at zero rather than allowed negative. A device clock inside the
+    /// skew tolerance the registry accepts may be slightly ahead of the
+    /// server, so an online registration can publish a fraction of a second
+    /// "before" it was registered; a median dragged below zero by that would
+    /// report the centre receiving births ahead of them being registered.
+    /// </summary>
+    private static decimal DaysRegistrationToCentre(RegistrationFact fact)
+    {
+        var days = (decimal)(fact.PublishedAtUtc - fact.RegisteredAtUtc!.Value).TotalDays;
+
+        return days > 0 ? days : 0;
     }
 
     private static Mortality MortalityOf(int neonatal, int maternal, int liveBirths)

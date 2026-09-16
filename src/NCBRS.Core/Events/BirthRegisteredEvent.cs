@@ -62,5 +62,28 @@ public record BirthRegisteredEvent(
     /// number the centre has not confirmed is not yet a registration anyone
     /// can rely on.
     /// </summary>
-    DateTime? ConfirmedAtUtc = null
+    DateTime? ConfirmedAtUtc = null,
+
+    /// <summary>
+    /// When the birth was registered on the device, as distinct from
+    /// <see cref="EventTimestampUtc"/>, which is when the centre published it.
+    ///
+    /// **Two different delays sit between a birth and a figure on a national
+    /// dashboard, and until this travelled they were one number.** How long a
+    /// family took to reach a registrar is a question about outreach; how long
+    /// the record then took to arrive is a question about connectivity. The
+    /// remedies are a health campaign and a mast, and a figure that adds them
+    /// together points at neither.
+    ///
+    /// Carried as the timestamp rather than as a derived lag — unlike
+    /// <see cref="WithinStatutoryWindow"/>, which travels as a decision
+    /// because a law can change underneath it. Nothing can change what a
+    /// subtraction of two instants means, so a consumer can safely do its own
+    /// arithmetic, and the raw pair supports breakdowns nobody has asked for
+    /// yet.
+    ///
+    /// Null on events published before this field existed, which is a third
+    /// answer and not a zero-day lag.
+    /// </summary>
+    DateTime? RegisteredAtUtc = null
 );

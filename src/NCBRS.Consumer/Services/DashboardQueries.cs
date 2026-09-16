@@ -80,6 +80,43 @@ public record TimeToConfirmation(
 public record TierTimeToConfirmation(string FacilityTier, int Confirmed, decimal? MedianDays);
 
 /// <summary>
+/// The two delays between a birth happening and the centre knowing about it,
+/// reported separately because they are different problems with different
+/// remedies.
+///
+/// **Birth to registration** is how long the family took to reach a
+/// registrar: an outreach question, answered by a health campaign or a
+/// mobile clinic. **Registration to centre** is how long the record then
+/// waited for a link: a connectivity question, answered by a mast or a
+/// better sync schedule. Added together they are a number that points at
+/// neither, and for the offline tier the second can dwarf the first.
+///
+/// Broken out by tier because that is where they diverge most: a hospital
+/// terminal's second figure is zero by construction, and a village post's
+/// may be weeks.
+/// </summary>
+public record RegistrationDelay(
+    /// <summary>Registrations whose event carried the device's registration time.</summary>
+    int Measured,
+
+    /// <summary>
+    /// Registrations published before the event carried it. Reported rather
+    /// than dropped: a median over a tenth of the period, presented as though
+    /// it covered all of it, is worse than one nobody trusts.
+    /// </summary>
+    int NotMeasurable,
+
+    decimal? MedianDaysBirthToRegistration,
+    decimal? MedianDaysRegistrationToCentre,
+    IReadOnlyList<TierRegistrationDelay> ByFacilityTier);
+
+public record TierRegistrationDelay(
+    string FacilityTier,
+    int Measured,
+    decimal? MedianDaysBirthToRegistration,
+    decimal? MedianDaysRegistrationToCentre);
+
+/// <summary>
 /// Deaths recorded against births in the period. Rates are per 1,000 live
 /// births and null when there are none -- the draft's §10 figures are
 /// meaningless on an empty denominator and a zero would read as "no deaths".
@@ -129,6 +166,7 @@ public record DashboardSummary(
     RegistrationCounts Registrations,
     Timeliness Timeliness,
     TimeToConfirmation TimeToConfirmation,
+    RegistrationDelay RegistrationDelay,
     Mortality Mortality,
     SyncReliability Sync,
     DuplicateRate Duplicates,

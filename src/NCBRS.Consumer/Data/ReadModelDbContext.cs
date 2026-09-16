@@ -41,7 +41,7 @@ public class ReadModelDbContext(DbContextOptions<ReadModelDbContext> options) : 
             .HasIndex(fact => new { fact.DistrictId, fact.AnnulledAtUtc });
 
         modelBuilder.Entity<RegistrationFact>()
-            .HasIndex(fact => fact.RegisteredAtUtc);
+            .HasIndex(fact => fact.PublishedAtUtc);
 
         // Every registration checks this for waiting events, so it is on the
         // hot path and wants an index even though the table is normally

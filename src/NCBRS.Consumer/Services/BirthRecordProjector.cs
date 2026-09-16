@@ -173,7 +173,8 @@ public class BirthRecordProjector(ReadModelDbContext db, ILogger<BirthRecordProj
         fact.FacilityId = evt.FacilityId;
         fact.DateOfBirth = evt.DateOfBirth;
         fact.Sex = evt.Sex;
-        fact.RegisteredAtUtc = evt.EventTimestampUtc;
+        fact.PublishedAtUtc = evt.EventTimestampUtc;
+        fact.RegisteredAtUtc = evt.RegisteredAtUtc;
         fact.FacilityTier = evt.FacilityTier;
         fact.VitalEventType = evt.VitalEventType;
         fact.WithinStatutoryWindow = evt.WithinStatutoryWindow;

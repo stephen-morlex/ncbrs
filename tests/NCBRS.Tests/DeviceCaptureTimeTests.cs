@@ -201,6 +201,45 @@ public class DeviceCaptureTimeTests : IDisposable
         Assert.DoesNotContain(audited, action => action.StartsWith("StatutoryWindowMetOnDeviceTime"));
     }
 
+    [Fact]
+    public async Task ThePublishedEventCarriesTheDeviceTime_NotOnlyThePublishTime()
+    {
+        // The registry keeping the capture time is only half of it. Until the
+        // event carried it too, the reporting side could measure the delay
+        // between a birth and the centre hearing about it but could not say
+        // how much of that was the family and how much was the link -- and
+        // for the offline tier those need different people to fix them.
+        var capturedAt = DateTime.UtcNow.Date.AddDays(-90);
+
+        await using var db = NewDb();
+        var publisher = new NoOpEventPublisher();
+        var http = AuthTestContext.HttpContextFor();
+        var current = AuthTestContext.RegistrarService(db, http);
+        var registrar = db.Registrars.Single(r => r.RegistrarId == RegistrarId);
+
+        var registrations = new BirthRegistrationService(
+            db, publisher, current,
+            new DuplicateDetectionService(db, new DuplicateMatcher(),
+                new CertificateRevocationRecorder(db), NullLogger<DuplicateDetectionService>.Instance,
+                new DistrictLookup(db)),
+            Options.Create(new StatutoryRegistrationOptions { WindowDays = WindowDays }));
+
+        var result = await registrations.RegisterAsync(
+            Request("100008", bornDaysAgo: 100, capturedAt: capturedAt),
+            registrar,
+            Guid.CreateVersion7());
+
+        Assert.True(result.Succeeded);
+
+        var published = Assert.Single(publisher.Registrations);
+
+        Assert.Equal(capturedAt, published.RegisteredAtUtc);
+
+        // And the two are genuinely different instants on the event, which is
+        // the only reason carrying both is worth anything.
+        Assert.NotEqual(published.EventTimestampUtc, published.RegisteredAtUtc);
+    }
+
     private async Task<BirthRecord> StoredAsync(string brn)
     {
         await using var db = NewDb();

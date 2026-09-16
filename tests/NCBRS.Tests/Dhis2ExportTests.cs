@@ -89,6 +89,7 @@ public class Dhis2ExportTests : IDisposable
                 DateOfBirth = new DateTime(2026, 9, 10, 0, 0, 0, DateTimeKind.Utc),
                 Sex = sex,
                 RegisteredAtUtc = new DateTime(2026, 9, 11, 0, 0, 0, DateTimeKind.Utc),
+                PublishedAtUtc = new DateTime(2026, 9, 11, 0, 0, 0, DateTimeKind.Utc),
                 VitalEventType = vitalEventType,
                 WithinStatutoryWindow = withinWindow,
                 ConfirmedAtUtc = new DateTime(2026, 9, 11, 0, 0, 0, DateTimeKind.Utc)

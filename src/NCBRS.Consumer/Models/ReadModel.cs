@@ -104,11 +104,31 @@ public class RegistrationFact
 
     /// <summary>
     /// When the centre published the registration, which is when it reached
-    /// the centre -- not when the device captured it. A post offline for
+    /// the centre -- not when the device registered it. A post offline for
     /// three weeks registers a birth long before this moment, so this is a
     /// reporting timestamp and never a legal one.
+    ///
+    /// **Named for what it is.** It was called `RegisteredAtUtc` while being
+    /// the publish time, next to a `RegisteredAtUtc` on `BirthRecord` that is
+    /// the device's -- one name for two instants that can be three weeks
+    /// apart. The registry has already lost a timestamp to that ambiguity
+    /// once.
     /// </summary>
-    public DateTime RegisteredAtUtc { get; set; }
+    public DateTime PublishedAtUtc { get; set; }
+
+    /// <summary>
+    /// When the birth was registered on the device.
+    ///
+    /// The difference between this and <see cref="PublishedAtUtc"/> is how
+    /// long the record waited for a link, and the difference between this and
+    /// <see cref="DateOfBirth"/> is how long the family waited to reach a
+    /// registrar. Those are questions about connectivity and about outreach
+    /// respectively, and a single figure spanning both answers neither.
+    ///
+    /// Null on events published before the field existed. Excluded from the
+    /// medians and counted, never treated as a zero-day lag.
+    /// </summary>
+    public DateTime? RegisteredAtUtc { get; set; }
 
     /// <summary>Hospital, Clinic or VillageHealthPost; null on events predating the field.</summary>
     public string? FacilityTier { get; set; }
