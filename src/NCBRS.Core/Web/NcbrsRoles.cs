@@ -55,6 +55,17 @@ public static class NcbrsRoles
     /// </summary>
     public const string CanEnrolDevices = nameof(CanEnrolDevices);
 
+    /// <summary>
+    /// Reading the audit trail.
+    ///
+    /// Its own capability rather than borrowed from another oversight policy,
+    /// because it is a different kind of access: the trail records what every
+    /// other endpoint did, and since W1 it also records the names people
+    /// searched for. Someone trawling it to see what colleagues looked up is
+    /// precisely the misuse it exists to expose.
+    /// </summary>
+    public const string CanReadAuditTrail = nameof(CanReadAuditTrail);
+
     /// <summary>Roles that may act beyond a single facility.</summary>
     public static readonly string[] CrossFacility = [DistrictOfficer, MinistryAdmin];
 }
