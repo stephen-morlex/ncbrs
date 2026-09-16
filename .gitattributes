@@ -1,0 +1,21 @@
+# Normalise line endings in the repository, whatever the contributor's OS.
+# Without this a Windows checkout rewrites every file and the next diff is the
+# whole tree.
+* text=auto eol=lf
+
+# Windows-only files keep CRLF.
+*.sln text eol=crlf
+*.slnx text eol=crlf
+*.csproj text eol=crlf
+*.props text eol=crlf
+*.targets text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binary. The draft is the policy document the platform is built against, so
+# it is versioned deliberately -- but git must not try to diff or merge it.
+*.docx binary
+*.pdf binary
+*.png binary
+*.jpg binary
+*.ico binary

@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The central tier's migration history (WS-A1).
+
+    Its own assembly because EF bakes provider-specific column types into a
+    scaffolded migration (SQLite writes "TEXT" where Postgres wants "text"
+    or "uuid"), so one history cannot serve both engines. The SQLite set
+    stays in NCBRS.Core, where it was written; NcbrsDatabase names both
+    explicitly so which history applies is a fact in the code rather than a
+    consequence of where a file sits.
+
+    This project holds migrations and nothing else. No model, no services:
+    the model lives in Core and is shared, which is the point.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>NCBRS</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NCBRS.Core\NCBRS.Core.csproj" />
+  </ItemGroup>
+
+</Project>

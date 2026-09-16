@@ -1,0 +1,114 @@
+{
+  "realm": "ncbrs",
+  "enabled": true,
+  "displayName": "NCBRS",
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "accessTokenLifespan": 900,
+  "ssoSessionIdleTimeout": 1800,
+  "offlineSessionIdleTimeout": 5184000,
+  "roles": {
+    "realm": [
+      {
+        "name": "facility-registrar",
+        "description": "Registers births at their own facility. Maps to RegistrarRole.FacilityRegistrar."
+      },
+      {
+        "name": "community-health-worker",
+        "description": "Registers births in the community for their facility. Maps to RegistrarRole.CommunityHealthWorker."
+      },
+      {
+        "name": "district-officer",
+        "description": "Oversees the facilities in a district; may act across them. Maps to RegistrarRole.DistrictOfficer."
+      },
+      {
+        "name": "ministry-admin",
+        "description": "National administration; may act across all facilities. Maps to RegistrarRole.MinistryAdmin."
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "ncbrs-device",
+      "name": "NCBRS facility device",
+      "description": "The tablet/phone app used at facilities and village posts.",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["*"],
+      "webOrigins": ["*"],
+      "attributes": {
+        "post.logout.redirect.uris": "+"
+      },
+      "protocolMappers": [
+        {
+          "name": "ncbrs-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.custom.audience": "ncbrs-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "username": "nurse.banda",
+      "firstName": "Alice",
+      "lastName": "Banda",
+      "email": "nurse.banda@ncbrs.test",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "password", "temporary": false }
+      ],
+      "realmRoles": ["facility-registrar"]
+    },
+    {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "username": "dr.tembo",
+      "firstName": "Moses",
+      "lastName": "Tembo",
+      "email": "dr.tembo@ncbrs.test",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "password", "temporary": false }
+      ],
+      "realmRoles": ["facility-registrar"]
+    },
+    {
+      "id": "33333333-3333-4333-8333-333333333333",
+      "username": "district.officer",
+      "firstName": "Grace",
+      "lastName": "Phiri",
+      "email": "district.officer@ncbrs.test",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "password", "temporary": false }
+      ],
+      "realmRoles": ["district-officer"]
+    },
+    {
+      "id": "44444444-4444-4444-8444-444444444444",
+      "username": "ministry.admin",
+      "firstName": "Naledi",
+      "lastName": "Zulu",
+      "email": "ministry.admin@ncbrs.test",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "password", "temporary": false }
+      ],
+      "realmRoles": ["ministry-admin"]
+    }
+  ]
+}

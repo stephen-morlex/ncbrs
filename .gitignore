@@ -1,0 +1,54 @@
+# Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+.idea/
+
+# Local databases.
+#
+# Never committed. These hold real-shaped birth records, registrar PIN
+# hashes and audit rows; a civil registry's data does not belong in version
+# control even when it is test data, because test data in a registry is
+# indistinguishable in shape from the real thing.
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Certificate signing material.
+#
+# The private key that signs birth certificates must never be generated into
+# the repository or committed (see CLAUDE.md). A key in git history is a key
+# that has to be treated as compromised, and every certificate it ever signed
+# with it.
+*.pfx
+*.p12
+*.key
+*.pem
+!**/testdata/*.pem
+
+# Secrets
+appsettings.*.local.json
+*.env
+.env
+.env.*
+secrets.json
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Backups and dumps produced by the recovery drill (WS-A6)
+*.dump
+*.bak
+backup/

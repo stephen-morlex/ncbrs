@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/NCBRS.Api/NCBRS.Api.csproj" />
+    <Project Path="src/NCBRS.Consumer/NCBRS.Consumer.csproj" />
+    <Project Path="src/NCBRS.Core/NCBRS.Core.csproj" />
+    <Project Path="src/NCBRS.District/NCBRS.District.csproj" />
+    <Project Path="src/NCBRS.Migrations.Postgres/NCBRS.Migrations.Postgres.csproj" />
+    <Project Path="src/NCBRS.Relay/NCBRS.Relay.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/NCBRS.Tests/NCBRS.Tests.csproj" />
+  </Folder>
+</Solution>
