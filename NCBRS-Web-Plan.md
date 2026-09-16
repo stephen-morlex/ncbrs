@@ -511,12 +511,95 @@ status code of the result object, so no URL is ever generated. Verified
 instead with a real request against the running service — `POST /api/devices`
 returned `201` with `Location: .../api/devices/{deviceId}`.
 
-**Auth (§4)**
-- [ ] `oidc-client-ts` + `react-oidc-context` against `ncbrs-web`; authorization code + PKCE
-- [ ] Access token in memory only; refresh via refresh token, never an iframe
-- [ ] Login, logout, post-logout redirect, and the callback route
-- [ ] Parse `realm_access.roles`; expose them through one module that mirrors the API's policy names
-- [ ] Route guards for navigation, plus a graceful 403 screen — the server is the control, the UI is a courtesy
+**Auth (§4)** — PR #11
+- [x] `oidc-client-ts` + `react-oidc-context` against `ncbrs-web`; authorization code + PKCE
+- [x] Access token in memory only; refresh via refresh token, never an iframe
+- [x] Login, logout, post-logout redirect, and the callback route
+- [x] Parse `realm_access.roles`; expose them through one module that mirrors the API's policy names
+- [x] Route guards for navigation, plus a graceful 403 screen — the server is the control, the UI is a courtesy
+
+#### What "in memory only" actually means
+
+**Tokens in memory; the PKCE handshake state in `sessionStorage`.** The split
+is not a compromise, it is forced: the `code_verifier` and `state` are created
+before the redirect to Keycloak and needed after the redirect back, and a
+redirect is a full page unload. In-memory state cannot survive it, so an
+all-in-memory configuration fails *every* sign-in with "No matching state
+found in storage" — which is how this was found, by trying it.
+
+The exposure is much smaller than the tokens'. A verifier is single-use, lives
+for the seconds of one round trip, authorizes nothing and identifies nobody.
+The long-lived credential never touches storage — verified in the browser:
+`localStorage` and `sessionStorage` both empty after sign-in, no JWT anywhere.
+
+**A reload does not sign the user out.** There is no token in memory, so the
+app redirects to Keycloak — which still holds the SSO session cookie and
+bounces straight back with no prompt. What is lost is in-page state, which is
+a draft-persistence problem for Phase 2, not a reason to weaken this.
+
+**This is not the strongest pattern available.** The browser-apps BCP
+recommends a backend-for-frontend, where tokens never reach JavaScript at all;
+with tokens in memory an XSS bug can still act as the user for the life of the
+page, it just cannot exfiltrate a credential for later use elsewhere. A BFF
+needs a server component this architecture does not have. Moving to one later
+changes `oidc.ts` and `client.ts`, not every call site.
+
+#### Every screen here is registry components (§2)
+
+The first draft of this PR hand-wrote a centring wrapper, a loading block and
+a placeholder card. All three were replaced: `Empty` already centres, spaces
+and balances its own text, so the wrapper was duplicating it, and the states
+it exists for are exactly these.
+
+| Screen | Components |
+|---|---|
+| Signing in / completing sign-in | `Empty` + `Spinner` |
+| Sign-in failed | `Empty` + `Button` |
+| 403 | `Empty` |
+| Signed in | `Card` + `Item` + `Avatar` + `Badge` + `Button` |
+
+`avatar` and `item` were added from the registry rather than composed by
+hand. What remains hand-written is layout only — page height, centring, a
+max-width — and one `AuthStatus` page frame, which exists because `Empty`
+fills its parent rather than the viewport and something has to give it the
+height. No control, icon or piece of chrome is bespoke.
+
+#### Verified against the live realm, not a mock
+
+Keycloak from `docker compose`, signing in as `district.officer`:
+
+| | |
+|---|---|
+| Unauthenticated → Keycloak | ✅ |
+| Code exchange → back to the app | ✅ |
+| Roles from `realm_access` on the **access** token | ✅ `district-officer` |
+| Reload → no prompt (SSO cookie) | ✅ |
+| Tokens in web storage | ✅ none, anywhere |
+| Deep link survives sign-in | ✅ `/annulments` preserved |
+| 403 screen | ✅ "It needs ministry-admin. You are signed in as district-officer." |
+| Sign-out ends the **Keycloak** session | ✅ next visit shows the login form |
+
+Three bugs that only a real IdP would have shown, all fixed:
+
+1. **No `/auth/callback` route.** The code exchange succeeded and the router
+   matched nothing, so a successful sign-in rendered a blank page.
+2. **`stateStore` in memory.** Every sign-in failed, as above.
+3. **Deep links lost.** The callback navigated to `/` unconditionally, so a
+   link to a specific record — exactly what one registrar sends another —
+   would never open that record. The intended path now travels through the
+   OIDC `state`, and is validated as a same-site path on the way back, since
+   an unchecked value round-tripping through the browser is an open redirect.
+
+**Not yet proven: a real API call.** Sign-in works, but nothing has yet sent
+the token to `NCBRS.Api` — so CORS (W5) and the `ncbrs-api` audience mapper
+(W9) are still only verified from the Keycloak side. The vertical slice in the
+Shell PR is where that gets exercised, and it is the first place either could
+fail.
+
+**No web tests exist yet.** No framework is installed. The `returnTo`
+open-redirect guard and `realmRolesFromToken` are pure functions handling
+untrusted input and should have unit tests; that needs vitest, which is a
+dependency decision of its own.
 
 **Shell**
 - [ ] App layout: navigation, header with signed-in user and role, sign-out
