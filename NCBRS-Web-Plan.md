@@ -262,7 +262,7 @@ and they are the ones most likely to be underestimated:
 | # | Gap | Why the site needs it |
 |---|---|---|
 | **W1** | **Record search** — by name, date range, facility, district, status | `GET /api/birthrecords/{brn}` is exact-BRN lookup only. A registrar helping a family who lost their certificate has a name and an approximate date, not a number. **This is the single largest backend gap.** |
-| **W2** | **Facilities list and detail**, incl. BRN block state | No endpoint exists at all; there is no way to see which facility is near block exhaustion. |
+| **W2** | **Facilities list and detail**, incl. BRN block state — **done, PR #19** | Premise verified before building: two endpoints took a `facilityId`, but nothing could produce one or say anything about a facility. |
 | **W3** | **Registrar / user directory** — **done, PR #15** | The gap was narrower than this line claimed; see below. |
 | **W4** | **Audit log query** — **done, PR #16** | The trail is legally load-bearing and was readable only by SQL. W1 made that worse: it writes search criteria there, and nobody without database access could see them. |
 | **W5** | **CORS** on both services | Nothing in the browser works without it. |
@@ -437,6 +437,72 @@ enforce the boundary.
 cannot tell who said they were dealing with a dead tablet. And
 `BirthRecordResponse` names nobody who registered the birth. Neither is W3,
 but both are the same class of gap.
+
+### W2 as built
+
+`GET /api/facilities` and `GET /api/facilities/{facilityId}`, plus the
+`/facilities` screen. PR #19.
+
+Premise checked first, per the lesson W3 taught: two endpoints already took a
+`facilityId` — granting a BRN block and fetching device credentials — but
+nothing could produce one or say anything about a facility, and there was no
+facility schema at all. The gap was real.
+
+#### The point is block exhaustion, not a directory
+
+A facility that runs out of its granted BRN block starts issuing `PROV-`
+identifiers (draft 6.3). The birth is still registered, but the family leaves
+with a slip rather than a certificate and the record waits for a central act
+before it can be certificated. **Seeing that coming is the difference between
+granting a block and explaining to a district why forty families are holding
+provisional paper.**
+
+#### "Low" is not one number
+
+The same reasoning as WS-F4's device-silence thresholds, and deliberately the
+same shape so a reader who understands one understands the other:
+
+| Connectivity | Warn below |
+|---|---|
+| `AlwaysOn` | 50 — can ask for more this afternoon |
+| `Intermittent` | 200 — a few days of registrations |
+| `OfflineFirst` | 500 — the buffer must cover the whole offline stretch |
+
+A hospital with 100 numbers left is fine. A village post with 100 left, a
+fortnight from its next connection, is already in trouble. Applying the
+hospital's threshold to the post is how the post runs out; applying the
+post's to the hospital fills a district's screen with warnings about
+facilities working exactly as designed — and a queue that is mostly noise
+stops being read.
+
+Three states rather than a percentage, because the action differs at each and
+a percentage invites the reader to invent their own threshold. **The
+threshold is published beside the count**, so a post flagged at 400 and a
+hospital clear at 60 does not look arbitrary.
+
+#### Two details that fail quietly
+
+- **The remaining count is inclusive of the end and exclusive of next**, the
+  same arithmetic `BrnReconciler` uses. An off-by-one here reports a number
+  the facility cannot actually issue, and the first symptom is a device
+  handing out a BRN the centre then refuses.
+- **A facility never granted a block has all three fields at zero**, which
+  that arithmetic alone reports as one number available. It has none.
+
+#### Verified against the running stack
+
+All three states, by temporarily moving one dev facility's block and
+restoring it exactly:
+
+| Remaining | Shown |
+|---|---|
+| 89,499 | "in hand" |
+| 300 | "grant a block" |
+| 0 | "issuing provisional numbers" |
+
+Scope held — a Central district officer saw only the Central facility, never
+Lusaka. Two grammar faults were caught and fixed in passing: "1 facilities",
+and "1 of 1 facility need".
 
 ### W1's privacy decision — decided
 
@@ -966,7 +1032,7 @@ each needs the reason for the decision captured.*
 - [ ] Enrolment — public key only, with a visible refusal if a private key is pasted
 - [ ] Suspend, reinstate, revoke, each requiring a reason
 - [ ] Silence alert queue; acknowledge with a note, and make clear acknowledging is not resolving
-- [ ] **W2** Facilities list, BRN block state, low-block warning
+- [x] **W2** Facilities list, BRN block state, low-block warning — PR #19
 - [ ] Grant a BRN block
 
 ### Phase 6 — Dashboard and exports
