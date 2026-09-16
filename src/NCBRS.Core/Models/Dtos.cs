@@ -116,7 +116,41 @@ public record BirthRecordResponse(
     /// hidden: a BRN that has circulated must keep resolving to an
     /// explanation of what became of it.
     /// </summary>
-    AnnulmentSummary? Annulment = null
+    AnnulmentSummary? Annulment = null,
+
+    /// <summary>
+    /// Who filed this registration.
+    ///
+    /// The record already stored the id; nothing published it, so a screen
+    /// showing a birth could not say who entered it. That matters in the one
+    /// situation this system exists to survive — a disputed record, where the
+    /// first question asked is who filed it.
+    ///
+    /// The foreign key is enforced, so a record can never name a registrar
+    /// who does not exist and the name always resolves. Both are nullable on
+    /// this response only because they are optional parameters with defaults,
+    /// not because the register can lose track of who filed a birth.
+    /// </summary>
+    Guid? RegisteredByRegistrarId = null,
+    string? RegisteredByRegistrarName = null,
+
+    /// <summary>
+    /// When the centre received this registration.
+    ///
+    /// **Server receipt, not the device's capture time**, and the difference
+    /// is not cosmetic: a record synced from a post that was offline for
+    /// three weeks arrives three weeks after the family was seen. Only the
+    /// capture time says anything about when the birth was actually
+    /// registered, and it is the value the statutory window is measured
+    /// against (WS-C1).
+    ///
+    /// The capture time is **not stored** — `BirthRegistrationService`
+    /// computes it, validates it against the birth date and the server clock,
+    /// uses it to decide lateness, and discards it. So this field cannot be
+    /// that, and is named for what it is rather than borrowing the more
+    /// useful label.
+    /// </summary>
+    DateTime? ReceivedAtUtc = null
 );
 
 /// <summary>

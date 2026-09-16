@@ -64,7 +64,7 @@ public class DevicesController(
             .ThenByDescending(alert => alert.DaysSilentWhenRaised)
             .ToListAsync(HttpContext.RequestAborted);
 
-        return alerts.Select(AlertResponse).ToList();
+        return await AlertResponsesAsync(alerts, HttpContext.RequestAborted);
     }
 
     /// <summary>
@@ -127,7 +127,10 @@ public class DevicesController(
 
         await db.SaveChangesAsync(HttpContext.RequestAborted);
 
-        return AlertResponse(alert);
+        // The acknowledger is the caller, so no lookup is needed -- and the
+        // response naming them confirms to the person who just pressed the
+        // button that the undertaking is recorded against them.
+        return AlertResponse(alert, registrar.DisplayName);
     }
 
     /// <summary>Enrols a device against a facility.</summary>
@@ -389,7 +392,40 @@ public class DevicesController(
             StatusCodes.Status403Forbidden, "Account not provisioned.",
             "registrar", "This account is not linked to a registrar in the registry."));
 
-    private static DeviceAlertResponse AlertResponse(DeviceAlert alert)
+    /// <summary>
+    /// Resolves acknowledgers in one query rather than per row, then maps.
+    ///
+    /// A name and not only an id, because "acknowledged" without a person is
+    /// an undertaking nobody can be asked about — see the remark on
+    /// <see cref="DeviceAlertResponse.AcknowledgedByRegistrarId"/>.
+    /// </summary>
+    private async Task<List<DeviceAlertResponse>> AlertResponsesAsync(
+        List<DeviceAlert> alerts, CancellationToken cancellationToken)
+    {
+        var ids = alerts
+            .Where(alert => alert.AcknowledgedByRegistrarId is not null)
+            .Select(alert => alert.AcknowledgedByRegistrarId!.Value)
+            .Distinct()
+            .ToList();
+
+        var names = ids.Count == 0
+            ? []
+            : await db.Registrars
+                .Where(registrar => ids.Contains(registrar.RegistrarId))
+                .ToDictionaryAsync(
+                    registrar => registrar.RegistrarId,
+                    registrar => registrar.DisplayName,
+                    cancellationToken);
+
+        return alerts.Select(alert => AlertResponse(alert, NameOf(alert, names))).ToList();
+    }
+
+    private static string? NameOf(DeviceAlert alert, Dictionary<Guid, string> names)
+        => alert.AcknowledgedByRegistrarId is { } id && names.TryGetValue(id, out var name)
+            ? name
+            : null;
+
+    private static DeviceAlertResponse AlertResponse(DeviceAlert alert, string? acknowledgedBy)
         => new(
             alert.DeviceAlertId,
             alert.DeviceId,
@@ -402,6 +438,8 @@ public class DevicesController(
             alert.DaysSilentWhenRaised,
             alert.ThresholdDays,
             alert.AcknowledgedAtUtc,
+            alert.AcknowledgedByRegistrarId,
+            acknowledgedBy,
             alert.AcknowledgementNote,
             alert.ResolvedAtUtc);
 

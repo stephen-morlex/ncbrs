@@ -438,6 +438,45 @@ cannot tell who said they were dealing with a dead tablet. And
 `BirthRecordResponse` names nobody who registered the birth. Neither is W3,
 but both are the same class of gap.
 
+### Naming the two unnamed actors — PR #20
+
+Both ids were stored from the start and neither was published, so a screen
+could show that a birth was registered and an alert acknowledged without
+naming a person for either.
+
+- **`BirthRecordResponse`** now carries who filed the registration, and the
+  record screen shows it.
+- **`DeviceAlertResponse`** now carries who acknowledged the alert, in the
+  queue as well as in the response to pressing the button. That was the
+  sharper gap: **acknowledging is not resolving** (WS-F4) — it says "I am
+  driving out there Thursday" — and an undertaking nobody is named for is one
+  nobody can be asked about on Friday.
+
+**The timestamp is named `ReceivedAtUtc`, not a registration time**, and that
+is a correction rather than a preference. CLAUDE.md says of late registration
+that the residual risk "is why both timestamps are stored" — but the device's
+capture time is **not stored**. `BirthRegistrationService` computes it,
+validates it against the birth date and the server clock, uses it to decide
+lateness, and discards it. Only server receipt survives, so only server
+receipt is published, under its own name.
+
+#### Two findings, one of them serious
+
+**The capture time is not stored.** The documented defence against a device
+claiming a plausible-but-false capture time is having both timestamps to
+compare afterwards. There is currently nothing to compare: a backdating
+attempt that passes validation leaves no trace of what was claimed. Closing
+it is a column on `BirthRecord` and a migration on both providers.
+
+**`BirthRecords → Registrars` cascades on delete.** Deleting a registrar
+deletes every birth they ever filed. Nobody chose this — it is EF's default
+for a required relationship — but in a register where an annulment keeps the
+record, a duplicate keeps both, and the audit trail cannot be rewritten, it
+is the one delete that was never intended. `ReferentialAction.Restrict` is
+the obvious correction; it needs a migration on both providers.
+
+The cascade is pinned down by a test rather than left to be rediscovered.
+
 ### W2 as built
 
 `GET /api/facilities` and `GET /api/facilities/{facilityId}`, plus the

@@ -837,6 +837,11 @@ export interface components {
             /** Format: date-time */
             confirmedAtUtc?: null | string;
             annulment?: null | components["schemas"]["AnnulmentSummary"];
+            /** Format: uuid */
+            registeredByRegistrarId?: null | string;
+            registeredByRegistrarName?: null | string;
+            /** Format: date-time */
+            receivedAtUtc?: null | string;
         };
         BirthRecordSearchHit: {
             brn: string;
@@ -938,6 +943,9 @@ export interface components {
             thresholdDays: number;
             /** Format: date-time */
             acknowledgedAtUtc: null | string;
+            /** Format: uuid */
+            acknowledgedByRegistrarId: null | string;
+            acknowledgedByRegistrarName: null | string;
             acknowledgementNote: null | string;
             /** Format: date-time */
             resolvedAtUtc: null | string;
