@@ -267,8 +267,12 @@ with that number on it is not a search, it is a lookup.
 
 ## 6. To-do list
 
+Every phase below is delivered through the workflow in `CONTRIBUTING.md`:
+one branch per coherent unit of work, tests run before the commit, and
+approval gates at commit, PR and merge.
+
 Ordered so each phase is usable on its own. **[stack]** marks tasks whose
-content depend on the stack chosen in §2.
+content depends on the stack chosen in §2.
 
 ### Phase 0 — Make a browser able to talk to the platform
 *No UI yet. Everything here is backend and realm configuration, and none of

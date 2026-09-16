@@ -1,0 +1,96 @@
+name: CI
+
+# Every pull request into main, and main itself. A check that only runs
+# after merge tells you what you already shipped.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A new push supersedes the run it interrupted. Without this, a branch pushed
+# three times queues three full runs and the useful one waits behind two
+# obsolete ones.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  # The fast one. SQLite in memory, a few seconds, and it is what a
+  # contributor waits for.
+  build-and-test:
+    name: Build and test (SQLite)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test --no-build --configuration Release --verbosity normal
+
+  # The slow one, and the one that matters for anything touching the schema.
+  #
+  # SQLite is permissive where PostgreSQL is strict -- DateTime kinds, string
+  # comparison, identifier case, timestamp precision. A suite that only ever
+  # runs on SQLite is a suite that has never met the engine the central tier
+  # runs on (draft 6.4, 7.1).
+  test-postgres:
+    name: Test (PostgreSQL)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17.2
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: ncbrs
+          POSTGRES_PASSWORD: ncbrs-ci
+        ports:
+          - 5432:5432
+        # Without this the job races the container and fails on connection
+        # refused, intermittently, which reads as a flaky test suite.
+        options: >-
+          --health-cmd "pg_isready -U ncbrs"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      NCBRS_TEST_PROVIDER: Postgres
+      # The harness creates and drops a database per test from a migrated
+      # template, so it connects to the maintenance database first.
+      NCBRS_TEST_POSTGRES: Host=localhost;Port=5432;Database=postgres;Username=ncbrs;Password=ncbrs-ci
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Test against PostgreSQL
+        run: dotnet test --no-build --configuration Release --verbosity normal
