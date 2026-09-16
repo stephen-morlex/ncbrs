@@ -264,11 +264,57 @@ and they are the ones most likely to be underestimated:
 | **W1** | **Record search** — by name, date range, facility, district, status | `GET /api/birthrecords/{brn}` is exact-BRN lookup only. A registrar helping a family who lost their certificate has a name and an approximate date, not a number. **This is the single largest backend gap.** |
 | **W2** | **Facilities list and detail**, incl. BRN block state | No endpoint exists at all; there is no way to see which facility is near block exhaustion. |
 | **W3** | **Registrar / user directory** — **done, PR #15** | The gap was narrower than this line claimed; see below. |
-| **W4** | **Audit log query** — by record, actor, device, date | The audit trail is legally load-bearing and currently readable only by SQL. |
+| **W4** | **Audit log query** — **done, PR #16** | The trail is legally load-bearing and was readable only by SQL. W1 made that worse: it writes search criteria there, and nobody without database access could see them. |
 | **W5** | **CORS** on both services | Nothing in the browser works without it. |
 | **W6** | **SPA Keycloak client** with redirect URIs and PKCE | As above. |
 | **W7** | **Pagination contract** across all list endpoints — **done** | Every queue endpoint returned an unbounded list. At national volume that is a denial of service against the Ministry's own dashboard. |
 | **W8** | **OpenAPI for `NCBRS.Consumer`** | Found by the Phase 0 audit: the dashboard and export endpoints have no document, so the generated client cannot cover them — and the generated client is why React was chosen over Blazor. |
+
+### W4 as built
+
+`GET /api/audit` — `GetAuditTrail` — filtered by record, actor, device, entity
+type and date, paged newest first. PR #16.
+
+A control nobody can consult only works in retrospect, after a dispute has
+already escalated to whoever holds the database credentials. W1 sharpened
+that: it writes the names people searched for into the trail, and until now
+those rows were invisible to everyone the control was meant to serve.
+
+**Reading the trail is written to the trail**, with the filter recorded.
+"Read the trail" and "read every entry for this one registrar" are different
+acts, and only the second looks like checking up on a colleague. A refused
+read writes nothing — nothing was disclosed, so there is nothing to account
+for.
+
+This corrects a claim made in W3. That PR justified adding no audit row on
+the grounds that `RequestLog` already records every `/api` call. It does —
+but it stores method, path, status and duration, and **not who made the
+call**. For a directory read that is an acceptable gap; for the one endpoint
+that can read every other endpoint's record of itself, it is not.
+
+Two scopes, because there are two questions:
+
+- **"What happened to this record?"** — given a `brn`, every entry against it
+  whoever acted. Gated on the record being in the caller's district, and a
+  record outside it answers **404**, identically to one that does not exist:
+  a 403 would confirm the BRN exists elsewhere, which is what the scope
+  withholds.
+- **"What have my people done?"** — without a `brn`, entries whose actor is a
+  registrar in the caller's district.
+
+**A real limitation, named rather than hidden:** an action taken on a
+district's records by someone outside it does not appear in that district's
+unfiltered view. Closing it properly needs a district on the row itself, and
+that cannot be backfilled — `AuditLogs` is append-only and enforced so at the
+database, so existing rows can never be given one. Any fix applies to future
+rows only, and the gap in the history is permanent.
+
+Entries name the actor rather than their id, resolved in one query rather
+than per row. `ActorName` is null where no person acted — a sweep, a
+projection — which is different from a blank name.
+
+`CanReadAuditTrail` is its own policy rather than borrowed from another
+oversight role, and is mirrored in the web client's policy table.
 
 ### W3 as built — and how the gap was overstated
 

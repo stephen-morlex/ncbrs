@@ -61,6 +61,14 @@ export const NcbrsPolicies = {
   CanEnrolDevices: Oversight,
 
   /**
+   * Reading the audit trail. Its own capability rather than borrowed from
+   * another oversight policy: the trail records what every other endpoint
+   * did, and since W1 it also records the names people searched for, so
+   * trawling it is itself a thing worth being entitled to separately.
+   */
+  CanReadAuditTrail: Oversight,
+
+  /**
    * National vital statistics. Not a facility registrar's to read -- their
    * work is a record at a time. Matches the consumer's `ncbrs-reporting`.
    */

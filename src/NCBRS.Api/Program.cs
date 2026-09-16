@@ -230,6 +230,12 @@ builder.Services.AddAuthorization(authorization =>
     authorization.AddPolicy(NcbrsRoles.CanAnnulRegistrations, policy =>
         policy.RequireRole(NcbrsRoles.MinistryAdmin));
 
+    // Reading the trail is oversight, and the trail now carries the names
+    // people searched for -- so it sits with the same roles that adjudicate
+    // on records, not with the facility staff whose work it records.
+    authorization.AddPolicy(NcbrsRoles.CanReadAuditTrail, policy =>
+        policy.RequireRole(NcbrsRoles.DistrictOfficer, NcbrsRoles.MinistryAdmin));
+
     // The district officers who issue and collect the tablets, not the
     // facility staff holding them.
     authorization.AddPolicy(NcbrsRoles.CanEnrolDevices, policy =>
