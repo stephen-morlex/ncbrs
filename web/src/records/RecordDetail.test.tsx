@@ -126,9 +126,12 @@ describe('RecordDetail', () => {
     show(
       aRecord({
         status: 'Annulled',
+        // Annulment says there was no such birth. A record describing a real
+        // child registered twice is a duplicate supersession, which is a
+        // different act and keeps one of the records.
         annulment: {
-          reason: 'DuplicateOfAnotherRecord',
-          justification: 'Registered twice by two devices.',
+          reason: 'RegisteredInError',
+          justification: 'No birth took place; the entry was created in error.',
           authorityReference: 'MIN/2026/14',
           annulledAtUtc: '2026-08-01T00:00:00Z',
         },
