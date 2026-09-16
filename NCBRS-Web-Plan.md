@@ -659,7 +659,60 @@ from coverage: the first is upstream's, the second is regenerated and already
 checked by the contract job.
 
 ### Phase 2 — The register
-- [ ] **W1** Record search backend: district-scoped from the token, ministry exempt, every search audited
+- [x] **W1** Record search backend: district-scoped from the token, ministry exempt, every search audited — PR #13
+
+#### W1 as built
+
+`GET /api/birthrecords/search` — `SearchBirthRecords` — by name, date range,
+facility and status, paged with the same cursor contract as the review
+queues (W7).
+
+Deliberately a **separate controller** from `BirthRecordsController`. That one
+answers "show me the record with this number", which a family holding a
+certificate is entitled to ask. This one answers "which records match this
+name", which is a surveillance capability. Side by side, the second would
+have inherited the first's openness.
+
+Four controls, each of which had to be built in rather than added later:
+
+- **Scope comes from the token.** The caller's district is resolved through
+  their registrar record; a `districtId` naming a different one is **refused,
+  not narrowed**. Narrowing silently would answer an empty page, which the
+  caller reads as "no such child in that district" — a false statement about
+  a district they were never allowed to ask about.
+- **Only `ministry-admin` is exempt.** A district officer is not: overseeing
+  several facilities is not overseeing several districts.
+- **A blank search is refused.** A name of at least 2 characters or a date
+  range is required; facility or status alone is still "every birth at this
+  clinic". Leaving the form empty must not read a district out of the
+  register.
+- **An account with no registrar record cannot search at all**, whatever
+  realm role it holds. There would be nobody for the trail to name, and an
+  unattributable search is the one thing this endpoint must not permit.
+
+The audit row records **what was looked for**, not merely that a search
+happened: criteria, rows returned and scoped total, against
+`EntityType = "BirthRecordSearch"` and `EntityId` = the district (or
+`national`). Twelve rows saying "a search occurred" cannot distinguish a
+registrar helping one family from someone enumerating a district. A search
+matching nothing is audited too — repeated fruitless searches for a surname
+are exactly what fishing looks like.
+
+Two costs accepted knowingly:
+
+- **The trail now holds names of people who may not be in the register.**
+  Unavoidable: an audit that cannot say what was looked for cannot
+  distinguish use from misuse.
+- **A name search is a scan.** The district filter is what keeps it
+  survivable at national volume, which is one more reason the scope is not
+  optional. An index on the child's name is the obvious next step if this
+  gets slow, and should be measured before it is added.
+
+A result carries only what identifies the right child — BRN, name, date, sex,
+status, facility, district, provisional identifier. No parents, no weights: a
+result list that carried them would spread them across every search that
+happened to match.
+
 - [ ] Search UI and results
 - [ ] Record detail: identity, status, certificate state, provisional identifier, annulment block
 - [ ] Amendment history timeline, showing previous values
