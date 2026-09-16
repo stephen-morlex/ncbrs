@@ -38,12 +38,16 @@ registrar shown four empty review queues learns to ignore the navigation.
 
 ---
 
-## 2. Decision required before step 1: the stack
+## 2. The stack — decided
 
-This shapes every task below and should be recorded like B1 was.
+**React + TypeScript + Vite, with the API client generated from the existing
+OpenAPI document.** Decided; the reasoning is below and the alternative is
+kept so the decision can be re-read rather than re-argued.
 
-**Recommended: React + TypeScript + Vite, with the API client generated from
-the existing OpenAPI document.**
+The generated client is not optional decoration. It is the term that made
+this choice defensible against Blazor, and dropping it later would quietly
+remove the reason the decision was made — so it belongs in CI from the first
+commit, failing the build when the contract moves.
 
 | | React + TypeScript | Blazor WebAssembly |
 |---|---|---|
@@ -119,11 +123,24 @@ and they are the ones most likely to be underestimated:
 | **W6** | **SPA Keycloak client** with redirect URIs and PKCE | As above. |
 | **W7** | **Pagination contract** across all list endpoints | Every queue endpoint returns an unbounded list today. At national volume that is a denial of service against the Ministry's own dashboard. |
 
-W1 carries a privacy consequence worth deciding deliberately: **a name search
-across the national register is a surveillance capability.** It needs to be
-role-gated, logged to `AuditLog` like any other access, and probably scoped to
-the caller's district unless they hold a ministry role. Decide that before
-building it, not after.
+### W1's privacy decision — decided
+
+**A name search across the national register is a surveillance capability**,
+so W1 is **scoped to the caller's own district, with `ministry-admin`
+exempt**, and **every search is written to `AuditLog`** like any other access
+to the register.
+
+Two consequences to build in rather than bolt on:
+
+- The scope is enforced **server-side, from the token**, never from a
+  parameter the client sends. A district id in a query string is a district
+  id a caller can change.
+- A registrar helping a family who moved districts will hit this, and that is
+  the cost of the decision, not a bug in it. The answer is a referral to the
+  Ministry, not a quiet widening of the scope later.
+
+Searching by exact BRN stays unrestricted — a family holding a certificate
+with that number on it is not a search, it is a lookup.
 
 ---
 
@@ -148,7 +165,7 @@ content depends on the §2 decision.
 - [ ] **Vertical slice: look up a BRN and display the record.** Ends the phase by proving auth, envelope, error handling and rendering end to end
 
 ### Phase 2 — The register
-- [ ] **W1** Record search backend, with the district-scoping decision recorded
+- [ ] **W1** Record search backend: district-scoped from the token, ministry exempt, every search audited
 - [ ] Search UI and results
 - [ ] Record detail: identity, status, certificate state, provisional identifier, annulment block
 - [ ] Amendment history timeline, showing previous values
