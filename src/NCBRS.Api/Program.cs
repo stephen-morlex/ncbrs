@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using NCBRS.Data;
 using NCBRS.Devices;
+using NCBRS.Web;
 using NCBRS.Kafka;
 using FluentValidation;
 using NCBRS.Middleware;
@@ -150,6 +151,34 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// W5. The management site is served from its own origin; without this the
+// browser refuses every call before the API sees one.
+//
+// Two choices here are deliberate. **No credentials**: the access token
+// travels in the Authorization header, never a cookie, and allowing
+// credentials cross-origin is the one combination that would make CSRF
+// against these endpoints possible. **Correlation headers exposed**: the API
+// echoes the transaction id on every response so a caller can tie its request
+// to the audit trail, and a response header the browser cannot read may as
+// well not be sent.
+var webCors = WebClientCorsOptions.From(builder.Configuration);
+
+builder.Services.AddCors(cors => cors.AddPolicy(WebClientCorsOptions.PolicyName, policy =>
+{
+    if (webCors.AllowedOrigins.Length == 0)
+    {
+        return;
+    }
+
+    policy
+        .WithOrigins(webCors.AllowedOrigins)
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .WithExposedHeaders(
+            TransactionContext.TransactionIdHeader,
+            TransactionContext.ClientIdHeader);
+}));
+
 builder.Services.AddSingleton<IClaimsTransformation, KeycloakRoleClaimsTransformation>();
 builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, ApiAuthorizationResultHandler>();
 
@@ -262,6 +291,12 @@ if (app.Environment.IsDevelopment())
     var db = scope.ServiceProvider.GetRequiredService<NcbrsDbContext>();
     db.Database.Migrate();
 }
+
+// Before authentication, deliberately. A CORS preflight is an unauthenticated
+// OPTIONS request: placed after the auth middleware it would be rejected
+// without the headers the browser needs, and every call from the site would
+// fail as a CORS error rather than as the 401 it actually is.
+app.UseCors(WebClientCorsOptions.PolicyName);
 
 app.UseAuthentication();
 app.UseAuthorization();

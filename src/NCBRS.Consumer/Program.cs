@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using NCBRS.Consumer.Data;
 using NCBRS.Consumer.Services;
 using NCBRS.Kafka;
+using NCBRS.Web;
 
 // The consumer side, deployed on its own.
 //
@@ -41,6 +42,25 @@ var dhis2 = builder.Configuration.GetSection(Dhis2ExportOptions.SectionName)
 
 builder.Services.AddSingleton(dhis2);
 builder.Services.AddScoped<Dhis2ExportService>();
+
+// W5. The dashboard and export endpoints are called from the same site as the
+// API, so the same origins apply — shared through WebClientCorsOptions rather
+// than configured twice from memory. No credentials, for the same reason as
+// the API: the token travels in the Authorization header, not a cookie.
+var webCors = WebClientCorsOptions.From(builder.Configuration);
+
+builder.Services.AddCors(cors => cors.AddPolicy(WebClientCorsOptions.PolicyName, policy =>
+{
+    if (webCors.AllowedOrigins.Length == 0)
+    {
+        return;
+    }
+
+    policy
+        .WithOrigins(webCors.AllowedOrigins)
+        .AllowAnyHeader()
+        .AllowAnyMethod();
+}));
 builder.Services.AddHostedService<BirthRecordDashboardConsumer>();
 
 // Enums as names, matching the central API. A dashboard branching on a
@@ -49,6 +69,8 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 var app = builder.Build();
+
+app.UseCors(WebClientCorsOptions.PolicyName);
 
 // This service owns the read model outright -- one writer, no other schema
 // on it -- so unlike the registry there is nothing to race with.

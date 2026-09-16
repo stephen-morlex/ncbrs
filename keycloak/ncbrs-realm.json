@@ -30,6 +30,30 @@
   },
   "clients": [
     {
+      "clientId": "ncbrs-web",
+      "name": "NCBRS central management site",
+      "description": "Central management site (plan W6). Public client, authorization code with PKCE. Direct access grants are off on purpose - see NCBRS-Web-Plan.md section 4.",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:5173/*",
+        "http://127.0.0.1:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173/*##http://127.0.0.1:5173/*"
+      },
+      "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "basic", "email"]
+    },
+    {
       "clientId": "ncbrs-device",
       "name": "NCBRS facility device",
       "description": "The tablet/phone app used at facilities and village posts.",
