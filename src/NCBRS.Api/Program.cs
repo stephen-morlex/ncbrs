@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication;
@@ -39,8 +40,24 @@ builder.Services.AddControllers(mvcOptions =>
 
         mvcOptions.Filters.Add<MetaEnvelopeFilter>();
     })
-    .AddJsonOptions(jsonOptions =>
-        jsonOptions.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+    .AddJsonOptions(jsonOptions => ConfigureNcbrsJson(jsonOptions.JsonSerializerOptions));
+
+// The same configuration again, where the OpenAPI generator reads it.
+//
+// Not a duplicate registration by accident. MVC serializes through
+// Microsoft.AspNetCore.Mvc.JsonOptions above; the built-in OpenAPI generator
+// describes types through Microsoft.AspNetCore.Http.Json.JsonOptions, and
+// consults nothing else. Without this it cannot see the converter, and
+// describes every enum as a bare `integer` -- so `Sex` would document as a
+// number with no allowed values while the API actually sends and accepts
+// "Female". A client generated from that document would type `sex: number`,
+// which is the integer-code mix-up the comment above says a civil registry
+// cannot absorb, made permanent in every call site.
+//
+// Routed through one method so the two registrations cannot drift into two
+// opinions about how enums travel.
+builder.Services.ConfigureHttpJsonOptions(jsonOptions =>
+    ConfigureNcbrsJson(jsonOptions.SerializerOptions));
 
 // Field rules live in FluentValidation validators (see Validation/), run by
 // FluentValidationFilter. This still handles what happens before they get a
@@ -216,26 +233,21 @@ builder.Services.AddAuthorization(authorization =>
         .Build();
 });
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(swaggerOptions =>
+
+// The built-in generator, matching NCBRS.Consumer. Both services now emit
+// OpenAPI 3.1, so one generator can produce the web client from both
+// documents -- which is why React was chosen over Blazor
+// (NCBRS-Web-Plan.md §2) and was not actually true while this service
+// emitted 3.0.4 through Swashbuckle and the consumer emitted 3.1.1.
+//
+// The two transformers replace what Swashbuckle did: one describes the
+// response envelope and the correlation headers, the other declares the
+// bearer scheme. Neither is inferred.
+builder.Services.AddOpenApi(openApi =>
 {
-    swaggerOptions.OperationFilter<TransactionHeaderOperationFilter>();
-
-    // Lets the Swagger UI carry a bearer token, so the endpoints stay
-    // explorable now that every one of them requires authentication.
-    swaggerOptions.AddSecurityDefinition("bearer", new OpenApiSecurityScheme
-    {
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        Description = "Paste a Keycloak access token (without the \"Bearer \" prefix)."
-    });
-
-    // Swashbuckle 10 takes a factory so the requirement can reference the
-    // document it is being added to.
-    swaggerOptions.AddSecurityRequirement(document => new OpenApiSecurityRequirement
-    {
-        [new OpenApiSecuritySchemeReference("bearer", document)] = []
-    });
+    openApi.AddOperationTransformer<TransactionHeaderTransformer>();
+    openApi.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+    openApi.AddSchemaTransformer<EnumSchemaTransformer>();
 });
 
 // SQLite here matches the district/facility tier from the NCBRS draft
@@ -278,8 +290,23 @@ app.UseMiddleware<RequestAuditMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    // Served at /openapi/v1.json, the same path as the consumer's. Note the
+    // old Swashbuckle path was /swagger/v1/swagger.json -- anything pinned to
+    // that needs repointing.
+    //
+    // AllowAnonymous is required, not incidental. UseSwagger() was middleware
+    // and ran ahead of authorization; MapOpenApi() maps an endpoint, so the
+    // FallbackPolicy above catches it and the document returns 401 -- to the
+    // UI, to a developer, and to the client generator. It is Development-only
+    // either way, so this exposes nothing that `dotnet run` did not already.
+    app.MapOpenApi().AllowAnonymous();
+
+    // Swashbuckle's UI package, kept for the explorer itself while its
+    // generator goes. It reads whatever document it is pointed at, so it is
+    // now rendering the built-in generator's output: what a developer
+    // explores and what a client is generated from are the same document,
+    // which they were not when two generators were in play.
+    app.UseSwaggerUI(ui => ui.SwaggerEndpoint("/openapi/v1.json", "NCBRS API v1"));
 
     // Applies any pending migrations so a dev machine is always on the
     // current schema. Other tiers should apply migrations deliberately as a
@@ -303,3 +330,10 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// How this API serializes, in one place. Applied to MVC (what the API
+// actually sends) and to the OpenAPI generator (what the document says it
+// sends) so the two cannot disagree -- a document that misdescribes the wire
+// format is worse than no document, because a generated client trusts it.
+static void ConfigureNcbrsJson(JsonSerializerOptions options) =>
+    options.Converters.Add(new JsonStringEnumConverter());

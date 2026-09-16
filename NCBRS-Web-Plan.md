@@ -396,9 +396,57 @@ registration form, where the dependency is justified by something that
 needs it.
 
 **Contract**
+- [x] Align both services on one OpenAPI generator — PR #8
+- [ ] Give every controller action an `operationId` (see below)
 - [ ] Generate the typed API client from the OpenAPI document into `src/api/generated/`
 - [ ] Wire generation into CI so a drifting contract fails the build rather than production
 - [ ] Wrap the request/response envelope once, centrally (`{envelope, data}` out, `{meta, data}` back), including the transaction id header
+
+#### Generator alignment — result
+
+`NCBRS.Api` emitted OpenAPI **3.0.4** through Swashbuckle while
+`NCBRS.Consumer` emitted **3.1.1** through the built-in generator. Both now
+use the built-in one and emit 3.1.1, so a single client generator reads both
+documents. The API keeps `Swashbuckle.AspNetCore.SwaggerUI` for the explorer
+itself, pointed at `/openapi/v1.json` — what a developer explores and what a
+client is generated from are now the same document.
+
+Proved by capturing the Swashbuckle document first and diffing a reduction of
+both against each other: 36 operations, every parameter, every response code,
+every `{meta, data}` envelope and the security scheme came through
+unchanged.
+
+Four things the swap broke or exposed, none of which the manual audit could
+have caught:
+
+1. **`/openapi/v1.json` returned 401.** `UseSwagger()` was middleware and ran
+   ahead of authorization; `MapOpenApi()` maps an endpoint, which the global
+   `FallbackPolicy` catches. The document was unreachable — to the UI, to a
+   developer and to the client generator. Needs `.AllowAnonymous()`.
+2. **Every enum became a bare `integer`.** MVC serializes through
+   `Mvc.JsonOptions`; the built-in generator describes types through
+   `Http.Json.JsonOptions` and consults nothing else, so it could not see
+   `JsonStringEnumConverter`. `Sex` would have documented as a number with no
+   allowed values while the API sends `"Female"` — the integer-code mix-up
+   CLAUDE.md calls out, made permanent in every generated call site.
+3. **204 responses carried a body schema.** Swashbuckle left them empty; a
+   generated client would wait to parse a payload that never arrives.
+4. **Nullable enums lost their type.** 3.1 folds `null` into the enum values,
+   and the generator then omitted `type` entirely. Now typed
+   `["string","null"]`, which keeps `NotStated` ("declined to say") distinct
+   from `null` ("never asked") — the draft 6.5.1 distinction — in the
+   generated types. This is the one place the new document is *better* than
+   the old: 3.0 could not express it and Swashbuckle claimed those three
+   fields were always strings.
+
+**Still open, and it blocks good client output: no operation has an
+`operationId`.** Swashbuckle did not emit one and neither does the built-in
+generator, so a generator invents method names from the path —
+`apiBirthRecordsRegisterPost` — and they change whenever a route changes.
+The consumer's endpoints have them, from `.WithName(...)`. The API needs
+`[EndpointName]` on all 36 actions, and it has to happen **before** the
+client is generated: afterwards, renaming them means touching every call
+site in the web app.
 
 **Auth (§4)**
 - [ ] `oidc-client-ts` + `react-oidc-context` against `ncbrs-web`; authorization code + PKCE
