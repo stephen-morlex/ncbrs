@@ -30,12 +30,15 @@ public class LateRegistrationsController(
     /// family without a certificate, so age is the thing worth seeing.
     /// </summary>
     [HttpGet("pending")]
-    [ProducesResponseType(typeof(IReadOnlyList<PendingLateRegistrationResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Page<PendingLateRegistrationResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<IReadOnlyList<PendingLateRegistrationResponse>>> Pending(
-        [FromQuery] Guid? facilityId = null)
-        => Ok(await lateRegistrations.PendingAsync(facilityId, HttpContext.RequestAborted));
+    public async Task<ActionResult<Page<PendingLateRegistrationResponse>>> Pending(
+        [FromQuery] Guid? facilityId = null,
+        [FromQuery] int limit = PageRequest.DefaultLimit,
+        [FromQuery] string? after = null)
+        => Ok(await lateRegistrations.PendingAsync(
+            facilityId, new PageRequest { Limit = limit, After = after }, HttpContext.RequestAborted));
 
     /// <summary>
     /// Records the verification decision. Approval is what releases the

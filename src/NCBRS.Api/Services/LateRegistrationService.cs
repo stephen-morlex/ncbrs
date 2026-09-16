@@ -33,9 +33,16 @@ public class LateRegistrationService(
     NcbrsDbContext db,
     CurrentRegistrarService currentRegistrar)
 {
-    /// <summary>The queue a district registrar works from, oldest first.</summary>
-    public async Task<IReadOnlyList<PendingLateRegistrationResponse>> PendingAsync(
+    /// <summary>
+    /// The queue a district registrar works from, oldest first.
+    ///
+    /// Paged by cursor rather than offset (W7): verifying an entry removes it
+    /// from the queue, and an offset counted from the start would step past
+    /// the entries that shuffled down into the gap.
+    /// </summary>
+    public async Task<Page<PendingLateRegistrationResponse>> PendingAsync(
         Guid? facilityId,
+        PageRequest paging,
         CancellationToken cancellationToken = default)
     {
         var query = db.LateRegistrations
@@ -50,8 +57,26 @@ public class LateRegistrationService(
             query = query.Where(late => late.BirthRecord!.FacilityId == facilityId);
         }
 
-        return await query
+        var total = await query.CountAsync(cancellationToken);
+
+        if (PageCursor.TryDecode(paging.After, out var cursor) && cursor.IsDateTime())
+        {
+            var at = cursor.AsDateTime();
+
+            // Strictly after the cursor's position in the ordering. The id
+            // comparison is what stops two entries submitted in the same tick
+            // from straddling a page boundary.
+            query = query.Where(late =>
+                late.SubmittedAtUtc > at
+                || (late.SubmittedAtUtc == at && late.LateRegistrationId.CompareTo(cursor.Id) > 0));
+        }
+
+        // One more than asked for: whether that row exists is how we know
+        // there is a next page, without a second count.
+        var rows = await query
             .OrderBy(late => late.SubmittedAtUtc)
+            .ThenBy(late => late.LateRegistrationId)
+            .Take(paging.EffectiveLimit + 1)
             .Select(late => new PendingLateRegistrationResponse(
                 late.LateRegistrationId,
                 late.BirthRecord!.Brn,
@@ -69,6 +94,9 @@ public class LateRegistrationService(
                 late.SubmittedByRegistrar!.DisplayName,
                 late.SubmittedAtUtc))
             .ToListAsync(cancellationToken);
+
+        return Page<PendingLateRegistrationResponse>.From(rows, total, paging.EffectiveLimit,
+            last => PageCursor.For(last.SubmittedAtUtc, last.LateRegistrationId));
     }
 
     public async Task<LateRegistrationReviewOutcome> ReviewAsync(

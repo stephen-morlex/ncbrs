@@ -29,12 +29,15 @@ public class AmendmentsController(
     /// already knows is wrong, so age is the thing worth seeing.
     /// </summary>
     [HttpGet("pending")]
-    [ProducesResponseType(typeof(IReadOnlyList<PendingAmendmentResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Page<PendingAmendmentResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<IReadOnlyList<PendingAmendmentResponse>>> Pending(
-        [FromQuery] Guid? facilityId = null)
-        => Ok(await amendments.PendingAsync(facilityId, HttpContext.RequestAborted));
+    public async Task<ActionResult<Page<PendingAmendmentResponse>>> Pending(
+        [FromQuery] Guid? facilityId = null,
+        [FromQuery] int limit = PageRequest.DefaultLimit,
+        [FromQuery] string? after = null)
+        => Ok(await amendments.PendingAsync(
+            facilityId, new PageRequest { Limit = limit, After = after }, HttpContext.RequestAborted));
 
     /// <summary>
     /// Corrections that arrived having been composed against a value the
@@ -47,12 +50,15 @@ public class AmendmentsController(
     /// record.
     /// </summary>
     [HttpGet("conflicts")]
-    [ProducesResponseType(typeof(IReadOnlyList<AmendmentConflictResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Page<AmendmentConflictResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<IReadOnlyList<AmendmentConflictResponse>>> Conflicts(
-        [FromQuery] Guid? facilityId = null)
-        => Ok(await amendments.ConflictsAsync(facilityId, HttpContext.RequestAborted));
+    public async Task<ActionResult<Page<AmendmentConflictResponse>>> Conflicts(
+        [FromQuery] Guid? facilityId = null,
+        [FromQuery] int limit = PageRequest.DefaultLimit,
+        [FromQuery] string? after = null)
+        => Ok(await amendments.ConflictsAsync(
+            facilityId, new PageRequest { Limit = limit, After = after }, HttpContext.RequestAborted));
 
     /// <summary>
     /// Records a registrar's judgement on a flagged conflict: the resolution

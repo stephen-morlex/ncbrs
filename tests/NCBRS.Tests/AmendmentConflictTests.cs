@@ -127,10 +127,12 @@ public class AmendmentConflictTests : IDisposable
         await using var db = NewDb();
         var http = AuthTestContext.HttpContextFor(ReviewerSubject, NcbrsRoles.DistrictOfficer);
 
-        return await new AmendmentService(
+        var page = await new AmendmentService(
                 db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db),
                 AuthTestContext.RegistrarService(db, http))
-            .ConflictsAsync(null);
+            .ConflictsAsync(null, new PageRequest());
+
+        return page.Items;
     }
 
     // --- detection ---------------------------------------------------------
