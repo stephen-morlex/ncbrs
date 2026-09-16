@@ -8,7 +8,10 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -b --noEmit",
+    "generate:api": "openapi-typescript openapi/NCBRS.Api.json -o src/api/generated/api.d.ts",
+    "generate:consumer": "openapi-typescript openapi/NCBRS.Consumer.json -o src/api/generated/consumer.d.ts",
+    "generate": "npm run generate:api && npm run generate:consumer"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
@@ -17,6 +20,7 @@
     "cn": "^0.3.0",
     "lucide-react": "^1.46.0",
     "next-themes": "^0.4.6",
+    "openapi-fetch": "^0.17.0",
     "radix-ui": "^1.6.7",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
@@ -30,6 +34,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "openapi-typescript": "^7.13.0",
     "oxlint": "^1.81.0",
     "typescript": "~6.0.2",
     "vite": "^8.3.0"

@@ -1,0 +1,862 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "NCBRS.Consumer | v1",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "NCBRS.Consumer"
+        ],
+        "operationId": "GetProjectionHealth",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectionHealth"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard/summary": {
+      "get": {
+        "tags": [
+          "NCBRS.Consumer"
+        ],
+        "operationId": "GetDashboardSummary",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "districtId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardSummary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/dashboard/districts": {
+      "get": {
+        "tags": [
+          "NCBRS.Consumer"
+        ],
+        "operationId": "GetDashboardDistricts",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DistrictSummary"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/exports/dhis2": {
+      "get": {
+        "tags": [
+          "NCBRS.Consumer"
+        ],
+        "operationId": "GetDhis2Export",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dhis2Export"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/dashboard/devices/silent": {
+      "get": {
+        "tags": [
+          "NCBRS.Consumer"
+        ],
+        "operationId": "GetSilentDevices",
+        "parameters": [
+          {
+            "name": "silentForDays",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "districtId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SilentDevice"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": [ ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiError": {
+        "required": [
+          "error"
+        ],
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "DashboardSummary": {
+        "required": [
+          "period",
+          "districtId",
+          "registrations",
+          "timeliness",
+          "timeToConfirmation",
+          "mortality",
+          "sync",
+          "duplicates",
+          "notAvailable"
+        ],
+        "type": "object",
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/ReportingPeriod"
+          },
+          "districtId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "registrations": {
+            "$ref": "#/components/schemas/RegistrationCounts"
+          },
+          "timeliness": {
+            "$ref": "#/components/schemas/Timeliness"
+          },
+          "timeToConfirmation": {
+            "$ref": "#/components/schemas/TimeToConfirmation"
+          },
+          "mortality": {
+            "$ref": "#/components/schemas/Mortality"
+          },
+          "sync": {
+            "$ref": "#/components/schemas/SyncReliability"
+          },
+          "duplicates": {
+            "$ref": "#/components/schemas/DuplicateRate"
+          },
+          "notAvailable": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Dhis2DataValue": {
+        "required": [
+          "dataElement",
+          "period",
+          "orgUnit",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "dataElement": {
+            "type": "string"
+          },
+          "period": {
+            "type": "string"
+          },
+          "orgUnit": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "Dhis2DataValueSet": {
+        "required": [
+          "period",
+          "dataValues"
+        ],
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "string"
+          },
+          "dataValues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Dhis2DataValue"
+            }
+          }
+        }
+      },
+      "Dhis2Export": {
+        "required": [
+          "dataValueSet",
+          "suppressed",
+          "unmapped"
+        ],
+        "type": "object",
+        "properties": {
+          "dataValueSet": {
+            "$ref": "#/components/schemas/Dhis2DataValueSet"
+          },
+          "suppressed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Dhis2Suppression"
+            }
+          },
+          "unmapped": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Dhis2Suppression": {
+        "required": [
+          "orgUnit",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "orgUnit": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "DistrictSummary": {
+        "required": [
+          "districtId",
+          "liveBirths",
+          "annulled",
+          "withinWindowShare"
+        ],
+        "type": "object",
+        "properties": {
+          "districtId": {
+            "type": "string"
+          },
+          "liveBirths": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "annulled": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "withinWindowShare": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "DuplicateRate": {
+        "required": [
+          "duplicatesSeen",
+          "perTenThousandBirths",
+          "caveat"
+        ],
+        "type": "object",
+        "properties": {
+          "duplicatesSeen": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "perTenThousandBirths": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "caveat": {
+            "type": "string"
+          }
+        }
+      },
+      "Mortality": {
+        "required": [
+          "neonatalDeaths",
+          "maternalDeaths",
+          "neonatalDeathsPerThousandLiveBirths",
+          "maternalDeathsPerHundredThousandLiveBirths"
+        ],
+        "type": "object",
+        "properties": {
+          "neonatalDeaths": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maternalDeaths": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "neonatalDeathsPerThousandLiveBirths": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "maternalDeathsPerHundredThousandLiveBirths": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "ProjectionHealth": {
+        "required": [
+          "status",
+          "lastEventProcessedAtUtc",
+          "registrations",
+          "heldAwaitingRegistration"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "lastEventProcessedAtUtc": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "registrations": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "heldAwaitingRegistration": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "RegistrationCounts": {
+        "required": [
+          "liveBirths",
+          "fetalDeaths",
+          "vitalEventTypeUnknown",
+          "annulled",
+          "male",
+          "female",
+          "sexRatio"
+        ],
+        "type": "object",
+        "properties": {
+          "liveBirths": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "fetalDeaths": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "vitalEventTypeUnknown": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "annulled": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "male": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "female": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "sexRatio": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "ReportingPeriod": {
+        "required": [
+          "fromUtc",
+          "toUtc",
+          "stillFilling"
+        ],
+        "type": "object",
+        "properties": {
+          "fromUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "toUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "stillFilling": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SilentDevice": {
+        "required": [
+          "deviceId",
+          "districtId",
+          "facilityId",
+          "lastSyncAtUtc",
+          "daysSilent"
+        ],
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string"
+          },
+          "districtId": {
+            "type": "string"
+          },
+          "facilityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "lastSyncAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "daysSilent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "SyncReliability": {
+        "required": [
+          "batches",
+          "devicesReporting",
+          "recordsSubmitted",
+          "recordsRegistered",
+          "recordsRejected",
+          "registeredShare"
+        ],
+        "type": "object",
+        "properties": {
+          "batches": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "devicesReporting": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "recordsSubmitted": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "recordsRegistered": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "recordsRejected": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "registeredShare": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "TierTimeToConfirmation": {
+        "required": [
+          "facilityTier",
+          "confirmed",
+          "medianDays"
+        ],
+        "type": "object",
+        "properties": {
+          "facilityTier": {
+            "type": "string"
+          },
+          "confirmed": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "medianDays": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "Timeliness": {
+        "required": [
+          "withinWindow",
+          "outsideWindow",
+          "unknown",
+          "withinWindowShare"
+        ],
+        "type": "object",
+        "properties": {
+          "withinWindow": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "outsideWindow": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "unknown": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "withinWindowShare": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "TimeToConfirmation": {
+        "required": [
+          "confirmed",
+          "stillUnconfirmed",
+          "medianDays",
+          "byFacilityTier"
+        ],
+        "type": "object",
+        "properties": {
+          "confirmed": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "stillUnconfirmed": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "medianDays": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "byFacilityTier": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TierTimeToConfirmation"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "description": "A Keycloak access token for a district officer or ministry admin.",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "NCBRS.Consumer"
+    }
+  ]
+}

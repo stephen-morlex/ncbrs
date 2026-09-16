@@ -130,7 +130,13 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 // (NCBRS-Web-Plan.md §2). Hand-written types for the dashboard would be
 // exactly the drift that decision existed to prevent, in the part of the
 // system whose numbers a Ministry acts on.
-builder.Services.AddOpenApi();
+//
+// The security transformer is not optional decoration: the generator infers
+// nothing about authentication, so without it this document describes a
+// service that needs no credentials while every reporting endpoint requires
+// the policy above.
+builder.Services.AddOpenApi(openApi =>
+    openApi.AddOperationTransformer<ReportingSecurityTransformer>());
 
 var app = builder.Build();
 
@@ -146,10 +152,11 @@ app.UseAuthorization();
 // a map of the whole surface, and handing one to unauthenticated callers
 // gives away more than it helps.
 //
-// The client generator runs the service in Development, so this costs it
-// nothing. Note the API publishes its own document at
-// /swagger/v1/swagger.json: two services, two documents, and the generator
-// reads both.
+// Costs the client generator nothing, because it no longer reads this route
+// at all: the document is written at build time to web/openapi by
+// Microsoft.Extensions.ApiDescription.Server. This endpoint is now purely a
+// developer convenience, and the build-time copy is what the client and CI
+// use. The API is arranged identically, at its own /openapi/v1.json.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
