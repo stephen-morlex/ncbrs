@@ -5,6 +5,12 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>NCBRS</RootNamespace>
+
+    <!-- Written beside the web app that consumes it. This is what stops the
+         committed document drifting from the code: the build regenerates it
+         from the real endpoints, and CI fails on a difference, so a
+         controller change nobody regenerated cannot reach main. -->
+    <OpenApiDocumentsDirectory>$(MSBuildProjectDirectory)/../../web/openapi</OpenApiDocumentsDirectory>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,6 +33,13 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
+    <!-- Writes the OpenAPI document during build, so the committed copy under
+         web/openapi cannot drift from the code: the build regenerates it and
+         CI fails on a difference. Build-time only; it ships nothing. -->
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.12">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <!-- The UI only. The generator is Microsoft.AspNetCore.OpenApi above,
          shared with NCBRS.Consumer so both services emit OpenAPI 3.1 and one
          client generator can read both documents. -->

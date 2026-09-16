@@ -135,3 +135,55 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  # The contract check. Option C from the plan: the documents are committed,
+  # and the build regenerates them from the real endpoints, so the committed
+  # copy cannot silently stop describing the code.
+  #
+  # This is what a stale contract looks like without it: someone changes a
+  # response shape, does not regenerate, and the web app keeps compiling
+  # against types that describe the old shape. Nothing fails until a field is
+  # undefined in a registrar's browser. Here it fails in the PR that caused
+  # it.
+  contract:
+    name: Contract (OpenAPI + client)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      # Building the two services writes web/openapi/*.json, because both
+      # reference Microsoft.Extensions.ApiDescription.Server and point
+      # OpenApiDocumentsDirectory there.
+      # One project per invocation: `dotnet build a b` is MSB1008, not two
+      # builds.
+      - name: Build the API (regenerates its OpenAPI document)
+        run: dotnet build src/NCBRS.Api --configuration Release
+
+      - name: Build the consumer (regenerates its OpenAPI document)
+        run: dotnet build src/NCBRS.Consumer --configuration Release
+
+      - name: Install
+        working-directory: web
+        run: npm ci
+
+      - name: Regenerate the typed client
+        working-directory: web
+        run: npm run generate
+
+      # --exit-code fails on any difference. `git status` first so a failure
+      # names the files rather than only the diff.
+      - name: Fail if the committed contract is stale
+        run: |
+          git status --porcelain web/openapi web/src/api/generated
+          git diff --exit-code -- web/openapi web/src/api/generated

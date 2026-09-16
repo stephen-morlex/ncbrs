@@ -398,9 +398,57 @@ needs it.
 **Contract**
 - [x] Align both services on one OpenAPI generator — PR #8
 - [x] Give every controller action an `operationId` — verb-first, matching the consumer — PR #9
-- [ ] Generate the typed API client from the OpenAPI document into `src/api/generated/`
-- [ ] Wire generation into CI so a drifting contract fails the build rather than production
-- [ ] Wrap the request/response envelope once, centrally (`{envelope, data}` out, `{meta, data}` back), including the transaction id header
+- [x] Generate the typed API client from the OpenAPI document into `src/api/generated/` — PR #10
+- [x] Wire generation into CI so a drifting contract fails the build rather than production — PR #10
+- [x] Wrap the request/response envelope once, centrally (`{envelope, data}` out, `{meta, data}` back), including the transaction id header — PR #10
+
+#### How the contract is kept honest — option C
+
+The documents are **committed** under `web/openapi/`, and the **build
+regenerates them** from the real endpoints: both services reference
+`Microsoft.Extensions.ApiDescription.Server` and point
+`OpenApiDocumentsDirectory` there. CI builds, regenerates the TypeScript, and
+fails on any difference.
+
+That combination is the point. A committed document alone is a reviewable
+artifact — a contract change shows up as a diff in the PR that causes it,
+which matters where response shapes carry legal meaning — but it can go
+stale. Regenerating from a *running* service cannot go stale but needs both
+services and their databases booted in CI, which is slow and adds failures
+unrelated to the change under review. Building the document from the code
+gets the artifact and the accuracy, and boots nothing.
+
+Verified both directions, because a drift check that never fires is worse
+than none: a clean tree produces no diff, and adding one response code to
+`/health` produced a 19-line diff across the document and the generated
+types.
+
+**Generator: `openapi-typescript` + `openapi-fetch`, not `@hey-api/openapi-ts`.**
+hey-api generates operationId-named SDK functions, which would have suited
+the naming work better, but no version of it is currently free of advisories:
+0.99 carries four high-severity `js-yaml` issues transitively, and 0.97
+trades them for a prototype-pollution one. `openapi-typescript` audits clean,
+generates types only — no generated runtime code to churn — and still keys
+its `operations` interface by `operationId`, so the names earn their place.
+Call sites go through paths (`client.GET('/api/BirthRecords/{brn}')`) rather
+than named methods; the envelope and headers live in `src/api/client.ts`,
+which is where the plan wanted them anyway.
+
+**One wart: `web/.npmrc` sets `legacy-peer-deps=true`.** openapi-typescript
+7.13 still declares `peer typescript@^5.x` while this project is on
+TypeScript 6. The range is stale rather than accurate — generation works and
+the output typechecks under `tsc 6`, which CI proves on every run — but the
+setting relaxes peer checking for the whole tree, not just that package, and
+npm offers no narrower waiver. Remove it when openapi-typescript widens its
+range.
+
+Also fixed here: **the consumer's document declared no security scheme at
+all**, while all four reporting endpoints sit behind `ncbrs-reporting` (W9).
+A client generated from it would have sent no token and 401'd on every
+dashboard call — the same class of omission as the API's, since the built-in
+generator infers nothing about authentication. `ReportingSecurityTransformer`
+reads each endpoint's own authorization metadata, so `/health` stays open and
+endpoints added later are described correctly without anyone remembering.
 
 #### Generator alignment — result
 
