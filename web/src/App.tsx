@@ -37,6 +37,10 @@ const RecordSearch = lazy(() =>
   import('@/records/RecordSearch').then((module) => ({ default: module.RecordSearch })),
 )
 
+const Facilities = lazy(() =>
+  import('@/facilities/Facilities').then((module) => ({ default: module.Facilities })),
+)
+
 const AuditTrail = lazy(() =>
   import('@/audit/AuditTrail').then((module) => ({ default: module.AuditTrail })),
 )
@@ -78,6 +82,7 @@ export default function App() {
         <Route path="/" element={<Navigate to="/records" replace />} />
         <Route path="/records" element={<RecordLookup />} />
         <Route path="/records/search" element={<RecordSearch />} />
+        <Route path="/facilities" element={<Facilities />} />
 
         <Route
           path="/audit"

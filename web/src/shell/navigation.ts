@@ -5,6 +5,7 @@ import {
   GitCompareArrows,
   Hash,
   History,
+  Hospital,
   Hourglass,
   ScrollText,
   Search,
@@ -100,6 +101,10 @@ export const navigation: NavGroup[] = [
   {
     label: 'Oversight',
     items: [
+      // Not gated: a facility registrar needs to know their own post is
+      // running low on numbers, because they are the one who will be handing
+      // out provisional slips when it runs out.
+      { label: 'Facilities', to: '/facilities', icon: Hospital, policy: null },
       {
         label: 'Devices',
         to: '/devices',

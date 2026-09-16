@@ -123,6 +123,15 @@ var deviceSilence = builder.Configuration.GetSection(DeviceSilenceOptions.Sectio
                     ?? new DeviceSilenceOptions();
 
 builder.Services.AddSingleton(deviceSilence);
+
+// W2. How close a facility is to exhausting its BRN block. Bound eagerly for
+// the same reason as the others: a malformed section must fail at startup
+// rather than quietly warn on the wrong thresholds.
+var brnBlock = builder.Configuration.GetSection(BrnBlockOptions.SectionName)
+                   .Get<BrnBlockOptions>()
+               ?? new BrnBlockOptions();
+
+builder.Services.AddSingleton(brnBlock);
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<DeviceSilenceMonitor>();
 builder.Services.AddHostedService<DeviceSilenceSweepService>();
