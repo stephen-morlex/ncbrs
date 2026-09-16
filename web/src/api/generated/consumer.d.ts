@@ -125,63 +125,63 @@ export interface components {
         DistrictSummary: {
             districtId: string;
             /** Format: int32 */
-            liveBirths: number | string;
+            liveBirths: number;
             /** Format: int32 */
-            annulled: number | string;
+            annulled: number;
             /** Format: double */
-            withinWindowShare: null | number | string;
+            withinWindowShare: null | number;
         };
         DuplicateRate: {
             /** Format: int32 */
-            duplicatesSeen: number | string;
+            duplicatesSeen: number;
             /** Format: double */
-            perTenThousandBirths: null | number | string;
+            perTenThousandBirths: null | number;
             caveat: string;
         };
         Mortality: {
             /** Format: int32 */
-            neonatalDeaths: number | string;
+            neonatalDeaths: number;
             /** Format: int32 */
-            maternalDeaths: number | string;
+            maternalDeaths: number;
             /** Format: double */
-            neonatalDeathsPerThousandLiveBirths: null | number | string;
+            neonatalDeathsPerThousandLiveBirths: null | number;
             /** Format: double */
-            maternalDeathsPerHundredThousandLiveBirths: null | number | string;
+            maternalDeathsPerHundredThousandLiveBirths: null | number;
         };
         ProjectionHealth: {
             status: string;
             /** Format: date-time */
             lastEventProcessedAtUtc: null | string;
             /** Format: int32 */
-            registrations: number | string;
+            registrations: number;
             /** Format: int32 */
-            heldAwaitingRegistration: number | string;
+            heldAwaitingRegistration: number;
         };
         RegistrationCounts: {
             /** Format: int32 */
-            liveBirths: number | string;
+            liveBirths: number;
             /** Format: int32 */
-            fetalDeaths: number | string;
+            fetalDeaths: number;
             /** Format: int32 */
-            vitalEventTypeUnknown: number | string;
+            vitalEventTypeUnknown: number;
             /** Format: int32 */
-            annulled: number | string;
+            annulled: number;
             /** Format: int32 */
-            male: number | string;
+            male: number;
             /** Format: int32 */
-            female: number | string;
+            female: number;
             /** Format: double */
-            sexRatio: null | number | string;
+            sexRatio: null | number;
         };
         RegistrationDelay: {
             /** Format: int32 */
-            measured: number | string;
+            measured: number;
             /** Format: int32 */
-            notMeasurable: number | string;
+            notMeasurable: number;
             /** Format: double */
-            medianDaysBirthToRegistration: null | number | string;
+            medianDaysBirthToRegistration: null | number;
             /** Format: double */
-            medianDaysRegistrationToCentre: null | number | string;
+            medianDaysRegistrationToCentre: null | number;
             byFacilityTier: components["schemas"]["TierRegistrationDelay"][];
         };
         ReportingPeriod: {
@@ -199,55 +199,55 @@ export interface components {
             /** Format: date-time */
             lastSyncAtUtc: string;
             /** Format: int32 */
-            daysSilent: number | string;
+            daysSilent: number;
         };
         SyncReliability: {
             /** Format: int32 */
-            batches: number | string;
+            batches: number;
             /** Format: int32 */
-            devicesReporting: number | string;
+            devicesReporting: number;
             /** Format: int32 */
-            recordsSubmitted: number | string;
+            recordsSubmitted: number;
             /** Format: int32 */
-            recordsRegistered: number | string;
+            recordsRegistered: number;
             /** Format: int32 */
-            recordsRejected: number | string;
+            recordsRejected: number;
             /** Format: double */
-            registeredShare: null | number | string;
+            registeredShare: null | number;
         };
         TierRegistrationDelay: {
             facilityTier: string;
             /** Format: int32 */
-            measured: number | string;
+            measured: number;
             /** Format: double */
-            medianDaysBirthToRegistration: null | number | string;
+            medianDaysBirthToRegistration: null | number;
             /** Format: double */
-            medianDaysRegistrationToCentre: null | number | string;
+            medianDaysRegistrationToCentre: null | number;
         };
         TierTimeToConfirmation: {
             facilityTier: string;
             /** Format: int32 */
-            confirmed: number | string;
+            confirmed: number;
             /** Format: double */
-            medianDays: null | number | string;
+            medianDays: null | number;
         };
         Timeliness: {
             /** Format: int32 */
-            withinWindow: number | string;
+            withinWindow: number;
             /** Format: int32 */
-            outsideWindow: number | string;
+            outsideWindow: number;
             /** Format: int32 */
-            unknown: number | string;
+            unknown: number;
             /** Format: double */
-            withinWindowShare: null | number | string;
+            withinWindowShare: null | number;
         };
         TimeToConfirmation: {
             /** Format: int32 */
-            confirmed: number | string;
+            confirmed: number;
             /** Format: int32 */
-            stillUnconfirmed: number | string;
+            stillUnconfirmed: number;
             /** Format: double */
-            medianDays: null | number | string;
+            medianDays: null | number;
             byFacilityTier: components["schemas"]["TierTimeToConfirmation"][];
         };
     };
@@ -378,7 +378,7 @@ export interface operations {
     GetSilentDevices: {
         parameters: {
             query?: {
-                silentForDays?: number | string;
+                silentForDays?: number;
                 districtId?: string;
             };
             header?: never;

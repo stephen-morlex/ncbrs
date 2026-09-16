@@ -123,7 +123,32 @@ builder.Services.AddHostedService<BirthRecordDashboardConsumer>();
 // Enums as names, matching the central API. A dashboard branching on a
 // numeric 0 it has to look up is a contract bug waiting to happen.
 builder.Services.ConfigureHttpJsonOptions(options =>
-    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+
+    // Numbers are numbers here, and the document should say so.
+    //
+    // ASP.NET's web JSON defaults set JsonNumberHandling.AllowReadingFromString,
+    // so the serializer accepts "42" as well as 42 on the way in. The built-in
+    // generator reports that faithfully as {"type":["integer","string"]}, and
+    // because one component schema describes both directions, every integer
+    // this service *returns* inherited it -- typing every count and every
+    // median in the generated client as `number | string`.
+    //
+    // The central API keeps the leniency and corrects the document with
+    // NumberSchemaTransformer, because it has request bodies and wants to be
+    // forgiving about them. **This service has none: every endpoint is a GET.**
+    // So the leniency buys it nothing, and the honest fix is not to be lenient
+    // rather than to describe the leniency away. The document then states
+    // exactly what the service does instead of understating it.
+    //
+    // Inert at runtime, and checkably so. AllowReadingFromString affects
+    // reading, this service only writes through the HTTP JSON pipeline, and
+    // the Kafka projector deserialises with JsonSerializer.Deserialize passing
+    // no options -- so it uses JsonSerializerOptions.Default and never sees
+    // this setting at all.
+    options.SerializerOptions.NumberHandling = JsonNumberHandling.Strict;
+});
 
 // W8. Without a document these endpoints cannot be part of the generated web
 // client, and the generated client is the reason React was chosen over Blazor
