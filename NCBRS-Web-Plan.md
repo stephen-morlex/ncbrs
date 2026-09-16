@@ -263,12 +263,64 @@ and they are the ones most likely to be underestimated:
 |---|---|---|
 | **W1** | **Record search** — by name, date range, facility, district, status | `GET /api/birthrecords/{brn}` is exact-BRN lookup only. A registrar helping a family who lost their certificate has a name and an approximate date, not a number. **This is the single largest backend gap.** |
 | **W2** | **Facilities list and detail**, incl. BRN block state | No endpoint exists at all; there is no way to see which facility is near block exhaustion. |
-| **W3** | **Registrar / user directory** | Queues show `registrarId` GUIDs today. A queue that names "0199a1b2-…" instead of a person is a queue nobody can audit. |
+| **W3** | **Registrar / user directory** — **done, PR #15** | The gap was narrower than this line claimed; see below. |
 | **W4** | **Audit log query** — by record, actor, device, date | The audit trail is legally load-bearing and currently readable only by SQL. |
 | **W5** | **CORS** on both services | Nothing in the browser works without it. |
 | **W6** | **SPA Keycloak client** with redirect URIs and PKCE | As above. |
 | **W7** | **Pagination contract** across all list endpoints — **done** | Every queue endpoint returned an unbounded list. At national volume that is a denial of service against the Ministry's own dashboard. |
 | **W8** | **OpenAPI for `NCBRS.Consumer`** | Found by the Phase 0 audit: the dashboard and export endpoints have no document, so the generated client cannot cover them — and the generated client is why React was chosen over Blazor. |
+
+### W3 as built — and how the gap was overstated
+
+`GET /api/registrars` and `GET /api/registrars/{registrarId}` — PR #15.
+
+**The plan said "Queues show `registrarId` GUIDs today". That was no longer
+true when the work started.** `PendingAmendmentResponse`,
+`AmendmentConflictResponse`, `PendingLateRegistrationResponse` and
+`AmendmentHistoryEntry` all carry `…RegistrarName` beside the id; the
+duplicates queue has no registrar at all, because a duplicate is detected by
+the system rather than filed by a person. The names were added as those
+queues were built, and this line was not revisited.
+
+What was genuinely missing is the directory itself: a way to resolve an id
+the UI meets anywhere, and an answer to "who is provisioned here" — which a
+district officer needs before they can notice an account that should have
+been withdrawn.
+
+Two boundaries, both tested:
+
+- **District-scoped, ministry exempt**, through the same resolver the record
+  search uses.
+- **Out-of-district resolves as 404, not 403.** Distinguishing "no such
+  registrar" from "one you may not see" would confirm the id exists
+  elsewhere, which is the thing the scope withholds. An unknown id answers
+  identically, deliberately.
+
+**Listing needs an oversight role; resolving one id does not.** Knowing who
+holds an account is oversight. Putting a name to an id in a queue is what
+makes that queue auditable by the person reading it, and gating it would
+leave a facility registrar unable to tell who approved their own correction.
+
+**No `AuditLog` row.** That table covers domain writes; reading a colleague's
+name is not one, and `RequestLog` already records every `/api` call. The
+record search is the deliberate exception, because searching *citizens* by
+name is a surveillance act rather than a read.
+
+A directory entry carries id, name, role, facility and district — never the
+PIN hash, whose only legitimate destination is the credential bundle a device
+caches, and never `ExternalSubjectId`, which identifies the account to
+Keycloak rather than to anyone here.
+
+`DistrictScopeResolver` was extracted in this PR and the record search moved
+onto it. Two copies of "which district may this caller see" is precisely the
+drift to avoid, and the way it shows up is one endpoint quietly ceasing to
+enforce the boundary.
+
+**Still unnamed, and worth its own work:** `DeviceAlertResponse` records
+`acknowledgedAtUtc` and a note but not *who* acknowledged, so a district
+cannot tell who said they were dealing with a dead tablet. And
+`BirthRecordResponse` names nobody who registered the birth. Neither is W3,
+but both are the same class of gap.
 
 ### W1's privacy decision — decided
 

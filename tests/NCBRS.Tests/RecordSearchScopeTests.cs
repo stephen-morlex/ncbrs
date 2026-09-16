@@ -198,7 +198,8 @@ public class RecordSearchScopeTests : IDisposable
         var controller = new RecordSearchController(
             db,
             new RecordSearchService(db, TimeProvider.System),
-            AuthTestContext.RegistrarService(db, http))
+            AuthTestContext.RegistrarService(db, http),
+            new DistrictScopeResolver(db))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };
