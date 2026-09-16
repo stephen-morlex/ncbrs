@@ -144,13 +144,34 @@ public record BirthRecordResponse(
     /// registered, and it is the value the statutory window is measured
     /// against (WS-C1).
     ///
-    /// The capture time is **not stored** — `BirthRegistrationService`
-    /// computes it, validates it against the birth date and the server clock,
-    /// uses it to decide lateness, and discards it. So this field cannot be
-    /// that, and is named for what it is rather than borrowing the more
-    /// useful label.
+    /// Returned alongside <see cref="RegisteredAtUtc"/> rather than instead of
+    /// it, because the pair is what carries the meaning: equal timestamps say
+    /// the registration was filed online, and a gap says how long the record
+    /// waited for a link.
     /// </summary>
-    DateTime? ReceivedAtUtc = null
+    DateTime? ReceivedAtUtc = null,
+
+    /// <summary>
+    /// When the birth was registered on the device.
+    ///
+    /// The timestamp the statutory window was measured to, and so the reason
+    /// this record did or did not need evidence and a second registrar before
+    /// a certificate could be issued. A screen that shows only
+    /// <see cref="ReceivedAtUtc"/> invites a registrar to conclude a record
+    /// was filed months late when it was filed the same day and simply had
+    /// nowhere to go.
+    ///
+    /// Null only for records written before the registry began keeping it;
+    /// on an online registration it equals <see cref="ReceivedAtUtc"/>.
+    /// </summary>
+    DateTime? RegisteredAtUtc = null,
+
+    /// <summary>
+    /// The statutory window in days that this registration was judged
+    /// against, so the decision can be reconstructed exactly even after the
+    /// Act is amended. Null for records written before the registry kept it.
+    /// </summary>
+    int? StatutoryWindowDays = null
 );
 
 /// <summary>

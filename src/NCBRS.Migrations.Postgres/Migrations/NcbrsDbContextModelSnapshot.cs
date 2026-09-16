@@ -178,6 +178,9 @@ namespace NCBRS.Migrations.Postgres
                     b.Property<DateTime?>("ReconciledAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("RegisteredAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("RegisteredByRegistrarId")
                         .HasColumnType("uuid");
 
@@ -188,6 +191,9 @@ namespace NCBRS.Migrations.Postgres
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int?>("StatutoryWindowDays")
+                        .HasColumnType("integer");
 
                     b.Property<Guid?>("SupersededByBirthRecordId")
                         .HasColumnType("uuid");

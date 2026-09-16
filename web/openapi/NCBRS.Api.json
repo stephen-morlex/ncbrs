@@ -10613,6 +10613,20 @@
               "string"
             ],
             "format": "date-time"
+          },
+          "registeredAtUtc": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "statutoryWindowDays": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
           }
         }
       },

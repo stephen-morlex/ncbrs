@@ -387,7 +387,29 @@ Two things here are easy to get wrong and must not be "simplified":
   turning the offline tier this system exists for into its heaviest
   administrative burden. The capture time is bounded by the birth date below
   and server-time-plus-skew above; the residual (a device claiming a capture
-  time somewhere in between) is why both timestamps are stored.
+  time somewhere in between) is why both timestamps are stored —
+  `BirthRecord.RegisteredAtUtc` next to `CreatedAtUtc`. Which one a piece of
+  code reaches for decides whether it describes the registry's behaviour or
+  the country's mobile coverage.
+- **The window applied is stored with the timestamp**
+  (`BirthRecord.StatutoryWindowDays`). The timestamp alone makes lateness
+  *recomputable*, and recomputing against an amended Act would silently
+  restate what was on time years ago — the same failure that put the decision
+  rather than the timestamps on `BirthRegisteredEvent.WithinStatutoryWindow`.
+  Keeping the window rather than a bool records the decision and its reason
+  together. Both columns are null on rows written before them, and a backfill
+  from `CreatedAtUtc` would assert every offline record was captured on
+  arrival, which is false for exactly the tier this exists to serve.
+- **The residual is audited, never refused.** Where the device's clock is what
+  kept a registration inside the window on a birth that arrived outside it,
+  the registration succeeds and
+  `StatutoryWindowMetOnDeviceTime:{byDevice}/{byArrival}` is written. Refusing
+  would close the offline tier — a post out of contact for months looks
+  identical, request by request, to a dishonest one. It is only
+  distinguishable in aggregate, which requires the occurrences to have been
+  recorded at the one moment anybody could tell. Do not make this row fire on
+  ordinary registrations: a queue that is mostly noise stops being read, which
+  is the same reasoning as the connectivity-profile thresholds in WS-F4.
 - **Verification withholds the certificate, not the registration.** The
   record and its BRN are created regardless — a child registered late is
   still a child who exists, and refusing the record would leave them with no

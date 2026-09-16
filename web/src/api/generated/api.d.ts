@@ -842,6 +842,10 @@ export interface components {
             registeredByRegistrarName?: null | string;
             /** Format: date-time */
             receivedAtUtc?: null | string;
+            /** Format: date-time */
+            registeredAtUtc?: null | string;
+            /** Format: int32 */
+            statutoryWindowDays?: null | number;
         };
         BirthRecordSearchHit: {
             brn: string;

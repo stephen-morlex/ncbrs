@@ -22,6 +22,7 @@ import type { components } from '@/api/generated/api'
 import { type NcbrsError, messagesFor, toNcbrsError, unreachableError } from '@/api/errors'
 import { useApiClient } from '@/api/useApi'
 import { PageHeader } from '@/shell/PageHeader'
+import { heldDays } from './held'
 
 type BirthRecord = components['schemas']['BirthRecordResponse']
 
@@ -222,6 +223,8 @@ function Failure({ error }: { error: NcbrsError }) {
 }
 
 function RecordCard({ record }: { record: BirthRecord }) {
+  const held = heldDays(record.registeredAtUtc, record.receivedAtUtc)
+
   return (
     <Card>
       <CardHeader>
@@ -238,6 +241,13 @@ function RecordCard({ record }: { record: BirthRecord }) {
                 family's hands. */}
             {record.confirmedAtUtc ? null : <Badge variant="outline">BRN unconfirmed</Badge>}
             {record.lateRegistration ? <Badge variant="outline">late registration</Badge> : null}
+            {/* The at-a-glance version of the two dates below. Shown only
+                when the record actually waited, so an online registration --
+                where the two timestamps are the same instant -- carries no
+                badge saying nothing happened. */}
+            {held > 0 ? (
+              <Badge variant="outline">reached the centre {held} days later</Badge>
+            ) : null}
           </div>
         </div>
 
@@ -277,6 +287,14 @@ function RecordCard({ record }: { record: BirthRecord }) {
           <Detail
             label="Registered by"
             value={record.registeredByRegistrarName ?? 'Not recorded'}
+          />
+          {/* The two are one fact and are shown together deliberately. On
+              their own, "received 3 October" on a birth in June reads as a
+              registration filed three months late -- the exact conclusion the
+              statutory window was measured to avoid drawing. */}
+          <Detail
+            label="Registered on the device"
+            value={formatDate(record.registeredAtUtc ?? undefined)}
           />
           <Detail
             label="Received by the centre"
