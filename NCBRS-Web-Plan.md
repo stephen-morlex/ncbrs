@@ -40,13 +40,21 @@ registrar shown four empty review queues learns to ignore the navigation.
 
 ## 2. The stack — decided
 
-**React + TypeScript + Vite, with the API client generated from the existing
-OpenAPI document.** Decided; the reasoning is below and the alternative is
-kept so the decision can be re-read rather than re-argued.
+**React + TypeScript + Vite, styled with Tailwind CSS and built on
+shadcn/ui, with the API client generated from the existing OpenAPI
+document.**
+
+| Layer | Choice |
+|---|---|
+| Build | Vite |
+| Language | TypeScript |
+| UI components | shadcn/ui (Radix primitives, Tailwind CSS v4) |
+| API client | Generated from OpenAPI, checked in CI |
+| Auth | Keycloak, OIDC authorization code + PKCE (§4) |
 
 The generated client is not optional decoration. It is the term that made
-this choice defensible against Blazor, and dropping it later would quietly
-remove the reason the decision was made — so it belongs in CI from the first
+React defensible against Blazor, whose real advantage was that a DTO change
+breaks the build rather than production — so it belongs in CI from the first
 commit, failing the build when the contract moves.
 
 | | React + TypeScript | Blazor WebAssembly |
@@ -57,16 +65,49 @@ commit, failing the build when the contract moves.
 | Data grids, queue UIs, forms | Mature ecosystem | Workable, thinner |
 | Initial download | Small | Several MB before first paint |
 
-The generated client is what makes the recommendation defensible: Blazor's
-real advantage is that a DTO change breaks the build rather than production,
-and generating TypeScript from Swagger buys most of that back. If the
-Ministry's standing team is .NET-only and will stay that way, Blazor WASM is
-the better answer and the to-do list below barely changes — only the tasks
-marked **[stack]**.
-
 **Blazor Server is not recommended**: it needs a live WebSocket per user, and
 a dropped connection loses UI state mid-form. For a form that creates a legal
 record, that is the wrong failure mode.
+
+### What choosing shadcn/ui actually commits us to
+
+shadcn/ui is **not an npm component library**. Its own documentation is
+explicit: *"This is not a component library. It is how you build your
+component library."* The CLI copies component **source** into
+`src/components/ui/`, and from that moment the project owns it.
+
+That property cuts both ways, and both directions matter here:
+
+- **In our favour.** A birth certificate form and a district officer's review
+  queue are not generic UI. Owning the source means adapting a component to
+  the workflow rather than fighting a library's abstraction with wrapper
+  components and style overrides. There is also no runtime dependency to go
+  unmaintained under a system with a ten-year horizon.
+- **Against us.** There is **no upgrade path**. A fix published upstream does
+  not arrive by bumping a version; someone has to notice it and port it. For
+  a Ministry system maintained by a small team, that is a standing obligation,
+  and it should be written into the maintenance plan (WS-G) rather than
+  discovered when an accessibility bug is found in a dialog three years from
+  now.
+
+**The accessibility argument is the strongest one.** shadcn/ui builds on
+Radix primitives, which handle focus management, keyboard navigation and ARIA
+semantics properly. Phase 7 commits this site to **WCAG 2.2 AA** because it is
+a government service, and starting from Radix means that target is a review
+rather than a rewrite. Hand-rolled dialogs and comboboxes are where that
+target normally dies.
+
+**Tailwind v4 comes with it**, via the `@tailwindcss/vite` plugin rather than
+a PostCSS config. That is a styling decision made by accepting shadcn, not a
+separate one, and it should be recorded as such.
+
+Two conventions to set on day one, while there is nothing to migrate:
+
+- **Components under `src/components/ui/` are treated as vendored source.**
+  Edit them deliberately, and note what was changed, so a future port of an
+  upstream fix can tell our changes from theirs.
+- **Domain components never live there.** `BirthRecordCard` is ours;
+  `button.tsx` is vendored. Mixing them makes the first rule unenforceable.
 
 ---
 
@@ -94,21 +135,101 @@ Recommended: **CORS now, proxy when the site is deployed** — the security
 benefit of a BFF is real but belongs with the deployment topology, not with
 the first screen.
 
-### Token handling
+---
 
-A public SPA client with PKCE, access token in memory, refresh handled by the
-Keycloak JS adapter or `oidc-client-ts`. **Not `localStorage`** — an access
-token that survives a tab close is an access token an XSS payload can
-exfiltrate at leisure, and this one can withdraw a legal identity.
+## 4. Authentication and authorisation — Keycloak
 
-`ncbrs-device` must not be reused: it has direct access grants enabled, which
-means a password grant. A browser application that collects a password is
-one that can be phished into collecting it for someone else, and it
-contradicts the platform's rule that the API never handles credentials.
+Keycloak is already the platform's identity provider (a settled deviation
+from the draft: the system must manage users *and* client applications, and
+the API stays a pure resource server that never stores credentials). The site
+does not change that; it becomes a second client of the same realm.
+
+### The flow
+
+**OIDC authorization code with PKCE**, against a **new public client
+`ncbrs-web`**. No client secret — a secret shipped to a browser is not a
+secret.
+
+**`ncbrs-device` must not be reused.** It has direct access grants enabled,
+which is the password grant: the application would collect the user's
+password itself. An application that collects passwords is one that can be
+phished into collecting them for someone else, and it contradicts the rule
+that the API never handles credentials. The new client has direct access
+grants **off**.
+
+Realm configuration for `ncbrs-web`:
+
+| Setting | Value |
+|---|---|
+| Client type | Public |
+| Standard flow | On |
+| Direct access grants | **Off** |
+| PKCE method | `S256`, required |
+| Valid redirect URIs | Exact dev and staging URIs — never `*` |
+| Valid post-logout redirect URIs | Exact |
+| Web origins | Exact origins, not `+` or `*` |
+
+A wildcard redirect URI is an open redirect, and an open redirect on an OIDC
+client is a way to have an authorization code delivered somewhere else.
+
+### Library
+
+**`oidc-client-ts` with `react-oidc-context`**, rather than `keycloak-js`.
+
+The reason is not preference. `keycloak-js` renews sessions through a hidden
+iframe against the Keycloak session cookie, and browsers now partition or
+block third-party cookies by default — which makes silent renewal fail
+intermittently, in a way that looks like random logouts to a district officer
+halfway through a registration form. `oidc-client-ts` renews with a refresh
+token and does not depend on third-party cookie behaviour.
+
+It is also standards-based OIDC. The only Keycloak-specific thing in the
+token is where roles sit, which is a few lines of parsing rather than a
+reason to take a coupled adapter.
+
+### Token storage
+
+**Access token in memory only. Never `localStorage`.** A token that survives
+a tab close is a token an XSS payload can exfiltrate at leisure — and this
+one can annul a birth registration. Refresh handled by the library, with the
+session ending when the tab does.
+
+This is the position to revisit if a BFF is introduced (§3): the strongest
+answer is that the browser holds no token at all and the proxy keeps it in a
+server-side session. That belongs with the deployment topology, and the
+memory-only rule is what holds until then.
+
+### Authorisation
+
+Roles arrive in the token under `realm_access.roles`: `facility-registrar`,
+`community-health-worker`, `district-officer`, `ministry-admin`.
+
+**The front end uses roles for navigation only. Authorisation is enforced
+server-side, always.** Hiding a button is a courtesy to the user, not a
+control — the API's policies (`CanApproveAmendments`,
+`CanAnnulRegistrations`, `CanEnrolDevices`, and the rest) are the control,
+and they already exist. Anyone reasoning about who can annul a registration
+should be reading `Program.cs`, not a React component.
+
+Two rules that follow:
+
+- **Mirror the API's policy names in one module**, so navigation and the
+  server agree by construction rather than by someone remembering. A screen
+  the UI offers and the API refuses is a bug report from a user; a screen the
+  UI hides and the API allows is a control nobody is enforcing.
+- **The site must handle a 403 gracefully anyway.** Roles change while a
+  session is open, and a token minted before a role was withdrawn stays valid
+  until it expires. The UI should say what happened rather than showing an
+  empty page.
+
+Beyond roles, the API enforces rules the front end cannot and must not try
+to: a reviewer may not approve their own submission, and a late registration
+may not be verified by the registrar who filed it. The UI should explain
+those refusals, never pre-empt them.
 
 ---
 
-## 4. Backend work this forces
+## 5. Backend work this forces
 
 The site cannot be built from the current API alone. These are backend tasks,
 and they are the ones most likely to be underestimated:
@@ -144,25 +265,53 @@ with that number on it is not a search, it is a lookup.
 
 ---
 
-## 5. To-do list
+## 6. To-do list
 
 Ordered so each phase is usable on its own. **[stack]** marks tasks whose
-content depends on the §2 decision.
+content depend on the stack chosen in §2.
 
 ### Phase 0 — Make a browser able to talk to the platform
-- [ ] **W5** Add CORS to `NCBRS.Api` and `NCBRS.Consumer`; allowed origins from configuration, credentials off, no wildcard
-- [ ] **W6** Add an `ncbrs-web` public client to the Keycloak realm: PKCE required, direct access grants **off**, redirect and post-logout URIs for dev and staging
+*No UI yet. Everything here is backend and realm configuration, and none of
+it is visible — which is exactly why it gets skipped and then blocks Phase 1.*
+
+- [ ] **W5** Add CORS to `NCBRS.Api` and `NCBRS.Consumer`; allowed origins from configuration, no wildcard, credentials off (the token travels in the `Authorization` header, not a cookie)
+- [ ] **W6** Add the `ncbrs-web` public client to `keycloak/ncbrs-realm.json` per §4: standard flow on, direct access grants **off**, PKCE `S256` required, exact redirect/post-logout URIs and web origins
+- [ ] Verify the realm import still works from a clean `docker compose down -v && up`
 - [ ] **W7** Agree and implement a pagination envelope for list endpoints; apply to the four existing queues
-- [ ] Confirm the OpenAPI document covers every endpoint and enum accurately
+- [ ] Confirm the OpenAPI document covers every endpoint, enum and the `{meta, data}` envelope accurately — it is about to become a build input, not just documentation
 
 ### Phase 1 — Skeleton that proves the risky parts
-- [ ] **[stack]** Scaffold the project, routing, build and lint
-- [ ] **[stack]** Generate the typed API client from OpenAPI; wire it into CI so a drifting contract fails the build
-- [ ] Wrap the request/response envelope (`{envelope, data}` out, `{meta, data}` back) once, centrally, including the transaction id header
-- [ ] OIDC login, silent refresh, logout; token in memory only
-- [ ] Role-aware shell: navigation reflects what the signed-in role can actually do
-- [ ] Error surface that renders the API's `errors[]` against the right form fields — the API already returns field paths, so the UI should never show a bare "something went wrong"
-- [ ] **Vertical slice: look up a BRN and display the record.** Ends the phase by proving auth, envelope, error handling and rendering end to end
+*Ends with one screen. The point is not the screen; it is that auth, the
+envelope, error handling and the generated client are proven together before
+anything is built on them.*
+
+**Scaffold**
+- [ ] `npm create vite@latest web -- --template react-ts` under a new top-level `web/` directory
+- [ ] `npm install tailwindcss @tailwindcss/vite` and replace `src/index.css` with `@import "tailwindcss";`
+- [ ] `npm install -D @types/node`; add `baseUrl` and the `@/*` → `./src/*` path alias to **both** `tsconfig.json` and `tsconfig.app.json`
+- [ ] Add the matching `resolve.alias` for `@` and the `tailwindcss()` plugin to `vite.config.ts` — the alias must be set in both places or the editor and the build disagree
+- [ ] `npx shadcn@latest init`, then add components as needed (`npx shadcn@latest add button table dialog form …`)
+- [ ] Commit `components.json` and treat `src/components/ui/` as vendored source per §2
+- [ ] ESLint, Prettier, and a CI job running lint, typecheck, build and tests
+
+**Contract**
+- [ ] Generate the typed API client from the OpenAPI document into `src/api/generated/`
+- [ ] Wire generation into CI so a drifting contract fails the build rather than production
+- [ ] Wrap the request/response envelope once, centrally (`{envelope, data}` out, `{meta, data}` back), including the transaction id header
+
+**Auth (§4)**
+- [ ] `oidc-client-ts` + `react-oidc-context` against `ncbrs-web`; authorization code + PKCE
+- [ ] Access token in memory only; refresh via refresh token, never an iframe
+- [ ] Login, logout, post-logout redirect, and the callback route
+- [ ] Parse `realm_access.roles`; expose them through one module that mirrors the API's policy names
+- [ ] Route guards for navigation, plus a graceful 403 screen — the server is the control, the UI is a courtesy
+
+**Shell**
+- [ ] App layout: navigation, header with signed-in user and role, sign-out
+- [ ] Role-aware navigation, so a facility registrar is not shown four empty review queues
+- [ ] Error surface that renders the API's `errors[]` against the right form fields — the API returns field paths, so the UI should never show a bare "something went wrong"
+- [ ] Loading, empty and failure states as shared components, decided once
+- [ ] **Vertical slice: look up a BRN and display the record**
 
 ### Phase 2 — The register
 - [ ] **W1** Record search backend: district-scoped from the token, ministry exempt, every search audited
@@ -215,7 +364,7 @@ each needs the reason for the decision captured.*
 
 ---
 
-## 6. Sequencing and risk
+## 7. Sequencing and risk
 
 The dependency order is tight at the start and loose afterwards: **Phase 0
 blocks everything**, Phase 1 blocks everything after it, and Phases 2–6 are
@@ -232,3 +381,7 @@ Three risks worth naming now:
 - **This site is a second consumer of the API contract.** Until now the API
   had no real client, so contract mistakes were invisible. Generating the
   client from OpenAPI is what keeps that honest.
+- **shadcn/ui has no upgrade path** (§2). Owning the component source is the
+  right trade for a workflow-specific UI, but porting upstream fixes becomes
+  a standing maintenance obligation and belongs in WS-G's plan, not in
+  somebody's memory.
