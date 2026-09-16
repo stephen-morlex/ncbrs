@@ -84,7 +84,14 @@ public class DashboardReadModelTests : IDisposable
         bool? withinWindow = true,
         int? confirmedAfterDays = 2,
         DateTime? dateOfBirth = null,
-        DateTime? annulledAtUtc = null)
+        DateTime? annulledAtUtc = null,
+
+        // The two ends of the journey, named separately because they are
+        // separate. Null registeredAfterDays is an event published before the
+        // stream carried the device's registration time -- a third answer,
+        // not a same-day registration.
+        int? registeredAfterDays = 1,
+        int publishedAfterDays = 1)
     {
         var born = dateOfBirth ?? new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc);
 
@@ -96,7 +103,8 @@ public class DashboardReadModelTests : IDisposable
             FacilityId = FacilityId,
             DateOfBirth = born,
             Sex = sex,
-            RegisteredAtUtc = born.AddDays(1),
+            PublishedAtUtc = born.AddDays(publishedAfterDays),
+            RegisteredAtUtc = registeredAfterDays is { } captured ? born.AddDays(captured) : null,
             FacilityTier = tier,
             VitalEventType = vitalEventType,
             WithinStatutoryWindow = withinWindow,
@@ -542,5 +550,110 @@ public class DashboardReadModelTests : IDisposable
         var silent = await Dashboard(db).SilentDevicesAsync(silentForDays: 7, districtId: "D-LUSAKA-01");
 
         Assert.Equal("TABLET-LUSAKA", Assert.Single(silent).DeviceId);
+    }
+
+    // ---- Registration delay -------------------------------------------
+    //
+    // Two delays sit between a birth and a national figure: how long the
+    // family took to reach a registrar, and how long the record then took to
+    // reach the centre. One is answered by a health campaign, the other by a
+    // mast. TimeToConfirmation spans both and can separate neither.
+
+    [Fact]
+    public async Task TheDelayBeforeRegistration_IsReportedApartFromTheDelayReachingTheCentre()
+    {
+        // Registered two days after the birth, and published 30 days after
+        // the birth -- so 28 of those days were the post waiting for a link,
+        // and only 2 were the family.
+        await GivenAsync(
+            Birth("100001", registeredAfterDays: 2, publishedAfterDays: 30),
+            Birth("100002", registeredAfterDays: 2, publishedAfterDays: 30));
+
+        var summary = await SummaryAsync();
+
+        Assert.Equal(2, summary.RegistrationDelay.Measured);
+        Assert.Equal(2m, summary.RegistrationDelay.MedianDaysBirthToRegistration);
+        Assert.Equal(28m, summary.RegistrationDelay.MedianDaysRegistrationToCentre);
+    }
+
+    [Fact]
+    public async Task AHospitalAndAVillagePost_AreNotAveragedTogether()
+    {
+        // The whole reason for the tier breakdown. A hospital terminal's
+        // second figure is zero by construction; the village post's is three
+        // weeks. A single national median would describe neither, and would
+        // move whenever the mix of facilities changed rather than when
+        // anything about the country did.
+        await GivenAsync(
+            Birth("100001", tier: "Hospital", registeredAfterDays: 1, publishedAfterDays: 1),
+            Birth("100002", tier: "VillageHealthPost", registeredAfterDays: 1, publishedAfterDays: 22));
+
+        var summary = await SummaryAsync();
+
+        var hospital = summary.RegistrationDelay.ByFacilityTier.Single(t => t.FacilityTier == "Hospital");
+        var post = summary.RegistrationDelay.ByFacilityTier.Single(t => t.FacilityTier == "VillageHealthPost");
+
+        Assert.Equal(0m, hospital.MedianDaysRegistrationToCentre);
+        Assert.Equal(21m, post.MedianDaysRegistrationToCentre);
+
+        // The families were equally prompt in both places, which is exactly
+        // the fact a combined figure would have hidden.
+        Assert.Equal(1m, hospital.MedianDaysBirthToRegistration);
+        Assert.Equal(1m, post.MedianDaysBirthToRegistration);
+    }
+
+    [Fact]
+    public async Task EventsPredatingTheField_AreCountedAndExcluded_NotTreatedAsNoDelay()
+    {
+        // The rule this whole projection is built on: an indicator whose
+        // inputs are unknown says so. Folding these in as zero-day delays
+        // would report an offline tier getting faster the more of its history
+        // predated the measurement.
+        await GivenAsync(
+            Birth("100001", registeredAfterDays: 4, publishedAfterDays: 10),
+            Birth("100002", registeredAfterDays: null, publishedAfterDays: 10),
+            Birth("100003", registeredAfterDays: null, publishedAfterDays: 10));
+
+        var summary = await SummaryAsync();
+
+        Assert.Equal(1, summary.RegistrationDelay.Measured);
+        Assert.Equal(2, summary.RegistrationDelay.NotMeasurable);
+
+        // The median is of the one record that can answer, not of three.
+        Assert.Equal(4m, summary.RegistrationDelay.MedianDaysBirthToRegistration);
+        Assert.Equal(6m, summary.RegistrationDelay.MedianDaysRegistrationToCentre);
+    }
+
+    [Fact]
+    public async Task WhenNothingCanBeMeasured_TheMediansAreNullAndNotZero()
+    {
+        // A Ministry reading "0 days" concludes the offline tier is
+        // instantaneous. A Ministry reading "not available" asks why.
+        await GivenAsync(
+            Birth("100001", registeredAfterDays: null),
+            Birth("100002", registeredAfterDays: null));
+
+        var summary = await SummaryAsync();
+
+        Assert.Equal(0, summary.RegistrationDelay.Measured);
+        Assert.Equal(2, summary.RegistrationDelay.NotMeasurable);
+        Assert.Null(summary.RegistrationDelay.MedianDaysBirthToRegistration);
+        Assert.Null(summary.RegistrationDelay.MedianDaysRegistrationToCentre);
+    }
+
+    [Fact]
+    public async Task ADeviceClockAheadOfTheServer_DoesNotProduceANegativeWait()
+    {
+        // The registry accepts a device clock up to the skew tolerance ahead
+        // of the server, so an online registration can be published fractally
+        // "before" it was registered. Left unfloored, that reports the centre
+        // receiving births before they happened.
+        await GivenAsync(
+            Birth("100001", registeredAfterDays: 3, publishedAfterDays: 2),
+            Birth("100002", registeredAfterDays: 3, publishedAfterDays: 2));
+
+        var summary = await SummaryAsync();
+
+        Assert.Equal(0m, summary.RegistrationDelay.MedianDaysRegistrationToCentre);
     }
 }

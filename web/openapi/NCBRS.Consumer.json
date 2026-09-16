@@ -266,6 +266,7 @@
           "registrations",
           "timeliness",
           "timeToConfirmation",
+          "registrationDelay",
           "mortality",
           "sync",
           "duplicates",
@@ -290,6 +291,9 @@
           },
           "timeToConfirmation": {
             "$ref": "#/components/schemas/TimeToConfirmation"
+          },
+          "registrationDelay": {
+            "$ref": "#/components/schemas/RegistrationDelay"
           },
           "mortality": {
             "$ref": "#/components/schemas/Mortality"
@@ -611,6 +615,58 @@
           }
         }
       },
+      "RegistrationDelay": {
+        "required": [
+          "measured",
+          "notMeasurable",
+          "medianDaysBirthToRegistration",
+          "medianDaysRegistrationToCentre",
+          "byFacilityTier"
+        ],
+        "type": "object",
+        "properties": {
+          "measured": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "notMeasurable": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "medianDaysBirthToRegistration": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "medianDaysRegistrationToCentre": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "byFacilityTier": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TierRegistrationDelay"
+            }
+          }
+        }
+      },
       "ReportingPeriod": {
         "required": [
           "fromUtc",
@@ -718,6 +774,46 @@
             "format": "int32"
           },
           "registeredShare": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "TierRegistrationDelay": {
+        "required": [
+          "facilityTier",
+          "measured",
+          "medianDaysBirthToRegistration",
+          "medianDaysRegistrationToCentre"
+        ],
+        "type": "object",
+        "properties": {
+          "facilityTier": {
+            "type": "string"
+          },
+          "measured": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "medianDaysBirthToRegistration": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "medianDaysRegistrationToCentre": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
             "type": [
               "null",

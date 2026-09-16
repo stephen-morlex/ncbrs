@@ -97,6 +97,7 @@ export interface components {
             registrations: components["schemas"]["RegistrationCounts"];
             timeliness: components["schemas"]["Timeliness"];
             timeToConfirmation: components["schemas"]["TimeToConfirmation"];
+            registrationDelay: components["schemas"]["RegistrationDelay"];
             mortality: components["schemas"]["Mortality"];
             sync: components["schemas"]["SyncReliability"];
             duplicates: components["schemas"]["DuplicateRate"];
@@ -172,6 +173,17 @@ export interface components {
             /** Format: double */
             sexRatio: null | number | string;
         };
+        RegistrationDelay: {
+            /** Format: int32 */
+            measured: number | string;
+            /** Format: int32 */
+            notMeasurable: number | string;
+            /** Format: double */
+            medianDaysBirthToRegistration: null | number | string;
+            /** Format: double */
+            medianDaysRegistrationToCentre: null | number | string;
+            byFacilityTier: components["schemas"]["TierRegistrationDelay"][];
+        };
         ReportingPeriod: {
             /** Format: date-time */
             fromUtc: string;
@@ -202,6 +214,15 @@ export interface components {
             recordsRejected: number | string;
             /** Format: double */
             registeredShare: null | number | string;
+        };
+        TierRegistrationDelay: {
+            facilityTier: string;
+            /** Format: int32 */
+            measured: number | string;
+            /** Format: double */
+            medianDaysBirthToRegistration: null | number | string;
+            /** Format: double */
+            medianDaysRegistrationToCentre: null | number | string;
         };
         TierTimeToConfirmation: {
             facilityTier: string;

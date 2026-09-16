@@ -529,6 +529,56 @@ The screen shows both dates together and badges the gap, because "received 3
 October" on a birth in June reads as a filing three months late, which is the
 exact conclusion measuring to the device's clock was meant to prevent.
 
+### Splitting the delay the dashboard could not separate
+
+`BirthRegisteredEvent.RegisteredAtUtc`, `RegistrationFact.PublishedAtUtc`, and
+a `RegistrationDelay` block on `GET /api/dashboard/summary`.
+
+The previous change kept the device's registration time in the registry. It
+did not travel, so the reporting side still saw one number where there are
+two: **how long the family took to reach a registrar, and how long the record
+then took to reach the centre.** One is answered by an outreach campaign, the
+other by a mast, and `TimeToConfirmation` — birth to a confirmed BRN — spans
+both and separates neither.
+
+For a hospital that hardly matters. For the tier this platform exists to serve
+the second term can be most of the total, so reading the combined figure as
+the first says families near a village post are slow to register when they are
+not. That is a conclusion that redirects money to the wrong intervention.
+
+**The read model had one name for two instants.** `RegistrationFact.RegisteredAtUtc`
+held the *publish* time while `BirthRecord.RegisteredAtUtc` held the device's —
+values that can be three weeks apart. Renamed to `PublishedAtUtc`. The
+existing dashboard fixture proved why it mattered: after the rename it still
+compiled and still passed, now silently setting the device time and leaving
+the publish time at year 0001. Every new median would have read a confident
+zero.
+
+**The consumer refuses to start on a stale read model.** The projection is
+created with `EnsureCreated`, which does nothing to a database that already
+exists — so this rename would have left a deployed consumer starting cleanly,
+consuming happily, and failing on the first dashboard query with `no such
+column`, which reads as a broken deployment rather than a projection needing a
+rebuild. `ReadModelSchema.EnsureUsable` refuses at startup and names the
+remedy instead, the same rule as an unrecognised `Database:Provider`. It
+proved itself immediately by failing on this machine's own stale store.
+
+Nulls stay nulls throughout: events predating the field are counted as
+`NotMeasurable` and excluded, never folded in as a zero-day delay, which would
+report the offline tier getting faster the more of its history predated the
+measurement.
+
+#### Found, not fixed
+
+**The consumer's OpenAPI document widens every integer to
+`["integer","string"]`** — 26 fields before this change, 30 after. The API has
+none, because `NumberSchemaTransformer` narrows them there; the consumer never
+got that transformer, so its generated client types `measured` as
+`number | string` and every median as `null | number | string`. Fixing it is
+registering an existing transformer on a second service, but it retypes the
+whole consumer contract, so it wants its own PR and its own before/after diff
+rather than riding along inside a feature.
+
 ### W2 as built
 
 `GET /api/facilities` and `GET /api/facilities/{facilityId}`, plus the

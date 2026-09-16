@@ -11,8 +11,19 @@ public class NoOpEventPublisher : IEventPublisher
 {
     public List<(string Topic, string PartitionKey)> Enqueued { get; } = [];
 
+    /// <summary>
+    /// Kept as the event, for the same reason amendments and annulments are:
+    /// a registration event carries the §10 indicator fields and the device's
+    /// registration time, and one that dropped any of them would still reach
+    /// the right topic while telling the projection nothing it can measure.
+    /// </summary>
+    public List<BirthRegisteredEvent> Registrations { get; } = [];
+
     public void EnqueueBirthRegistered(BirthRegisteredEvent evt, string districtId)
-        => Enqueued.Add(("birth-registered", districtId));
+    {
+        Registrations.Add(evt);
+        Enqueued.Add(("birth-registered", districtId));
+    }
 
     public void EnqueueNeonatalOutcome(NeonatalOutcomeRecordedEvent evt, string districtId)
         => Enqueued.Add(("neonatal-outcome", districtId));

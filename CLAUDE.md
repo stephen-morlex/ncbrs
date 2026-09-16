@@ -528,13 +528,40 @@ ignorance into a reassuring fact.
   post deployed and never heard from is invisible — the worst silent failure
   here — and closing that needs device enrolment (WS-B9).
 
+- **The delay before registration and the delay reaching the centre are
+  reported apart** (`RegistrationDelay`). They are different problems with
+  different remedies: how long a family took to reach a registrar is answered
+  by an outreach campaign, how long the record then waited is answered by a
+  mast. `TimeToConfirmation` spans both and can separate neither, and for the
+  offline tier the second term can be most of the total — so reading the
+  combined figure as the first says families near a village post are slow to
+  register when they are not. Broken out by tier, where the two diverge most:
+  a hospital terminal's sync lag is zero by construction.
+
 `BirthRegisteredEvent` carries `FacilityTier`, `VitalEventType`,
-`WithinStatutoryWindow` and `ConfirmedAtUtc` for these indicators. **All four
-are nullable on purpose**: events already in the topic predate them, and a
-consumer must be able to tell "this birth was on time" from "this event
-cannot say". `WithinStatutoryWindow` carries the *decision* rather than the
-timestamps because the window is set in law — recomputing it downstream next
-year would silently restate what was on time last year.
+`WithinStatutoryWindow`, `ConfirmedAtUtc` and `RegisteredAtUtc` for these
+indicators. **All five are nullable on purpose**: events already in the topic
+predate them, and a consumer must be able to tell "this birth was on time"
+from "this event cannot say". `WithinStatutoryWindow` carries the *decision*
+rather than the timestamps because the window is set in law — recomputing it
+downstream next year would silently restate what was on time last year.
+`RegisteredAtUtc` travels as the timestamp rather than a derived lag for the
+opposite reason: nothing can change what a subtraction of two instants means.
+
+**`RegistrationFact.PublishedAtUtc` is the publish time; `RegisteredAtUtc` is
+the device's.** The former was called `RegisteredAtUtc` while holding the
+publish time, next to a `BirthRecord.RegisteredAtUtc` that is the device's —
+one name for two instants three weeks apart. Do not merge them back.
+
+**The read model refuses to start when its shape no longer matches the code**
+(`ReadModelSchema.EnsureUsable`). It is created with `EnsureCreated`, which is
+a no-op against an existing database, so a column added or renamed simply
+never appears in a store built before the change; without the check the
+service starts cleanly and fails later on a dashboard query, looking like a
+broken deployment rather than a projection needing a rebuild. The remedy is
+always the same and always safe: delete the store and replay from the
+earliest offset. Nothing is lost — this projection is derived from Kafka by
+design and is the system of record for nothing.
 
 ## DHIS2 aggregate export (WS-E4, draft 6.8, built)
 `GET /api/exports/dhis2?period=YYYYMM` on the consumer, in DHIS2's

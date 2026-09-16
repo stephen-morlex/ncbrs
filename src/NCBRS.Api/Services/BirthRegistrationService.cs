@@ -359,7 +359,8 @@ public class BirthRegistrationService(
                 facility.Tier.ToString(),
                 record.VitalEventType.ToString(),
                 !isLate,
-                record.ConfirmedAtUtc),
+                record.ConfirmedAtUtc,
+                record.RegisteredAtUtc),
             facility.DistrictId);
 
         await db.SaveChangesAsync(cancellationToken);

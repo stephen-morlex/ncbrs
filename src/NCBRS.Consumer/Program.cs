@@ -166,7 +166,14 @@ if (app.Environment.IsDevelopment())
 // on it -- so unlike the registry there is nothing to race with.
 using (var scope = app.Services.CreateScope())
 {
-    scope.ServiceProvider.GetRequiredService<ReadModelDbContext>().Database.EnsureCreated();
+    var readModel = scope.ServiceProvider.GetRequiredService<ReadModelDbContext>();
+
+    readModel.Database.EnsureCreated();
+
+    // EnsureCreated does nothing to a database that already exists, so a
+    // store built by an earlier version keeps its old shape. Refused here
+    // rather than discovered on the first dashboard query.
+    ReadModelSchema.EnsureUsable(readModel);
 }
 
 // Whether the projection is keeping up. A dashboard served from a consumer
