@@ -50,8 +50,9 @@ function isFieldError(value: unknown): value is ApiFieldError {
 }
 
 /**
- * `status` is documented as `["integer","string"]` because it round-trips
- * through JSON, so it can arrive either way.
+ * The document says `integer`, and the API sends one. The string branch is
+ * kept anyway because this runs on the failure path: a body that is already
+ * not what was expected is the worst place to be strict about its shape.
  */
 function readStatus(value: unknown, fallback: number | null): number | null {
   if (typeof value === 'number') {

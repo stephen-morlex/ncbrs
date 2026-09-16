@@ -12,6 +12,7 @@ import { RequireAuth } from '@/auth/RequireAuth'
 import { AppLayout } from '@/shell/AppLayout'
 import { navigation } from '@/shell/navigation'
 import { RecordLookup } from '@/records/RecordLookup'
+import { RecordSearch } from '@/records/RecordSearch'
 
 /**
  * Routing for the shell.
@@ -43,6 +44,7 @@ export default function App() {
       >
         <Route path="/" element={<Navigate to="/records" replace />} />
         <Route path="/records" element={<RecordLookup />} />
+        <Route path="/records/search" element={<RecordSearch />} />
 
         {pending.map((item) => (
           <Route

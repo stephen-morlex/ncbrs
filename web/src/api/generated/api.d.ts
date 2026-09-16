@@ -545,11 +545,11 @@ export interface components {
             dateOfBirth?: null | string;
             sex?: null | components["schemas"]["Sex"];
             /** Format: int32 */
-            birthWeightGrams?: null | number | string;
+            birthWeightGrams?: null | number;
             /** Format: double */
-            gestationalAgeWeeks?: null | number | string;
+            gestationalAgeWeeks?: null | number;
             /** Format: int32 */
-            birthOrder?: null | number | string;
+            birthOrder?: null | number;
             motherFullName?: null | string;
             fatherFullName?: null | string;
             reason?: string;
@@ -650,7 +650,7 @@ export interface components {
         };
         ApiErrorResponse: {
             /** Format: int32 */
-            status: number | string;
+            status: number;
             title: string;
             errors: components["schemas"]["ApiError"][];
         };
@@ -755,16 +755,16 @@ export interface components {
         };
         BrnBlockRequest: {
             /** Format: int32 */
-            blockSize?: number | string;
+            blockSize?: number;
             deviceId?: null | string;
         };
         BrnBlockResponse: {
             /** Format: uuid */
             facilityId: string;
             /** Format: int64 */
-            blockStart: number | string;
+            blockStart: number;
             /** Format: int64 */
-            blockEnd: number | string;
+            blockEnd: number;
         };
         CaptureMaternalStatisticsRequest: {
             deviceId?: string;
@@ -773,11 +773,11 @@ export interface components {
             fatherEducationLevel?: null | components["schemas"]["EducationLevel"];
             fatherOccupation?: null | components["schemas"]["OccupationGroup"];
             /** Format: int32 */
-            priorLiveBirths?: number | string;
+            priorLiveBirths?: number;
             /** Format: int32 */
-            priorFetalDeaths?: number | string;
+            priorFetalDeaths?: number;
             /** Format: int32 */
-            prenatalVisitCount?: null | number | string;
+            prenatalVisitCount?: null | number;
             /** Format: date */
             medicalCareBeganDate?: null | string;
             /** Format: date */
@@ -797,7 +797,7 @@ export interface components {
             qrPayload: string;
             signature: string;
             /** Format: int32 */
-            reprintCount: number | string;
+            reprintCount: number;
         };
         CertificateRevocationList: {
             issuer: string;
@@ -810,7 +810,7 @@ export interface components {
             /** Format: date-time */
             nextUpdateUtc: string;
             /** Format: int32 */
-            count: number | string;
+            count: number;
             entries: components["schemas"]["RevocationEntry"][];
             signature: string;
         };
@@ -833,9 +833,9 @@ export interface components {
             /** Format: date-time */
             lastSeenAtUtc: null | string;
             /** Format: int32 */
-            daysSilentWhenRaised: number | string;
+            daysSilentWhenRaised: number;
             /** Format: int32 */
-            thresholdDays: number | string;
+            thresholdDays: number;
             /** Format: date-time */
             acknowledgedAtUtc: null | string;
             acknowledgementNote: null | string;
@@ -879,7 +879,7 @@ export interface components {
             /** Format: uuid */
             duplicateCandidateId: string;
             /** Format: int32 */
-            score: number | string;
+            score: number;
             reasons: string;
             brn: string;
             childFullName: string;
@@ -914,9 +914,9 @@ export interface components {
         LateRegistrationStatus: "PendingApproval" | "Approved" | "Rejected";
         LateRegistrationSummary: {
             /** Format: int32 */
-            daysLate: number | string;
+            daysLate: number;
             /** Format: int32 */
-            windowDaysAtFiling: number | string;
+            windowDaysAtFiling: number;
             status: components["schemas"]["LateRegistrationStatus"];
             evidenceType: components["schemas"]["LateRegistrationEvidenceType"];
         };
@@ -928,7 +928,7 @@ export interface components {
             deathDateUtc: string;
             icdMmCauseCode: string;
             /** Format: int32 */
-            daysAfterBirth: number | string;
+            daysAfterBirth: number;
         };
         MaternalStatisticsRequest: {
             motherEducationLevel?: null | components["schemas"]["EducationLevel"];
@@ -936,11 +936,11 @@ export interface components {
             fatherEducationLevel?: null | components["schemas"]["EducationLevel"];
             fatherOccupation?: null | components["schemas"]["OccupationGroup"];
             /** Format: int32 */
-            priorLiveBirths?: number | string;
+            priorLiveBirths?: number;
             /** Format: int32 */
-            priorFetalDeaths?: number | string;
+            priorFetalDeaths?: number;
             /** Format: int32 */
-            prenatalVisitCount?: null | number | string;
+            prenatalVisitCount?: null | number;
             /** Format: date */
             medicalCareBeganDate?: null | string;
             /** Format: date */
@@ -953,17 +953,17 @@ export interface components {
             fatherEducationLevel: null | components["schemas"]["EducationLevel"];
             fatherOccupation: null | components["schemas"]["OccupationGroup"];
             /** Format: int32 */
-            priorLiveBirths: number | string;
+            priorLiveBirths: number;
             /** Format: int32 */
-            priorFetalDeaths: number | string;
+            priorFetalDeaths: number;
             /** Format: int32 */
-            prenatalVisitCount: null | number | string;
+            prenatalVisitCount: null | number;
             /** Format: date */
             medicalCareBeganDate: null | string;
             /** Format: date */
             dateOfLastLiveBirth: null | string;
             /** Format: int32 */
-            birthIntervalMonths: null | number | string;
+            birthIntervalMonths: null | number;
             meetsWhoAntenatalMinimum: null | boolean;
             /** Format: date-time */
             recordedAtUtc: string;
@@ -980,7 +980,7 @@ export interface components {
             icdPmCauseCode: string;
             contributingMaternalConditionCode: null | string;
             /** Format: int32 */
-            daysAfterBirth: number | string;
+            daysAfterBirth: number;
         };
         ObservedValue: {
             field: string;
@@ -998,31 +998,31 @@ export interface components {
         PageOfAmendmentConflictResponse: {
             items: components["schemas"]["AmendmentConflictResponse"][];
             /** Format: int32 */
-            total: number | string;
+            total: number;
             nextCursor: null | string;
         };
         PageOfBirthRecordSearchHit: {
             items: components["schemas"]["BirthRecordSearchHit"][];
             /** Format: int32 */
-            total: number | string;
+            total: number;
             nextCursor: null | string;
         };
         PageOfDuplicateCandidateResponse: {
             items: components["schemas"]["DuplicateCandidateResponse"][];
             /** Format: int32 */
-            total: number | string;
+            total: number;
             nextCursor: null | string;
         };
         PageOfPendingAmendmentResponse: {
             items: components["schemas"]["PendingAmendmentResponse"][];
             /** Format: int32 */
-            total: number | string;
+            total: number;
             nextCursor: null | string;
         };
         PageOfPendingLateRegistrationResponse: {
             items: components["schemas"]["PendingLateRegistrationResponse"][];
             /** Format: int32 */
-            total: number | string;
+            total: number;
             nextCursor: null | string;
         };
         PendingAmendmentResponse: {
@@ -1049,9 +1049,9 @@ export interface components {
             /** Format: date-time */
             dateOfBirth: string;
             /** Format: int32 */
-            daysLate: number | string;
+            daysLate: number;
             /** Format: int32 */
-            windowDaysAtFiling: number | string;
+            windowDaysAtFiling: number;
             evidenceType: components["schemas"]["LateRegistrationEvidenceType"];
             evidenceReference: null | string;
             declarantName: string;
@@ -1090,12 +1090,12 @@ export interface components {
             dateOfBirth?: string;
             sex?: components["schemas"]["Sex"];
             /** Format: int32 */
-            birthWeightGrams?: null | number | string;
+            birthWeightGrams?: null | number;
             /** Format: double */
-            gestationalAgeWeeks?: null | number | string;
+            gestationalAgeWeeks?: null | number;
             plurality?: components["schemas"]["BirthPlurality"];
             /** Format: int32 */
-            birthOrder?: null | number | string;
+            birthOrder?: null | number;
             motherFullName?: null | string;
             fatherFullName?: null | string;
             deviceId?: string;
@@ -1192,13 +1192,13 @@ export interface components {
             syncBatchId: string;
             status: components["schemas"]["SyncBatchStatus"];
             /** Format: int32 */
-            submitted: number | string;
+            submitted: number;
             /** Format: int32 */
-            registered: number | string;
+            registered: number;
             /** Format: int32 */
-            duplicates: number | string;
+            duplicates: number;
             /** Format: int32 */
-            rejected: number | string;
+            rejected: number;
             records: components["schemas"]["SyncRecordOutcome"][];
         };
         /** @enum {string} */
@@ -1256,7 +1256,7 @@ export interface operations {
         parameters: {
             query?: {
                 facilityId?: string;
-                limit?: number | string;
+                limit?: number;
                 after?: string;
             };
             header?: {
@@ -1333,7 +1333,7 @@ export interface operations {
         parameters: {
             query?: {
                 facilityId?: string;
-                limit?: number | string;
+                limit?: number;
                 after?: string;
             };
             header?: {
@@ -3784,7 +3784,7 @@ export interface operations {
         parameters: {
             query?: {
                 facilityId?: string;
-                limit?: number | string;
+                limit?: number;
                 after?: string;
             };
             header?: {
@@ -3987,7 +3987,7 @@ export interface operations {
         parameters: {
             query?: {
                 facilityId?: string;
-                limit?: number | string;
+                limit?: number;
                 after?: string;
             };
             header?: {
@@ -4715,7 +4715,7 @@ export interface operations {
                 facilityId?: string;
                 status?: components["schemas"]["RecordStatus"];
                 districtId?: string;
-                limit?: number | string;
+                limit?: number;
                 after?: string;
             };
             header?: {
@@ -4735,29 +4735,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "text/plain": {
-                        meta?: {
-                            /** Format: uuid */
-                            transactionId: string;
-                            clientId: null | string;
-                            transactionIdGenerated: boolean;
-                            /** Format: date-time */
-                            timestampUtc: string;
-                        };
-                        data?: components["schemas"]["PageOfBirthRecordSearchHit"];
-                    };
                     "application/json": {
-                        meta?: {
-                            /** Format: uuid */
-                            transactionId: string;
-                            clientId: null | string;
-                            transactionIdGenerated: boolean;
-                            /** Format: date-time */
-                            timestampUtc: string;
-                        };
-                        data?: components["schemas"]["PageOfBirthRecordSearchHit"];
-                    };
-                    "text/json": {
                         meta?: {
                             /** Format: uuid */
                             transactionId: string;
@@ -4776,29 +4754,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "text/plain": {
-                        meta?: {
-                            /** Format: uuid */
-                            transactionId: string;
-                            clientId: null | string;
-                            transactionIdGenerated: boolean;
-                            /** Format: date-time */
-                            timestampUtc: string;
-                        };
-                        data?: components["schemas"]["ApiErrorResponse"];
-                    };
                     "application/json": {
-                        meta?: {
-                            /** Format: uuid */
-                            transactionId: string;
-                            clientId: null | string;
-                            transactionIdGenerated: boolean;
-                            /** Format: date-time */
-                            timestampUtc: string;
-                        };
-                        data?: components["schemas"]["ApiErrorResponse"];
-                    };
-                    "text/json": {
                         meta?: {
                             /** Format: uuid */
                             transactionId: string;
@@ -4817,29 +4773,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "text/plain": {
-                        meta?: {
-                            /** Format: uuid */
-                            transactionId: string;
-                            clientId: null | string;
-                            transactionIdGenerated: boolean;
-                            /** Format: date-time */
-                            timestampUtc: string;
-                        };
-                        data?: components["schemas"]["ApiErrorResponse"];
-                    };
                     "application/json": {
-                        meta?: {
-                            /** Format: uuid */
-                            transactionId: string;
-                            clientId: null | string;
-                            transactionIdGenerated: boolean;
-                            /** Format: date-time */
-                            timestampUtc: string;
-                        };
-                        data?: components["schemas"]["ApiErrorResponse"];
-                    };
-                    "text/json": {
                         meta?: {
                             /** Format: uuid */
                             transactionId: string;
@@ -4858,29 +4792,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "text/plain": {
-                        meta?: {
-                            /** Format: uuid */
-                            transactionId: string;
-                            clientId: null | string;
-                            transactionIdGenerated: boolean;
-                            /** Format: date-time */
-                            timestampUtc: string;
-                        };
-                        data?: components["schemas"]["ApiErrorResponse"];
-                    };
                     "application/json": {
-                        meta?: {
-                            /** Format: uuid */
-                            transactionId: string;
-                            clientId: null | string;
-                            transactionIdGenerated: boolean;
-                            /** Format: date-time */
-                            timestampUtc: string;
-                        };
-                        data?: components["schemas"]["ApiErrorResponse"];
-                    };
-                    "text/json": {
                         meta?: {
                             /** Format: uuid */
                             transactionId: string;

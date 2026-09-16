@@ -24,11 +24,7 @@
             "name": "limit",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32",
               "default": 50
             }
@@ -210,11 +206,7 @@
             "name": "limit",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32",
               "default": 50
             }
@@ -5766,11 +5758,7 @@
             "name": "limit",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32",
               "default": 50
             }
@@ -6228,11 +6216,7 @@
             "name": "limit",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32",
               "default": 50
             }
@@ -7919,11 +7903,7 @@
             "name": "limit",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32",
               "default": 50
             }
@@ -7957,83 +7937,7 @@
           "200": {
             "description": "OK",
             "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "meta": {
-                      "required": [
-                        "transactionId",
-                        "clientId",
-                        "transactionIdGenerated",
-                        "timestampUtc"
-                      ],
-                      "type": "object",
-                      "properties": {
-                        "transactionId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "clientId": {
-                          "type": [
-                            "null",
-                            "string"
-                          ]
-                        },
-                        "transactionIdGenerated": {
-                          "type": "boolean"
-                        },
-                        "timestampUtc": {
-                          "type": "string",
-                          "format": "date-time"
-                        }
-                      }
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/PageOfBirthRecordSearchHit"
-                    }
-                  }
-                }
-              },
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "meta": {
-                      "required": [
-                        "transactionId",
-                        "clientId",
-                        "transactionIdGenerated",
-                        "timestampUtc"
-                      ],
-                      "type": "object",
-                      "properties": {
-                        "transactionId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "clientId": {
-                          "type": [
-                            "null",
-                            "string"
-                          ]
-                        },
-                        "transactionIdGenerated": {
-                          "type": "boolean"
-                        },
-                        "timestampUtc": {
-                          "type": "string",
-                          "format": "date-time"
-                        }
-                      }
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/PageOfBirthRecordSearchHit"
-                    }
-                  }
-                }
-              },
-              "text/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
@@ -8076,83 +7980,7 @@
           "400": {
             "description": "Bad Request",
             "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "meta": {
-                      "required": [
-                        "transactionId",
-                        "clientId",
-                        "transactionIdGenerated",
-                        "timestampUtc"
-                      ],
-                      "type": "object",
-                      "properties": {
-                        "transactionId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "clientId": {
-                          "type": [
-                            "null",
-                            "string"
-                          ]
-                        },
-                        "transactionIdGenerated": {
-                          "type": "boolean"
-                        },
-                        "timestampUtc": {
-                          "type": "string",
-                          "format": "date-time"
-                        }
-                      }
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/ApiErrorResponse"
-                    }
-                  }
-                }
-              },
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "meta": {
-                      "required": [
-                        "transactionId",
-                        "clientId",
-                        "transactionIdGenerated",
-                        "timestampUtc"
-                      ],
-                      "type": "object",
-                      "properties": {
-                        "transactionId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "clientId": {
-                          "type": [
-                            "null",
-                            "string"
-                          ]
-                        },
-                        "transactionIdGenerated": {
-                          "type": "boolean"
-                        },
-                        "timestampUtc": {
-                          "type": "string",
-                          "format": "date-time"
-                        }
-                      }
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/ApiErrorResponse"
-                    }
-                  }
-                }
-              },
-              "text/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
@@ -8195,83 +8023,7 @@
           "401": {
             "description": "Unauthorized",
             "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "meta": {
-                      "required": [
-                        "transactionId",
-                        "clientId",
-                        "transactionIdGenerated",
-                        "timestampUtc"
-                      ],
-                      "type": "object",
-                      "properties": {
-                        "transactionId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "clientId": {
-                          "type": [
-                            "null",
-                            "string"
-                          ]
-                        },
-                        "transactionIdGenerated": {
-                          "type": "boolean"
-                        },
-                        "timestampUtc": {
-                          "type": "string",
-                          "format": "date-time"
-                        }
-                      }
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/ApiErrorResponse"
-                    }
-                  }
-                }
-              },
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "meta": {
-                      "required": [
-                        "transactionId",
-                        "clientId",
-                        "transactionIdGenerated",
-                        "timestampUtc"
-                      ],
-                      "type": "object",
-                      "properties": {
-                        "transactionId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "clientId": {
-                          "type": [
-                            "null",
-                            "string"
-                          ]
-                        },
-                        "transactionIdGenerated": {
-                          "type": "boolean"
-                        },
-                        "timestampUtc": {
-                          "type": "string",
-                          "format": "date-time"
-                        }
-                      }
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/ApiErrorResponse"
-                    }
-                  }
-                }
-              },
-              "text/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
@@ -8314,83 +8066,7 @@
           "403": {
             "description": "Forbidden",
             "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "meta": {
-                      "required": [
-                        "transactionId",
-                        "clientId",
-                        "transactionIdGenerated",
-                        "timestampUtc"
-                      ],
-                      "type": "object",
-                      "properties": {
-                        "transactionId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "clientId": {
-                          "type": [
-                            "null",
-                            "string"
-                          ]
-                        },
-                        "transactionIdGenerated": {
-                          "type": "boolean"
-                        },
-                        "timestampUtc": {
-                          "type": "string",
-                          "format": "date-time"
-                        }
-                      }
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/ApiErrorResponse"
-                    }
-                  }
-                }
-              },
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "meta": {
-                      "required": [
-                        "transactionId",
-                        "clientId",
-                        "transactionIdGenerated",
-                        "timestampUtc"
-                      ],
-                      "type": "object",
-                      "properties": {
-                        "transactionId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "clientId": {
-                          "type": [
-                            "null",
-                            "string"
-                          ]
-                        },
-                        "transactionIdGenerated": {
-                          "type": "boolean"
-                        },
-                        "timestampUtc": {
-                          "type": "string",
-                          "format": "date-time"
-                        }
-                      }
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/ApiErrorResponse"
-                    }
-                  }
-                }
-              },
-              "text/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
@@ -8781,29 +8457,23 @@
             ]
           },
           "birthWeightGrams": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
-              "string"
+              "integer"
             ],
             "format": "int32"
           },
           "gestationalAgeWeeks": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
             "type": [
               "null",
-              "number",
-              "string"
+              "number"
             ],
             "format": "double"
           },
           "birthOrder": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
-              "string"
+              "integer"
             ],
             "format": "int32"
           },
@@ -9203,11 +8873,7 @@
         "type": "object",
         "properties": {
           "status": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "title": {
@@ -9787,11 +9453,7 @@
         "type": "object",
         "properties": {
           "blockSize": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "deviceId": {
@@ -9815,19 +9477,11 @@
             "format": "uuid"
           },
           "blockStart": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int64"
           },
           "blockEnd": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int64"
           }
         }
@@ -9879,27 +9533,17 @@
             ]
           },
           "priorLiveBirths": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "priorFetalDeaths": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "prenatalVisitCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
-              "string"
+              "integer"
             ],
             "format": "int32"
           },
@@ -9965,11 +9609,7 @@
             "type": "string"
           },
           "reprintCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           }
         }
@@ -10013,11 +9653,7 @@
             "format": "date-time"
           },
           "count": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "entries": {
@@ -10096,19 +9732,11 @@
             "format": "date-time"
           },
           "daysSilentWhenRaised": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "thresholdDays": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "acknowledgedAtUtc": {
@@ -10274,11 +9902,7 @@
             "format": "uuid"
           },
           "score": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "reasons": {
@@ -10406,19 +10030,11 @@
         "type": "object",
         "properties": {
           "daysLate": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "windowDaysAtFiling": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "status": {
@@ -10454,11 +10070,7 @@
             "type": "string"
           },
           "daysAfterBirth": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           }
         }
@@ -10507,27 +10119,17 @@
             ]
           },
           "priorLiveBirths": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "priorFetalDeaths": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "prenatalVisitCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
-              "string"
+              "integer"
             ],
             "format": "int32"
           },
@@ -10610,27 +10212,17 @@
             ]
           },
           "priorLiveBirths": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "priorFetalDeaths": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "prenatalVisitCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
-              "string"
+              "integer"
             ],
             "format": "int32"
           },
@@ -10649,11 +10241,9 @@
             "format": "date"
           },
           "birthIntervalMonths": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
-              "string"
+              "integer"
             ],
             "format": "int32"
           },
@@ -10712,11 +10302,7 @@
             ]
           },
           "daysAfterBirth": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           }
         }
@@ -10805,11 +10391,7 @@
             }
           },
           "total": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "nextCursor": {
@@ -10835,11 +10417,7 @@
             }
           },
           "total": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "nextCursor": {
@@ -10865,11 +10443,7 @@
             }
           },
           "total": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "nextCursor": {
@@ -10895,11 +10469,7 @@
             }
           },
           "total": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "nextCursor": {
@@ -10925,11 +10495,7 @@
             }
           },
           "total": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "nextCursor": {
@@ -11029,19 +10595,11 @@
             "format": "date-time"
           },
           "daysLate": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "windowDaysAtFiling": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "evidenceType": {
@@ -11148,20 +10706,16 @@
             "$ref": "#/components/schemas/Sex"
           },
           "birthWeightGrams": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
-              "string"
+              "integer"
             ],
             "format": "int32"
           },
           "gestationalAgeWeeks": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
             "type": [
               "null",
-              "number",
-              "string"
+              "number"
             ],
             "format": "double"
           },
@@ -11169,11 +10723,9 @@
             "$ref": "#/components/schemas/BirthPlurality"
           },
           "birthOrder": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
-              "string"
+              "integer"
             ],
             "format": "int32"
           },
@@ -11527,35 +11079,19 @@
             "$ref": "#/components/schemas/SyncBatchStatus"
           },
           "submitted": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "registered": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "duplicates": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "rejected": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "records": {

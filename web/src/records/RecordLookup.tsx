@@ -1,4 +1,5 @@
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router'
 import { CircleAlert, FileSearch, Search, TriangleAlert } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,7 @@ import { Spinner } from '@/components/ui/spinner'
 import type { components } from '@/api/generated/api'
 import { type NcbrsError, messagesFor, toNcbrsError, unreachableError } from '@/api/errors'
 import { useApiClient } from '@/api/useApi'
+import { PageHeader } from '@/shell/PageHeader'
 
 type BirthRecord = components['schemas']['BirthRecordResponse']
 
@@ -42,13 +44,60 @@ const BrnField = 'brn'
 export function RecordLookup() {
   const api = useApiClient()
 
-  const [query, setQuery] = useState('')
+  // A search result links here with ?brn=…, so the number arrives in the URL
+  // rather than being typed. That also makes a record shareable: a registrar
+  // sending a colleague a link is the commonest way one is opened twice.
+  const [params, setParams] = useSearchParams()
+  const linked = params.get('brn') ?? ''
+
+  const [query, setQuery] = useState(linked)
   const [record, setRecord] = useState<BirthRecord | null>(null)
   const [error, setError] = useState<NcbrsError | null>(null)
   const [searching, setSearching] = useState(false)
   const [searched, setSearched] = useState(false)
 
-  async function onSubmit(event: FormEvent) {
+  const fetchRecord = useCallback(
+    async (brn: string) => {
+      if (!brn) {
+        return
+      }
+
+      setSearching(true)
+      setError(null)
+      setRecord(null)
+
+      try {
+        const { data, error: failure, response } = await api.GET('/api/BirthRecords/{brn}', {
+          params: { path: { brn } },
+        })
+
+        if (failure || !response.ok) {
+          setError(toNcbrsError(failure, response.status))
+        } else {
+          setRecord(data?.data ?? null)
+        }
+      } catch (cause) {
+        // Never reached the server at all: offline, DNS, or a refused CORS
+        // preflight. Distinct from a refusal, and the distinction is the
+        // difference between "try again" and "this will not work".
+        setError(unreachableError(cause))
+      } finally {
+        setSearching(false)
+        setSearched(true)
+      }
+    },
+    [api],
+  )
+
+  // Opens the record named in the URL. Depends on the value, not the params
+  // object, so typing in the box afterwards does not refetch the linked one.
+  useEffect(() => {
+    if (linked) {
+      void fetchRecord(linked)
+    }
+  }, [linked, fetchRecord])
+
+  function onSubmit(event: FormEvent) {
     event.preventDefault()
 
     const brn = query.trim()
@@ -57,28 +106,13 @@ export function RecordLookup() {
       return
     }
 
-    setSearching(true)
-    setError(null)
-    setRecord(null)
+    // Through the URL rather than straight to the fetch, so a typed lookup
+    // and a linked one are the same thing and the address bar always names
+    // the record on screen.
+    setParams(brn === linked ? params : { brn })
 
-    try {
-      const { data, error: failure, response } = await api.GET('/api/BirthRecords/{brn}', {
-        params: { path: { brn } },
-      })
-
-      if (failure || !response.ok) {
-        setError(toNcbrsError(failure, response.status))
-      } else {
-        setRecord(data?.data ?? null)
-      }
-    } catch (cause) {
-      // Never reached the server at all: offline, DNS, or a refused CORS
-      // preflight. Distinct from a refusal, and the distinction is the
-      // difference between "try again" and "this will not work".
-      setError(unreachableError(cause))
-    } finally {
-      setSearching(false)
-      setSearched(true)
+    if (brn === linked) {
+      void fetchRecord(brn)
     }
   }
 
@@ -87,13 +121,13 @@ export function RecordLookup() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
       <PageHeader
-        title="Find a record"
+        title="Find by number"
         description="By birth registration number, or by the provisional identifier a device issued before the record was reconciled."
       />
 
       <Card>
         <CardContent className="pt-6">
-          <form onSubmit={(event) => void onSubmit(event)} className="grid gap-2">
+          <form onSubmit={onSubmit} className="grid gap-2">
             <Label htmlFor={BrnField}>Registration number</Label>
             <div className="flex flex-col gap-2 sm:flex-row">
               <Input
@@ -144,15 +178,6 @@ export function RecordLookup() {
           </EmptyHeader>
         </Empty>
       ) : null}
-    </div>
-  )
-}
-
-function PageHeader({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="space-y-1">
-      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-      <p className="text-muted-foreground text-sm">{description}</p>
     </div>
   )
 }
