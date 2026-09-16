@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/empty'
 import { Spinner } from '@/components/ui/spinner'
 import { AuthStatus } from '@/auth/AuthStatus'
+import { returnTo } from '@/auth/returnTo'
 
 /**
  * Where Keycloak sends the browser back to, carrying the authorization code.
@@ -27,29 +28,6 @@ import { AuthStatus } from '@/auth/AuthStatus'
  * thinks it is on; and it drops the spent code from the history entry, so a
  * reload cannot replay it.
  */
-
-/**
- * Where to send the user once signed in: the page they originally asked for,
- * which `RequireAuth` put into the OIDC `state` before redirecting.
- *
- * Only same-site paths are honoured. The value survives a round trip through
- * the browser, so treating it as a destination unchecked would make this an
- * open redirect -- a phishing link could send someone to Keycloak, have them
- * sign in genuinely, and land them on an attacker's page still believing they
- * are inside NCBRS. Requiring a single leading slash rejects both absolute
- * URLs and protocol-relative `//evil.example` ones.
- */
-function returnTo(state: unknown): string {
-  const candidate = (state as { returnTo?: unknown } | undefined)?.returnTo
-
-  if (typeof candidate !== 'string' || !candidate.startsWith('/') || candidate.startsWith('//')) {
-    return '/'
-  }
-
-  // Landing back on the callback route would render this component again with
-  // no code to redeem.
-  return candidate.startsWith('/auth/callback') ? '/' : candidate
-}
 
 export function AuthCallback() {
   const auth = useAuth()

@@ -133,6 +133,11 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # Ahead of the build: a failing assertion is a more useful message than
+      # a bundle that builds and is wrong.
+      - name: Test
+        run: npm test
+
       - name: Build
         run: npm run build
 

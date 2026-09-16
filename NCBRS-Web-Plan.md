@@ -601,12 +601,62 @@ open-redirect guard and `realmRolesFromToken` are pure functions handling
 untrusted input and should have unit tests; that needs vitest, which is a
 dependency decision of its own.
 
-**Shell**
-- [ ] App layout: navigation, header with signed-in user and role, sign-out
-- [ ] Role-aware navigation, so a facility registrar is not shown four empty review queues
-- [ ] Error surface that renders the API's `errors[]` against the right form fields — the API returns field paths, so the UI should never show a bare "something went wrong"
-- [ ] Loading, empty and failure states, decided once — `spinner`/`skeleton`, `empty` and `alert` from the registry, not written by hand (§2)
-- [ ] **Vertical slice: look up a BRN and display the record**
+**Shell** — PR #12
+- [x] App layout: navigation, header with signed-in user and role, sign-out
+- [x] Role-aware navigation, so a facility registrar is not shown four empty review queues
+- [x] Error surface that renders the API's `errors[]` against the right form fields
+- [x] Loading, empty and failure states, decided once — `spinner`/`skeleton`, `empty` and `alert` from the registry, not written by hand (§2)
+- [x] **Vertical slice: look up a BRN and display the record**
+
+#### The slice proved five things at once
+
+Nothing before this had sent a token to the API. One lookup exercises the
+whole chain, and any link in it could have been wrong:
+
+| | |
+|---|---|
+| CORS preflight (W5) | `OPTIONS /api/BirthRecords/100000 → 204` |
+| Token + `ncbrs-api` audience (W9) | `GET → 200`, not 401 |
+| `{meta, data}` envelope | unwrapped to the record |
+| Generated types | rendered without a hand-written interface |
+| String enums (PR #8) | `Sex` shows **"Female"**, not `1` |
+
+That last row is the one worth keeping. Had the enum fix not landed, this
+screen would have displayed a number, and the fault would have been three
+layers away in a generator's reading of `Http.Json.JsonOptions`.
+
+Navigation is derived from `src/shell/navigation.ts`, which names the policy
+gating each destination, so the sidebar and the route guards read the same
+list. Two lists would drift, and the drift is silent in both directions: a
+link to a page that refuses the user, or a page the user is entitled to that
+never appears, leaving them to conclude the system cannot do it. Verified
+live — signed in as a district officer, `/review/annulments` is absent from
+the sidebar entirely and the route answers with the 403 screen.
+
+Unbuilt destinations are routed and gated anyway, marked "soon". The shape of
+the system is legible before all of it exists, and the guards are exercised
+against the real policy list rather than one example.
+
+#### Tests
+
+vitest, jsdom and Testing Library, with **36 tests** over the pure logic that
+handles untrusted input:
+
+- `returnTo` — the open-redirect guard. Absolute, protocol-relative,
+  backslash-normalised and `javascript:` values all refused.
+- `realmRolesFromToken` — malformed tokens yield no roles rather than
+  throwing, and non-string entries are dropped.
+- `roles` — the policy table, asserting review stays out of the filer's hands
+  and annulment stays at the ministry.
+
+Writing them found a bug in the test rather than the code: the first helper
+base64'd Latin-1 while `decodePayload` correctly decodes UTF-8, which is what
+Keycloak emits. Worth recording because the failure looked like a production
+bug and was not.
+
+Components under `src/components/ui/` and `src/api/generated/` are excluded
+from coverage: the first is upstream's, the second is regenerated and already
+checked by the contract job.
 
 ### Phase 2 — The register
 - [ ] **W1** Record search backend: district-scoped from the token, ministry exempt, every search audited
