@@ -316,6 +316,38 @@ projection — which is different from a blank name.
 `CanReadAuditTrail` is its own policy rather than borrowed from another
 oversight role, and is mirrored in the web client's policy table.
 
+#### The screen — PR #17
+
+`/audit`, under **Oversight** rather than beside the register: reading the
+trail is checking on the work, not doing it. A record's own history is one
+click from the record, which is where a dispute starts.
+
+The screen says plainly that **opening the trail is recorded in it**. Not as
+a deterrent — a district officer checking a disputed record is doing their
+job. It is there because that read and someone checking what a colleague
+searched for look identical, and the person doing the first should know the
+second is not invisible either.
+
+Two things the table is careful about:
+
+- **"no person" rather than a blank actor.** A sweep raising a device alert
+  has no actor, and an empty cell reads as missing data rather than as an act
+  nobody performed.
+- **"district not recorded" rather than an empty cell**, for rows written
+  before the column existed. A blank reads as a bug; the label says what it
+  actually is, and that it can never be filled in.
+
+Timestamps render in UTC as stored, with the time. Unlike a date of birth, an
+audit entry *is* an instant — and "who acted first" is a question this table
+exists to answer, so it must read the same in two offices in different
+offsets.
+
+Verified against the running stack: a search wrote
+`Search:name=Naledi;returned=4;total=4` against `D-CENTRAL-07`, opening the
+trail wrote `Read:all;returned=50;total=116` against the same district, and
+rows written before the migration show "district not recorded" beside rows
+that carry one. The two eras are visually distinct on the screen.
+
 ### W3 as built — and how the gap was overstated
 
 `GET /api/registrars` and `GET /api/registrars/{registrarId}` — PR #15.
