@@ -171,7 +171,28 @@ public record BirthRecordResponse(
     /// against, so the decision can be reconstructed exactly even after the
     /// Act is amended. Null for records written before the registry kept it.
     /// </summary>
-    int? StatutoryWindowDays = null
+    int? StatutoryWindowDays = null,
+
+    /// <summary>
+    /// The fallback identifier a device issued after exhausting its BRN block
+    /// offline (draft 6.3), retained forever even once a real BRN is assigned.
+    ///
+    /// **Published because a family may still be holding the slip that number
+    /// was printed on.** Lookup already resolves on it — but until now the
+    /// response never said so, which meant a clerk handed a `PROV-` slip
+    /// found the record and saw only a BRN, with nothing confirming the two
+    /// were the same registration. That is the moment the retention exists
+    /// for, and it was the one moment it could not be seen.
+    /// </summary>
+    string? ProvisionalIdentifier = null,
+
+    /// <summary>
+    /// The certificate's state, when one has been issued. Null means none has
+    /// been — which for a late registration awaiting verification, or a record
+    /// whose BRN is still provisional, is the expected answer rather than a
+    /// fault.
+    /// </summary>
+    CertificateState? Certificate = null
 );
 
 /// <summary>

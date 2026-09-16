@@ -624,6 +624,47 @@ a fault — and **it was rationalised rather than diagnosed once already in this
 repo**, in PR #10. The test was proved non-vacuous by running it against the
 pre-fix document, where it fails.
 
+### The record screen, and what it could not say
+
+`BirthRecordResponse` gains `ProvisionalIdentifier` and a `Certificate` state
+block, `GET` finally populates `LateRegistration`, and the record screen
+becomes a detail view with a corrections tab.
+
+**The late-registration badge shipped in PR #14 could never appear.** The
+field was on the response but populated only by the *registration* endpoint,
+never by the lookup — so a record opened afterwards showed no sign it had been
+filed late and no sign its certificate was being withheld pending
+verification. That is exactly the message CLAUDE.md says a family must not be
+sent away without, and the screen was structurally incapable of showing it.
+Found by checking the plan's premise rather than trusting it, which is now the
+fourth time that has paid.
+
+**The provisional identifier was retained and never published.** Lookup has
+always resolved on it — a family may still be holding the slip a device
+printed — but the response never said the record had one. So a clerk handed a
+`PROV-` slip found the record and saw only a BRN, with nothing confirming the
+two were the same registration. The one moment the retention exists for was
+the one moment it was invisible.
+
+**Certificate state travels on the record, not beside it.** A certificate is
+valid only if signed *and* not revoked, and the paper in a family's hands does
+not change when the register is corrected. Fetched separately, a screen could
+render "issued 3 March" without the withdrawal and state something false about
+a legal document. One payload makes that particular mistake impossible. The QR
+payload and signature are deliberately **not** included: those are what
+actually verifies a certificate, and they stay behind the certificate
+endpoint's own policy.
+
+The corrections tab lists refused and still-pending changes alongside applied
+ones. A change someone proposed and a reviewer turned down is part of a
+record's history too, and is often the part a dispute turns on; a queued change
+shown as applied would misdescribe the register while it waits.
+
+Guarded at both halves, which is the split worth being explicit about: the API
+tests prove the lookup *returns* the late registration, the component tests
+prove the screen *renders* the warning. Neither alone would have caught the
+bug.
+
 ### W2 as built
 
 `GET /api/facilities` and `GET /api/facilities/{facilityId}`, plus the
@@ -1192,8 +1233,8 @@ should not rely on.
 This was visible in PR #10 — `errors.ts` handled `status` as either — and was
 rationalised as JSON round-tripping rather than investigated. It was a
 regression.
-- [ ] Record detail: identity, status, certificate state, provisional identifier, annulment block
-- [ ] Amendment history timeline, showing previous values
+- [x] Record detail: identity, status, certificate state, provisional identifier, annulment block — PR pending
+- [x] Amendment history timeline, showing previous values — PR pending
 - [ ] Online registration form, incl. late-registration evidence when the window has passed
 - [ ] Request a correction, with the two-track outcome made visible: applied now vs queued for approval (the 202 case must not look like a failure)
 

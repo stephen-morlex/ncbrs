@@ -10627,6 +10627,22 @@
               "integer"
             ],
             "format": "int32"
+          },
+          "provisionalIdentifier": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "certificate": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CertificateState"
+              }
+            ]
           }
         }
       },
@@ -10896,6 +10912,41 @@
           },
           "signature": {
             "type": "string"
+          }
+        }
+      },
+      "CertificateState": {
+        "required": [
+          "issuedAtUtc",
+          "withdrawnAtUtc",
+          "withdrawnReason",
+          "reprintCount"
+        ],
+        "type": "object",
+        "properties": {
+          "issuedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "withdrawnAtUtc": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "withdrawnReason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reprintCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "isValid": {
+            "type": "boolean"
           }
         }
       },
