@@ -485,6 +485,78 @@ public class LateRegistrationTests : IDisposable
 
     // --- the queue ----------------------------------------------------------
 
+    /// <summary>
+    /// The case keyset paging exists for (W7).
+    ///
+    /// A reviewer pages through the queue while working it. With offset
+    /// paging, verifying the first page's entries shifts everything below
+    /// them up by that many rows, and asking for "page 2" steps straight past
+    /// the ones that moved — so entries are never seen by a reviewer who
+    /// believes the queue is done. A cursor is a position in the ordering,
+    /// so removing everything before it changes nothing.
+    /// </summary>
+    [Fact]
+    public async Task WorkingTheQueueWhilePagingSkipsNothing()
+    {
+        for (var index = 1; index <= 6; index++)
+        {
+            await RegisterAsync(Request($"10000{index}", bornDaysAgo: 100 + index, late: Evidence()));
+        }
+
+        var seen = new List<string>();
+        string? cursor = null;
+
+        do
+        {
+            await using var db = NewDb();
+            var http = AuthTestContext.HttpContextFor(ReviewerSubject, NcbrsRoles.DistrictOfficer);
+
+            var page = await new LateRegistrationService(db, AuthTestContext.RegistrarService(db, http))
+                .PendingAsync(null, new PageRequest { Limit = 2, After = cursor });
+
+            seen.AddRange(page.Items.Select(entry => entry.Brn));
+            cursor = page.NextCursor;
+
+            // The reviewer acts on what they were just shown, which removes it
+            // from the queue -- exactly what breaks offset paging.
+            foreach (var entry in page.Items)
+            {
+                await ReviewAsync(entry.LateRegistrationId, approve: true);
+            }
+        }
+        while (cursor is not null);
+
+        Assert.Equal(6, seen.Count);
+        Assert.Equal(6, seen.Distinct().Count());
+    }
+
+    [Fact]
+    public async Task TheQueueIsPagedAndReportsTheWholeBacklog()
+    {
+        for (var index = 1; index <= 5; index++)
+        {
+            await RegisterAsync(Request($"10000{index}", bornDaysAgo: 100 + index, late: Evidence()));
+        }
+
+        await using var db = NewDb();
+        var http = AuthTestContext.HttpContextFor(ReviewerSubject, NcbrsRoles.DistrictOfficer);
+        var service = new LateRegistrationService(db, AuthTestContext.RegistrarService(db, http));
+
+        var first = await service.PendingAsync(null, new PageRequest { Limit = 2 });
+
+        Assert.Equal(2, first.Items.Count);
+
+        // Total is the backlog, not the page -- it is what tells an officer
+        // how much work is waiting.
+        Assert.Equal(5, first.Total);
+        Assert.NotNull(first.NextCursor);
+
+        var second = await service.PendingAsync(null, new PageRequest { Limit = 2, After = first.NextCursor });
+
+        Assert.Equal(2, second.Items.Count);
+        Assert.Empty(second.Items.Select(entry => entry.Brn).Intersect(first.Items.Select(entry => entry.Brn)));
+    }
+
     [Fact]
     public async Task PendingClaims_AppearInTheQueueOldestFirst()
     {
@@ -494,13 +566,15 @@ public class LateRegistrationTests : IDisposable
         await using var db = NewDb();
         var http = AuthTestContext.HttpContextFor(ReviewerSubject, NcbrsRoles.DistrictOfficer);
         var queue = await new LateRegistrationService(db, AuthTestContext.RegistrarService(db, http))
-            .PendingAsync(null);
+            .PendingAsync(null, new PageRequest());
 
-        Assert.Equal(2, queue.Count);
-        Assert.Equal("100001", queue[0].Brn);
-        Assert.Equal("Nurse A. Banda", queue[0].SubmittedByRegistrarName);
-        Assert.Equal("Kabwe Village Health Post", queue[0].FacilityName);
-        Assert.Equal(400, queue[1].DaysLate);
+        Assert.Equal(2, queue.Total);
+        Assert.Equal(2, queue.Items.Count);
+        Assert.Null(queue.NextCursor);
+        Assert.Equal("100001", queue.Items[0].Brn);
+        Assert.Equal("Nurse A. Banda", queue.Items[0].SubmittedByRegistrarName);
+        Assert.Equal("Kabwe Village Health Post", queue.Items[0].FacilityName);
+        Assert.Equal(400, queue.Items[1].DaysLate);
     }
 
     [Fact]
@@ -519,8 +593,8 @@ public class LateRegistrationTests : IDisposable
         await using var verify = NewDb();
         var http = AuthTestContext.HttpContextFor(ReviewerSubject, NcbrsRoles.DistrictOfficer);
         var queue = await new LateRegistrationService(verify, AuthTestContext.RegistrarService(verify, http))
-            .PendingAsync(null);
+            .PendingAsync(null, new PageRequest());
 
-        Assert.Empty(queue);
+        Assert.Empty(queue.Items);
     }
 }

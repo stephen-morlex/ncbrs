@@ -117,8 +117,9 @@ public class DuplicateDetectionService(
         }
     }
 
-    public async Task<IReadOnlyList<DuplicateCandidate>> PendingAsync(
+    public async Task<Page<DuplicateCandidate>> PendingAsync(
         Guid? facilityId,
+        PageRequest paging,
         CancellationToken cancellationToken = default)
     {
         var query = db.DuplicateCandidates
@@ -133,9 +134,30 @@ public class DuplicateDetectionService(
                 || link.MatchedBirthRecord!.FacilityId == facilityId);
         }
 
-        return await query
+        var total = await query.CountAsync(cancellationToken);
+
+        // Ordered by match score, not by time: the strongest candidates are the
+        // ones a reviewer should see first. The cursor therefore walks scores
+        // downward, and the id breaks ties between identical scores -- without
+        // it two candidates scoring the same could straddle a page boundary and
+        // one would never be reviewed.
+        if (PageCursor.TryDecode(paging.After, out var cursor) && cursor.IsInt())
+        {
+            var score = cursor.AsInt();
+
+            query = query.Where(link =>
+                link.Score < score
+                || (link.Score == score && link.DuplicateCandidateId.CompareTo(cursor.Id) > 0));
+        }
+
+        var rows = await query
             .OrderByDescending(link => link.Score)
+            .ThenBy(link => link.DuplicateCandidateId)
+            .Take(paging.EffectiveLimit + 1)
             .ToListAsync(cancellationToken);
+
+        return Page<DuplicateCandidate>.From(rows, total, paging.EffectiveLimit,
+            last => PageCursor.For(last.Score, last.DuplicateCandidateId));
     }
 
     /// <summary>

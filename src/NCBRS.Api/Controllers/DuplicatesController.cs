@@ -25,15 +25,18 @@ public class DuplicatesController(
 {
     /// <summary>Potential duplicates awaiting a decision, most likely first.</summary>
     [HttpGet("pending")]
-    [ProducesResponseType(typeof(IReadOnlyList<DuplicateCandidateResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Page<DuplicateCandidateResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<IReadOnlyList<DuplicateCandidateResponse>>> Pending(
-        [FromQuery] Guid? facilityId = null)
+    public async Task<ActionResult<Page<DuplicateCandidateResponse>>> Pending(
+        [FromQuery] Guid? facilityId = null,
+        [FromQuery] int limit = PageRequest.DefaultLimit,
+        [FromQuery] string? after = null)
     {
-        var pending = await duplicates.PendingAsync(facilityId, HttpContext.RequestAborted);
+        var pending = await duplicates.PendingAsync(
+            facilityId, new PageRequest { Limit = limit, After = after }, HttpContext.RequestAborted);
 
-        return pending.Select(link => new DuplicateCandidateResponse(
+        var items = pending.Items.Select(link => new DuplicateCandidateResponse(
                 link.DuplicateCandidateId,
                 link.Score,
                 link.Reasons,
@@ -43,6 +46,11 @@ public class DuplicatesController(
                 link.MatchedBirthRecord?.ChildPerson?.FullName ?? string.Empty,
                 link.DetectedAtUtc))
             .ToList();
+
+        // The page's shape is decided by the service; this only maps entities
+        // to their response type, so the cursor and total pass through
+        // untouched.
+        return new Page<DuplicateCandidateResponse>(items, pending.Total, pending.NextCursor);
     }
 
     /// <summary>

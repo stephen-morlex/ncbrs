@@ -404,25 +404,68 @@ public class AmendmentService(
                 Describe(approvedChanges), certificateInvalidated, reviewedAt));
     }
 
-    /// <summary>The queue a reviewer works from.</summary>
-    public async Task<IReadOnlyList<PendingAmendmentResponse>> PendingAsync(
+    /// <summary>
+    /// The queue a reviewer works from.
+    ///
+    /// Paged over **requests**, not rows. One submission can correct several
+    /// fields and so holds several rows; paging the rows would split a single
+    /// correction across a page boundary and show a reviewer half of it.
+    ///
+    /// That forces two queries — the page of request ids, then their rows —
+    /// which is the cost of the row-per-field shape. It is still bounded work,
+    /// where the previous version loaded every pending row in the country.
+    /// </summary>
+    public async Task<Page<PendingAmendmentResponse>> PendingAsync(
         Guid? facilityId,
+        PageRequest paging,
         CancellationToken cancellationToken = default)
     {
-        var query = db.BirthRecordAmendments
-            .Include(amendment => amendment.BirthRecord!).ThenInclude(record => record.ChildPerson)
-            .Include(amendment => amendment.BirthRecord!).ThenInclude(record => record.Facility)
-            .Include(amendment => amendment.AmendedByRegistrar)
+        var pending = db.BirthRecordAmendments
             .Where(amendment => amendment.Status == AmendmentStatus.PendingApproval);
 
         if (facilityId is not null)
         {
-            query = query.Where(amendment => amendment.BirthRecord!.FacilityId == facilityId);
+            pending = pending.Where(amendment => amendment.BirthRecord!.FacilityId == facilityId);
         }
 
-        var rows = await query.ToListAsync(cancellationToken);
+        // A request's position in the queue is when it was submitted, which is
+        // the earliest of its rows.
+        var requests = pending
+            .GroupBy(amendment => amendment.AmendmentRequestId)
+            .Select(group => new { RequestId = group.Key, SubmittedAtUtc = group.Min(a => a.AmendedAtUtc) });
 
-        return [.. rows
+        var total = await requests.CountAsync(cancellationToken);
+
+        if (PageCursor.TryDecode(paging.After, out var cursor) && cursor.IsDateTime())
+        {
+            var at = cursor.AsDateTime();
+
+            requests = requests.Where(entry =>
+                entry.SubmittedAtUtc > at
+                || (entry.SubmittedAtUtc == at && entry.RequestId.CompareTo(cursor.Id) > 0));
+        }
+
+        var page = await requests
+            .OrderBy(entry => entry.SubmittedAtUtc)
+            .ThenBy(entry => entry.RequestId)
+            .Take(paging.EffectiveLimit + 1)
+            .ToListAsync(cancellationToken);
+
+        var ids = page.Select(entry => entry.RequestId).ToList();
+
+        var rows = await db.BirthRecordAmendments
+            .Include(amendment => amendment.BirthRecord!).ThenInclude(record => record.ChildPerson)
+            .Include(amendment => amendment.BirthRecord!).ThenInclude(record => record.Facility)
+            .Include(amendment => amendment.AmendedByRegistrar)
+            // Still filtered by status, not just by request id. A submission
+            // can split across both tracks, and its immediate half is already
+            // applied -- showing that half in the approval queue would invite
+            // a reviewer to approve a change that has already taken effect.
+            .Where(amendment => ids.Contains(amendment.AmendmentRequestId)
+                                && amendment.Status == AmendmentStatus.PendingApproval)
+            .ToListAsync(cancellationToken);
+
+        List<PendingAmendmentResponse> fetched = [.. rows
             .GroupBy(amendment => amendment.AmendmentRequestId)
             .Select(group =>
             {
@@ -439,7 +482,11 @@ public class AmendmentService(
                     first.AmendedAtUtc,
                     Describe([.. group.Select(ToChange)]));
             })
-            .OrderBy(pending => pending.SubmittedAtUtc)];
+            .OrderBy(entry => entry.SubmittedAtUtc)
+            .ThenBy(entry => entry.AmendmentRequestId)];
+
+        return Page<PendingAmendmentResponse>.From(fetched, total, paging.EffectiveLimit,
+            last => PageCursor.For(last.SubmittedAtUtc, last.AmendmentRequestId));
     }
 
     /// <summary>
@@ -450,8 +497,9 @@ public class AmendmentService(
     /// an approval, the record has usually already moved, so age here is a
     /// measure of how long a possibly-wrong value has been standing.
     /// </summary>
-    public async Task<IReadOnlyList<AmendmentConflictResponse>> ConflictsAsync(
+    public async Task<Page<AmendmentConflictResponse>> ConflictsAsync(
         Guid? facilityId,
+        PageRequest paging,
         CancellationToken cancellationToken = default)
     {
         var query = db.AmendmentConflicts
@@ -464,13 +512,28 @@ public class AmendmentService(
             query = query.Where(conflict => conflict.BirthRecord!.FacilityId == facilityId);
         }
 
-        var rows = await query.OrderBy(conflict => conflict.DetectedAtUtc).ToListAsync(cancellationToken);
+        var total = await query.CountAsync(cancellationToken);
+
+        if (PageCursor.TryDecode(paging.After, out var cursor) && cursor.IsDateTime())
+        {
+            var at = cursor.AsDateTime();
+
+            query = query.Where(conflict =>
+                conflict.DetectedAtUtc > at
+                || (conflict.DetectedAtUtc == at && conflict.AmendmentConflictId.CompareTo(cursor.Id) > 0));
+        }
+
+        var rows = await query
+            .OrderBy(conflict => conflict.DetectedAtUtc)
+            .ThenBy(conflict => conflict.AmendmentConflictId)
+            .Take(paging.EffectiveLimit + 1)
+            .ToListAsync(cancellationToken);
 
         var submitters = await db.Registrars
             .AsNoTracking()
             .ToDictionaryAsync(person => person.RegistrarId, person => person.DisplayName, cancellationToken);
 
-        return [.. rows.Select(conflict => new AmendmentConflictResponse(
+        List<AmendmentConflictResponse> fetched = [.. rows.Select(conflict => new AmendmentConflictResponse(
             conflict.AmendmentConflictId,
             conflict.AmendmentRequestId,
             conflict.BirthRecord?.Brn ?? string.Empty,
@@ -483,6 +546,9 @@ public class AmendmentService(
             conflict.DetectedFromRegistrarId,
             submitters.GetValueOrDefault(conflict.DetectedFromRegistrarId, string.Empty),
             conflict.DetectedAtUtc))];
+
+        return Page<AmendmentConflictResponse>.From(fetched, total, paging.EffectiveLimit,
+            last => PageCursor.For(last.DetectedAtUtc, last.AmendmentConflictId));
     }
 
     public async Task<AmendmentReviewOutcome> ReviewConflictAsync(

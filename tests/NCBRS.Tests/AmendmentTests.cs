@@ -721,9 +721,9 @@ public class AmendmentServiceTests : IDisposable
         await using var db = NewDb();
         var http = AuthTestContext.HttpContextFor(ReviewerSubject, NcbrsRoles.DistrictOfficer);
         var queue = await Service(db, AuthTestContext.RegistrarService(db, http), new NoOpEventPublisher())
-            .PendingAsync(null);
+            .PendingAsync(null, new PageRequest());
 
-        var item = Assert.Single(queue);
+        var item = Assert.Single(queue.Items);
 
         Assert.Equal(Brn, item.Brn);
         Assert.Equal("Nurse A. Banda", item.SubmittedByRegistrarName);
@@ -742,9 +742,9 @@ public class AmendmentServiceTests : IDisposable
         await using var db = NewDb();
         var http = AuthTestContext.HttpContextFor(ReviewerSubject, NcbrsRoles.DistrictOfficer);
         var queue = await Service(db, AuthTestContext.RegistrarService(db, http), new NoOpEventPublisher())
-            .PendingAsync(null);
+            .PendingAsync(null, new PageRequest());
 
-        Assert.Empty(queue);
+        Assert.Empty(queue.Items);
     }
 
     // --- the amended stream -----------------------------------------------

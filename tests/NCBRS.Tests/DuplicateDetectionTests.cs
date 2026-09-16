@@ -488,9 +488,9 @@ public class DuplicateDetectionServiceTests : IDisposable
         }
 
         await using var verify = NewDb();
-        var pending = await Service(verify).PendingAsync(facilityId: null);
+        var pending = await Service(verify).PendingAsync(facilityId: null, new PageRequest());
 
-        Assert.True(pending.Count >= 2);
-        Assert.True(pending[0].Score >= pending[^1].Score);
+        Assert.True(pending.Items.Count >= 2);
+        Assert.True(pending.Items[0].Score >= pending.Items[^1].Score);
     }
 }
