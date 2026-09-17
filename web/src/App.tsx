@@ -41,6 +41,10 @@ const RegisterBirth = lazy(() =>
   import('@/records/RegisterBirth').then((module) => ({ default: module.RegisterBirth })),
 )
 
+const RequestCorrection = lazy(() =>
+  import('@/records/RequestCorrection').then((module) => ({ default: module.RequestCorrection })),
+)
+
 const Facilities = lazy(() =>
   import('@/facilities/Facilities').then((module) => ({ default: module.Facilities })),
 )
@@ -86,6 +90,18 @@ export default function App() {
         <Route path="/" element={<Navigate to="/records" replace />} />
         <Route path="/records" element={<RecordLookup />} />
         <Route path="/records/search" element={<RecordSearch />} />
+
+        {/* A correction is an act on a record, not a destination -- reached
+            from the record itself, and gated by the same policy as filing
+            one. */}
+        <Route
+          path="/records/correct"
+          element={
+            <RequireAuth policy="CanRegisterBirths">
+              <RequestCorrection />
+            </RequireAuth>
+          }
+        />
 
         {/* Gated by the same policy its navigation entry names, so the guard
             and the nav cannot disagree about who may file a registration. */}

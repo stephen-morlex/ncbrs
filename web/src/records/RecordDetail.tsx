@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { CircleCheck, FileWarning, History, Info, ShieldOff, TriangleAlert } from 'lucide-react'
+import { CircleCheck, FileWarning, History, Info, PenLine, ShieldOff, TriangleAlert } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -49,12 +49,26 @@ export function RecordDetail({ record }: { record: BirthRecord }) {
           </div>
         </div>
 
-        <Button asChild variant="outline" size="sm" className="mt-2 w-fit">
-          <Link to={`/audit?brn=${encodeURIComponent(record.brn)}`}>
-            <History />
-            This record's history
-          </Link>
-        </Button>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link to={`/audit?brn=${encodeURIComponent(record.brn)}`}>
+              <History />
+              This record's history
+            </Link>
+          </Button>
+
+          {/* Not offered on an annulled record. Every acting path refuses one
+              with a 409 — there is no such birth to correct — and an enabled
+              button that always fails is worse than none. */}
+          {record.annulment ? null : (
+            <Button asChild variant="outline" size="sm">
+              <Link to={`/records/correct?brn=${encodeURIComponent(record.brn)}`}>
+                <PenLine />
+                Request a correction
+              </Link>
+            </Button>
+          )}
+        </div>
       </CardHeader>
 
       <CardContent className="space-y-4">

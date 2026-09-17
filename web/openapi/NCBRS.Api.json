@@ -10758,6 +10758,39 @@
                 "$ref": "#/components/schemas/CertificateState"
               }
             ]
+          },
+          "motherFullName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "fatherFullName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "birthWeightGrams": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "gestationalAgeWeeks": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "birthOrder": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
           }
         }
       },
