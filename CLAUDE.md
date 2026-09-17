@@ -371,6 +371,24 @@ Two rules not to "tidy away":
 - **`ConfirmedAtUtc` is separate from `Status`.** `Status` is one enum and an
   amendment overwrites it with `Amended`, which would otherwise erase the
   fact that the record had been reconciled.
+- **A grant skips numbers already on a record.** `BrnBlockNextAvailable`
+  tracks what has been *granted*, not what has been *used*, and the two
+  diverge whenever a record enters carrying a BRN from the range without a
+  grant — a sync from a device provisioned elsewhere, a restored dump, a
+  seeded environment. The counter never learns, so the next grant hands out
+  numbers that are already registered. Found live: a facility sitting at
+  200000 while 200000 and 200001 were both on records.
+  **Checked at grant time rather than maintained on write, deliberately.** The
+  alternative — advancing the counter when a record arrives with a BRN above
+  it — would let a device's own number move a facility's counter, so one
+  device with a bad clock could burn a whole range with a single high value.
+  Decision #2 and this section both turn on the centre never trusting a
+  device-supplied number, and asking the register what it holds keeps that
+  intact. Skips are audited as `BrnBlockGranted:skipped=N`, because a counter
+  behind the register means records reached the range outside the grant path
+  and somebody should be able to see that. Provisional identifiers are never
+  treated as used: a `PROV-` value was never drawn from a block and cannot
+  collide with one.
 
 ## Late registration (WS-C1/C2, built)
 A birth registered outside the statutory window (`StatutoryRegistration:WindowDays`,
