@@ -211,7 +211,17 @@ export function RegisterBirth() {
         })
 
         if (failure || !response.ok) {
-          setError(toNcbrsError(failure, response.status))
+          const refusal = toNcbrsError(failure, response.status)
+
+          // When the registry objects to the *number*, the held one can never
+          // work -- pressing Register again with it would refuse forever. Any
+          // other objection is about the form, and keeping the number is what
+          // stops a registrar fixing three fields and burning three BRNs.
+          if (aboutTheNumber(refusal)) {
+            drawnRef.current.discard()
+          }
+
+          setError(refusal)
           show(failureRef)
           return
         }
@@ -628,6 +638,17 @@ function optional(value: unknown): number | undefined {
  */
 function show(target: React.RefObject<HTMLDivElement | null>) {
   requestAnimationFrame(() => target.current?.scrollIntoView?.({ block: "center", behavior: "smooth" }))
+}
+
+/**
+ * Whether the registry refused the BRN rather than the form.
+ *
+ * Read from the field the server names, not from the status code. 409 also
+ * covers a facility whose range is exhausted, where drawing again is precisely
+ * the wrong move — the next number is no more available than the last.
+ */
+function aboutTheNumber(error: NcbrsError): boolean {
+  return error.fields.some((item) => item.field.toLowerCase() === 'data.brn')
 }
 
 /**

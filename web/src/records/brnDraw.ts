@@ -29,6 +29,21 @@ export interface BrnDraw {
   /** Called once the number is registered, so the next birth draws afresh. */
   spend(): void
 
+  /**
+   * Called when the registry refused the **number itself**, so the next
+   * attempt draws a different one.
+   *
+   * Holding a number across retries is right when the number was not what was
+   * wrong — a missing declarant, an implausible weight. It is exactly wrong
+   * when the registry says that BRN is already registered: retrying with the
+   * same number cannot ever succeed, and the form would sit there refusing
+   * forever however many times the registrar pressed it.
+   *
+   * Discarding costs a number from the facility's range. That is the cheaper
+   * mistake: a gap in a sequence versus a registration that can never be made.
+   */
+  discard(): void
+
   /** What is currently held, for tests and for diagnostics. */
   held(): string | null
 }
@@ -59,6 +74,12 @@ export function createBrnDraw(draw: BrnBlockDrawer): BrnDraw {
     },
 
     spend() {
+      current = null
+    },
+
+    // Same mechanics as spend, kept separate because the two mean opposite
+    // things to a reader: one number reached a record, the other never can.
+    discard() {
       current = null
     },
 

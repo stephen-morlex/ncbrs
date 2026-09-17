@@ -308,3 +308,90 @@ describe('when the registry refuses', () => {
     await waitFor(() => expect(scrolled.length).toBeGreaterThan(0))
   })
 })
+
+describe('when the registry says the number is already registered', () => {
+  async function fillIn(typist: ReturnType<typeof userEvent.setup>) {
+    await typist.type(screen.getByLabelText(/child’s full name/i), 'Chipo Mwale')
+    fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: daysAgo(3) } })
+    await typist.click(screen.getByLabelText(/facility/i))
+    await typist.click(await screen.findByRole('option', { name: /kabwe/i }))
+    await typist.click(screen.getByLabelText(/^sex$/i))
+    await typist.click(await screen.findByRole('option', { name: /female/i }))
+    await typist.click(screen.getByLabelText(/plurality/i))
+    await typist.click(await screen.findByRole('option', { name: /singleton/i }))
+  }
+
+  it('draws a fresh number on the next attempt instead of refusing forever', async () => {
+    // The reported failure. The registry's counter can point at a number that
+    // is already registered, and retrying with the same one can never succeed
+    // -- so the form sat there refusing however many times it was pressed.
+    let drawn = 200000
+
+    post.mockImplementation((path: string) => {
+      if (path.includes('request-brn-block')) {
+        return Promise.resolve(ok({ blockStart: drawn++, blockEnd: drawn }))
+      }
+
+      return Promise.resolve({
+        data: undefined,
+        error: {
+          status: 409,
+          title: 'BRN already registered.',
+          errors: [{ field: 'data.brn', message: "BRN '200000' has already been registered." }],
+        },
+        response: { ok: false, status: 409 },
+      })
+    })
+
+    const typist = userEvent.setup({ delay: null })
+
+    show()
+    await waitFor(() => expect(get).toHaveBeenCalled())
+    await fillIn(typist)
+
+    const save = screen.getByRole('button', { name: /register the birth/i })
+
+    await typist.click(save)
+    expect(await screen.findByText(/already been registered/i)).toBeInTheDocument()
+
+    await typist.click(save)
+    await waitFor(() => expect(post.mock.calls.filter((call: unknown[]) => String(call[0]).includes("request-brn-block"))).toHaveLength(2))
+
+    // Two draws, two different numbers -- not the same one refused twice.
+    const registers = post.mock.calls.filter((call: unknown[]) => !String(call[0]).includes("request-brn-block"))
+    expect(registers[0][1].body.data.brn).not.toBe(registers[1][1].body.data.brn)
+  })
+
+  it('still holds the number when the refusal was about the form', async () => {
+    // A refusal naming a different field must not burn a number.
+    post.mockImplementation((path: string) =>
+      path.includes('request-brn-block')
+        ? Promise.resolve(ok({ blockStart: 100001, blockEnd: 100001 }))
+        : Promise.resolve({
+            data: undefined,
+            error: {
+              status: 400,
+              title: 'Late registration evidence required.',
+              errors: [{ field: 'data.lateRegistration', message: 'Evidence is required.' }],
+            },
+            response: { ok: false, status: 400 },
+          }),
+    )
+
+    const typist = userEvent.setup({ delay: null })
+
+    show()
+    await waitFor(() => expect(get).toHaveBeenCalled())
+    await fillIn(typist)
+
+    const save = screen.getByRole('button', { name: /register the birth/i })
+
+    await typist.click(save)
+    await screen.findByText(/late registration evidence required/i)
+
+    await typist.click(save)
+    await waitFor(() => expect(post.mock.calls.filter((call: unknown[]) => !String(call[0]).includes("request-brn-block"))).toHaveLength(2))
+
+    expect(post.mock.calls.filter((call: unknown[]) => String(call[0]).includes("request-brn-block"))).toHaveLength(1)
+  })
+})
