@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { RegisterBirth } from './RegisterBirth'
@@ -8,8 +9,13 @@ const FacilityId = '0199a1b2-0001-7000-8000-000000000001'
 const get = vi.fn()
 const post = vi.fn()
 
+// One stable object, not a fresh one per render. The real useApiClient
+// memoises so that effects depending on it do not re-run every render; a mock
+// that ignores that reloads the form continuously and resets what was typed.
+const client = { GET: get, POST: post }
+
 vi.mock('@/api/useApi', () => ({
-  useApiClient: () => ({ GET: get, POST: post }),
+  useApiClient: () => client,
 }))
 
 function ok<T>(data: T) {
@@ -140,5 +146,165 @@ describe('RegisterBirth', () => {
 
     // Nothing is selected yet, so nothing is claimed yet either.
     expect(screen.queryByText(/no registration numbers left/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('when the form is refused', () => {
+  it('says so at the button instead of appearing to do nothing', async () => {
+    // The reported bug. The only feedback used to be a line of red under
+    // whichever field was unfilled -- on a form this long, usually scrolled
+    // off screen. The click looked like it did nothing, so the registrar
+    // clicked again and concluded the system was broken.
+    show()
+    await waitFor(() => expect(get).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole('button', { name: /register the birth/i }))
+
+    expect(await screen.findByText(/this birth has not been registered yet/i)).toBeInTheDocument()
+    expect(screen.getByText(/nothing was sent to the registry/i)).toBeInTheDocument()
+  })
+
+  it('names the missing fields the way the screen labels them', async () => {
+    // "childFullName" asks the reader to translate before they can act.
+    show()
+    await waitFor(() => expect(get).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole('button', { name: /register the birth/i }))
+
+    const summary = await screen.findByText(/still needed:/i)
+
+    expect(summary.textContent).toMatch(/facility/i)
+    expect(summary.textContent).toMatch(/the child’s name/i)
+    expect(summary.textContent).toMatch(/date of birth/i)
+    expect(summary.textContent).not.toMatch(/childFullName/)
+  })
+
+  it('sends nothing to the registry when it refuses', async () => {
+    show()
+    await waitFor(() => expect(get).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole('button', { name: /register the birth/i }))
+    await screen.findByText(/this birth has not been registered yet/i)
+
+    // No BRN drawn, in particular. A refused form must not advance the
+    // facility's counter.
+    expect(post).not.toHaveBeenCalled()
+  })
+
+  it('clears the summary once the form is put right', async () => {
+    post.mockImplementation((path: string) =>
+      path.includes('request-brn-block')
+        ? Promise.resolve(ok({ blockStart: 100001, blockEnd: 100001 }))
+        : Promise.resolve(ok({ brn: '100001' })),
+    )
+
+    const typist = userEvent.setup({ delay: null })
+
+    show()
+    await waitFor(() => expect(get).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole('button', { name: /register the birth/i }))
+    await screen.findByText(/this birth has not been registered yet/i)
+
+    await typist.type(screen.getByLabelText(/child’s full name/i), 'Chipo Mwale')
+    fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: daysAgo(3) } })
+
+    await typist.click(screen.getByLabelText(/facility/i))
+    await typist.click(await screen.findByRole('option', { name: /kabwe/i }))
+    await typist.click(screen.getByLabelText(/^sex$/i))
+    await typist.click(await screen.findByRole('option', { name: /female/i }))
+    await typist.click(screen.getByLabelText(/plurality/i))
+    await typist.click(await screen.findByRole('option', { name: /singleton/i }))
+
+    await typist.click(screen.getByRole('button', { name: /register the birth/i }))
+
+    await waitFor(() => expect(post).toHaveBeenCalledTimes(2))
+
+    expect(
+      screen.queryByText(/this birth has not been registered yet/i),
+    ).not.toBeInTheDocument()
+  })
+})
+
+describe('when the registry refuses', () => {
+  it('brings the refusal into view instead of leaving it above the fold', async () => {
+    // The submit button sits ~1800px down this form on a 720px viewport, and
+    // the registry's refusal renders at the top. Without scrolling to it, a
+    // 400 and a broken button are indistinguishable from where the click
+    // happened.
+    const scrolled: unknown[] = []
+    Element.prototype.scrollIntoView = function (arg?: unknown) {
+      scrolled.push(this)
+      void arg
+    }
+
+    post.mockImplementation((path: string) =>
+      path.includes('request-brn-block')
+        ? Promise.resolve(ok({ blockStart: 100001, blockEnd: 100001 }))
+        : Promise.resolve({
+            data: undefined,
+            error: {
+              status: 400,
+              title: 'Late registration evidence required.',
+              errors: [{ field: 'data.lateRegistration', message: 'Evidence and a declarant are required.' }],
+            },
+            response: { ok: false, status: 400 },
+          }),
+    )
+
+    const typist = userEvent.setup({ delay: null })
+
+    show()
+    await waitFor(() => expect(get).toHaveBeenCalled())
+
+    await typist.type(screen.getByLabelText(/child’s full name/i), 'Chipo Mwale')
+    fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: daysAgo(3) } })
+    await typist.click(screen.getByLabelText(/facility/i))
+    await typist.click(await screen.findByRole('option', { name: /kabwe/i }))
+    await typist.click(screen.getByLabelText(/^sex$/i))
+    await typist.click(await screen.findByRole('option', { name: /female/i }))
+    await typist.click(screen.getByLabelText(/plurality/i))
+    await typist.click(await screen.findByRole('option', { name: /singleton/i }))
+
+    await typist.click(screen.getByRole('button', { name: /register the birth/i }))
+
+    expect(await screen.findByText(/late registration evidence required/i)).toBeInTheDocument()
+
+    // And something was scrolled to, rather than the message being left where
+    // the person cannot see it.
+    await waitFor(() => expect(scrolled.length).toBeGreaterThan(0))
+  })
+
+  it('brings a refused BRN draw into view too', async () => {
+    const scrolled: unknown[] = []
+    Element.prototype.scrollIntoView = function () {
+      scrolled.push(this)
+    }
+
+    // A facility that has exhausted its pre-approved range.
+    post.mockResolvedValue({
+      data: undefined,
+      error: { status: 409, title: 'BRN range exhausted.', errors: [] },
+      response: { ok: false, status: 409 },
+    })
+
+    const typist = userEvent.setup({ delay: null })
+
+    show()
+    await waitFor(() => expect(get).toHaveBeenCalled())
+
+    await typist.type(screen.getByLabelText(/child’s full name/i), 'Chipo Mwale')
+    fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: daysAgo(3) } })
+    await typist.click(screen.getByLabelText(/facility/i))
+    await typist.click(await screen.findByRole('option', { name: /kabwe/i }))
+    await typist.click(screen.getByLabelText(/^sex$/i))
+    await typist.click(await screen.findByRole('option', { name: /female/i }))
+    await typist.click(screen.getByLabelText(/plurality/i))
+    await typist.click(await screen.findByRole('option', { name: /singleton/i }))
+
+    await typist.click(screen.getByRole('button', { name: /register the birth/i }))
+
+    expect(await screen.findByText(/brn range exhausted/i)).toBeInTheDocument()
+    await waitFor(() => expect(scrolled.length).toBeGreaterThan(0))
   })
 })

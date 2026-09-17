@@ -723,6 +723,44 @@ ASP.NET's literal-over-parameter route precedence rather than on a test. Both
 paths appear distinctly in the generated document, which rules out a template
 collision but is not the same thing.
 
+### The registration form appeared to do nothing — fixed
+
+Reported from the running app: clicking **Register the birth** did nothing.
+
+It was not doing nothing. The form was refusing its own validation and saying
+so only as a line of red under whichever field was unfilled — which on a form
+this long is usually scrolled off the screen. From the button, a refused click
+and a broken button are indistinguishable, so the registrar clicks again and
+concludes the system is broken.
+
+Diagnosed by driving the running app rather than by reading: filling every
+field registered a birth end to end (BRN block granted, `POST /register` →
+201, landed on the record), while an incomplete one produced no request at
+all. The audit trail agreed — no BRN block had ever been granted, and granting
+one is audited on success.
+
+**Feedback now appears at the button**, naming what is still needed in the
+screen's own words rather than the schema's: *"Nothing was sent to the
+registry. Still needed: facility, the child's name, date of birth, sex,
+plurality."* Focusing the offending field would not have been enough on its
+own — facility, sex and plurality are set through `setValue` rather than
+`register`, so react-hook-form has no input to move the cursor to for three of
+the five required fields.
+
+A refused submission still draws **no** BRN, which is pinned by a test: a form
+that fails validation must not advance the facility's counter.
+
+**A second defect found in the console while there.** `sex` and `plurality`
+had no entry in `defaultValues`, so they began `undefined` and React warned
+that the Select was "changing from uncontrolled to controlled" — a component
+switching modes can drop what was chosen. Every field is now named in
+`defaultValues` and every Select is controlled from the first render.
+
+Worth recording about the testing: this class of bug is invisible to a test
+that only drives the happy path, and the existing suite had exactly that
+shape. The new cases assert what the screen says when it refuses, which is the
+half that was never exercised.
+
 ### W2 as built
 
 `GET /api/facilities` and `GET /api/facilities/{facilityId}`, plus the
