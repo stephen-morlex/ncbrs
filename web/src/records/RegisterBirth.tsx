@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { useForm } from 'react-hook-form'
+import { type FieldErrors, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { CircleAlert, Save, TriangleAlert } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -69,15 +69,44 @@ export function RegisterBirth() {
   // fresh one each attempt. The rule, and why it matters, lives in brnDraw.ts.
   const drawnRef = useRef<BrnDraw | null>(null)
 
+  /**
+   * What is still stopping the form from being submitted.
+   *
+   * Empty until a submission is actually refused, so the screen never scolds
+   * someone for a field they have not reached yet.
+   */
+  const [blocking, setBlocking] = useState<string[]>([])
+  const blockingRef = useRef<HTMLDivElement | null>(null)
+
+  /**
+   * The registry's own refusal, which renders at the top of the page.
+   *
+   * The submit button sits about 1800px down a form this long, on a 720px
+   * viewport — so an error rendered at the top is roughly a thousand pixels
+   * above where the person clicked, and nothing moves them to it. From the
+   * button, "the registry refused this" and "the button is broken" look
+   * identical.
+   */
+  const failureRef = useRef<HTMLDivElement | null>(null)
+
   const form = useForm<RegistrationInput>({
-    resolver: zodResolver(registrationSchema),
+    // Every field named, including the ones behind a Select. An absent key
+    // leaves the value undefined, which makes the control uncontrolled on the
+    // first render and controlled on the next -- React warns about exactly
+    // that, and a component switching modes can drop what was chosen.
     defaultValues: {
       facilityId: '',
       childFullName: '',
       dateOfBirth: '',
+      sex: undefined,
+      plurality: undefined,
+      birthWeightGrams: '',
+      gestationalAgeWeeks: '',
+      birthOrder: '',
       motherFullName: '',
       fatherFullName: '',
     },
+    resolver: zodResolver(registrationSchema),
   })
 
   const dateOfBirth = form.watch('dateOfBirth')
@@ -119,8 +148,28 @@ export function RegisterBirth() {
     }
   }, [api])
 
+  /**
+   * A refused submission has to say so **at the button**.
+   *
+   * Without this the click did nothing visible: the only feedback was a line
+   * of red under whichever field was unfilled, which on a form this long is
+   * usually scrolled off the screen. A registrar clicks Register, the page
+   * does not move, and there is nothing to read — so they click again, and
+   * conclude the system is broken.
+   *
+   * Focusing the offending field is not enough on its own here. Facility, sex
+   * and plurality are set through `setValue` rather than `register`, so
+   * react-hook-form has no input to move the cursor to for three of the five
+   * required fields.
+   */
+  const refused = useCallback((errors: FieldErrors<RegistrationInput>) => {
+    setBlocking(Object.keys(errors).map(label))
+    show(blockingRef)
+  }, [])
+
   const submit = useCallback(
     async (values: RegistrationInput) => {
+      setBlocking([])
       setSubmitting(true)
       setError(null)
 
@@ -130,6 +179,11 @@ export function RegisterBirth() {
         const brn = await drawnRef.current.forAttempt(values.facilityId)
 
         if (!brn) {
+          // drawBrn has already set the error -- a facility out of numbers, or
+          // one this registrar may not act for. Same hole as below: without
+          // this the refusal renders far above the button and the click looks
+          // like it did nothing.
+          show(failureRef)
           return
         }
 
@@ -157,7 +211,18 @@ export function RegisterBirth() {
         })
 
         if (failure || !response.ok) {
-          setError(toNcbrsError(failure, response.status))
+          const refusal = toNcbrsError(failure, response.status)
+
+          // When the registry objects to the *number*, the held one can never
+          // work -- pressing Register again with it would refuse forever. Any
+          // other objection is about the form, and keeping the number is what
+          // stops a registrar fixing three fields and burning three BRNs.
+          if (aboutTheNumber(refusal)) {
+            drawnRef.current.discard()
+          }
+
+          setError(refusal)
+          show(failureRef)
           return
         }
 
@@ -206,7 +271,7 @@ export function RegisterBirth() {
         description="For a birth being filed at the centre. A facility device registers its own, from the block it already holds."
       />
 
-      {error ? <Failure error={error} /> : null}
+      <div ref={failureRef}>{error ? <Failure error={error} /> : null}</div>
 
       {chosen && chosen.brnRemaining <= 0 ? (
         <Alert variant="destructive">
@@ -227,7 +292,7 @@ export function RegisterBirth() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={form.handleSubmit(submit)} noValidate>
+          <form onSubmit={form.handleSubmit(submit, refused)} noValidate>
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="facilityId">Facility</FieldLabel>
@@ -283,7 +348,7 @@ export function RegisterBirth() {
               <Field>
                 <FieldLabel htmlFor="sex">Sex</FieldLabel>
                 <Select
-                  value={form.watch('sex')}
+                  value={form.watch('sex') ?? ''}
                   onValueChange={(value) =>
                     form.setValue('sex', value as RegistrationInput['sex'], {
                       shouldValidate: true,
@@ -305,7 +370,7 @@ export function RegisterBirth() {
               <Field>
                 <FieldLabel htmlFor="plurality">Plurality</FieldLabel>
                 <Select
-                  value={form.watch('plurality')}
+                  value={form.watch('plurality') ?? ''}
                   onValueChange={(value) =>
                     form.setValue('plurality', value as RegistrationInput['plurality'], {
                       shouldValidate: true,
@@ -389,6 +454,19 @@ export function RegisterBirth() {
 
               {isLate ? <LateRegistrationFields form={form} error={error} /> : null}
 
+              <div ref={blockingRef}>
+                {blocking.length > 0 ? (
+                  <Alert variant="destructive">
+                    <CircleAlert />
+                    <AlertTitle>This birth has not been registered yet</AlertTitle>
+                    <AlertDescription>
+                      Nothing was sent to the registry. Still needed:{' '}
+                      {blocking.join(', ')}.
+                    </AlertDescription>
+                  </Alert>
+                ) : null}
+              </div>
+
               <Button type="submit" disabled={submitting} className="w-fit">
                 {submitting ? <Spinner /> : <Save />}
                 Register the birth
@@ -433,7 +511,7 @@ function LateRegistrationFields({
         <Field>
           <FieldLabel htmlFor="evidenceType">Supporting evidence</FieldLabel>
           <Select
-            value={form.watch('lateRegistration.evidenceType')}
+            value={form.watch('lateRegistration.evidenceType') ?? ''}
             onValueChange={(value) =>
               form.setValue(
                 'lateRegistration.evidenceType',
@@ -548,6 +626,53 @@ function optional(value: unknown): number | undefined {
   const parsed = Number(value)
 
   return Number.isFinite(parsed) ? parsed : undefined
+}
+
+/**
+ * Brings a message the submission produced into view.
+ *
+ * After paint, because the element does not exist until the state that
+ * renders it has been applied. Guarded, because scrollIntoView with options
+ * is absent in jsdom and a test must not fail on the scroll rather than on
+ * the behaviour.
+ */
+function show(target: React.RefObject<HTMLDivElement | null>) {
+  requestAnimationFrame(() => target.current?.scrollIntoView?.({ block: "center", behavior: "smooth" }))
+}
+
+/**
+ * Whether the registry refused the BRN rather than the form.
+ *
+ * Read from the field the server names, not from the status code. 409 also
+ * covers a facility whose range is exhausted, where drawing again is precisely
+ * the wrong move — the next number is no more available than the last.
+ */
+function aboutTheNumber(error: NcbrsError): boolean {
+  return error.fields.some((item) => item.field.toLowerCase() === 'data.brn')
+}
+
+/**
+ * The name a registrar sees on screen, not the name the schema uses.
+ *
+ * "childFullName" in a summary asks the reader to translate before they can
+ * act, which is the opposite of what a message on a refused submission is for.
+ */
+function label(field: string): string {
+  const names: Record<string, string> = {
+    facilityId: 'facility',
+    childFullName: 'the child’s name',
+    dateOfBirth: 'date of birth',
+    sex: 'sex',
+    plurality: 'plurality',
+    birthWeightGrams: 'birth weight',
+    gestationalAgeWeeks: 'gestational age',
+    birthOrder: 'birth order',
+    motherFullName: 'mother’s name',
+    fatherFullName: 'father’s name',
+    lateRegistration: 'the late-registration evidence',
+  }
+
+  return names[field] ?? field
 }
 
 function blankToUndefined(value: string | undefined): string | undefined {

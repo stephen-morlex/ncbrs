@@ -56,3 +56,35 @@ describe('createBrnDraw', () => {
     expect(draw).toHaveBeenCalledTimes(2)
   })
 })
+
+describe('when the registry refuses the number itself', () => {
+  it('draws a different one next time', async () => {
+    // A BRN already registered can never be registered again. Holding it
+    // across retries leaves the form refusing forever, however many times the
+    // registrar presses it.
+    const draw = vi.fn().mockResolvedValueOnce('200000').mockResolvedValueOnce('200002')
+    const brn = createBrnDraw(draw)
+
+    expect(await brn.forAttempt(FacilityId)).toBe('200000')
+
+    brn.discard()
+
+    expect(await brn.forAttempt(FacilityId)).toBe('200002')
+    expect(draw).toHaveBeenCalledTimes(2)
+  })
+
+  it('holds the number for every other kind of refusal', async () => {
+    // The distinction this rests on. A missing declarant says nothing about
+    // the number, and drawing a fresh one per fix would leave a trail of gaps
+    // nobody could account for.
+    const draw = vi.fn().mockResolvedValue('200000')
+    const brn = createBrnDraw(draw)
+
+    await brn.forAttempt(FacilityId)
+    await brn.forAttempt(FacilityId)
+    await brn.forAttempt(FacilityId)
+
+    expect(draw).toHaveBeenCalledTimes(1)
+    expect(brn.held()).toBe('200000')
+  })
+})
