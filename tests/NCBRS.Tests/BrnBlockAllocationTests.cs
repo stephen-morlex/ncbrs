@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.AspNetCore.Http;
@@ -226,5 +227,153 @@ public class BrnBlockAllocationTests
         await using var verifyDb = new NcbrsDbContext(options);
         var finalFacility = await verifyDb.Facilities.FindAsync(FacilityId);
         Assert.Equal(1400, finalFacility!.BrnBlockNextAvailable);
+    }
+
+    // ---- Numbers already on a record --------------------------------------
+    //
+    // BrnBlockNextAvailable tracks what has been granted, not what has been
+    // used, and the two diverge whenever a record enters carrying a BRN from
+    // the facility's range without a grant -- a sync from a device provisioned
+    // elsewhere, a restored dump, a seeded environment.
+    //
+    // Reported live: a facility whose counter sat at 200000 while 200000 and
+    // 200001 were both registered. The grant handed out 200000 and the
+    // registration was refused as a duplicate.
+
+    [Fact]
+    public async Task AGrantSkipsANumberAlreadyOnARecord()
+    {
+        using var database = TestDatabase.Create();
+        var options = await SeedAsync(database, TestFacility("Test Clinic", 200_000, 299_999, 200_000));
+
+        await GivenRegisteredAsync(options, "200000");
+
+        await using var db = new NcbrsDbContext(options);
+        var response = Assert.IsType<BrnBlockResponse>(
+            (await CreateController(db).RequestBrnBlock(FacilityId, Block(1))).Value);
+
+        // Not 200000, which is on a record and can never be registered again.
+        Assert.Equal(200_001, response.BlockStart);
+    }
+
+    [Fact]
+    public async Task AGrantSkipsAWholeRunOfUsedNumbers()
+    {
+        // The reported case exactly: two consecutive numbers used, counter at
+        // the first. One request must clear both rather than handing out a
+        // refusal twice.
+        using var database = TestDatabase.Create();
+        var options = await SeedAsync(database, TestFacility("Test Clinic", 200_000, 299_999, 200_000));
+
+        await GivenRegisteredAsync(options, "200000", "200001");
+
+        await using var db = new NcbrsDbContext(options);
+        var response = Assert.IsType<BrnBlockResponse>(
+            (await CreateController(db).RequestBrnBlock(FacilityId, Block(1))).Value);
+
+        Assert.Equal(200_002, response.BlockStart);
+    }
+
+    [Fact]
+    public async Task AGrantedBlockNeverContainsAUsedNumber()
+    {
+        // A device takes its block offline. Every number in it must be one it
+        // can actually register against -- a collision is not discovered until
+        // it syncs, a fortnight of births later.
+        using var database = TestDatabase.Create();
+        var options = await SeedAsync(database, TestFacility("Test Clinic", 200_000, 299_999, 200_000));
+
+        await GivenRegisteredAsync(options, "200000", "200003");
+
+        await using var db = new NcbrsDbContext(options);
+        var response = Assert.IsType<BrnBlockResponse>(
+            (await CreateController(db).RequestBrnBlock(FacilityId, Block(10))).Value);
+
+        await using var verify = new NcbrsDbContext(options);
+        var used = verify.BirthRecords.Select(record => record.Brn).ToList();
+
+        for (var number = response.BlockStart; number <= response.BlockEnd; number++)
+        {
+            Assert.DoesNotContain(number.ToString(CultureInfo.InvariantCulture), used);
+        }
+    }
+
+    [Fact]
+    public async Task SkippingIsRecordedInTheAuditTrail()
+    {
+        // A counter behind the register means records reached this range
+        // outside the grant path. Somebody should be able to find out that
+        // happened, and how often.
+        using var database = TestDatabase.Create();
+        var options = await SeedAsync(database, TestFacility("Test Clinic", 200_000, 299_999, 200_000));
+
+        await GivenRegisteredAsync(options, "200000", "200001");
+
+        await using var db = new NcbrsDbContext(options);
+        await CreateController(db).RequestBrnBlock(FacilityId, Block(1));
+
+        await using var verify = new NcbrsDbContext(options);
+        var actions = verify.AuditLogs.Select(log => log.Action).ToList();
+
+        Assert.Contains(actions, action => action.StartsWith("BrnBlockGranted:skipped="));
+    }
+
+    [Fact]
+    public async Task AnOrdinaryGrantIsNotRecordedAsSkipping()
+    {
+        // The negative that keeps the signal worth reading. If every grant
+        // carried a skip count, nobody would notice the ones that did.
+        using var database = TestDatabase.Create();
+        var options = await SeedAsync(database, TestFacility("Test Clinic", 1000, 5000, 1000));
+
+        await using var db = new NcbrsDbContext(options);
+        await CreateController(db).RequestBrnBlock(FacilityId, Block(200));
+
+        await using var verify = new NcbrsDbContext(options);
+        var actions = verify.AuditLogs.Select(log => log.Action).ToList();
+
+        Assert.Contains("BrnBlockGranted", actions);
+        Assert.DoesNotContain(actions, action => action.StartsWith("BrnBlockGranted:skipped="));
+    }
+
+    [Fact]
+    public async Task AProvisionalIdentifierNeverBlocksANumber()
+    {
+        // A PROV- identifier was never drawn from a block and cannot collide
+        // with one. Treating it as used would burn numbers for nothing.
+        using var database = TestDatabase.Create();
+        var options = await SeedAsync(database, TestFacility("Test Clinic", 200_000, 299_999, 200_000));
+
+        await GivenRegisteredAsync(options, "PROV-TABLET07-1");
+
+        await using var db = new NcbrsDbContext(options);
+        var response = Assert.IsType<BrnBlockResponse>(
+            (await CreateController(db).RequestBrnBlock(FacilityId, Block(1))).Value);
+
+        Assert.Equal(200_000, response.BlockStart);
+    }
+
+    private static async Task GivenRegisteredAsync(
+        DbContextOptions<NcbrsDbContext> options, params string[] brns)
+    {
+        await using var db = new NcbrsDbContext(options);
+
+        foreach (var brn in brns)
+        {
+            db.BirthRecords.Add(new BirthRecord
+            {
+                Brn = brn,
+                VitalEventType = VitalEventType.LiveBirth,
+                ChildPerson = new Person { FullName = "Chipo Mwale" },
+                FacilityId = FacilityId,
+                RegisteredByRegistrarId = RegistrarId,
+                DateOfBirth = new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc),
+                Sex = Sex.Female,
+                Plurality = BirthPlurality.Singleton,
+                Status = RecordStatus.Provisional,
+            });
+        }
+
+        await db.SaveChangesAsync();
     }
 }
