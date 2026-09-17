@@ -192,7 +192,33 @@ public record BirthRecordResponse(
     /// whose BRN is still provisional, is the expected answer rather than a
     /// fault.
     /// </summary>
-    CertificateState? Certificate = null
+    CertificateState? Certificate = null,
+
+    /// <summary>
+    /// The rest of what a correction can change.
+    ///
+    /// **Returned because a registrar cannot correct a value they cannot see.**
+    /// Five of the eight correctable fields were stored and never published, so
+    /// a correction form could offer nothing but blank boxes — and a birth
+    /// weight retyped from memory is not a correction, it is a second guess.
+    ///
+    /// This is a deliberate departure from how *search* treats parents' names,
+    /// not an oversight about it. A result list carrying them would spread them
+    /// across every search that happened to match a surname; a single record,
+    /// fetched by someone who already holds the BRN, discloses them to one
+    /// person about one family they have already identified. The two are
+    /// different acts and W1's exclusion stands.
+    /// </summary>
+    string? MotherFullName = null,
+    string? FatherFullName = null,
+
+    /// <summary>
+    /// Null means not measured, and stays distinct from zero: a village post
+    /// with no scale records no weight, and a 0g baby is a different claim.
+    /// </summary>
+    int? BirthWeightGrams = null,
+    decimal? GestationalAgeWeeks = null,
+    int? BirthOrder = null
 );
 
 /// <summary>

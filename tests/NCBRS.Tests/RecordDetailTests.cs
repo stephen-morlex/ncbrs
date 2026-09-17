@@ -174,6 +174,38 @@ public class RecordDetailTests : IDisposable
         Assert.Equal(Born.AddDays(60), record.Certificate.IssuedAtUtc);
     }
 
+    [Fact]
+    public async Task EverythingACorrectionCanChange_IsReturned()
+    {
+        // A registrar cannot correct a value they cannot see. Five of the eight
+        // correctable fields were stored and published nowhere, so a correction
+        // form could offer only blank boxes -- and a birth weight retyped from
+        // memory is a second guess, not a correction.
+        GivenARecord(withParentsAndMeasurements: true);
+
+        var record = await LookUpAsync("100001");
+
+        Assert.Equal("Grace Mwale", record.MotherFullName);
+        Assert.Equal("John Mwale", record.FatherFullName);
+        Assert.Equal(3200, record.BirthWeightGrams);
+        Assert.Equal(39.5m, record.GestationalAgeWeeks);
+        Assert.Equal(1, record.BirthOrder);
+    }
+
+    [Fact]
+    public async Task AnUnmeasuredValue_ComesBackNullRatherThanZero()
+    {
+        // A village post with no scale records no weight. Zero would render as
+        // a number a registrar might leave in place, thereby asserting it.
+        GivenARecord();
+
+        var record = await LookUpAsync("100001");
+
+        Assert.Null(record.BirthWeightGrams);
+        Assert.Null(record.GestationalAgeWeeks);
+        Assert.Null(record.MotherFullName);
+    }
+
     [Theory]
     [InlineData(30)]
     [InlineData(90)]
@@ -192,12 +224,23 @@ public class RecordDetailTests : IDisposable
         Assert.Equal(windowDays, rules.Value!.StatutoryWindowDays);
     }
 
-    private void GivenARecord(string? provisionalIdentifier = null)
+    private void GivenARecord(
+        string? provisionalIdentifier = null,
+        bool withParentsAndMeasurements = false)
     {
         using var db = new NcbrsDbContext(_options);
 
         db.BirthRecords.Add(new BirthRecord
         {
+            MotherPerson = withParentsAndMeasurements
+                ? new Person { FullName = "Grace Mwale" }
+                : null,
+            FatherPerson = withParentsAndMeasurements
+                ? new Person { FullName = "John Mwale" }
+                : null,
+            BirthWeightGrams = withParentsAndMeasurements ? 3200 : null,
+            GestationalAgeWeeks = withParentsAndMeasurements ? 39.5m : null,
+            BirthOrder = withParentsAndMeasurements ? 1 : null,
             Brn = "100001",
             VitalEventType = VitalEventType.LiveBirth,
             ChildPerson = new Person { FullName = "Chipo Mwale" },

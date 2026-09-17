@@ -164,6 +164,11 @@ public class BirthRecordsController(
             // the family is standing there.
             .Include(b => b.LateRegistration)
             .Include(b => b.Certificates)
+            // Loaded so a correction can be made against what the record
+            // actually says. People are separate rows, so without these the
+            // names come back null and read as "not recorded".
+            .Include(b => b.MotherPerson)
+            .Include(b => b.FatherPerson)
             .FirstOrDefaultAsync(b => b.Brn == brn || b.ProvisionalIdentifier == brn);
 
         if (record is null || record.ChildPerson is null)
@@ -202,7 +207,15 @@ public class BirthRecordsController(
             RegisteredAtUtc: record.RegisteredAtUtc,
             StatutoryWindowDays: record.StatutoryWindowDays,
             ProvisionalIdentifier: record.ProvisionalIdentifier,
-            Certificate: CertificateStateOf(record));
+            Certificate: CertificateStateOf(record),
+            // The rest of what a correction can change, so a correction form
+            // can show what the register currently says rather than asking a
+            // registrar to retype it from memory.
+            MotherFullName: record.MotherPerson?.FullName,
+            FatherFullName: record.FatherPerson?.FullName,
+            BirthWeightGrams: record.BirthWeightGrams,
+            GestationalAgeWeeks: record.GestationalAgeWeeks,
+            BirthOrder: record.BirthOrder);
     }
 
     /// <summary>

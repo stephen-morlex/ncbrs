@@ -761,6 +761,62 @@ that only drives the happy path, and the existing suite had exactly that
 shape. The new cases assert what the screen says when it refuses, which is the
 half that was never exercised.
 
+### Requesting a correction — Phase 2 complete
+
+`/records/correct?brn=…`, reached from the record rather than from the
+navigation, because a correction is an act on a record and not a destination.
+
+**The screen says which track a field is on before you submit, not after.**
+The clinical measurements take effect at once; everything describing *who the
+record is about* waits for a reviewer who is not the submitter. Saying that
+afterwards would be too late — a registrar correcting a child's name has a
+family in front of them when they press save, and needs to know the record will
+not change today.
+
+**A 202 must read as neither a failure nor a success.** It means something real
+happened *and* the record has not changed. A red error would send a registrar
+back to redo work that was accepted; a green tick would have them tell a family
+a correction was made when it was not. The screen reports the two outcomes as
+separate facts, and the pending one carries the sentence that matters: *do not
+tell the family the correction has been made.*
+
+**Only changed fields are sent.** The form is prefilled from the register, so
+submitting it whole would file a correction for every untouched field — each an
+audit row asserting a change that never happened, and each dragging its field
+onto the approval track for nothing. A name resubmitted identically would send
+a record to review. Extracted to `correction.ts` and tested there, including
+that blank, null and whitespace all compare as the same absence.
+
+#### The gap it surfaced
+
+**Five of the eight correctable fields were stored and published nowhere.**
+`BirthRecordResponse` carried the child's name, date of birth and sex, but not
+the parents' names, birth weight, gestational age or birth order — so a
+correction form could offer nothing but blank boxes for them, and a birth
+weight retyped from memory is a second guess rather than a correction. They are
+now returned.
+
+That widens what `GET /api/BirthRecords/{brn}` discloses, and the decision is
+deliberate rather than incidental. W1 excludes parents' names from *search*
+because a result list carrying them would spread them across every search that
+happened to match a surname. A single record, fetched by someone who already
+holds the BRN, discloses them to one person about one family they have already
+identified. Different acts; W1's exclusion stands unchanged.
+
+#### A test bug worth recording
+
+The first run failed with the form silently resetting under the typing. The
+mock returned a **new** client object on every render, so the load effect
+re-ran continuously and overwrote the draft. The real `useApiClient` memoises
+for exactly this reason, and says so in its own comment — the mock was the only
+thing violating the contract. The same flaw was latent in the registration-form
+tests and is fixed there too.
+
+`@testing-library/user-event` was added for this screen, approved beforehand.
+`fireEvent` cannot drive a radix `Select` or a realistic type-and-submit
+sequence, and the 200-vs-202 distinction is precisely the behaviour that has to
+be exercised rather than asserted about a schema.
+
 ### W2 as built
 
 `GET /api/facilities` and `GET /api/facilities/{facilityId}`, plus the
@@ -1329,10 +1385,10 @@ should not rely on.
 This was visible in PR #10 — `errors.ts` handled `status` as either — and was
 rationalised as JSON round-tripping rather than investigated. It was a
 regression.
-- [x] Record detail: identity, status, certificate state, provisional identifier, annulment block — PR pending
-- [x] Amendment history timeline, showing previous values — PR pending
-- [x] Online registration form, incl. late-registration evidence when the window has passed — PR pending
-- [ ] Request a correction, with the two-track outcome made visible: applied now vs queued for approval (the 202 case must not look like a failure)
+- [x] Record detail: identity, status, certificate state, provisional identifier, annulment block — PR #25
+- [x] Amendment history timeline, showing previous values — PR #25
+- [x] Online registration form, incl. late-registration evidence when the window has passed — PR #26
+- [x] Request a correction, with the two-track outcome made visible: applied now vs queued for approval (the 202 case must not look like a failure) — PR pending
 
 ### Phase 3 — The review queues
 *The legal heart of the site. Each queue is a decision with consequences, and

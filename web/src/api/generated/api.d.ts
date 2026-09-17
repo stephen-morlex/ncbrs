@@ -864,6 +864,14 @@ export interface components {
             statutoryWindowDays?: null | number;
             provisionalIdentifier?: null | string;
             certificate?: null | components["schemas"]["CertificateState"];
+            motherFullName?: null | string;
+            fatherFullName?: null | string;
+            /** Format: int32 */
+            birthWeightGrams?: null | number;
+            /** Format: double */
+            gestationalAgeWeeks?: null | number;
+            /** Format: int32 */
+            birthOrder?: null | number;
         };
         BirthRecordSearchHit: {
             brn: string;
