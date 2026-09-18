@@ -63,6 +63,10 @@ const LateRegistrationQueue = lazy(() =>
   })),
 )
 
+const DuplicateReview = lazy(() =>
+  import('@/review/DuplicateReview').then((module) => ({ default: module.DuplicateReview })),
+)
+
 /**
  * Routing for the shell.
  *
@@ -142,6 +146,16 @@ export default function App() {
           element={
             <RequireAuth policy="CanApproveLateRegistrations">
               <LateRegistrationQueue />
+            </RequireAuth>
+          }
+        />
+
+        {/* Gated by the same policy its navigation entry names. */}
+        <Route
+          path="/review/duplicates"
+          element={
+            <RequireAuth policy="CanReviewDuplicates">
+              <DuplicateReview />
             </RequireAuth>
           }
         />
