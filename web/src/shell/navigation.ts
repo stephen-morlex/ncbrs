@@ -7,6 +7,7 @@ import {
   History,
   Hospital,
   Hourglass,
+  ListX,
   ScrollText,
   Search,
   ShieldCheck,
@@ -121,6 +122,9 @@ export const navigation: NavGroup[] = [
       // signed-in officer does, and the verify endpoint is anonymous by
       // design — it is meant to be usable by anyone holding the document.
       { label: 'Verify a certificate', to: '/certificates/verify', icon: ShieldCheck, policy: null },
+      // Not gated: the list names no person — every entry is an opaque digest —
+      // and the endpoint is anonymous so verifiers can mirror it.
+      { label: 'Revocation list', to: '/certificates/revocations', icon: ListX, policy: null },
       // Under Oversight rather than beside the register: reading the trail
       // is checking on the work, not doing it.
       {

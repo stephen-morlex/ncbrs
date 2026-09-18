@@ -87,6 +87,10 @@ const VerifyCertificate = lazy(() =>
   })),
 )
 
+const RevocationList = lazy(() =>
+  import('@/certificates/RevocationList').then((module) => ({ default: module.RevocationList })),
+)
+
 /**
  * Routing for the shell.
  *
@@ -163,6 +167,7 @@ export default function App() {
         {/* Signed-in is enough: verifying a presented certificate is not an
             oversight act, and the endpoint behind it is anonymous by design. */}
         <Route path="/certificates/verify" element={<VerifyCertificate />} />
+        <Route path="/certificates/revocations" element={<RevocationList />} />
 
         {/* Gated by the same policy its navigation entry names — listing who
             is provisioned is an oversight act. */}
