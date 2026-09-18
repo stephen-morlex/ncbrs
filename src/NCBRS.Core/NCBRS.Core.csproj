@@ -15,6 +15,13 @@
     <Using Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
 
+  <!-- The dependency-light models and certificate verifier, shared with the
+       Tier-1 facility device app. Kept in their own assembly so that app need
+       not reference Kafka/Npgsql/EF; here they compile in as before. -->
+  <ItemGroup>
+    <ProjectReference Include="..\NCBRS.Contracts\NCBRS.Contracts.csproj" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
