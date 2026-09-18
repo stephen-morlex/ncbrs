@@ -53,6 +53,10 @@ const AuditTrail = lazy(() =>
   import('@/audit/AuditTrail').then((module) => ({ default: module.AuditTrail })),
 )
 
+const AmendmentQueue = lazy(() =>
+  import('@/review/AmendmentQueue').then((module) => ({ default: module.AmendmentQueue })),
+)
+
 /**
  * Routing for the shell.
  *
@@ -114,6 +118,17 @@ export default function App() {
           }
         />
         <Route path="/facilities" element={<Facilities />} />
+
+        {/* Gated by the same policy its navigation entry names, so the guard
+            and the nav cannot disagree about who may review corrections. */}
+        <Route
+          path="/review/amendments"
+          element={
+            <RequireAuth policy="CanApproveAmendments">
+              <AmendmentQueue />
+            </RequireAuth>
+          }
+        />
 
         <Route
           path="/audit"
