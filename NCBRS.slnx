@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/NCBRS.Api/NCBRS.Api.csproj" />
     <Project Path="src/NCBRS.Consumer/NCBRS.Consumer.csproj" />
+    <Project Path="src/NCBRS.Contracts/NCBRS.Contracts.csproj" />
     <Project Path="src/NCBRS.Core/NCBRS.Core.csproj" />
     <Project Path="src/NCBRS.District/NCBRS.District.csproj" />
     <Project Path="src/NCBRS.Migrations.Postgres/NCBRS.Migrations.Postgres.csproj" />
