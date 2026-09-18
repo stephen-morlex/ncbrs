@@ -85,6 +85,68 @@ public class DashboardQueryService(ReadModelDbContext db, TimeProvider clock)
             Unanswerable);
     }
 
+    /// <summary>
+    /// The headline figures bucketed by calendar month, for charting a trend.
+    ///
+    /// Every rule the summary keeps holds per bucket: births by date of
+    /// occurrence, annulled ones excluded and counted apart, and shares null
+    /// rather than zero. Each bucket's <see cref="ReportingPeriod"/> carries
+    /// StillFilling, so the caller can mark the most recent month — which is
+    /// not settled — rather than let a chart read it as a fall in births.
+    /// </summary>
+    public async Task<IReadOnlyList<TrendPoint>> TrendsAsync(
+        DateTime fromUtc,
+        DateTime toUtc,
+        string? districtId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var facts = await InPeriod(fromUtc, toUtc, districtId).ToListAsync(cancellationToken);
+        var brns = facts.Where(fact => fact.AnnulledAtUtc is null).Select(fact => fact.Brn).ToList();
+
+        // Which of the period's births carry a perinatal or maternal death.
+        // Fetched once for the whole range and bucketed in memory by the
+        // birth's month, since an outcome is keyed by the BRN it belongs to.
+        var neonatalBrns = (await db.NeonatalOutcomeFacts
+            .Where(fact => brns.Contains(fact.Brn))
+            .Select(fact => fact.Brn)
+            .ToListAsync(cancellationToken)).ToHashSet();
+
+        var maternalBrns = (await db.MaternalOutcomeFacts
+            .Where(fact => brns.Contains(fact.Brn))
+            .Select(fact => fact.Brn)
+            .ToListAsync(cancellationToken)).ToHashSet();
+
+        var points = new List<TrendPoint>();
+
+        for (var monthStart = FirstOfMonth(fromUtc); monthStart < toUtc; monthStart = monthStart.AddMonths(1))
+        {
+            var monthEnd = monthStart.AddMonths(1);
+
+            var monthFacts = facts
+                .Where(fact => fact.DateOfBirth >= monthStart && fact.DateOfBirth < monthEnd)
+                .ToList();
+
+            var monthBirths = monthFacts.Where(fact => fact.AnnulledAtUtc is null).ToList();
+
+            var within = monthBirths.Count(fact => fact.WithinStatutoryWindow == true);
+            var outside = monthBirths.Count(fact => fact.WithinStatutoryWindow == false);
+
+            points.Add(new TrendPoint(
+                Period(monthStart, monthEnd),
+                monthBirths.Count(fact => fact.VitalEventType != "FetalDeath"),
+                monthBirths.Count(fact => fact.VitalEventType == "FetalDeath"),
+                monthFacts.Count - monthBirths.Count,
+                Share(within, within + outside),
+                monthBirths.Count(fact => neonatalBrns.Contains(fact.Brn)),
+                monthBirths.Count(fact => maternalBrns.Contains(fact.Brn))));
+        }
+
+        return points;
+    }
+
+    private static DateTime FirstOfMonth(DateTime value)
+        => new(value.Year, value.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+
     /// <summary>The district drill-down behind the national view.</summary>
     public async Task<IReadOnlyList<DistrictSummary>> DistrictsAsync(
         DateTime fromUtc,

@@ -260,6 +260,27 @@ app.MapGet("/api/dashboard/districts", async (
 .Produces<ApiError>(StatusCodes.Status400BadRequest)
 .RequireAuthorization(ReportingPolicy);
 
+// The headline figures bucketed by month, for charting a trend across the
+// year. Same authorization and same date range as the summary; each bucket
+// carries StillFilling so the client can mark the month that is not yet settled.
+app.MapGet("/api/dashboard/trends", async (
+    DateTime? from,
+    DateTime? to,
+    string? districtId,
+    DashboardQueryService dashboard,
+    CancellationToken cancellationToken) =>
+{
+    var (fromUtc, toUtc) = Range(from, to);
+
+    return toUtc <= fromUtc
+        ? Results.BadRequest(new ApiError("'to' must be after 'from'."))
+        : Results.Ok(await dashboard.TrendsAsync(fromUtc, toUtc, districtId, cancellationToken));
+})
+.WithName("GetDashboardTrends")
+.Produces<IReadOnlyList<TrendPoint>>()
+.Produces<ApiError>(StatusCodes.Status400BadRequest)
+.RequireAuthorization(ReportingPolicy);
+
 // E4. Anonymised aggregate only: the unit of this payload is a
 // district-month, never a person. See Dhis2ExportService for the three
 // suppression rules and why aggregation alone is not anonymity.

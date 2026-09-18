@@ -182,6 +182,27 @@ public record DashboardSummary(
 public record DistrictSummary(string DistrictId, int LiveBirths, int Annulled, decimal? WithinWindowShare);
 
 /// <summary>
+/// One calendar month of the headline figures, for charting a trend across the
+/// year. A compact slice of the summary rather than the whole of it repeated
+/// per point.
+///
+/// The same two rules the summary keeps apply here, and the first matters more
+/// on a line than in a tile: <see cref="ReportingPeriod.StillFilling"/> marks
+/// the most recent bucket as not settled, so a chart does not draw the month
+/// that is simply not over yet as a fall in births. A share is null — "not
+/// available" — never zero, so a month with no known window status is a gap in
+/// the line, not a plunge to the axis.
+/// </summary>
+public record TrendPoint(
+    ReportingPeriod Period,
+    int LiveBirths,
+    int FetalDeaths,
+    int Annulled,
+    decimal? WithinWindowShare,
+    int NeonatalDeaths,
+    int MaternalDeaths);
+
+/// <summary>
 /// The error shape these endpoints return on a bad request.
 ///
 /// A named record rather than an anonymous object, because an anonymous one

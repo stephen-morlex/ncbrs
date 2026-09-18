@@ -141,6 +141,69 @@
         ]
       }
     },
+    "/api/dashboard/trends": {
+      "get": {
+        "tags": [
+          "NCBRS.Consumer"
+        ],
+        "operationId": "GetDashboardTrends",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "districtId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TrendPoint"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/exports/dhis2": {
       "get": {
         "tags": [
@@ -795,6 +858,50 @@
             "items": {
               "$ref": "#/components/schemas/TierTimeToConfirmation"
             }
+          }
+        }
+      },
+      "TrendPoint": {
+        "required": [
+          "period",
+          "liveBirths",
+          "fetalDeaths",
+          "annulled",
+          "withinWindowShare",
+          "neonatalDeaths",
+          "maternalDeaths"
+        ],
+        "type": "object",
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/ReportingPeriod"
+          },
+          "liveBirths": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "fetalDeaths": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "annulled": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "withinWindowShare": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "neonatalDeaths": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maternalDeaths": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       }
