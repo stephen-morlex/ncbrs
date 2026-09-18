@@ -145,6 +145,65 @@ Draft v1.3 was revised to match these; v1.2 still contradicts them.
   would be rewritten through and what an inheritance claim later turns on.
   Don't collapse the two constants back together.
 
+## Administrative geography (South Sudan, built)
+The system registers births in **South Sudan**, whose geography is
+Country → State → County → Payam (rural) / Block (urban) → Boma (rural) /
+Quarter (urban) → Village. The original scaffold carried a flat
+`Facility.DistrictId` string and Zambian dev data (Lusaka, Kabwe); both were
+wrong for this deployment and have been replaced.
+
+- **`AdministrativeArea` is one self-referencing tree, not a column per
+  level.** `Level` (the `AdministrativeLevel` enum) says what a node is;
+  `ParentId` says where it sits. A table per level would force every location
+  to the same depth, which is exactly what the draft warns against: a county
+  may be split into payams *or* into blocks, and a village may be recorded
+  directly under a county where the intermediate area was never captured.
+  Payam and block share a tier, as do boma and quarter — the same tier carries
+  a rural and an urban name, and a place is one or the other. `CanContain`
+  allows any strictly-higher tier as a parent, not only the one immediately
+  above, which is what keeps the tree flexible.
+- **It lives in `NCBRS.Contracts`** (BCL-only), with the `AdministrativeLevels`
+  rules beside the model, so the facility device app can validate a tree
+  offline exactly as the centre does — the same reason the certificate
+  verification side sits there.
+- **`Code` is the stable identity, not the surrogate id.** Audit rows, the
+  reporting projection and DHIS2 org-unit maps snapshot/reference the code, so
+  a name correction never orphans a snapshot or a mapping. Codes are unique
+  across the tree (`SS`, `SS-CE`, `SS-CE-JUB`).
+- **Access scope is the County** (not "country", not the old flat string).
+  `DistrictScopeResolver` resolves the caller's county by walking up their
+  facility's area chain, and `DistrictLookup` resolves the county code the
+  same way (fallback to the transitional `DistrictId`, else `Unknown`) — audit,
+  events and the reporting stamp all carry that resolved county, not the flat
+  string. Ministry admins stay national; scoping still **refuses** rather than
+  silently narrows.
+- **`DistrictLookup` / `DistrictScopeResolver` kept their names on purpose**,
+  though they now resolve a county. Renaming them is part of the deferred
+  cleanup, not this work. **The "District tier" (`NCBRS.District`) is a
+  different thing entirely** — a store-and-forward node, not an administrative
+  field. Don't conflate the two.
+- **`Facility.AdministrativeAreaId` is nullable during the transition**, and
+  `Facility.DistrictId` is retained carrying the **county code** so nothing
+  that still reads it breaks. Dropping `DistrictId` and renaming the resolvers
+  is a later cosmetic pass, staged to run after this stack merges (it is not a
+  design change).
+- **The seed never invents locations.** `SouthSudanAreas.json` (an embedded
+  resource) carries the country, 10 states, the 3 state-equivalent areas
+  (Abyei `SS-AB`, Greater Pibor `SS-GP`, Ruweng `SS-RW`) and counties, marked
+  `"verified": false` with a provenance note that the county list must be
+  confirmed against the official gazette before production. `AdministrativeAreaSeeder`
+  is idempotent (upsert by `Code`) and seeds Country/State/County only; it runs
+  after migrations on Development startup, before the dev data seeder.
+- **`GET /api/administrative-areas`** feeds dependent location pickers one
+  level at a time (`?parentId=` for children, `?level=` for a whole level,
+  neither for the country root). Read-only and open to any signed-in caller:
+  it names no person and is the same reference data a registrar and an
+  oversight officer both need. Creating areas is a separate, write-gated
+  concern and is not this endpoint.
+- **Migrations are per provider, as everywhere** — the new table, FK and
+  columns were added to both the SQLite set (Core) and the Postgres set
+  (`NCBRS.Migrations.Postgres`).
+
 ## Signing key rotation (WS-A3/A4, built)
 The signer holds one **active** key and any number of **retired** ones;
 `CertificatePayloadVerifier` holds a set and selects by the key id printed in
