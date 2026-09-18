@@ -65,6 +65,14 @@ public class AdministrativeArea
     public required string Code { get; set; }
 }
 
+/// <summary>One area, as the read API returns it for dependent location pickers.</summary>
+public record AdministrativeAreaResponse(
+    Guid AdministrativeAreaId,
+    string Name,
+    AdministrativeLevel Level,
+    string Code,
+    Guid? ParentId);
+
 /// <summary>
 /// The rules of the hierarchy, kept dependency-light beside the model so the
 /// device app can validate a tree offline exactly as the centre does.
