@@ -656,4 +656,70 @@ public class DashboardReadModelTests : IDisposable
 
         Assert.Equal(0m, summary.RegistrationDelay.MedianDaysRegistrationToCentre);
     }
+
+    // --- trends over time ------------------------------------------------------
+
+    private async Task<IReadOnlyList<TrendPoint>> TrendsAsync(string? districtId = null)
+    {
+        await using var db = NewDb();
+
+        return await Dashboard(db).TrendsAsync(PeriodFrom, PeriodTo, districtId);
+    }
+
+    private static TrendPoint MonthOf(IReadOnlyList<TrendPoint> trends, int month)
+        => trends.Single(point => point.Period.FromUtc.Year == 2026 && point.Period.FromUtc.Month == month);
+
+    private static DateTime OnDay(int month, int day) => new(2026, month, day, 0, 0, 0, DateTimeKind.Utc);
+
+    [Fact]
+    public async Task Trends_BucketBirthsByMonthOfOccurrence()
+    {
+        await GivenAsync(
+            Birth("100001", dateOfBirth: OnDay(6, 10)),
+            Birth("100002", dateOfBirth: OnDay(6, 20)),
+            Birth("100003", dateOfBirth: OnDay(8, 5)));
+
+        var trends = await TrendsAsync();
+
+        // A bucket per calendar month across the default year, so a chart has
+        // an unbroken axis rather than only the months that had births.
+        Assert.Equal(12, trends.Count);
+        Assert.Equal(2, MonthOf(trends, 6).LiveBirths);
+        Assert.Equal(1, MonthOf(trends, 8).LiveBirths);
+        Assert.Equal(0, MonthOf(trends, 7).LiveBirths);
+    }
+
+    [Fact]
+    public async Task Trends_ExcludeAnnulledFromTheLineButCountThem()
+    {
+        await GivenAsync(
+            Birth("100001", dateOfBirth: OnDay(6, 10)),
+            Birth("100002", dateOfBirth: OnDay(6, 12), annulledAtUtc: Now));
+
+        var june = MonthOf(await TrendsAsync(), 6);
+
+        Assert.Equal(1, june.LiveBirths);
+        Assert.Equal(1, june.Annulled);
+    }
+
+    [Fact]
+    public async Task Trends_MarkTheMostRecentBucketAsStillFilling()
+    {
+        // The point of carrying StillFilling per bucket: a line must be able to
+        // mark the month that is simply not over, not draw it as a fall.
+        var trends = await TrendsAsync();
+
+        Assert.True(MonthOf(trends, 12).Period.StillFilling);
+        Assert.False(MonthOf(trends, 2).Period.StillFilling);
+    }
+
+    [Fact]
+    public async Task Trends_ShareIsNullNotZeroWhenNoBirthKnowsItsWindow()
+    {
+        // A month with births none of which report a window status is a gap in
+        // the line — "not available" — not a plunge to zero.
+        await GivenAsync(Birth("100001", dateOfBirth: OnDay(6, 10), withinWindow: null));
+
+        Assert.Null(MonthOf(await TrendsAsync(), 6).WithinWindowShare);
+    }
 }

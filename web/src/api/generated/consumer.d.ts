@@ -52,6 +52,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/dashboard/trends": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetDashboardTrends"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/exports/dhis2": {
         parameters: {
             query?: never;
@@ -250,6 +266,21 @@ export interface components {
             medianDays: null | number;
             byFacilityTier: components["schemas"]["TierTimeToConfirmation"][];
         };
+        TrendPoint: {
+            period: components["schemas"]["ReportingPeriod"];
+            /** Format: int32 */
+            liveBirths: number;
+            /** Format: int32 */
+            fetalDeaths: number;
+            /** Format: int32 */
+            annulled: number;
+            /** Format: double */
+            withinWindowShare: null | number;
+            /** Format: int32 */
+            neonatalDeaths: number;
+            /** Format: int32 */
+            maternalDeaths: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -331,6 +362,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DistrictSummary"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    GetDashboardTrends: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                districtId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrendPoint"][];
                 };
             };
             /** @description Bad Request */
