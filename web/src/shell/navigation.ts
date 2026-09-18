@@ -72,7 +72,6 @@ export const navigation: NavGroup[] = [
         to: '/review/amendments',
         icon: GitCompareArrows,
         policy: 'CanApproveAmendments',
-        pending: true,
       },
       {
         label: 'Duplicates',
