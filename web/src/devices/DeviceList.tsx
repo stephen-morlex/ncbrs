@@ -44,6 +44,7 @@ import { type NcbrsError, toNcbrsError, unreachableError } from '@/api/errors'
 import { useApiClient } from '@/api/useApi'
 import { PageHeader } from '@/shell/PageHeader'
 import { formatDate } from '@/records/RecordDetail'
+import { EnrolDeviceDialog } from './EnrolDeviceDialog'
 
 type Device = components['schemas']['DeviceResponse']
 type DeviceStatus = components['schemas']['DeviceStatus']
@@ -79,6 +80,7 @@ export function DeviceList() {
   const [facilityId, setFacilityId] = useState<string>(AllFacilities)
 
   const [acting, setActing] = useState<{ device: Device; action: Action } | null>(null)
+  const [enrolling, setEnrolling] = useState(false)
 
   const load = useCallback(
     async (facility: string) => {
@@ -153,7 +155,7 @@ export function DeviceList() {
         description="The tablets and terminals permitted to register and sync births — and which of them have gone quiet."
       />
 
-      <div className="flex flex-wrap items-end gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid gap-2">
           <Label htmlFor="device-facility">Facility</Label>
           <Select value={facilityId} onValueChange={setFacilityId}>
@@ -170,6 +172,11 @@ export function DeviceList() {
             </SelectContent>
           </Select>
         </div>
+
+        <Button onClick={() => setEnrolling(true)} disabled={facilities.length === 0}>
+          <Smartphone />
+          Enrol a device
+        </Button>
       </div>
 
       {loading && devices === null ? <LoadingList /> : null}
@@ -229,6 +236,18 @@ export function DeviceList() {
             </CardContent>
           </Card>
         )
+      ) : null}
+
+      {enrolling ? (
+        <EnrolDeviceDialog
+          facilities={facilities}
+          defaultFacilityId={facilityId !== AllFacilities ? facilityId : (facilities[0]?.facilityId ?? '')}
+          onClose={() => setEnrolling(false)}
+          onEnrolled={() => {
+            setEnrolling(false)
+            void load(facilityId)
+          }}
+        />
       ) : null}
 
       {acting ? (
