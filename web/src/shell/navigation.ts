@@ -116,7 +116,6 @@ export const navigation: NavGroup[] = [
         to: '/devices',
         icon: Smartphone,
         policy: 'CanEnrolDevices',
-        pending: true,
       },
       // Not gated: checking a certificate a family presents is something any
       // signed-in officer does, and the verify endpoint is anonymous by

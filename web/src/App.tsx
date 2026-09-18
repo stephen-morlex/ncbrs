@@ -91,6 +91,10 @@ const RevocationList = lazy(() =>
   import('@/certificates/RevocationList').then((module) => ({ default: module.RevocationList })),
 )
 
+const DeviceList = lazy(() =>
+  import('@/devices/DeviceList').then((module) => ({ default: module.DeviceList })),
+)
+
 /**
  * Routing for the shell.
  *
@@ -168,6 +172,16 @@ export default function App() {
             oversight act, and the endpoint behind it is anonymous by design. */}
         <Route path="/certificates/verify" element={<VerifyCertificate />} />
         <Route path="/certificates/revocations" element={<RevocationList />} />
+
+        {/* Gated by the same policy its navigation entry names. */}
+        <Route
+          path="/devices"
+          element={
+            <RequireAuth policy="CanEnrolDevices">
+              <DeviceList />
+            </RequireAuth>
+          }
+        />
 
         {/* Gated by the same policy its navigation entry names — listing who
             is provisioned is an oversight act. */}
