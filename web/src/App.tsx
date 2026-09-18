@@ -53,8 +53,8 @@ const AuditTrail = lazy(() =>
   import('@/audit/AuditTrail').then((module) => ({ default: module.AuditTrail })),
 )
 
-const AmendmentQueue = lazy(() =>
-  import('@/review/AmendmentQueue').then((module) => ({ default: module.AmendmentQueue })),
+const AmendmentsReview = lazy(() =>
+  import('@/review/AmendmentsReview').then((module) => ({ default: module.AmendmentsReview })),
 )
 
 /**
@@ -125,7 +125,7 @@ export default function App() {
           path="/review/amendments"
           element={
             <RequireAuth policy="CanApproveAmendments">
-              <AmendmentQueue />
+              <AmendmentsReview />
             </RequireAuth>
           }
         />
