@@ -1,9 +1,18 @@
 import { type FormEvent, type ReactNode, useCallback, useEffect, useState } from 'react'
-import { CircleAlert, Hourglass, TriangleAlert } from 'lucide-react'
+import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, XAxis, YAxis } from 'recharts'
+import { CircleAlert, Hourglass, RefreshCw, TriangleAlert } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  type ChartConfig,
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart'
 import {
   Empty,
   EmptyContent,
@@ -22,14 +31,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import type { components } from '@/api/generated/consumer'
 import { type NcbrsError, toNcbrsError, unreachableError } from '@/api/errors'
 import { useConsumerClient } from '@/api/useApi'
@@ -38,58 +39,79 @@ import { formatDate } from '@/records/RecordDetail'
 
 type Summary = components['schemas']['DashboardSummary']
 type District = components['schemas']['DistrictSummary']
+type TrendPoint = components['schemas']['TrendPoint']
 
 const National = 'national'
+const PollMs = 30_000
+
+type Query = { districtId: string; from: string; to: string }
 
 /**
- * The Ministry's dashboard, over the reporting projection.
+ * The Ministry's dashboard, over the reporting projection — a live, charted
+ * overview rather than a table of the current period.
  *
- * **The rule that outranks the arithmetic: an indicator whose inputs are
- * unknown reports "not available" and never zero.** A Ministry reading 0
- * neonatal deaths concludes the month went well; one reading "not available"
- * sends someone to find out. Every nullable figure the API returns is rendered
- * through {@link NotAvailable} for exactly that reason — a stray `0` here would
- * turn ignorance into a reassuring fact.
+ * Two rules from the read model survive into every chart here, and both are
+ * easy to lose the moment data becomes a shape on a screen:
  *
- * A recent period is still filling: registrations for births inside it are
- * still arriving, so the figures only rise. That is flagged, not hidden, so a
- * rising line is not read as a recovery.
+ * **An indicator whose inputs are unknown reads "not available", never zero.**
+ * A null share is a gap in the line, not a plunge to the axis; a null rate is
+ * "not available" on the tile, not a reassuring 0.
+ *
+ * **The most recent month is still filling.** Registrations for it keep
+ * arriving, so its figure only rises — the still-filling bar is faded and
+ * flagged, so a chart does not show a fall in births that is only the month
+ * not being over.
  */
 export function Dashboard() {
   const consumer = useConsumerClient()
 
   const [summary, setSummary] = useState<Summary | null>(null)
+  const [trends, setTrends] = useState<TrendPoint[]>([])
   const [districts, setDistricts] = useState<District[]>([])
   const [error, setError] = useState<NcbrsError | null>(null)
   const [loading, setLoading] = useState(true)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
-  const [districtId, setDistrictId] = useState<string>(National)
-  const [from, setFrom] = useState('')
-  const [to, setTo] = useState('')
+  const [applied, setApplied] = useState<Query>({ districtId: National, from: '', to: '' })
+  const [live, setLive] = useState(true)
+  const [draft, setDraft] = useState({ from: '', to: '' })
 
   const load = useCallback(
-    async (district: string, fromDate: string, toDate: string) => {
-      setLoading(true)
+    async (query: Query, background = false) => {
+      if (!background) {
+        setLoading(true)
+      }
       setError(null)
 
-      try {
-        const { data, error: failure, response } = await consumer.GET('/api/dashboard/summary', {
-          params: {
-            query: {
-              ...(district !== National ? { districtId: district } : {}),
-              ...(fromDate ? { from: fromDate } : {}),
-              ...(toDate ? { to: toDate } : {}),
-            },
-          },
-        })
+      const scoped = {
+        ...(query.districtId !== National ? { districtId: query.districtId } : {}),
+        ...(query.from ? { from: query.from } : {}),
+        ...(query.to ? { to: query.to } : {}),
+      }
+      const dates = {
+        ...(query.from ? { from: query.from } : {}),
+        ...(query.to ? { to: query.to } : {}),
+      }
 
-        if (failure || !response.ok) {
-          setError(toNcbrsError(failure, response.status))
+      try {
+        const [summaryResult, trendsResult, districtsResult] = await Promise.all([
+          consumer.GET('/api/dashboard/summary', { params: { query: scoped } }),
+          consumer.GET('/api/dashboard/trends', { params: { query: scoped } }),
+          consumer.GET('/api/dashboard/districts', { params: { query: dates } }),
+        ])
+
+        // The summary is the screen; if it fails, the screen failed. Trends and
+        // the district comparison are enrichments — a failure there leaves a
+        // chart empty rather than taking the dashboard down.
+        if (summaryResult.error || !summaryResult.response.ok) {
+          setError(toNcbrsError(summaryResult.error, summaryResult.response.status))
           return
         }
 
-        // The consumer returns the body unwrapped — no { data } envelope.
-        setSummary(data ?? null)
+        setSummary(summaryResult.data ?? null)
+        setTrends(trendsResult.response.ok ? (trendsResult.data ?? []) : [])
+        setDistricts(districtsResult.response.ok ? (districtsResult.data ?? []) : [])
+        setLastUpdated(new Date())
       } catch (cause) {
         setError(unreachableError(cause))
       } finally {
@@ -99,54 +121,89 @@ export function Dashboard() {
     [consumer],
   )
 
+  // Reload when the applied query changes, and — while Live — poll on an
+  // interval. The consumer has no push channel, so "live" is polling; the
+  // refresh is a background one, so the charts do not flash a skeleton every
+  // thirty seconds.
   useEffect(() => {
-    let cancelled = false
+    void load(applied)
 
-    void (async () => {
-      try {
-        const { data, response } = await consumer.GET('/api/dashboard/districts', {})
-        if (!cancelled && response.ok) {
-          setDistricts(data ?? [])
-        }
-      } catch {
-        // The drill-down is a convenience; the national view works without it.
-      }
-    })()
-
-    return () => {
-      cancelled = true
+    if (!live) {
+      return
     }
-  }, [consumer])
 
-  // The first load is the national, current period. Changing the area reloads
-  // at once; changing the dates waits for Apply, so a half-typed range does
-  // not fire a query on every keystroke.
-  useEffect(() => {
-    void load(National, '', '')
-  }, [load])
+    const id = setInterval(() => void load(applied, true), PollMs)
+    return () => clearInterval(id)
+  }, [applied, live, load])
 
-  function selectDistrict(value: string) {
-    setDistrictId(value)
-    void load(value, from, to)
+  function selectDistrict(districtId: string) {
+    setApplied((current) => ({ ...current, districtId }))
   }
 
   function applyDates(event: FormEvent) {
     event.preventDefault()
-    void load(districtId, from, to)
+    setApplied((current) => ({ ...current, from: draft.from, to: draft.to }))
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6">
+    <div className="mx-auto w-full max-w-6xl space-y-6">
       <PageHeader
         title="Dashboard"
         description="Vital-statistics indicators over the reporting projection. Figures that cannot be computed read “not available”, never zero."
       />
 
-      <Card>
-        <CardContent className="flex flex-wrap items-end gap-4 pt-6">
+      <Controls
+        districtId={applied.districtId}
+        districts={districts}
+        onDistrict={selectDistrict}
+        draft={draft}
+        onDraft={setDraft}
+        onApplyDates={applyDates}
+        live={live}
+        onToggleLive={() => setLive((value) => !value)}
+        onRefresh={() => void load(applied, true)}
+        lastUpdated={lastUpdated}
+      />
+
+      {loading && summary === null ? <LoadingDashboard /> : null}
+
+      {error ? <Failure error={error} onRetry={() => void load(applied)} /> : null}
+
+      {summary && !error ? <DashboardBody summary={summary} trends={trends} districts={districts} /> : null}
+    </div>
+  )
+}
+
+function Controls({
+  districtId,
+  districts,
+  onDistrict,
+  draft,
+  onDraft,
+  onApplyDates,
+  live,
+  onToggleLive,
+  onRefresh,
+  lastUpdated,
+}: {
+  districtId: string
+  districts: District[]
+  onDistrict: (id: string) => void
+  draft: { from: string; to: string }
+  onDraft: (value: { from: string; to: string }) => void
+  onApplyDates: (event: FormEvent) => void
+  live: boolean
+  onToggleLive: () => void
+  onRefresh: () => void
+  lastUpdated: Date | null
+}) {
+  return (
+    <Card>
+      <CardContent className="flex flex-wrap items-end justify-between gap-4 pt-6">
+        <div className="flex flex-wrap items-end gap-4">
           <div className="grid gap-2">
             <Label htmlFor="dash-district">Area</Label>
-            <Select value={districtId} onValueChange={selectDistrict}>
+            <Select value={districtId} onValueChange={onDistrict}>
               <SelectTrigger id="dash-district" className="w-56">
                 <SelectValue />
               </SelectTrigger>
@@ -161,138 +218,90 @@ export function Dashboard() {
             </Select>
           </div>
 
-          <form onSubmit={applyDates} className="flex flex-wrap items-end gap-3">
+          <form onSubmit={onApplyDates} className="flex flex-wrap items-end gap-3">
             <div className="grid gap-2">
               <Label htmlFor="dash-from">From</Label>
-              <Input id="dash-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+              <Input
+                id="dash-from"
+                type="date"
+                value={draft.from}
+                onChange={(e) => onDraft({ ...draft, from: e.target.value })}
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="dash-to">To</Label>
-              <Input id="dash-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+              <Input
+                id="dash-to"
+                type="date"
+                value={draft.to}
+                onChange={(e) => onDraft({ ...draft, to: e.target.value })}
+              />
             </div>
             <Button type="submit" variant="outline">
               Apply
             </Button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
 
-      {loading && summary === null ? <LoadingDashboard /> : null}
-
-      {error ? <Failure error={error} onRetry={() => void load(districtId, from, to)} /> : null}
-
-      {summary && !error ? <SummaryView summary={summary} /> : null}
-    </div>
+        <div className="flex items-center gap-3">
+          <span className="text-muted-foreground text-xs" aria-live="polite">
+            {lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : 'Loading…'}
+          </span>
+          <Button variant="outline" size="sm" onClick={onRefresh}>
+            <RefreshCw />
+            Refresh
+          </Button>
+          <Button
+            variant={live ? 'default' : 'outline'}
+            size="sm"
+            onClick={onToggleLive}
+            aria-pressed={live}
+          >
+            {live ? 'Live' : 'Paused'}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 
-function SummaryView({ summary }: { summary: Summary }) {
-  const { period, registrations, timeliness, mortality, timeToConfirmation, registrationDelay, sync, duplicates } =
-    summary
-
+function DashboardBody({
+  summary,
+  trends,
+  districts,
+}: {
+  summary: Summary
+  trends: TrendPoint[]
+  districts: District[]
+}) {
   return (
     <div className="space-y-6">
       <p className="text-muted-foreground text-sm">
-        {formatDate(period.fromUtc)} to {formatDate(period.toUtc)}
+        {formatDate(summary.period.fromUtc)} to {formatDate(summary.period.toUtc)}
         {summary.districtId ? ` · ${summary.districtId}` : ' · National'}
       </p>
 
-      {period.stillFilling ? (
+      {summary.period.stillFilling ? (
         <Alert>
           <Hourglass />
           <AlertTitle>This period is still filling</AlertTitle>
           <AlertDescription>
             Registrations for births inside it are still arriving, so these figures will only rise.
-            Do not read the recent trend as a fall and recovery.
+            The most recent month is faded on the charts for the same reason.
           </AlertDescription>
         </Alert>
       ) : null}
 
-      <Section title="Registrations">
-        <Metric label="Live births" value={num(registrations.liveBirths)} />
-        <Metric label="Fetal deaths" value={num(registrations.fetalDeaths)} />
-        <Metric
-          label="Annulled"
-          value={num(registrations.annulled)}
-          hint="Excluded from every indicator; counted here on its own."
-        />
-        <Metric label="Male" value={num(registrations.male)} />
-        <Metric label="Female" value={num(registrations.female)} />
-        <Metric label="Sex ratio" value={nn(registrations.sexRatio, (v) => v.toFixed(2))} />
-      </Section>
+      <KpiRow summary={summary} />
 
-      <Section title="Timeliness" note="Share of registrations made inside the statutory window — not registration completeness.">
-        <Metric label="Within window" value={num(timeliness.withinWindow)} />
-        <Metric label="Outside window" value={num(timeliness.outsideWindow)} />
-        <Metric label="Unknown" value={num(timeliness.unknown)} />
-        <Metric label="Within-window share" value={nn(timeliness.withinWindowShare, pct)} />
-      </Section>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <RegistrationsChart trends={trends} />
+        <TimelinessChart trends={trends} />
+        <MortalityChart trends={trends} />
+        <DistrictChart districts={districts} />
+      </div>
 
-      <Section title="Mortality" note="Rates report “not available” rather than zero when the inputs are unknown.">
-        <Metric label="Neonatal deaths" value={num(mortality.neonatalDeaths)} />
-        <Metric
-          label="per 1,000 live births"
-          value={nn(mortality.neonatalDeathsPerThousandLiveBirths, (v) => v.toFixed(1))}
-        />
-        <Metric label="Maternal deaths" value={num(mortality.maternalDeaths)} />
-        <Metric
-          label="per 100,000 live births"
-          value={nn(mortality.maternalDeathsPerHundredThousandLiveBirths, (v) => v.toFixed(1))}
-        />
-      </Section>
-
-      <Section title="Time to confirmation">
-        <Metric label="Confirmed" value={num(timeToConfirmation.confirmed)} />
-        <Metric
-          label="Still unconfirmed"
-          value={num(timeToConfirmation.stillUnconfirmed)}
-          hint="Excluded from the median; treating a provisional record as zero days would flatter the offline tier."
-        />
-        <Metric label="Median days" value={nn(timeToConfirmation.medianDays, days)} />
-      </Section>
-
-      <Section title="Registration delay" note="The delay before a family reached a registrar and the delay a record then took to reach the centre are different problems, reported apart.">
-        <Metric
-          label="Birth → registration (median)"
-          value={nn(registrationDelay.medianDaysBirthToRegistration, days)}
-        />
-        <Metric
-          label="Registration → centre (median)"
-          value={nn(registrationDelay.medianDaysRegistrationToCentre, days)}
-        />
-        <Metric label="Measured" value={num(registrationDelay.measured)} />
-        <Metric label="Not measurable" value={num(registrationDelay.notMeasurable)} />
-      </Section>
-
-      {registrationDelay.byFacilityTier.length > 0 ? (
-        <TierTable
-          title="Registration delay by facility tier"
-          caption="Where the two delays diverge most — a hospital terminal's sync lag is zero by construction."
-          rows={registrationDelay.byFacilityTier.map((tier) => ({
-            tier: tier.facilityTier,
-            cells: [
-              num(tier.measured),
-              nn(tier.medianDaysBirthToRegistration, days),
-              nn(tier.medianDaysRegistrationToCentre, days),
-            ],
-          }))}
-          headers={['Tier', 'Measured', 'Birth → registration', 'Registration → centre']}
-        />
-      ) : null}
-
-      <Section title="Sync reliability">
-        <Metric label="Batches" value={num(sync.batches)} />
-        <Metric label="Devices reporting" value={num(sync.devicesReporting)} />
-        <Metric label="Records submitted" value={num(sync.recordsSubmitted)} />
-        <Metric label="Registered" value={num(sync.recordsRegistered)} />
-        <Metric label="Rejected" value={num(sync.recordsRejected)} />
-        <Metric label="Registered share" value={nn(sync.registeredShare, pct)} />
-      </Section>
-
-      <Section title="Duplicates" note={duplicates.caveat}>
-        <Metric label="Duplicates seen" value={num(duplicates.duplicatesSeen)} />
-        <Metric label="per 10,000 births" value={nn(duplicates.perTenThousandBirths, (v) => v.toFixed(1))} />
-      </Section>
+      <Indicators summary={summary} />
 
       {summary.notAvailable.length > 0 ? (
         <Card>
@@ -318,111 +327,270 @@ function SummaryView({ summary }: { summary: Summary }) {
   )
 }
 
-/** "Not available" — the one thing a nullable indicator must never render as 0. */
+function KpiRow({ summary }: { summary: Summary }) {
+  return (
+    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <Kpi label="Live births" value={summary.registrations.liveBirths.toLocaleString()} />
+      <Kpi label="Registered on time" value={share(summary.timeliness.withinWindowShare)} />
+      <Kpi
+        label="Neonatal deaths"
+        value={summary.mortality.neonatalDeaths.toLocaleString()}
+        sub={<>{rate(summary.mortality.neonatalDeathsPerThousandLiveBirths, 'per 1,000 live births')}</>}
+      />
+      <Kpi label="Sync registered" value={share(summary.sync.registeredShare)} />
+    </div>
+  )
+}
+
+function Kpi({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <p className="text-muted-foreground text-xs uppercase tracking-wide">{label}</p>
+        <p className="text-2xl font-semibold">{value}</p>
+        {sub ? <p className="text-muted-foreground text-xs">{sub}</p> : null}
+      </CardContent>
+    </Card>
+  )
+}
+
+const registrationsConfig = {
+  liveBirths: { label: 'Live births', color: 'var(--chart-1)' },
+  fetalDeaths: { label: 'Fetal deaths', color: 'var(--chart-3)' },
+} satisfies ChartConfig
+
+function RegistrationsChart({ trends }: { trends: TrendPoint[] }) {
+  const data = trends.map((point) => ({
+    month: monthLabel(point.period.fromUtc),
+    liveBirths: point.liveBirths,
+    fetalDeaths: point.fetalDeaths,
+    stillFilling: point.period.stillFilling,
+  }))
+
+  return (
+    <ChartCard title="Registrations by month" note="Counted by date of occurrence. The faded month is still filling.">
+      <ChartContainer config={registrationsConfig} className="h-64 w-full">
+        <BarChart data={data} accessibilityLayer>
+          <CartesianGrid vertical={false} />
+          <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+          <YAxis allowDecimals={false} width={36} />
+          <ChartTooltip content={<ChartTooltipContent />} />
+          <ChartLegend content={<ChartLegendContent />} />
+          <Bar dataKey="liveBirths" stackId="a" fill="var(--color-liveBirths)" radius={[0, 0, 0, 0]}>
+            {data.map((point) => (
+              <Cell key={point.month} fillOpacity={point.stillFilling ? 0.4 : 1} />
+            ))}
+          </Bar>
+          <Bar dataKey="fetalDeaths" stackId="a" fill="var(--color-fetalDeaths)" radius={[2, 2, 0, 0]}>
+            {data.map((point) => (
+              <Cell key={point.month} fillOpacity={point.stillFilling ? 0.4 : 1} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ChartContainer>
+    </ChartCard>
+  )
+}
+
+const timelinessConfig = {
+  withinWindowShare: { label: 'On-time share', color: 'var(--chart-1)' },
+} satisfies ChartConfig
+
+function TimelinessChart({ trends }: { trends: TrendPoint[] }) {
+  const data = trends.map((point) => ({
+    month: monthLabel(point.period.fromUtc),
+    // Null stays null: a month with no known window status is a gap in the
+    // line (connectNulls is off), never a drop to zero.
+    withinWindowShare: point.withinWindowShare,
+  }))
+
+  return (
+    <ChartCard title="Registered on time" note="Share within the statutory window. A gap is a month with no known status — not zero.">
+      <ChartContainer config={timelinessConfig} className="h-64 w-full">
+        <LineChart data={data} accessibilityLayer>
+          <CartesianGrid vertical={false} />
+          <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+          <YAxis domain={[0, 100]} unit="%" width={44} />
+          <ChartTooltip content={<ChartTooltipContent />} />
+          <Line
+            dataKey="withinWindowShare"
+            type="monotone"
+            stroke="var(--color-withinWindowShare)"
+            strokeWidth={2}
+            dot={false}
+            connectNulls={false}
+          />
+        </LineChart>
+      </ChartContainer>
+    </ChartCard>
+  )
+}
+
+const mortalityConfig = {
+  neonatalDeaths: { label: 'Neonatal', color: 'var(--chart-3)' },
+  maternalDeaths: { label: 'Maternal', color: 'var(--chart-5)' },
+} satisfies ChartConfig
+
+function MortalityChart({ trends }: { trends: TrendPoint[] }) {
+  const data = trends.map((point) => ({
+    month: monthLabel(point.period.fromUtc),
+    neonatalDeaths: point.neonatalDeaths,
+    maternalDeaths: point.maternalDeaths,
+  }))
+
+  return (
+    <ChartCard title="Recorded deaths by month" note="Counts of perinatal and maternal deaths recorded against the month's births.">
+      <ChartContainer config={mortalityConfig} className="h-64 w-full">
+        <LineChart data={data} accessibilityLayer>
+          <CartesianGrid vertical={false} />
+          <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+          <YAxis allowDecimals={false} width={36} />
+          <ChartTooltip content={<ChartTooltipContent />} />
+          <ChartLegend content={<ChartLegendContent />} />
+          <Line dataKey="neonatalDeaths" type="monotone" stroke="var(--color-neonatalDeaths)" strokeWidth={2} dot={false} />
+          <Line dataKey="maternalDeaths" type="monotone" stroke="var(--color-maternalDeaths)" strokeWidth={2} dot={false} />
+        </LineChart>
+      </ChartContainer>
+    </ChartCard>
+  )
+}
+
+const districtConfig = {
+  liveBirths: { label: 'Live births', color: 'var(--chart-2)' },
+} satisfies ChartConfig
+
+function DistrictChart({ districts }: { districts: District[] }) {
+  const data = [...districts]
+    .sort((a, b) => b.liveBirths - a.liveBirths)
+    .slice(0, 12)
+    .map((district) => ({ districtId: district.districtId, liveBirths: district.liveBirths }))
+
+  if (data.length === 0) {
+    return (
+      <ChartCard title="Live births by district" note="The district drill-down behind the national view.">
+        <p className="text-muted-foreground py-10 text-center text-sm">No districts in range.</p>
+      </ChartCard>
+    )
+  }
+
+  return (
+    <ChartCard title="Live births by district" note="Largest first. Select an area above to drill in.">
+      <ChartContainer config={districtConfig} className="h-64 w-full">
+        <BarChart data={data} layout="vertical" accessibilityLayer margin={{ left: 12 }}>
+          <CartesianGrid horizontal={false} />
+          <XAxis type="number" allowDecimals={false} />
+          <YAxis type="category" dataKey="districtId" width={110} tickLine={false} axisLine={false} />
+          <ChartTooltip content={<ChartTooltipContent />} />
+          <Bar dataKey="liveBirths" fill="var(--color-liveBirths)" radius={[0, 4, 4, 0]} />
+        </BarChart>
+      </ChartContainer>
+    </ChartCard>
+  )
+}
+
+/**
+ * The nullable figures the charts do not carry, kept as tiles so their
+ * "not available" is as visible as any bar. The shares here are already
+ * percentages from the server (0–100); they are not multiplied again.
+ */
+function Indicators({ summary }: { summary: Summary }) {
+  const { registrations, timeToConfirmation, registrationDelay, mortality, duplicates } = summary
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Indicators</CardTitle>
+      </CardHeader>
+      <CardContent className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+        <Tile label="Males per 100 females" value={nn(registrations.sexRatio, (v) => v.toFixed(1))} />
+        <Tile label="Median days to confirmation" value={nn(timeToConfirmation.medianDays, days)} />
+        <Tile
+          label="Median days birth → registration"
+          value={nn(registrationDelay.medianDaysBirthToRegistration, days)}
+        />
+        <Tile
+          label="Median days registration → centre"
+          value={nn(registrationDelay.medianDaysRegistrationToCentre, days)}
+        />
+        <Tile
+          label="Maternal deaths / 100,000"
+          value={nn(mortality.maternalDeathsPerHundredThousandLiveBirths, (v) => v.toFixed(1))}
+        />
+        <Tile label="Duplicates / 10,000" value={nn(duplicates.perTenThousandBirths, (v) => v.toFixed(1))} />
+      </CardContent>
+    </Card>
+  )
+}
+
+function Tile({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div>
+      <p className="text-muted-foreground text-xs uppercase tracking-wide">{label}</p>
+      <p className="text-lg">{value}</p>
+    </div>
+  )
+}
+
+function ChartCard({ title, note, children }: { title: string; note: string; children: ReactNode }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">{title}</CardTitle>
+        <p className="text-muted-foreground text-sm">{note}</p>
+      </CardHeader>
+      <CardContent>{children}</CardContent>
+    </Card>
+  )
+}
+
+/** "Not available" — never a zero. */
 function NotAvailable() {
   return <span className="text-muted-foreground italic">Not available</span>
 }
 
-/** A whole number is always known; render it plainly. */
-function num(value: number): ReactNode {
-  return value.toLocaleString()
-}
-
-/** A nullable figure: the value formatted, or "Not available" — never zero. */
 function nn(value: number | null, render: (value: number) => string): ReactNode {
   return value === null ? <NotAvailable /> : <span>{render(value)}</span>
 }
 
-function pct(value: number): string {
-  return `${(value * 100).toFixed(1)}%`
+/** Shares arrive as percentages (0–100); render as-is with a sign, or NA. */
+function share(value: number | null): ReactNode {
+  return value === null ? <NotAvailable /> : <span>{value.toFixed(1)}%</span>
+}
+
+function rate(value: number | null, suffix: string): ReactNode {
+  return value === null ? <NotAvailable /> : <span>{`${value.toFixed(1)} ${suffix}`}</span>
 }
 
 function days(value: number): string {
   return `${value.toFixed(1)} days`
 }
 
-function Section({ title, note, children }: { title: string; note?: string; children: ReactNode }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">{title}</CardTitle>
-        {note ? <p className="text-muted-foreground text-sm">{note}</p> : null}
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">{children}</div>
-      </CardContent>
-    </Card>
-  )
-}
+const MonthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-function Metric({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
-  return (
-    <div>
-      <p className="text-muted-foreground text-xs uppercase tracking-wide">{label}</p>
-      <p className="text-lg">{value}</p>
-      {hint ? <p className="text-muted-foreground text-xs">{hint}</p> : null}
-    </div>
-  )
-}
-
-function TierTable({
-  title,
-  caption,
-  headers,
-  rows,
-}: {
-  title: string
-  caption: string
-  headers: string[]
-  rows: { tier: string; cells: ReactNode[] }[]
-}) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">{title}</CardTitle>
-        <p className="text-muted-foreground text-sm">{caption}</p>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {headers.map((header) => (
-                <TableHead key={header}>{header}</TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((row) => (
-              <TableRow key={row.tier}>
-                <TableCell className="font-medium">{spaced(row.tier)}</TableCell>
-                {row.cells.map((cell, index) => (
-                  <TableCell key={index}>{cell}</TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  )
-}
-
-function spaced(value: string): string {
-  return value.replace(/([a-z])([A-Z])/g, '$1 $2')
+function monthLabel(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+  return `${MonthNames[date.getUTCMonth()]} ${String(date.getUTCFullYear()).slice(2)}`
 }
 
 function LoadingDashboard() {
   return (
     <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <Card key={i} aria-busy>
+            <CardContent className="space-y-2 pt-6">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-7 w-16" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
       <Card aria-busy>
-        <CardContent className="space-y-3 pt-6">
-          <Skeleton className="h-4 w-40" />
-          <Skeleton className="h-24 w-full" />
-        </CardContent>
-      </Card>
-      <Card aria-busy>
-        <CardContent className="space-y-3 pt-6">
-          <Skeleton className="h-24 w-full" />
+        <CardContent className="pt-6">
+          <Skeleton className="h-64 w-full" />
         </CardContent>
       </Card>
     </div>
