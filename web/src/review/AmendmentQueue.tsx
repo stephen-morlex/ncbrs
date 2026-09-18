@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/dialog'
 import {
   Empty,
-  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
@@ -27,7 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/spinner'
 import {
   Table,
@@ -41,8 +39,8 @@ import { Textarea } from '@/components/ui/textarea'
 import type { components } from '@/api/generated/api'
 import { type NcbrsError, toNcbrsError, unreachableError } from '@/api/errors'
 import { useApiClient } from '@/api/useApi'
-import { PageHeader } from '@/shell/PageHeader'
 import { formatDate } from '@/records/RecordDetail'
+import { ageInWords, QueueFailure, QueueSkeleton } from './queueParts'
 
 type PendingAmendment = components['schemas']['PendingAmendmentResponse']
 type AmendedField = components['schemas']['AmendedFieldResponse']
@@ -167,12 +165,7 @@ export function AmendmentQueue() {
   }, [])
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6">
-      <PageHeader
-        title="Amendment approvals"
-        description="Corrections to a person's identity, held until a registrar who did not submit them signs off."
-      />
-
+    <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid gap-2">
           <Label htmlFor="facility-filter">Facility</Label>
@@ -192,9 +185,15 @@ export function AmendmentQueue() {
         </div>
       </div>
 
-      {loading && rows === null ? <LoadingQueue /> : null}
+      {loading && rows === null ? <QueueSkeleton /> : null}
 
-      {error ? <Failure error={error} onRetry={() => void load(null, facilityId)} /> : null}
+      {error ? (
+        <QueueFailure
+          error={error}
+          onRetry={() => void load(null, facilityId)}
+          fallback="The approval queue could not be loaded."
+        />
+      ) : null}
 
       {rows !== null && !error ? (
         rows.length === 0 ? (
@@ -560,74 +559,6 @@ function ReviewDialog({
       </DialogContent>
     </Dialog>
   )
-}
-
-function LoadingQueue() {
-  return (
-    <Card aria-busy>
-      <CardContent className="space-y-3 pt-6">
-        <Skeleton className="h-4 w-48" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-      </CardContent>
-    </Card>
-  )
-}
-
-function Failure({ error, onRetry }: { error: NcbrsError; onRetry: () => void }) {
-  return (
-    <Empty className="border">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          {error.unreachable ? <TriangleAlert /> : <CircleAlert />}
-        </EmptyMedia>
-        <EmptyTitle>{error.title}</EmptyTitle>
-        <EmptyDescription>
-          {error.unreachable
-            ? 'The registry did not answer. Check the connection before trying again.'
-            : error.fields.map((item) => item.message).join(' ') ||
-              'The approval queue could not be loaded.'}
-        </EmptyDescription>
-      </EmptyHeader>
-      <EmptyContent>
-        <Button variant="outline" onClick={onRetry}>
-          Try again
-        </Button>
-      </EmptyContent>
-    </Empty>
-  )
-}
-
-/**
- * How long a correction has been waiting, in the coarse terms that matter for
- * a queue read top to bottom. The exact timestamp is on the row's title
- * attribute for anyone who needs it.
- */
-function ageInWords(iso: string): string {
-  const then = new Date(iso).getTime()
-  if (Number.isNaN(then)) {
-    return ''
-  }
-
-  const days = Math.floor((Date.now() - then) / 86_400_000)
-  if (days <= 0) {
-    return 'today'
-  }
-  if (days === 1) {
-    return 'yesterday'
-  }
-  if (days < 14) {
-    return `${days} days ago`
-  }
-
-  const weeks = Math.floor(days / 7)
-  if (weeks < 9) {
-    return `${weeks} weeks ago`
-  }
-
-  const months = Math.floor(days / 30)
-  return `${months} months ago`
 }
 
 function plural(count: number): string {
