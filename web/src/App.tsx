@@ -57,6 +57,12 @@ const AmendmentsReview = lazy(() =>
   import('@/review/AmendmentsReview').then((module) => ({ default: module.AmendmentsReview })),
 )
 
+const LateRegistrationQueue = lazy(() =>
+  import('@/review/LateRegistrationQueue').then((module) => ({
+    default: module.LateRegistrationQueue,
+  })),
+)
+
 /**
  * Routing for the shell.
  *
@@ -126,6 +132,16 @@ export default function App() {
           element={
             <RequireAuth policy="CanApproveAmendments">
               <AmendmentsReview />
+            </RequireAuth>
+          }
+        />
+
+        {/* Gated by the same policy its navigation entry names. */}
+        <Route
+          path="/review/late-registrations"
+          element={
+            <RequireAuth policy="CanApproveLateRegistrations">
+              <LateRegistrationQueue />
             </RequireAuth>
           }
         />
