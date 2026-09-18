@@ -345,6 +345,12 @@ if (app.Environment.IsDevelopment())
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<NcbrsDbContext>();
     db.Database.Migrate();
+
+    // The national administrative geography (country, states, counties).
+    // Idempotent, so it is safe on every start and after the data file is
+    // corrected. Payam/Boma/Village are not seeded — they are created as
+    // encountered.
+    await NCBRS.Data.AdministrativeAreaSeeder.SeedAsync(db);
 }
 
 // Before authentication, deliberately. A CORS preflight is an unauthenticated
