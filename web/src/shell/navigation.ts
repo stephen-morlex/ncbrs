@@ -85,7 +85,6 @@ export const navigation: NavGroup[] = [
         to: '/review/late-registrations',
         icon: Hourglass,
         policy: 'CanApproveLateRegistrations',
-        pending: true,
       },
       {
         label: 'Annulments',
