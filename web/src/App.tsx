@@ -103,6 +103,10 @@ const Dashboard = lazy(() =>
   import('@/dashboard/Dashboard').then((module) => ({ default: module.Dashboard })),
 )
 
+const Dhis2Export = lazy(() =>
+  import('@/dashboard/Dhis2Export').then((module) => ({ default: module.Dhis2Export })),
+)
+
 /**
  * Routing for the shell.
  *
@@ -205,6 +209,15 @@ export default function App() {
           element={
             <RequireAuth policy="CanReadReporting">
               <Dashboard />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/exports/dhis2"
+          element={
+            <RequireAuth policy="CanReadReporting">
+              <Dhis2Export />
             </RequireAuth>
           }
         />
