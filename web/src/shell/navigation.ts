@@ -10,6 +10,7 @@ import {
   ScrollText,
   Search,
   Smartphone,
+  Users,
   type LucideIcon,
 } from 'lucide-react'
 import type { NcbrsPolicy } from '@/auth/roles'
@@ -100,6 +101,14 @@ export const navigation: NavGroup[] = [
       // running low on numbers, because they are the one who will be handing
       // out provisional slips when it runs out.
       { label: 'Facilities', to: '/facilities', icon: Hospital, policy: null },
+      // Listing who is provisioned is an oversight act — the same role that
+      // enrols devices — so it names that policy, matching the list endpoint.
+      {
+        label: 'Registrars',
+        to: '/registrars',
+        icon: Users,
+        policy: 'CanEnrolDevices',
+      },
       {
         label: 'Devices',
         to: '/devices',

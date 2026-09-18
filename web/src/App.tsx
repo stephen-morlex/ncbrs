@@ -71,6 +71,12 @@ const AnnulRegistration = lazy(() =>
   import('@/review/AnnulRegistration').then((module) => ({ default: module.AnnulRegistration })),
 )
 
+const RegistrarDirectory = lazy(() =>
+  import('@/registrars/RegistrarDirectory').then((module) => ({
+    default: module.RegistrarDirectory,
+  })),
+)
+
 /**
  * Routing for the shell.
  *
@@ -132,6 +138,17 @@ export default function App() {
           }
         />
         <Route path="/facilities" element={<Facilities />} />
+
+        {/* Gated by the same policy its navigation entry names — listing who
+            is provisioned is an oversight act. */}
+        <Route
+          path="/registrars"
+          element={
+            <RequireAuth policy="CanEnrolDevices">
+              <RegistrarDirectory />
+            </RequireAuth>
+          }
+        />
 
         {/* Gated by the same policy its navigation entry names, so the guard
             and the nav cannot disagree about who may review corrections. */}
