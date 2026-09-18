@@ -199,7 +199,7 @@ public class RecordSearchScopeTests : IDisposable
             db,
             new RecordSearchService(db, TimeProvider.System),
             AuthTestContext.RegistrarService(db, http),
-            new DistrictScopeResolver(db))
+            new DistrictScopeResolver(new DistrictLookup(db)))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };

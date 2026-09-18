@@ -254,7 +254,7 @@ public class RegistrarDirectoryTests : IDisposable
     }
 
     private static RegistrarsController Controller(NcbrsDbContext db, HttpContext http) =>
-        new(db, AuthTestContext.RegistrarService(db, http), new DistrictScopeResolver(db))
+        new(db, AuthTestContext.RegistrarService(db, http), new DistrictScopeResolver(new DistrictLookup(db)))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };
