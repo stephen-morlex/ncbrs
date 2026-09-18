@@ -45,6 +45,10 @@ const RequestCorrection = lazy(() =>
   import('@/records/RequestCorrection').then((module) => ({ default: module.RequestCorrection })),
 )
 
+const CertificateManage = lazy(() =>
+  import('@/records/CertificateManage').then((module) => ({ default: module.CertificateManage })),
+)
+
 const Facilities = lazy(() =>
   import('@/facilities/Facilities').then((module) => ({ default: module.Facilities })),
 )
@@ -123,6 +127,17 @@ export default function App() {
           element={
             <RequireAuth policy="CanRegisterBirths">
               <RequestCorrection />
+            </RequireAuth>
+          }
+        />
+
+        {/* A certificate is an act on a record, reached from it, and gated by
+            the same policy as the issue endpoint. */}
+        <Route
+          path="/records/certificate"
+          element={
+            <RequireAuth policy="CanRegisterBirths">
+              <CertificateManage />
             </RequireAuth>
           }
         />

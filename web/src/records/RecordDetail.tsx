@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { CircleCheck, FileWarning, History, Info, PenLine, ShieldOff, TriangleAlert } from 'lucide-react'
+import { Award, CircleCheck, FileWarning, History, Info, PenLine, ShieldOff, TriangleAlert } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -65,6 +65,18 @@ export function RecordDetail({ record }: { record: BirthRecord }) {
               <Link to={`/records/correct?brn=${encodeURIComponent(record.brn)}`}>
                 <PenLine />
                 Request a correction
+              </Link>
+            </Button>
+          )}
+
+          {/* Hidden on an annulled record, which can carry no certificate.
+              What is certifiable otherwise is the server's call, made on the
+              certificate screen itself. */}
+          {record.annulment ? null : (
+            <Button asChild variant="outline" size="sm">
+              <Link to={`/records/certificate?brn=${encodeURIComponent(record.brn)}`}>
+                <Award />
+                Certificate
               </Link>
             </Button>
           )}
