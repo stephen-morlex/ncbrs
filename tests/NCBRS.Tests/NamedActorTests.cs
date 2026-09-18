@@ -215,6 +215,7 @@ public class NamedActorTests : IDisposable
                     new CertificateRevocationRecorder(db),
                     Microsoft.Extensions.Logging.Abstractions.NullLogger<DuplicateDetectionService>.Instance,
                     districts),
+                districts,
                 Microsoft.Extensions.Options.Options.Create(new StatutoryRegistrationOptions())),
             new AmendmentService(
                 db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db), current, districts),

@@ -70,6 +70,7 @@ public class BirthRegistrationService(
     IEventPublisher eventPublisher,
     CurrentRegistrarService currentRegistrar,
     DuplicateDetectionService duplicates,
+    DistrictLookup districts,
     IOptions<StatutoryRegistrationOptions> statutory)
 {
     private readonly StatutoryRegistrationOptions _statutory = statutory.Value;
@@ -107,6 +108,12 @@ public class BirthRegistrationService(
                 RegistrationOutcome.FacilityNotPermitted,
                 Detail: $"You are not permitted to register births for facility '{facility.FacilityId}'.");
         }
+
+        // The county this act is accountable to, resolved from the facility's
+        // administrative area (falling back to the legacy district string
+        // during the transition). Stamped on every audit row and the published
+        // event so the reporting projection is keyed by county.
+        var districtStamp = await districts.ForFacilityAsync(facility.FacilityId, cancellationToken);
 
         if (await db.BirthRecords.AnyAsync(record => record.Brn == request.Brn, cancellationToken))
         {
@@ -228,7 +235,7 @@ public class BirthRegistrationService(
             db.AuditLogs.Add(new AuditLog
             {
                 EntityType = nameof(BirthRecord),
-                DistrictId = facility.DistrictId,
+                DistrictId = districtStamp,
                 EntityId = request.Brn,
                 // A provisional identifier is an expected consequence of an
                 // exhausted block, not a device issuing numbers it was never
@@ -261,7 +268,7 @@ public class BirthRegistrationService(
             db.AuditLogs.Add(new AuditLog
             {
                 EntityType = nameof(BirthRecord),
-                DistrictId = facility.DistrictId,
+                DistrictId = districtStamp,
                 EntityId = request.Brn,
                 Action = $"StatutoryWindowMetOnDeviceTime:{daysLate}/{daysLateOnArrival}",
                 UserId = registrar.RegistrarId,
@@ -298,7 +305,7 @@ public class BirthRegistrationService(
             db.AuditLogs.Add(new AuditLog
             {
                 EntityType = nameof(LateRegistration),
-                DistrictId = facility.DistrictId,
+                DistrictId = districtStamp,
                 EntityId = request.Brn,
                 Action = "LateRegistrationFiled",
                 UserId = registrar.RegistrarId,
@@ -334,7 +341,7 @@ public class BirthRegistrationService(
         db.AuditLogs.Add(new AuditLog
         {
             EntityType = nameof(BirthRecord),
-            DistrictId = facility.DistrictId,
+            DistrictId = districtStamp,
             EntityId = request.Brn,
             Action = "Create",
             UserId = registrar.RegistrarId,
@@ -351,7 +358,7 @@ public class BirthRegistrationService(
                 record.Brn,
                 record.BirthRecordId,
                 record.FacilityId,
-                facility.DistrictId,
+                districtStamp,
                 record.DateOfBirth,
                 record.Sex.ToString(),
                 DateTime.UtcNow,
@@ -361,7 +368,7 @@ public class BirthRegistrationService(
                 !isLate,
                 record.ConfirmedAtUtc,
                 record.RegisteredAtUtc),
-            facility.DistrictId);
+            districtStamp);
 
         await db.SaveChangesAsync(cancellationToken);
 
