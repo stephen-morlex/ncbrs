@@ -95,6 +95,10 @@ const DeviceList = lazy(() =>
   import('@/devices/DeviceList').then((module) => ({ default: module.DeviceList })),
 )
 
+const DeviceAlerts = lazy(() =>
+  import('@/devices/DeviceAlerts').then((module) => ({ default: module.DeviceAlerts })),
+)
+
 /**
  * Routing for the shell.
  *
@@ -179,6 +183,15 @@ export default function App() {
           element={
             <RequireAuth policy="CanEnrolDevices">
               <DeviceList />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/devices/alerts"
+          element={
+            <RequireAuth policy="CanEnrolDevices">
+              <DeviceAlerts />
             </RequireAuth>
           }
         />

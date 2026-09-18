@@ -1,6 +1,7 @@
 import {
   BadgeCheck,
   BarChart3,
+  BellRing,
   FileSearch,
   GitCompareArrows,
   Hash,
@@ -115,6 +116,14 @@ export const navigation: NavGroup[] = [
         label: 'Devices',
         to: '/devices',
         icon: Smartphone,
+        policy: 'CanEnrolDevices',
+      },
+      // The queue of devices gone quiet — a silent post is not a post with no
+      // births, and only one of those needs someone to drive out.
+      {
+        label: 'Device alerts',
+        to: '/devices/alerts',
+        icon: BellRing,
         policy: 'CanEnrolDevices',
       },
       // Not gated: checking a certificate a family presents is something any
