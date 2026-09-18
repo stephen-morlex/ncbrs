@@ -90,7 +90,6 @@ export const navigation: NavGroup[] = [
         to: '/review/annulments',
         icon: BadgeCheck,
         policy: 'CanAnnulRegistrations',
-        pending: true,
       },
     ],
   },

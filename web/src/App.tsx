@@ -67,6 +67,10 @@ const DuplicateReview = lazy(() =>
   import('@/review/DuplicateReview').then((module) => ({ default: module.DuplicateReview })),
 )
 
+const AnnulRegistration = lazy(() =>
+  import('@/review/AnnulRegistration').then((module) => ({ default: module.AnnulRegistration })),
+)
+
 /**
  * Routing for the shell.
  *
@@ -156,6 +160,17 @@ export default function App() {
           element={
             <RequireAuth policy="CanReviewDuplicates">
               <DuplicateReview />
+            </RequireAuth>
+          }
+        />
+
+        {/* Gated by the same policy its navigation entry names. Ministry-level:
+            annulment withdraws a legal identity, not just how it reads. */}
+        <Route
+          path="/review/annulments"
+          element={
+            <RequireAuth policy="CanAnnulRegistrations">
+              <AnnulRegistration />
             </RequireAuth>
           }
         />
