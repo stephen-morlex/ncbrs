@@ -78,7 +78,6 @@ export const navigation: NavGroup[] = [
         to: '/review/duplicates',
         icon: FileSearch,
         policy: 'CanReviewDuplicates',
-        pending: true,
       },
       {
         label: 'Late registrations',
