@@ -4,7 +4,7 @@ import { daysSinceBirth, registrationSchema, today } from './registrationSchema'
 function valid(overrides: Record<string, unknown> = {}) {
   return {
     facilityId: '0199a1b2-0001-7000-8000-000000000001',
-    childFullName: 'Chipo Mwale',
+    childFullName: 'Ayen Deng',
     dateOfBirth: '2026-06-01',
     sex: 'Female',
     plurality: 'Singleton',
@@ -70,7 +70,7 @@ describe('registrationSchema', () => {
         lateRegistration: {
           evidenceType: 'BirthAttendantAttestation',
           evidenceReference: 'TBA attestation 44/2026',
-          declarantName: 'Grace Mwale',
+          declarantName: 'Nyandeng Deng',
           declarantRelationship: 'mother',
         },
       }),

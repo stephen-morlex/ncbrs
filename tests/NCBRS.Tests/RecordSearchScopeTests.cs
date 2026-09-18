@@ -18,13 +18,13 @@ namespace NCBRS.Tests;
 /// </summary>
 public class RecordSearchScopeTests : IDisposable
 {
-    private static readonly Guid CentralFacilityId = Guid.Parse("0199a1b2-0001-7000-8000-000000000001");
-    private static readonly Guid LusakaFacilityId = Guid.Parse("0199a1b2-0002-7000-8000-000000000002");
+    private static readonly Guid TerekekaFacilityId = Guid.Parse("0199a1b2-0001-7000-8000-000000000001");
+    private static readonly Guid JubaFacilityId = Guid.Parse("0199a1b2-0002-7000-8000-000000000002");
     private static readonly Guid RegistrarId = Guid.Parse("0199a1b2-1001-7000-8000-000000000001");
     private static readonly Guid MinistryId = Guid.Parse("0199a1b2-1002-7000-8000-000000000002");
 
-    private const string CentralDistrict = "D-CENTRAL-07";
-    private const string LusakaDistrict = "D-LUSAKA-01";
+    private const string TerekekaDistrict = "SS-CE-TER";
+    private const string JubaDistrict = "SS-CE-JUB";
     private const string MinistrySubject = "33333333-3333-4333-8333-333333333333";
     private const string StrangerSubject = "44444444-4444-4444-8444-444444444444";
 
@@ -42,29 +42,29 @@ public class RecordSearchScopeTests : IDisposable
         db.Database.EnsureCreated();
 
         db.Facilities.AddRange(
-            new Facility { FacilityId = CentralFacilityId, Name = "Kabwe Village Health Post", DistrictId = CentralDistrict },
-            new Facility { FacilityId = LusakaFacilityId, Name = "Lusaka Central", DistrictId = LusakaDistrict });
+            new Facility { FacilityId = TerekekaFacilityId, Name = "Terekeka Village Health Post", DistrictId = TerekekaDistrict },
+            new Facility { FacilityId = JubaFacilityId, Name = "Juba Central", DistrictId = JubaDistrict });
 
         db.Registrars.AddRange(
             new Registrar
             {
                 RegistrarId = RegistrarId,
-                FacilityId = CentralFacilityId,
+                FacilityId = TerekekaFacilityId,
                 ExternalSubjectId = AuthTestContext.DefaultSubject,
-                DisplayName = "Nurse A. Banda"
+                DisplayName = "Nurse A. Lado"
             },
             new Registrar
             {
                 RegistrarId = MinistryId,
-                FacilityId = CentralFacilityId,
+                FacilityId = TerekekaFacilityId,
                 ExternalSubjectId = MinistrySubject,
                 DisplayName = "Ministry Admin",
                 Role = RegistrarRole.MinistryAdmin
             });
 
         db.BirthRecords.AddRange(
-            Record("100002", CentralFacilityId, "Naledi Banda"),
-            Record("200001", LusakaFacilityId, "Grace Banda"));
+            Record("100002", TerekekaFacilityId, "Aluel Lado"),
+            Record("200001", JubaFacilityId, "Nyandeng Lado"));
 
         db.SaveChanges();
     }
@@ -73,7 +73,7 @@ public class RecordSearchScopeTests : IDisposable
     public async Task A_registrar_searching_their_own_district_is_allowed()
     {
         var result = await SearchAsync(AuthTestContext.DefaultSubject, [NcbrsRoles.FacilityRegistrar],
-            districtId: CentralDistrict);
+            districtId: TerekekaDistrict);
 
         var page = Assert.IsType<Page<BirthRecordSearchHit>>(Assert.IsType<ActionResult<Page<BirthRecordSearchHit>>>(result).Value);
 
@@ -86,10 +86,10 @@ public class RecordSearchScopeTests : IDisposable
     {
         // The refusal is the point. Narrowing to their own district instead
         // would return an empty page, which the caller reads as "no such
-        // child in Lusaka" -- a false answer about a district they were never
+        // child in Juba" -- a false answer about a district they were never
         // allowed to ask about.
         var result = await SearchAsync(AuthTestContext.DefaultSubject, [NcbrsRoles.FacilityRegistrar],
-            districtId: LusakaDistrict);
+            districtId: JubaDistrict);
 
         AssertStatus(StatusCodes.Status403Forbidden, result);
     }
@@ -100,7 +100,7 @@ public class RecordSearchScopeTests : IDisposable
         // Overseeing several facilities is not overseeing several districts.
         // Only the Ministry is national.
         var result = await SearchAsync(AuthTestContext.DefaultSubject, [NcbrsRoles.DistrictOfficer],
-            districtId: LusakaDistrict);
+            districtId: JubaDistrict);
 
         AssertStatus(StatusCodes.Status403Forbidden, result);
     }
@@ -109,7 +109,7 @@ public class RecordSearchScopeTests : IDisposable
     public async Task The_ministry_may_search_another_district()
     {
         var result = await SearchAsync(MinistrySubject, [NcbrsRoles.MinistryAdmin],
-            districtId: LusakaDistrict);
+            districtId: JubaDistrict);
 
         var page = Assert.IsType<Page<BirthRecordSearchHit>>(Assert.IsType<ActionResult<Page<BirthRecordSearchHit>>>(result).Value);
 
@@ -137,7 +137,7 @@ public class RecordSearchScopeTests : IDisposable
         var page = Assert.IsType<Page<BirthRecordSearchHit>>(Assert.IsType<ActionResult<Page<BirthRecordSearchHit>>>(result).Value);
 
         Assert.Single(page.Items);
-        Assert.Equal(CentralDistrict, page.Items[0].DistrictId);
+        Assert.Equal(TerekekaDistrict, page.Items[0].DistrictId);
     }
 
     [Fact]
@@ -176,7 +176,7 @@ public class RecordSearchScopeTests : IDisposable
         // fill the trail with non-events and make the real ones harder to
         // see.
         await SearchAsync(AuthTestContext.DefaultSubject, [NcbrsRoles.FacilityRegistrar],
-            districtId: LusakaDistrict);
+            districtId: JubaDistrict);
 
         await using var db = new NcbrsDbContext(_options);
 
@@ -186,7 +186,7 @@ public class RecordSearchScopeTests : IDisposable
     private async Task<ActionResult<Page<BirthRecordSearchHit>>> SearchAsync(
         string subject,
         string[] roles,
-        string? name = "Banda",
+        string? name = "Lado",
         DateTime? bornFrom = null,
         DateTime? bornTo = null,
         string? districtId = null)

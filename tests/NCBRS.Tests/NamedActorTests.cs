@@ -24,7 +24,7 @@ public class NamedActorTests : IDisposable
     private static readonly Guid OfficerId = Guid.Parse("0199a1b2-1003-7000-8000-000000000003");
     private static readonly Guid GhostId = Guid.Parse("0199a1b2-9999-7000-8000-000000000009");
 
-    private const string District = "D-CENTRAL-07";
+    private const string District = "SS-CE-TER";
     private const string OfficerSubject = "33333333-3333-4333-8333-333333333333";
     private const string Brn = "100001";
     private const string GhostBrn = "100002";
@@ -45,14 +45,14 @@ public class NamedActorTests : IDisposable
         db.Facilities.Add(new Facility
         {
             FacilityId = FacilityId,
-            Name = "Kabwe Village Health Post",
+            Name = "Terekeka Village Health Post",
             DistrictId = District,
             ConnectivityProfile = ConnectivityProfile.OfflineFirst,
         });
 
         db.Registrars.AddRange(
-            new Registrar { RegistrarId = NurseId, FacilityId = FacilityId, ExternalSubjectId = AuthTestContext.DefaultSubject, DisplayName = "Nurse A. Banda" },
-            new Registrar { RegistrarId = OfficerId, FacilityId = FacilityId, ExternalSubjectId = OfficerSubject, DisplayName = "Grace Phiri", Role = RegistrarRole.DistrictOfficer });
+            new Registrar { RegistrarId = NurseId, FacilityId = FacilityId, ExternalSubjectId = AuthTestContext.DefaultSubject, DisplayName = "Nurse A. Lado" },
+            new Registrar { RegistrarId = OfficerId, FacilityId = FacilityId, ExternalSubjectId = OfficerSubject, DisplayName = "Nyandeng Wani", Role = RegistrarRole.DistrictOfficer });
 
         db.BirthRecords.Add(Record(Brn, NurseId));
 
@@ -67,7 +67,7 @@ public class NamedActorTests : IDisposable
         var record = Ok(await GetRecordAsync(Brn));
 
         Assert.Equal(NurseId, record.RegisteredByRegistrarId);
-        Assert.Equal("Nurse A. Banda", record.RegisteredByRegistrarName);
+        Assert.Equal("Nurse A. Lado", record.RegisteredByRegistrarName);
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public class NamedActorTests : IDisposable
         var acknowledged = OkAlert(await AcknowledgeAsync(alertId));
 
         Assert.Equal(OfficerId, acknowledged.AcknowledgedByRegistrarId);
-        Assert.Equal("Grace Phiri", acknowledged.AcknowledgedByRegistrarName);
+        Assert.Equal("Nyandeng Wani", acknowledged.AcknowledgedByRegistrarName);
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public class NamedActorTests : IDisposable
         var alerts = OkAlerts(await ListAlertsAsync());
         var alert = Assert.Single(alerts);
 
-        Assert.Equal("Grace Phiri", alert.AcknowledgedByRegistrarName);
+        Assert.Equal("Nyandeng Wani", alert.AcknowledgedByRegistrarName);
     }
 
     [Fact]
@@ -248,7 +248,7 @@ public class NamedActorTests : IDisposable
         {
             Brn = brn,
             VitalEventType = VitalEventType.LiveBirth,
-            ChildPerson = new Person { FullName = "Chipo Mwale" },
+            ChildPerson = new Person { FullName = "Ayen Deng" },
             FacilityId = FacilityId,
             RegisteredByRegistrarId = registrarId,
             DateOfBirth = Born,

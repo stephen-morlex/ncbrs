@@ -77,7 +77,7 @@ public class DashboardReadModelTests : IDisposable
 
     private static RegistrationFact Birth(
         string brn,
-        string districtId = "D-CENTRAL-07",
+        string districtId = "SS-CE-TER",
         string sex = "Female",
         string? tier = "VillageHealthPost",
         string? vitalEventType = "LiveBirth",
@@ -115,7 +115,7 @@ public class DashboardReadModelTests : IDisposable
 
     private static SyncBatchFact Sync(
         string deviceId,
-        string districtId = "D-CENTRAL-07",
+        string districtId = "SS-CE-TER",
         int submitted = 10,
         int registered = 9,
         int duplicates = 1,
@@ -453,32 +453,32 @@ public class DashboardReadModelTests : IDisposable
     public async Task TheNationalViewDrillsDownByDistrict()
     {
         await GivenAsync(
-            Birth("100001", districtId: "D-CENTRAL-07"),
-            Birth("100002", districtId: "D-CENTRAL-07"),
-            Birth("100003", districtId: "D-CENTRAL-07", annulledAtUtc: Now),
-            Birth("200001", districtId: "D-LUSAKA-01"));
+            Birth("100001", districtId: "SS-CE-TER"),
+            Birth("100002", districtId: "SS-CE-TER"),
+            Birth("100003", districtId: "SS-CE-TER", annulledAtUtc: Now),
+            Birth("200001", districtId: "SS-CE-JUB"));
 
         await using var db = NewDb();
         var districts = await Dashboard(db).DistrictsAsync(PeriodFrom, PeriodTo);
 
-        var central = districts.Single(district => district.DistrictId == "D-CENTRAL-07");
+        var central = districts.Single(district => district.DistrictId == "SS-CE-TER");
 
         Assert.Equal(2, central.LiveBirths);
         Assert.Equal(1, central.Annulled);
-        Assert.Equal(1, districts.Single(district => district.DistrictId == "D-LUSAKA-01").LiveBirths);
+        Assert.Equal(1, districts.Single(district => district.DistrictId == "SS-CE-JUB").LiveBirths);
     }
 
     [Fact]
     public async Task ASummaryCanBeScopedToOneDistrict()
     {
         await GivenAsync(
-            Birth("100001", districtId: "D-CENTRAL-07"),
-            Birth("200001", districtId: "D-LUSAKA-01"),
-            Birth("200002", districtId: "D-LUSAKA-01"));
+            Birth("100001", districtId: "SS-CE-TER"),
+            Birth("200001", districtId: "SS-CE-JUB"),
+            Birth("200002", districtId: "SS-CE-JUB"));
 
-        var summary = await SummaryAsync("D-LUSAKA-01");
+        var summary = await SummaryAsync("SS-CE-JUB");
 
-        Assert.Equal("D-LUSAKA-01", summary.DistrictId);
+        Assert.Equal("SS-CE-JUB", summary.DistrictId);
         Assert.Equal(2, summary.Registrations.LiveBirths);
     }
 
@@ -519,7 +519,7 @@ public class DashboardReadModelTests : IDisposable
 
         Assert.Equal("TABLET-QUIET", quiet.DeviceId);
         Assert.Equal(30, quiet.DaysSilent);
-        Assert.Equal("D-CENTRAL-07", quiet.DistrictId);
+        Assert.Equal("SS-CE-TER", quiet.DistrictId);
     }
 
     /// <summary>
@@ -543,11 +543,11 @@ public class DashboardReadModelTests : IDisposable
     public async Task SilentDevicesCanBeScopedToOneDistrict()
     {
         await GivenAsync(
-            Sync("TABLET-CENTRAL", districtId: "D-CENTRAL-07", syncedAtUtc: Now.AddDays(-30)),
-            Sync("TABLET-LUSAKA", districtId: "D-LUSAKA-01", syncedAtUtc: Now.AddDays(-30)));
+            Sync("TABLET-CENTRAL", districtId: "SS-CE-TER", syncedAtUtc: Now.AddDays(-30)),
+            Sync("TABLET-LUSAKA", districtId: "SS-CE-JUB", syncedAtUtc: Now.AddDays(-30)));
 
         await using var db = NewDb();
-        var silent = await Dashboard(db).SilentDevicesAsync(silentForDays: 7, districtId: "D-LUSAKA-01");
+        var silent = await Dashboard(db).SilentDevicesAsync(silentForDays: 7, districtId: "SS-CE-JUB");
 
         Assert.Equal("TABLET-LUSAKA", Assert.Single(silent).DeviceId);
     }

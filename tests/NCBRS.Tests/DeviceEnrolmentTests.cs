@@ -49,8 +49,8 @@ public class DeviceEnrolmentTests : IDisposable
             new Facility
             {
                 FacilityId = FacilityId,
-                Name = "Kabwe Village Health Post",
-                DistrictId = "D-CENTRAL-07",
+                Name = "Terekeka Village Health Post",
+                DistrictId = "SS-CE-TER",
                 BrnBlockStart = 100_000,
                 BrnBlockEnd = 199_999,
                 BrnBlockNextAvailable = 100_000
@@ -58,8 +58,8 @@ public class DeviceEnrolmentTests : IDisposable
             new Facility
             {
                 FacilityId = OtherFacilityId,
-                Name = "Lusaka Central Hospital",
-                DistrictId = "D-LUSAKA-01",
+                Name = "Juba Central Hospital",
+                DistrictId = "SS-CE-JUB",
                 BrnBlockStart = 200_000,
                 BrnBlockEnd = 299_999,
                 BrnBlockNextAvailable = 200_000
@@ -106,7 +106,7 @@ public class DeviceEnrolmentTests : IDisposable
             DeviceId = deviceId,
             FacilityId = facilityId ?? FacilityId,
             PublicKeyPem = publicKeyPem ?? DeviceTestKeys.PublicKeyPem,
-            Label = "Kabwe post, tablet 2"
+            Label = "Terekeka post, tablet 2"
         };
 
     private async Task<Device> GivenEnrolledAsync(
@@ -697,7 +697,7 @@ public class DeviceEnrolmentTests : IDisposable
     {
         Brn = brn,
         FacilityId = FacilityId,
-        ChildFullName = "Chipo Mwale",
+        ChildFullName = "Ayen Deng",
         DateOfBirth = DateTime.UtcNow.Date.AddDays(-2),
         Sex = Sex.Female,
         BirthWeightGrams = 3200,

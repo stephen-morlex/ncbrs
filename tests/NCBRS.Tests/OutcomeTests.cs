@@ -36,15 +36,15 @@ public class OutcomeTests : IDisposable
         using var db = new NcbrsDbContext(_options);
 
         db.Facilities.AddRange(
-            new Facility { FacilityId = FacilityId, Name = "Kabwe", DistrictId = "D-CENTRAL-07" },
-            new Facility { FacilityId = OtherFacilityId, Name = "Lusaka", DistrictId = "D-LUSAKA-01" });
+            new Facility { FacilityId = FacilityId, Name = "Terekeka", DistrictId = "SS-CE-TER" },
+            new Facility { FacilityId = OtherFacilityId, Name = "Juba", DistrictId = "SS-CE-JUB" });
 
         db.Registrars.Add(new Registrar
         {
             RegistrarId = RegistrarId,
             FacilityId = FacilityId,
             ExternalSubjectId = AuthTestContext.DefaultSubject,
-            DisplayName = "Nurse A. Banda",
+            DisplayName = "Nurse A. Lado",
             CredentialHash = "test"
         });
 

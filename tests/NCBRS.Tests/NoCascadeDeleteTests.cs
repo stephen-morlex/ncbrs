@@ -43,8 +43,8 @@ public class NoCascadeDeleteTests : IDisposable
         db.Facilities.Add(new Facility
         {
             FacilityId = FacilityId,
-            Name = "Kabwe Village Health Post",
-            DistrictId = "D-CENTRAL-07",
+            Name = "Terekeka Village Health Post",
+            DistrictId = "SS-CE-TER",
         });
 
         db.Registrars.Add(new Registrar
@@ -52,14 +52,14 @@ public class NoCascadeDeleteTests : IDisposable
             RegistrarId = RegistrarId,
             FacilityId = FacilityId,
             ExternalSubjectId = AuthTestContext.DefaultSubject,
-            DisplayName = "Nurse A. Banda",
+            DisplayName = "Nurse A. Lado",
         });
 
         db.BirthRecords.Add(new BirthRecord
         {
             Brn = Brn,
             VitalEventType = VitalEventType.LiveBirth,
-            ChildPerson = new Person { FullName = "Chipo Mwale" },
+            ChildPerson = new Person { FullName = "Ayen Deng" },
             FacilityId = FacilityId,
             RegisteredByRegistrarId = RegistrarId,
             DateOfBirth = Born,

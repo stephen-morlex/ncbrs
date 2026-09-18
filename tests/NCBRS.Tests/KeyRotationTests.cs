@@ -34,7 +34,7 @@ public class KeyRotationTests
             NullLogger<CertificateSigner>.Instance);
 
     private const string Canonical =
-        "NCBRS|v1|100001|Chipo Mwale|2026-09-10|Female|fac|2026-09-14T10:00:00Z";
+        "NCBRS|v1|100001|Ayen Deng|2026-09-10|Female|fac|2026-09-14T10:00:00Z";
 
     // --- the rotation itself ------------------------------------------------
 

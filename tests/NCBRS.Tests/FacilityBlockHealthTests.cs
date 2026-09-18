@@ -126,7 +126,7 @@ public class FacilityBlockHealthTests
         => new()
         {
             Name = "Test facility",
-            DistrictId = "D-CENTRAL-07",
+            DistrictId = "SS-CE-TER",
             ConnectivityProfile = profile,
             BrnBlockStart = start,
             BrnBlockEnd = end,

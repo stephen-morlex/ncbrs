@@ -28,7 +28,7 @@ const user = () => userEvent.setup({ delay: null })
 const record = {
   birthRecordId: '0199a1b2-0001-7000-8000-000000000001',
   brn: '100001',
-  childFullName: 'Chipo Mwale',
+  childFullName: 'Ayen Deng',
   dateOfBirth: '2026-01-05T00:00:00Z',
   sex: 'Female',
   status: 'Confirmed',
@@ -62,7 +62,7 @@ describe('AnnulRegistration', () => {
   it('loads the record named in the URL and states the three-way distinction', async () => {
     renderScreen()
 
-    expect(await screen.findByText('Chipo Mwale')).toBeInTheDocument()
+    expect(await screen.findByText('Ayen Deng')).toBeInTheDocument()
     // The distinction annulment turns on, so the wrong act is not reached for.
     expect(screen.getByText(/is annulment the right act/i)).toBeInTheDocument()
     expect(screen.getByText(/there was no such birth/i)).toBeInTheDocument()
@@ -71,7 +71,7 @@ describe('AnnulRegistration', () => {
   it('will not open the confirmation without a justification', async () => {
     const typist = user()
     renderScreen()
-    await screen.findByText('Chipo Mwale')
+    await screen.findByText('Ayen Deng')
 
     await typist.click(screen.getByRole('button', { name: /annul this registration/i }))
 
@@ -94,7 +94,7 @@ describe('AnnulRegistration', () => {
 
     const typist = user()
     renderScreen()
-    await screen.findByText('Chipo Mwale')
+    await screen.findByText('Ayen Deng')
 
     await typist.type(
       screen.getByLabelText(/justification/i),

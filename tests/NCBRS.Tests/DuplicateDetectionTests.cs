@@ -23,7 +23,7 @@ public class DuplicateMatcherTests
 
     private static BirthRecord Record(
         string child,
-        string? mother = "Grace Mwale",
+        string? mother = "Nyandeng Deng",
         DateTime? dateOfBirth = null,
         Sex sex = Sex.Female,
         Guid? facilityId = null,
@@ -50,8 +50,8 @@ public class DuplicateMatcherTests
     public void TheSameBirthAtTwoFacilities_ScoresAboveTheReviewThreshold()
     {
         var assessment = Matcher.Assess(
-            Record("Chipo Mwale", facilityId: VillagePost),
-            Record("Chipo Mwale", facilityId: Hospital));
+            Record("Ayen Deng", facilityId: VillagePost),
+            Record("Ayen Deng", facilityId: Hospital));
 
         Assert.True(assessment.Score >= DuplicateMatcher.ReviewThreshold,
             $"Scored {assessment.Score}");
@@ -64,8 +64,8 @@ public class DuplicateMatcherTests
     [Fact]
     public void Twins_AreNeverFlagged()
     {
-        var first = Record("Baby A Mwale", plurality: BirthPlurality.Twin, birthOrder: 1);
-        var second = Record("Baby B Mwale", plurality: BirthPlurality.Twin, birthOrder: 2);
+        var first = Record("Baby A Deng", plurality: BirthPlurality.Twin, birthOrder: 1);
+        var second = Record("Baby B Deng", plurality: BirthPlurality.Twin, birthOrder: 2);
 
         Assert.Equal(0, Matcher.Assess(first, second).Score);
     }
@@ -73,8 +73,8 @@ public class DuplicateMatcherTests
     [Fact]
     public void TwinsWithIdenticalNames_AreStillNeverFlagged()
     {
-        var first = Record("Baby Mwale", plurality: BirthPlurality.Twin, birthOrder: 1);
-        var second = Record("Baby Mwale", plurality: BirthPlurality.Twin, birthOrder: 2);
+        var first = Record("Baby Deng", plurality: BirthPlurality.Twin, birthOrder: 1);
+        var second = Record("Baby Deng", plurality: BirthPlurality.Twin, birthOrder: 2);
 
         Assert.Equal(0, Matcher.Assess(first, second).Score);
     }
@@ -83,8 +83,8 @@ public class DuplicateMatcherTests
     public void DifferentChildrenOfDifferentMothers_AreNotFlagged()
     {
         var assessment = Matcher.Assess(
-            Record("Chipo Mwale", mother: "Grace Mwale"),
-            Record("Thabo Phiri", mother: "Joyce Phiri", facilityId: Hospital));
+            Record("Ayen Deng", mother: "Nyandeng Deng"),
+            Record("Garang Wani", mother: "Achol Wani", facilityId: Hospital));
 
         Assert.True(assessment.Score < DuplicateMatcher.ReviewThreshold,
             $"Scored {assessment.Score}");
@@ -94,8 +94,8 @@ public class DuplicateMatcherTests
     public void BirthsFarApartInTime_AreNotCompared()
     {
         var assessment = Matcher.Assess(
-            Record("Chipo Mwale"),
-            Record("Chipo Mwale", dateOfBirth: Born.AddMonths(4), facilityId: Hospital));
+            Record("Ayen Deng"),
+            Record("Ayen Deng", dateOfBirth: Born.AddMonths(4), facilityId: Hospital));
 
         Assert.Equal(0, assessment.Score);
     }
@@ -108,8 +108,8 @@ public class DuplicateMatcherTests
     public void ASmallDateDiscrepancy_StillMatches()
     {
         var assessment = Matcher.Assess(
-            Record("Chipo Mwale"),
-            Record("Chipo Mwale", dateOfBirth: Born.AddDays(1), facilityId: Hospital));
+            Record("Ayen Deng"),
+            Record("Ayen Deng", dateOfBirth: Born.AddDays(1), facilityId: Hospital));
 
         Assert.True(assessment.Score >= DuplicateMatcher.ReviewThreshold,
             $"Scored {assessment.Score}");
@@ -120,8 +120,8 @@ public class DuplicateMatcherTests
     public void MisspelledNames_StillMatch()
     {
         var assessment = Matcher.Assess(
-            Record("Chipo Mwale", mother: "Grace Mwale"),
-            Record("Chipo Mwali", mother: "Grace Mwali", facilityId: Hospital));
+            Record("Ayen Deng", mother: "Nyandeng Deng"),
+            Record("Ayen Deeng", mother: "Nyandeng Deeng", facilityId: Hospital));
 
         Assert.True(assessment.Score >= DuplicateMatcher.ReviewThreshold,
             $"Scored {assessment.Score}");
@@ -131,12 +131,12 @@ public class DuplicateMatcherTests
     public void ADifferentRecordedSex_ArguesAgainstAMatch()
     {
         var same = Matcher.Assess(
-            Record("Chipo Mwale"),
-            Record("Chipo Mwale", facilityId: Hospital));
+            Record("Ayen Deng"),
+            Record("Ayen Deng", facilityId: Hospital));
 
         var differing = Matcher.Assess(
-            Record("Chipo Mwale"),
-            Record("Chipo Mwale", sex: Sex.Male, facilityId: Hospital));
+            Record("Ayen Deng"),
+            Record("Ayen Deng", sex: Sex.Male, facilityId: Hospital));
 
         Assert.True(differing.Score < same.Score);
     }
@@ -147,8 +147,8 @@ public class DuplicateMatcherTests
         // Children are often registered before being named; an absent name
         // is uninformative, not evidence of difference.
         var assessment = Matcher.Assess(
-            Record("", mother: "Grace Mwale"),
-            Record("", mother: "Grace Mwale", facilityId: Hospital));
+            Record("", mother: "Nyandeng Deng"),
+            Record("", mother: "Nyandeng Deng", facilityId: Hospital));
 
         Assert.DoesNotContain(assessment.Reasons, reason => reason.StartsWith("Child name"));
     }
@@ -156,7 +156,7 @@ public class DuplicateMatcherTests
     [Fact]
     public void ARecordIsNeverItsOwnDuplicate()
     {
-        var record = Record("Chipo Mwale");
+        var record = Record("Ayen Deng");
         Assert.Equal(0, Matcher.Assess(record, record).Score);
     }
 
@@ -164,8 +164,8 @@ public class DuplicateMatcherTests
     public void ReasonsExplainTheDecision_SoAReviewerCanJudge()
     {
         var assessment = Matcher.Assess(
-            Record("Chipo Mwale", facilityId: VillagePost),
-            Record("Chipo Mwale", facilityId: Hospital));
+            Record("Ayen Deng", facilityId: VillagePost),
+            Record("Ayen Deng", facilityId: Hospital));
 
         Assert.Contains(assessment.Reasons, reason => reason.Contains("Same date of birth"));
         Assert.Contains(assessment.Reasons, reason => reason.Contains("different facility"));
@@ -193,15 +193,15 @@ public class DuplicateDetectionServiceTests : IDisposable
         using var db = new NcbrsDbContext(_options);
 
         db.Facilities.AddRange(
-            new Facility { FacilityId = VillagePost, Name = "Kabwe Village Post", DistrictId = "D-CENTRAL-07" },
-            new Facility { FacilityId = Hospital, Name = "Lusaka Central", DistrictId = "D-LUSAKA-01" });
+            new Facility { FacilityId = VillagePost, Name = "Terekeka Village Post", DistrictId = "SS-CE-TER" },
+            new Facility { FacilityId = Hospital, Name = "Juba Central", DistrictId = "SS-CE-JUB" });
 
         db.Registrars.Add(new Registrar
         {
             RegistrarId = RegistrarId,
             FacilityId = VillagePost,
             ExternalSubjectId = AuthTestContext.DefaultSubject,
-            DisplayName = "Nurse A. Banda",
+            DisplayName = "Nurse A. Lado",
             CredentialHash = "test"
         });
 
@@ -225,7 +225,7 @@ public class DuplicateDetectionServiceTests : IDisposable
         string child,
         Guid facilityId,
         DateTime? dateOfBirth = null,
-        string? mother = "Grace Mwale",
+        string? mother = "Nyandeng Deng",
         DateTime? createdAt = null)
     {
         await using var db = NewDb();
@@ -252,8 +252,8 @@ public class DuplicateDetectionServiceTests : IDisposable
     [Fact]
     public async Task ASecondRegistrationOfTheSameBirth_IsFlagged()
     {
-        await AddRecordAsync("100001", "Chipo Mwale", VillagePost);
-        var second = await AddRecordAsync("200001", "Chipo Mwale", Hospital);
+        await AddRecordAsync("100001", "Ayen Deng", VillagePost);
+        var second = await AddRecordAsync("200001", "Ayen Deng", Hospital);
 
         await using (var db = NewDb())
         {
@@ -275,8 +275,8 @@ public class DuplicateDetectionServiceTests : IDisposable
     [Fact]
     public async Task FlaggingDoesNotBlockOrRemoveEitherRegistration()
     {
-        await AddRecordAsync("100001", "Chipo Mwale", VillagePost);
-        var second = await AddRecordAsync("200001", "Chipo Mwale", Hospital);
+        await AddRecordAsync("100001", "Ayen Deng", VillagePost);
+        var second = await AddRecordAsync("200001", "Ayen Deng", Hospital);
 
         await using (var db = NewDb())
         {
@@ -292,8 +292,8 @@ public class DuplicateDetectionServiceTests : IDisposable
     [Fact]
     public async Task UnrelatedBirths_AreNotFlagged()
     {
-        await AddRecordAsync("100001", "Chipo Mwale", VillagePost, mother: "Grace Mwale");
-        var second = await AddRecordAsync("200001", "Thabo Phiri", Hospital, mother: "Joyce Phiri");
+        await AddRecordAsync("100001", "Ayen Deng", VillagePost, mother: "Nyandeng Deng");
+        var second = await AddRecordAsync("200001", "Garang Wani", Hospital, mother: "Achol Wani");
 
         await using var db = NewDb();
         Assert.Equal(0, await Service(db).ScanAsync(second));
@@ -302,8 +302,8 @@ public class DuplicateDetectionServiceTests : IDisposable
     [Fact]
     public async Task ScanningTwice_DoesNotFlagTheSamePairAgain()
     {
-        await AddRecordAsync("100001", "Chipo Mwale", VillagePost);
-        var second = await AddRecordAsync("200001", "Chipo Mwale", Hospital);
+        await AddRecordAsync("100001", "Ayen Deng", VillagePost);
+        var second = await AddRecordAsync("200001", "Ayen Deng", Hospital);
 
         await using (var db = NewDb())
         {
@@ -326,9 +326,9 @@ public class DuplicateDetectionServiceTests : IDisposable
     [Fact]
     public async Task ConfirmingADuplicate_SupersedesTheLaterRecord()
     {
-        var earlier = await AddRecordAsync("100001", "Chipo Mwale", VillagePost,
+        var earlier = await AddRecordAsync("100001", "Ayen Deng", VillagePost,
             createdAt: new DateTime(2026, 9, 10, 8, 0, 0, DateTimeKind.Utc));
-        var later = await AddRecordAsync("200001", "Chipo Mwale", Hospital,
+        var later = await AddRecordAsync("200001", "Ayen Deng", Hospital,
             createdAt: new DateTime(2026, 9, 12, 8, 0, 0, DateTimeKind.Utc));
 
         await using (var db = NewDb())
@@ -366,8 +366,8 @@ public class DuplicateDetectionServiceTests : IDisposable
     [Fact]
     public async Task DismissingACandidate_LeavesBothRecordsStanding()
     {
-        await AddRecordAsync("100001", "Chipo Mwale", VillagePost);
-        var second = await AddRecordAsync("200001", "Chipo Mwale", Hospital);
+        await AddRecordAsync("100001", "Ayen Deng", VillagePost);
+        var second = await AddRecordAsync("200001", "Ayen Deng", Hospital);
 
         await using (var db = NewDb())
         {
@@ -397,8 +397,8 @@ public class DuplicateDetectionServiceTests : IDisposable
     [Fact]
     public async Task ReviewingTwice_IsRefused()
     {
-        await AddRecordAsync("100001", "Chipo Mwale", VillagePost);
-        var second = await AddRecordAsync("200001", "Chipo Mwale", Hospital);
+        await AddRecordAsync("100001", "Ayen Deng", VillagePost);
+        var second = await AddRecordAsync("200001", "Ayen Deng", Hospital);
 
         await using (var db = NewDb())
         {
@@ -426,8 +426,8 @@ public class DuplicateDetectionServiceTests : IDisposable
     [Fact]
     public async Task AConfirmedDuplicate_IsAudited()
     {
-        await AddRecordAsync("100001", "Chipo Mwale", VillagePost);
-        var second = await AddRecordAsync("200001", "Chipo Mwale", Hospital);
+        await AddRecordAsync("100001", "Ayen Deng", VillagePost);
+        var second = await AddRecordAsync("200001", "Ayen Deng", Hospital);
 
         await using (var db = NewDb())
         {
@@ -453,9 +453,9 @@ public class DuplicateDetectionServiceTests : IDisposable
     [Fact]
     public async Task ASupersededRecord_IsExcludedFromFutureScans()
     {
-        var earlier = await AddRecordAsync("100001", "Chipo Mwale", VillagePost,
+        var earlier = await AddRecordAsync("100001", "Ayen Deng", VillagePost,
             createdAt: new DateTime(2026, 9, 10, 8, 0, 0, DateTimeKind.Utc));
-        var later = await AddRecordAsync("200001", "Chipo Mwale", Hospital,
+        var later = await AddRecordAsync("200001", "Ayen Deng", Hospital,
             createdAt: new DateTime(2026, 9, 12, 8, 0, 0, DateTimeKind.Utc));
 
         await using (var db = NewDb())
@@ -467,7 +467,7 @@ public class DuplicateDetectionServiceTests : IDisposable
 
         // A third registration of the same child should now match only the
         // surviving record, not the superseded one.
-        var third = await AddRecordAsync("300001", "Chipo Mwale", Hospital);
+        var third = await AddRecordAsync("300001", "Ayen Deng", Hospital);
 
         await using (var db = NewDb())
         {
@@ -478,9 +478,9 @@ public class DuplicateDetectionServiceTests : IDisposable
     [Fact]
     public async Task ThePendingQueue_IsOrderedByLikelihood()
     {
-        await AddRecordAsync("100001", "Chipo Mwale", VillagePost);
-        var exact = await AddRecordAsync("200001", "Chipo Mwale", Hospital);
-        var fuzzy = await AddRecordAsync("200002", "Chipo Mwali", Hospital, dateOfBirth: Born.AddDays(2));
+        await AddRecordAsync("100001", "Ayen Deng", VillagePost);
+        var exact = await AddRecordAsync("200001", "Ayen Deng", Hospital);
+        var fuzzy = await AddRecordAsync("200002", "Ayen Deeng", Hospital, dateOfBirth: Born.AddDays(2));
 
         await using (var db = NewDb())
         {

@@ -37,8 +37,8 @@ describe('the two tracks', () => {
 
 describe('changedFields', () => {
   it('names only what was actually changed', () => {
-    const original = { childFullName: 'Chipo Mwale', birthWeightGrams: 3200 }
-    const edited = { childFullName: 'Chipo Mwale', birthWeightGrams: 3350 }
+    const original = { childFullName: 'Ayen Deng', birthWeightGrams: 3200 }
+    const edited = { childFullName: 'Ayen Deng', birthWeightGrams: 3350 }
 
     expect(changedFields(original, edited)).toEqual({ birthWeightGrams: 3350 })
   })
@@ -47,7 +47,7 @@ describe('changedFields', () => {
     // The form is prefilled, so submitting it untouched must not file a
     // correction -- every unchanged field would be an audit row asserting a
     // change that did not happen.
-    const record = { childFullName: 'Chipo Mwale', birthWeightGrams: 3200 }
+    const record = { childFullName: 'Ayen Deng', birthWeightGrams: 3200 }
 
     expect(changedFields(record, { ...record })).toEqual({})
   })
@@ -55,9 +55,9 @@ describe('changedFields', () => {
   it('does not treat a resubmitted identical name as a correction', () => {
     // The sharpest case. A name resubmitted unchanged would otherwise send the
     // whole record to a reviewer for nothing.
-    const original = { childFullName: 'Chipo Mwale' }
+    const original = { childFullName: 'Ayen Deng' }
 
-    expect(changedFields(original, { childFullName: '  Chipo Mwale  ' })).toEqual({})
+    expect(changedFields(original, { childFullName: '  Ayen Deng  ' })).toEqual({})
   })
 
   it('treats blank, null and undefined as the same absence', () => {
@@ -71,13 +71,13 @@ describe('changedFields', () => {
   it('sees a value being supplied where there was none', () => {
     const original = { motherFullName: '' }
 
-    expect(changedFields(original, { motherFullName: 'Grace Mwale' })).toEqual({
-      motherFullName: 'Grace Mwale',
+    expect(changedFields(original, { motherFullName: 'Nyandeng Deng' })).toEqual({
+      motherFullName: 'Nyandeng Deng',
     })
   })
 
   it('sees a value being cleared', () => {
-    const original = { fatherFullName: 'John Mwale' }
+    const original = { fatherFullName: 'John Deng' }
 
     expect(changedFields(original, { fatherFullName: '' })).toEqual({ fatherFullName: '' })
   })

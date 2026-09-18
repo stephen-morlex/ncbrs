@@ -37,14 +37,14 @@ public class AuthorizationTests : IDisposable
             new Facility
             {
                 FacilityId = HomeFacility,
-                Name = "Kabwe Village Health Post",
-                DistrictId = "D-CENTRAL-07"
+                Name = "Terekeka Village Health Post",
+                DistrictId = "SS-CE-TER"
             },
             new Facility
             {
                 FacilityId = OtherFacility,
-                Name = "Lusaka Central Hospital",
-                DistrictId = "D-LUSAKA-01"
+                Name = "Juba Central Hospital",
+                DistrictId = "SS-CE-JUB"
             });
 
         db.Registrars.Add(new Registrar
@@ -52,7 +52,7 @@ public class AuthorizationTests : IDisposable
             RegistrarId = RegistrarId,
             FacilityId = HomeFacility,
             ExternalSubjectId = AuthTestContext.DefaultSubject,
-            DisplayName = "Nurse A. Banda",
+            DisplayName = "Nurse A. Lado",
             Role = RegistrarRole.FacilityRegistrar,
             CredentialHash = "test"
         });

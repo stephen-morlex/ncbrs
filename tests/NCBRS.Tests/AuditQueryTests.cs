@@ -18,21 +18,21 @@ namespace NCBRS.Tests;
 /// </summary>
 public class AuditQueryTests : IDisposable
 {
-    private static readonly Guid CentralFacilityId = Guid.Parse("0199a1b2-0001-7000-8000-000000000001");
-    private static readonly Guid LusakaFacilityId = Guid.Parse("0199a1b2-0002-7000-8000-000000000002");
+    private static readonly Guid TerekekaFacilityId = Guid.Parse("0199a1b2-0001-7000-8000-000000000001");
+    private static readonly Guid JubaFacilityId = Guid.Parse("0199a1b2-0002-7000-8000-000000000002");
 
     private static readonly Guid NurseId = Guid.Parse("0199a1b2-1001-7000-8000-000000000001");
     private static readonly Guid OfficerId = Guid.Parse("0199a1b2-1003-7000-8000-000000000003");
     private static readonly Guid MinistryId = Guid.Parse("0199a1b2-1004-7000-8000-000000000004");
-    private static readonly Guid LusakaNurseId = Guid.Parse("0199a1b2-1005-7000-8000-000000000005");
+    private static readonly Guid JubaNurseId = Guid.Parse("0199a1b2-1005-7000-8000-000000000005");
 
-    private const string CentralDistrict = "D-CENTRAL-07";
-    private const string LusakaDistrict = "D-LUSAKA-01";
+    private const string TerekekaDistrict = "SS-CE-TER";
+    private const string JubaDistrict = "SS-CE-JUB";
     private const string OfficerSubject = "33333333-3333-4333-8333-333333333333";
     private const string MinistrySubject = "44444444-4444-4444-8444-444444444444";
 
     private const string CentralBrn = "100001";
-    private const string LusakaBrn = "200001";
+    private const string JubaBrn = "200001";
 
     private static readonly DateTime Born = new(2026, 9, 10, 4, 30, 0, DateTimeKind.Utc);
     private static readonly DateTime Earlier = new(2026, 9, 1, 8, 0, 0, DateTimeKind.Utc);
@@ -50,24 +50,24 @@ public class AuditQueryTests : IDisposable
         db.Database.EnsureCreated();
 
         db.Facilities.AddRange(
-            new Facility { FacilityId = CentralFacilityId, Name = "Kabwe Village Health Post", DistrictId = CentralDistrict },
-            new Facility { FacilityId = LusakaFacilityId, Name = "Lusaka Central", DistrictId = LusakaDistrict });
+            new Facility { FacilityId = TerekekaFacilityId, Name = "Terekeka Village Health Post", DistrictId = TerekekaDistrict },
+            new Facility { FacilityId = JubaFacilityId, Name = "Juba Central", DistrictId = JubaDistrict });
 
         db.Registrars.AddRange(
-            new Registrar { RegistrarId = NurseId, FacilityId = CentralFacilityId, ExternalSubjectId = AuthTestContext.DefaultSubject, DisplayName = "Nurse A. Banda" },
-            new Registrar { RegistrarId = OfficerId, FacilityId = CentralFacilityId, ExternalSubjectId = OfficerSubject, DisplayName = "Grace Phiri", Role = RegistrarRole.DistrictOfficer },
-            new Registrar { RegistrarId = MinistryId, FacilityId = CentralFacilityId, ExternalSubjectId = MinistrySubject, DisplayName = "Naledi Zulu", Role = RegistrarRole.MinistryAdmin },
-            new Registrar { RegistrarId = LusakaNurseId, FacilityId = LusakaFacilityId, ExternalSubjectId = "55555555-5555-4555-8555-555555555555", DisplayName = "Thandi Nkosi" });
+            new Registrar { RegistrarId = NurseId, FacilityId = TerekekaFacilityId, ExternalSubjectId = AuthTestContext.DefaultSubject, DisplayName = "Nurse A. Lado" },
+            new Registrar { RegistrarId = OfficerId, FacilityId = TerekekaFacilityId, ExternalSubjectId = OfficerSubject, DisplayName = "Nyandeng Wani", Role = RegistrarRole.DistrictOfficer },
+            new Registrar { RegistrarId = MinistryId, FacilityId = TerekekaFacilityId, ExternalSubjectId = MinistrySubject, DisplayName = "Aluel Lako", Role = RegistrarRole.MinistryAdmin },
+            new Registrar { RegistrarId = JubaNurseId, FacilityId = JubaFacilityId, ExternalSubjectId = "55555555-5555-4555-8555-555555555555", DisplayName = "Thandi Nkosi" });
 
         db.BirthRecords.AddRange(
-            Record(CentralBrn, CentralFacilityId, NurseId),
-            Record(LusakaBrn, LusakaFacilityId, LusakaNurseId));
+            Record(CentralBrn, TerekekaFacilityId, NurseId),
+            Record(JubaBrn, JubaFacilityId, JubaNurseId));
 
         db.AuditLogs.AddRange(
             Entry("BirthRecord", CentralBrn, "Create", NurseId, Earlier),
             Entry("BirthRecord", CentralBrn, "Amend", OfficerId, Later),
-            Entry("BirthRecord", LusakaBrn, "Create", LusakaNurseId, Later, LusakaDistrict),
-            Entry("BirthRecordSearch", CentralDistrict, "Search:name=Banda;returned=2;total=2", NurseId, Later),
+            Entry("BirthRecord", JubaBrn, "Create", JubaNurseId, Later, JubaDistrict),
+            Entry("BirthRecordSearch", TerekekaDistrict, "Search:name=Lado;returned=2;total=2", NurseId, Later),
             // Nobody did this: a sweep raised it. The actor name must come
             // back null rather than blank.
             Entry("DeviceAlert", "TABLET-01", "Raise:Silent", actor: null, Later));
@@ -82,7 +82,7 @@ public class AuditQueryTests : IDisposable
     {
         // The trail must not answer what the record itself withholds. A 200
         // with entries -- or a 403 -- would confirm the BRN exists elsewhere.
-        var result = await GetAsync(OfficerSubject, [NcbrsRoles.DistrictOfficer], brn: LusakaBrn);
+        var result = await GetAsync(OfficerSubject, [NcbrsRoles.DistrictOfficer], brn: JubaBrn);
 
         AssertStatus(StatusCodes.Status404NotFound, result.Result);
     }
@@ -100,7 +100,7 @@ public class AuditQueryTests : IDisposable
     {
         var page = Ok(await GetAsync(OfficerSubject, [NcbrsRoles.DistrictOfficer]));
 
-        Assert.DoesNotContain(page.Items, entry => entry.ActorId == LusakaNurseId);
+        Assert.DoesNotContain(page.Items, entry => entry.ActorId == JubaNurseId);
         Assert.Contains(page.Items, entry => entry.ActorId == NurseId);
     }
 
@@ -109,14 +109,14 @@ public class AuditQueryTests : IDisposable
     {
         var page = Ok(await GetAsync(MinistrySubject, [NcbrsRoles.MinistryAdmin]));
 
-        Assert.Contains(page.Items, entry => entry.ActorId == LusakaNurseId);
+        Assert.Contains(page.Items, entry => entry.ActorId == JubaNurseId);
     }
 
     [Fact]
     public async Task Naming_another_district_is_refused()
     {
         var result = await GetAsync(OfficerSubject, [NcbrsRoles.DistrictOfficer],
-            districtId: LusakaDistrict);
+            districtId: JubaDistrict);
 
         AssertStatus(StatusCodes.Status403Forbidden, result.Result);
     }
@@ -135,7 +135,7 @@ public class AuditQueryTests : IDisposable
         var read = await db.AuditLogs.SingleAsync(entry => entry.EntityType == "AuditTrail");
 
         Assert.Equal(OfficerId, read.UserId);
-        Assert.Equal(CentralDistrict, read.EntityId);
+        Assert.Equal(TerekekaDistrict, read.EntityId);
     }
 
     [Fact]
@@ -157,7 +157,7 @@ public class AuditQueryTests : IDisposable
     {
         // Nothing was disclosed, so there is nothing to account for, and a
         // row would fill the trail with non-events.
-        await GetAsync(OfficerSubject, [NcbrsRoles.DistrictOfficer], brn: LusakaBrn);
+        await GetAsync(OfficerSubject, [NcbrsRoles.DistrictOfficer], brn: JubaBrn);
 
         await using var db = new NcbrsDbContext(_options);
 
@@ -171,8 +171,8 @@ public class AuditQueryTests : IDisposable
     {
         var page = Ok(await GetAsync(OfficerSubject, [NcbrsRoles.DistrictOfficer], brn: CentralBrn));
 
-        Assert.Contains(page.Items, entry => entry.ActorName == "Nurse A. Banda");
-        Assert.Contains(page.Items, entry => entry.ActorName == "Grace Phiri");
+        Assert.Contains(page.Items, entry => entry.ActorName == "Nurse A. Lado");
+        Assert.Contains(page.Items, entry => entry.ActorName == "Nyandeng Wani");
     }
 
     [Fact]
@@ -210,7 +210,7 @@ public class AuditQueryTests : IDisposable
 
         var entry = Assert.Single(page.Items);
 
-        Assert.Contains("name=Banda", entry.Action);
+        Assert.Contains("name=Lado", entry.Action);
     }
 
 // ---- the district column ---------------------------------------------
@@ -245,7 +245,7 @@ public class AuditQueryTests : IDisposable
         await using (var seed = new NcbrsDbContext(_options))
         {
             seed.AuditLogs.Add(Entry("BirthRecord", CentralBrn, "LegacyOutsiderAct",
-                LusakaNurseId, Later, AuditLog.Unknown));
+                JubaNurseId, Later, AuditLog.Unknown));
 
             await seed.SaveChangesAsync();
         }
@@ -264,7 +264,7 @@ public class AuditQueryTests : IDisposable
         await using (var seed = new NcbrsDbContext(_options))
         {
             seed.AuditLogs.Add(Entry("BirthRecord", CentralBrn, "AnnulByMinistry",
-                MinistryId, Later, CentralDistrict));
+                MinistryId, Later, TerekekaDistrict));
 
             await seed.SaveChangesAsync();
         }
@@ -342,7 +342,7 @@ public class AuditQueryTests : IDisposable
 
     private static AuditLog Entry(
         string entityType, string entityId, string action, Guid? actor, DateTime at,
-        string district = CentralDistrict)
+        string district = TerekekaDistrict)
         => new()
         {
             EntityType = entityType,
@@ -359,7 +359,7 @@ public class AuditQueryTests : IDisposable
         {
             Brn = brn,
             VitalEventType = VitalEventType.LiveBirth,
-            ChildPerson = new Person { FullName = "Chipo Mwale" },
+            ChildPerson = new Person { FullName = "Ayen Deng" },
             FacilityId = facilityId,
             RegisteredByRegistrarId = registrarId,
             DateOfBirth = Born,

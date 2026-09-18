@@ -35,7 +35,7 @@ beforeEach(() => {
       ? Promise.resolve(
           ok({
             items: [
-              { facilityId: FacilityId, name: 'Kabwe Village Health Post', brnRemaining: 500 },
+              { facilityId: FacilityId, name: 'Terekeka Village Health Post', brnRemaining: 500 },
             ],
           }),
         )
@@ -134,7 +134,7 @@ describe('RegisterBirth', () => {
         ? Promise.resolve(
             ok({
               items: [
-                { facilityId: FacilityId, name: 'Kabwe Village Health Post', brnRemaining: 0 },
+                { facilityId: FacilityId, name: 'Terekeka Village Health Post', brnRemaining: 0 },
               ],
             }),
           )
@@ -206,11 +206,11 @@ describe('when the form is refused', () => {
     fireEvent.click(screen.getByRole('button', { name: /register the birth/i }))
     await screen.findByText(/this birth has not been registered yet/i)
 
-    await typist.type(screen.getByLabelText(/child’s full name/i), 'Chipo Mwale')
+    await typist.type(screen.getByLabelText(/child’s full name/i), 'Ayen Deng')
     fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: daysAgo(3) } })
 
     await typist.click(screen.getByLabelText(/facility/i))
-    await typist.click(await screen.findByRole('option', { name: /kabwe/i }))
+    await typist.click(await screen.findByRole('option', { name: /terekeka/i }))
     await typist.click(screen.getByLabelText(/^sex$/i))
     await typist.click(await screen.findByRole('option', { name: /female/i }))
     await typist.click(screen.getByLabelText(/plurality/i))
@@ -257,10 +257,10 @@ describe('when the registry refuses', () => {
     show()
     await waitFor(() => expect(get).toHaveBeenCalled())
 
-    await typist.type(screen.getByLabelText(/child’s full name/i), 'Chipo Mwale')
+    await typist.type(screen.getByLabelText(/child’s full name/i), 'Ayen Deng')
     fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: daysAgo(3) } })
     await typist.click(screen.getByLabelText(/facility/i))
-    await typist.click(await screen.findByRole('option', { name: /kabwe/i }))
+    await typist.click(await screen.findByRole('option', { name: /terekeka/i }))
     await typist.click(screen.getByLabelText(/^sex$/i))
     await typist.click(await screen.findByRole('option', { name: /female/i }))
     await typist.click(screen.getByLabelText(/plurality/i))
@@ -293,10 +293,10 @@ describe('when the registry refuses', () => {
     show()
     await waitFor(() => expect(get).toHaveBeenCalled())
 
-    await typist.type(screen.getByLabelText(/child’s full name/i), 'Chipo Mwale')
+    await typist.type(screen.getByLabelText(/child’s full name/i), 'Ayen Deng')
     fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: daysAgo(3) } })
     await typist.click(screen.getByLabelText(/facility/i))
-    await typist.click(await screen.findByRole('option', { name: /kabwe/i }))
+    await typist.click(await screen.findByRole('option', { name: /terekeka/i }))
     await typist.click(screen.getByLabelText(/^sex$/i))
     await typist.click(await screen.findByRole('option', { name: /female/i }))
     await typist.click(screen.getByLabelText(/plurality/i))
@@ -311,10 +311,10 @@ describe('when the registry refuses', () => {
 
 describe('when the registry says the number is already registered', () => {
   async function fillIn(typist: ReturnType<typeof userEvent.setup>) {
-    await typist.type(screen.getByLabelText(/child’s full name/i), 'Chipo Mwale')
+    await typist.type(screen.getByLabelText(/child’s full name/i), 'Ayen Deng')
     fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: daysAgo(3) } })
     await typist.click(screen.getByLabelText(/facility/i))
-    await typist.click(await screen.findByRole('option', { name: /kabwe/i }))
+    await typist.click(await screen.findByRole('option', { name: /terekeka/i }))
     await typist.click(screen.getByLabelText(/^sex$/i))
     await typist.click(await screen.findByRole('option', { name: /female/i }))
     await typist.click(screen.getByLabelText(/plurality/i))

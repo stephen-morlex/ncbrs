@@ -23,7 +23,7 @@ const user = () => userEvent.setup({ delay: null })
 
 const facility = {
   facilityId: '0199a1b2-fac0-7000-8000-000000000001',
-  name: 'Lusaka Central Clinic',
+  name: 'Juba Central Clinic',
   tier: 'Hospital',
   districtId: 'lusaka',
   connectivityProfile: 'AlwaysOn',

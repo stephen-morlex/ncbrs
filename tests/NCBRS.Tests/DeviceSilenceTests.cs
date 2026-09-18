@@ -48,8 +48,8 @@ public class DeviceSilenceTests : IDisposable
             new Facility
             {
                 FacilityId = PostId,
-                Name = "Kabwe Village Health Post",
-                DistrictId = "D-CENTRAL-07",
+                Name = "Terekeka Village Health Post",
+                DistrictId = "SS-CE-TER",
                 Tier = FacilityTier.VillageHealthPost,
                 ConnectivityProfile = ConnectivityProfile.OfflineFirst,
                 BrnBlockStart = 100_000,
@@ -59,8 +59,8 @@ public class DeviceSilenceTests : IDisposable
             new Facility
             {
                 FacilityId = HospitalId,
-                Name = "Lusaka Central Hospital",
-                DistrictId = "D-LUSAKA-01",
+                Name = "Juba Central Hospital",
+                DistrictId = "SS-CE-JUB",
                 Tier = FacilityTier.Hospital,
                 ConnectivityProfile = ConnectivityProfile.AlwaysOn,
                 BrnBlockStart = 200_000,
@@ -165,7 +165,7 @@ public class DeviceSilenceTests : IDisposable
         Assert.Equal(DeviceAlertKind.Silent, alert.Kind);
         Assert.Equal(30, alert.DaysSilentWhenRaised);
         Assert.Equal(21, alert.ThresholdDays);
-        Assert.Equal("D-CENTRAL-07", alert.DistrictId);
+        Assert.Equal("SS-CE-TER", alert.DistrictId);
     }
 
     [Fact]
@@ -466,7 +466,7 @@ public class DeviceSilenceTests : IDisposable
         await SweepAsync();
 
         await using var db = NewDb();
-        var queue = (await Devices(db).Alerts("D-CENTRAL-07")).Value!;
+        var queue = (await Devices(db).Alerts("SS-CE-TER")).Value!;
 
         Assert.Equal(2, queue.Count);
         Assert.Equal("TABLET-B", queue[0].DeviceId);
