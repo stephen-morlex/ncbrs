@@ -1,8 +1,18 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useAuth } from 'react-oidc-context'
 import { CircleAlert, Hospital, TriangleAlert } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   Empty,
   EmptyContent,
@@ -11,7 +21,10 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Spinner } from '@/components/ui/spinner'
 import {
   Table,
   TableBody,
@@ -22,8 +35,13 @@ import {
 } from '@/components/ui/table'
 import type { components } from '@/api/generated/api'
 import { type NcbrsError, toNcbrsError, unreachableError } from '@/api/errors'
+import { realmRoles } from '@/auth/claims'
+import { satisfies } from '@/auth/roles'
 import { useApiClient } from '@/api/useApi'
 import { PageHeader } from '@/shell/PageHeader'
+
+// The console requests blocks as itself; the grant is attributed to it.
+const WebClientDeviceId = 'ncbrs-web'
 
 type Facility = components['schemas']['FacilityResponse']
 type BlockStatus = components['schemas']['BrnBlockStatus']
@@ -41,11 +59,19 @@ type BlockStatus = components['schemas']['BrnBlockStatus']
  */
 export function Facilities() {
   const api = useApiClient()
+  const auth = useAuth()
+
+  // Anyone may see how close a post is to running out; only someone permitted
+  // to register births may top the block up. The server enforces both this and
+  // the facility scope — a facility registrar can grant only their own — so a
+  // hidden button is a courtesy, not the control.
+  const canGrant = satisfies(realmRoles(auth.user), 'CanRegisterBirths')
 
   const [facilities, setFacilities] = useState<Facility[] | null>(null)
   const [total, setTotal] = useState(0)
   const [error, setError] = useState<NcbrsError | null>(null)
   const [loading, setLoading] = useState(true)
+  const [granting, setGranting] = useState<Facility | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -133,6 +159,7 @@ export function Facilities() {
                     <TableHead>Connectivity</TableHead>
                     <TableHead className="text-right">Numbers left</TableHead>
                     <TableHead>Block</TableHead>
+                    {canGrant ? <TableHead className="text-right">Grant</TableHead> : null}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -154,6 +181,13 @@ export function Facilities() {
                       <TableCell>
                         <BlockBadge status={facility.blockStatus} />
                       </TableCell>
+                      {canGrant ? (
+                        <TableCell className="text-right">
+                          <Button variant="outline" size="sm" onClick={() => setGranting(facility)}>
+                            Grant a block
+                          </Button>
+                        </TableCell>
+                      ) : null}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -162,7 +196,149 @@ export function Facilities() {
           </CardContent>
         </Card>
       ) : null}
+
+      {granting ? (
+        <GrantBlockDialog
+          facility={granting}
+          onClose={() => setGranting(null)}
+          onGranted={() => {
+            setGranting(null)
+            void load()
+          }}
+        />
+      ) : null}
     </div>
+  )
+}
+
+type GrantPhase =
+  | { kind: 'form' }
+  | { kind: 'submitting' }
+  | { kind: 'granted'; start: number; end: number }
+  | { kind: 'error'; error: NcbrsError }
+
+/**
+ * Grant a facility a fresh block of registration numbers.
+ *
+ * Blocks are handed out ahead of connectivity so a post can register offline
+ * for weeks. The range comes back so the granter can see what was allocated;
+ * an exhausted ceiling (409) is surfaced rather than silently doing nothing,
+ * because raising it is a separate central act.
+ */
+function GrantBlockDialog({
+  facility,
+  onClose,
+  onGranted,
+}: {
+  facility: Facility
+  onClose: () => void
+  onGranted: () => void
+}) {
+  const api = useApiClient()
+
+  const [blockSize, setBlockSize] = useState(1000)
+  const [phase, setPhase] = useState<GrantPhase>({ kind: 'form' })
+
+  const busy = phase.kind === 'submitting'
+  const invalid = !Number.isInteger(blockSize) || blockSize < 1 || blockSize > 10_000
+
+  const submit = useCallback(async () => {
+    if (invalid) {
+      return
+    }
+
+    setPhase({ kind: 'submitting' })
+
+    try {
+      const { data, error: failure, response } = await api.POST(
+        '/api/BirthRecords/{facilityId}/request-brn-block',
+        {
+          params: { path: { facilityId: facility.facilityId } },
+          body: { data: { blockSize, deviceId: WebClientDeviceId } },
+        },
+      )
+
+      if (response.ok && data?.data) {
+        setPhase({ kind: 'granted', start: data.data.blockStart, end: data.data.blockEnd })
+        return
+      }
+
+      setPhase({ kind: 'error', error: toNcbrsError(failure, response.status) })
+    } catch (cause) {
+      setPhase({ kind: 'error', error: unreachableError(cause) })
+    }
+  }, [api, facility.facilityId, blockSize, invalid])
+
+  const granted = phase.kind === 'granted'
+
+  return (
+    <Dialog open onOpenChange={(open) => (open ? undefined : (granted ? onGranted() : onClose()))}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Grant a block to {facility.name}</DialogTitle>
+          <DialogDescription>
+            Registration numbers are handed out ahead of connectivity, so a post can register while
+            offline.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {phase.kind === 'error' ? (
+            <Alert variant="destructive">
+              <CircleAlert />
+              <AlertTitle>{phase.error.title}</AlertTitle>
+              <AlertDescription>
+                {phase.error.unreachable
+                  ? 'The registry did not answer. Nothing was granted; try again.'
+                  : phase.error.fields.map((item) => item.message).join(' ') || 'Nothing was granted.'}
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
+          {phase.kind === 'granted' ? (
+            <Alert>
+              <AlertTitle>Block granted</AlertTitle>
+              <AlertDescription>
+                Numbers {phase.start.toLocaleString()}–{phase.end.toLocaleString()} are now this
+                facility's to issue.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <div className="grid gap-2">
+              <Label htmlFor="block-size">How many numbers</Label>
+              <Input
+                id="block-size"
+                type="number"
+                min={1}
+                max={10000}
+                value={blockSize}
+                onChange={(event) => setBlockSize(event.target.valueAsNumber)}
+                className="w-40"
+                aria-invalid={invalid || undefined}
+                disabled={busy}
+              />
+              <p className="text-muted-foreground text-xs">Between 1 and 10,000.</p>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          {granted ? (
+            <Button onClick={onGranted}>Done</Button>
+          ) : (
+            <>
+              <Button variant="outline" onClick={onClose} disabled={busy}>
+                Cancel
+              </Button>
+              <Button onClick={() => void submit()} disabled={busy || invalid}>
+                {busy ? <Spinner /> : null}
+                Grant block
+              </Button>
+            </>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
