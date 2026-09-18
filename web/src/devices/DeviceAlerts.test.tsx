@@ -53,7 +53,7 @@ const neverReported = {
 
 const facility = {
   facilityId: '0199a1b2-fac0-7000-8000-000000000001',
-  name: 'Lusaka Central Clinic',
+  name: 'Juba Central Clinic',
   tier: 'Hospital',
   connectivityProfile: 'AlwaysOn',
   brnRemaining: 5000,
@@ -102,7 +102,7 @@ describe('DeviceAlerts', () => {
         ...silent,
         status: 'Acknowledged',
         acknowledgedAtUtc: '2026-09-18T00:00:00Z',
-        acknowledgedByRegistrarName: 'Grace Banda',
+        acknowledgedByRegistrarName: 'Nyandeng Lado',
         acknowledgementNote: 'Driving out Thursday.',
       }),
     )

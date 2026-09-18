@@ -30,14 +30,14 @@ const conflict = {
   amendmentConflictId: '0199a1b2-c0f0-7000-8000-000000000001',
   amendmentRequestId: '0199a1b2-0001-7000-8000-000000000001',
   brn: '100001',
-  childFullName: 'Chipo Mwale',
+  childFullName: 'Ayen Deng',
   facilityId: '0199a1b2-fac0-7000-8000-000000000001',
   field: 'BirthWeightGrams',
   expectedPreviousValue: '3200',
   actualPreviousValue: '3350',
   resolvedValue: '3400',
   submittedByRegistrarId: '0199a1b2-reg0-7000-8000-000000000001',
-  submittedByRegistrarName: 'Grace Banda',
+  submittedByRegistrarName: 'Nyandeng Lado',
   detectedAtUtc: '2026-09-10T08:00:00Z',
 }
 
@@ -166,7 +166,7 @@ describe('AmendmentConflicts', () => {
     expect(within(dialog).getByText(/does not change the value/i)).toBeInTheDocument()
     // The submitter is named on the review itself, even though the queue row
     // does not carry a column for it.
-    expect(within(dialog).getByText(/Grace Banda/)).toBeInTheDocument()
+    expect(within(dialog).getByText(/Nyandeng Lado/)).toBeInTheDocument()
   })
 
   it('clears a conflict another registrar already judged', async () => {

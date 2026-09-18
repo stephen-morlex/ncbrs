@@ -52,7 +52,7 @@ describe('VerifyCertificate', () => {
         valid: true,
         revoked: false,
         brn: '100001',
-        childFullName: 'Chipo Mwale',
+        childFullName: 'Ayen Deng',
         dateOfBirth: '2026-06-01',
         sex: 'Female',
         issueDateUtc: '2026-09-15T10:00:00Z',
@@ -63,7 +63,7 @@ describe('VerifyCertificate', () => {
     await verify('NCBRS.v1.payload.SIGNED')
 
     expect(await screen.findByText(/valid certificate/i)).toBeInTheDocument()
-    expect(screen.getByText('Chipo Mwale')).toBeInTheDocument()
+    expect(screen.getByText('Ayen Deng')).toBeInTheDocument()
     expect(screen.getByText('100001')).toBeInTheDocument()
     expect(post.mock.calls[0][1].body.data.qrPayload).toBe('NCBRS.v1.payload.SIGNED')
   })
@@ -78,7 +78,7 @@ describe('VerifyCertificate', () => {
         revocationReason: 'RegistrationAnnulled',
         revokedAtUtc: '2026-09-16T10:00:00Z',
         brn: '100001',
-        childFullName: 'Chipo Mwale',
+        childFullName: 'Ayen Deng',
       }),
     )
 
@@ -88,7 +88,7 @@ describe('VerifyCertificate', () => {
     expect(await screen.findByText(/this certificate has been revoked/i)).toBeInTheDocument()
     expect(screen.getByText(/registration was annulled/i)).toBeInTheDocument()
     // The facts are still shown so the counter can match the document.
-    expect(screen.getByText('Chipo Mwale')).toBeInTheDocument()
+    expect(screen.getByText('Ayen Deng')).toBeInTheDocument()
   })
 
   it('reads a bad signature as unverifiable', async () => {

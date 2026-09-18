@@ -70,7 +70,7 @@ public class Device
     /// </summary>
     public required string PublicKeyPem { get; set; }
 
-    /// <summary>A human label -- "Kabwe post, tablet 2" -- for the district officer.</summary>
+    /// <summary>A human label -- "Terekeka post, tablet 2" -- for the district officer.</summary>
     public string? Label { get; set; }
 
     public DateTime EnrolledAtUtc { get; set; } = DateTime.UtcNow;

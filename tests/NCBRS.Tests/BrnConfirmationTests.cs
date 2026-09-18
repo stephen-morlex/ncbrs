@@ -19,8 +19,8 @@ public class BrnReconcilerTests
         => new()
         {
             FacilityId = Guid.Parse("0199a1b2-0001-7000-8000-000000000001"),
-            Name = "Kabwe Village Health Post",
-            DistrictId = "D-CENTRAL-07",
+            Name = "Terekeka Village Health Post",
+            DistrictId = "SS-CE-TER",
             BrnBlockStart = start,
             BrnBlockNextAvailable = next,
             BrnBlockEnd = end
@@ -108,8 +108,8 @@ public class BrnConfirmationTests : IDisposable
         db.Facilities.Add(new Facility
         {
             FacilityId = FacilityId,
-            Name = "Kabwe Village Health Post",
-            DistrictId = "D-CENTRAL-07",
+            Name = "Terekeka Village Health Post",
+            DistrictId = "SS-CE-TER",
             BrnBlockStart = 100_000,
             BrnBlockNextAvailable = 100_200,
             BrnBlockEnd = 199_999
@@ -120,7 +120,7 @@ public class BrnConfirmationTests : IDisposable
             RegistrarId = RegistrarId,
             FacilityId = FacilityId,
             ExternalSubjectId = AuthTestContext.DefaultSubject,
-            DisplayName = "Nurse A. Banda",
+            DisplayName = "Nurse A. Lado",
             CredentialHash = "test"
         });
 
@@ -140,7 +140,7 @@ public class BrnConfirmationTests : IDisposable
         {
             Brn = brn,
             FacilityId = FacilityId,
-            ChildFullName = "Chipo Mwale",
+            ChildFullName = "Ayen Deng",
             DateOfBirth = DateTime.UtcNow.Date.AddDays(-5),
             Sex = Sex.Female,
             Plurality = BirthPlurality.Singleton,

@@ -105,7 +105,7 @@ function optionalNumber(min: number, max: number, message: string) {
 /**
  * A date of birth is a calendar date. Compared as text against today's date in
  * the same form, so the answer does not change with the reader's timezone —
- * "tomorrow" in Lusaka must not be "today" to a server in another one.
+ * "tomorrow" in Juba must not be "today" to a server in another one.
  */
 function notInTheFuture(value: string): boolean {
   return value <= today()

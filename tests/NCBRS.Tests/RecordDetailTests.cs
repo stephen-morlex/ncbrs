@@ -41,8 +41,8 @@ public class RecordDetailTests : IDisposable
         db.Facilities.Add(new Facility
         {
             FacilityId = FacilityId,
-            Name = "Kabwe Village Health Post",
-            DistrictId = "D-CENTRAL-07",
+            Name = "Terekeka Village Health Post",
+            DistrictId = "SS-CE-TER",
         });
 
         db.Registrars.Add(new Registrar
@@ -50,7 +50,7 @@ public class RecordDetailTests : IDisposable
             RegistrarId = RegistrarId,
             FacilityId = FacilityId,
             ExternalSubjectId = AuthTestContext.DefaultSubject,
-            DisplayName = "Nurse A. Banda",
+            DisplayName = "Nurse A. Lado",
         });
 
         db.SaveChanges();
@@ -74,7 +74,7 @@ public class RecordDetailTests : IDisposable
                 DaysLate = 400,
                 WindowDaysAtFiling = 90,
                 EvidenceType = LateRegistrationEvidenceType.BirthAttendantAttestation,
-                DeclarantName = "Grace Mwale",
+                DeclarantName = "Nyandeng Deng",
                 DeclarantRelationship = "mother",
                 SubmittedByRegistrarId = RegistrarId,
             });
@@ -185,8 +185,8 @@ public class RecordDetailTests : IDisposable
 
         var record = await LookUpAsync("100001");
 
-        Assert.Equal("Grace Mwale", record.MotherFullName);
-        Assert.Equal("John Mwale", record.FatherFullName);
+        Assert.Equal("Nyandeng Deng", record.MotherFullName);
+        Assert.Equal("John Deng", record.FatherFullName);
         Assert.Equal(3200, record.BirthWeightGrams);
         Assert.Equal(39.5m, record.GestationalAgeWeeks);
         Assert.Equal(1, record.BirthOrder);
@@ -233,17 +233,17 @@ public class RecordDetailTests : IDisposable
         db.BirthRecords.Add(new BirthRecord
         {
             MotherPerson = withParentsAndMeasurements
-                ? new Person { FullName = "Grace Mwale" }
+                ? new Person { FullName = "Nyandeng Deng" }
                 : null,
             FatherPerson = withParentsAndMeasurements
-                ? new Person { FullName = "John Mwale" }
+                ? new Person { FullName = "John Deng" }
                 : null,
             BirthWeightGrams = withParentsAndMeasurements ? 3200 : null,
             GestationalAgeWeeks = withParentsAndMeasurements ? 39.5m : null,
             BirthOrder = withParentsAndMeasurements ? 1 : null,
             Brn = "100001",
             VitalEventType = VitalEventType.LiveBirth,
-            ChildPerson = new Person { FullName = "Chipo Mwale" },
+            ChildPerson = new Person { FullName = "Ayen Deng" },
             FacilityId = FacilityId,
             RegisteredByRegistrarId = RegistrarId,
             DateOfBirth = Born,

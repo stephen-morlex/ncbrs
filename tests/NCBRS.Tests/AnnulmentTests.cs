@@ -51,8 +51,8 @@ public class AnnulmentServiceTests : IDisposable
         db.Facilities.Add(new Facility
         {
             FacilityId = FacilityId,
-            Name = "Kabwe Village Health Post",
-            DistrictId = "D-CENTRAL-07",
+            Name = "Terekeka Village Health Post",
+            DistrictId = "SS-CE-TER",
             BrnBlockStart = 100_000,
             BrnBlockNextAvailable = 100_200,
             BrnBlockEnd = 199_999
@@ -64,7 +64,7 @@ public class AnnulmentServiceTests : IDisposable
                 RegistrarId = RegistrarId,
                 FacilityId = FacilityId,
                 ExternalSubjectId = AuthTestContext.DefaultSubject,
-                DisplayName = "Nurse A. Banda",
+                DisplayName = "Nurse A. Lado",
                 CredentialHash = "test"
             },
             new Registrar
@@ -72,7 +72,7 @@ public class AnnulmentServiceTests : IDisposable
                 RegistrarId = AdminId,
                 FacilityId = FacilityId,
                 ExternalSubjectId = AdminSubject,
-                DisplayName = "Ministry Admin P. Zulu",
+                DisplayName = "Ministry Admin P. Lako",
                 Role = RegistrarRole.MinistryAdmin
             });
 
@@ -80,7 +80,7 @@ public class AnnulmentServiceTests : IDisposable
         {
             Brn = Brn,
             VitalEventType = VitalEventType.LiveBirth,
-            ChildPerson = new Person { FullName = "Chipo Mwale" },
+            ChildPerson = new Person { FullName = "Ayen Deng" },
             FacilityId = FacilityId,
             RegisteredByRegistrarId = RegistrarId,
             DateOfBirth = new DateTime(2026, 9, 10, 4, 30, 0, DateTimeKind.Utc),
@@ -173,7 +173,7 @@ public class AnnulmentServiceTests : IDisposable
         var record = await db.BirthRecords.Include(r => r.ChildPerson).SingleAsync();
 
         Assert.Equal(Brn, record.Brn);
-        Assert.Equal("Chipo Mwale", record.ChildPerson!.FullName);
+        Assert.Equal("Ayen Deng", record.ChildPerson!.FullName);
         Assert.Single(await db.RecordAnnulments.ToListAsync());
     }
 
@@ -414,7 +414,7 @@ public class AnnulmentServiceTests : IDisposable
         {
             Brn = "100002",
             VitalEventType = VitalEventType.LiveBirth,
-            ChildPerson = new Person { FullName = "Chipo Mwale" },
+            ChildPerson = new Person { FullName = "Ayen Deng" },
             FacilityId = FacilityId,
             RegisteredByRegistrarId = RegistrarId,
             DateOfBirth = annulled.DateOfBirth,
@@ -446,7 +446,7 @@ public class AnnulmentServiceTests : IDisposable
     {
         var (_, publisher) = await AnnulAsync();
 
-        Assert.Equal(("birth-record-annulled", "D-CENTRAL-07"), Assert.Single(publisher.Enqueued));
+        Assert.Equal(("birth-record-annulled", "SS-CE-TER"), Assert.Single(publisher.Enqueued));
         Assert.Empty(publisher.Amendments);
 
         var published = Assert.Single(publisher.Annulments);
@@ -488,7 +488,7 @@ public class AnnulmentServiceTests : IDisposable
         var message = await verify.OutboxMessages.SingleAsync();
 
         Assert.Equal("ncbrs.birth-records.annulled", message.Topic);
-        Assert.Equal("D-CENTRAL-07", message.PartitionKey);
+        Assert.Equal("SS-CE-TER", message.PartitionKey);
     }
 }
 

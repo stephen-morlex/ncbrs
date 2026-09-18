@@ -32,15 +32,15 @@ const user = () => userEvent.setup({ delay: null })
 const row = {
   amendmentRequestId: '0199a1b2-0001-7000-8000-000000000001',
   brn: '100001',
-  childFullName: 'Chipo Mwale',
+  childFullName: 'Ayen Deng',
   facilityId: '0199a1b2-fac0-7000-8000-000000000001',
-  facilityName: 'Lusaka Central Clinic',
+  facilityName: 'Juba Central Clinic',
   reason: 'Family name omitted at intake.',
   submittedByRegistrarId: '0199a1b2-reg0-7000-8000-000000000001',
-  submittedByRegistrarName: 'Grace Banda',
+  submittedByRegistrarName: 'Nyandeng Lado',
   submittedAtUtc: '2026-09-10T08:00:00Z',
   changes: [
-    { field: 'ChildFullName', previousValue: 'Chipo Mwale', newValue: 'Chipo Mwale Banda' },
+    { field: 'ChildFullName', previousValue: 'Ayen Deng', newValue: 'Ayen Deng Lado' },
   ],
 }
 
@@ -88,17 +88,17 @@ describe('AmendmentQueue', () => {
     renderQueue()
 
     expect(await screen.findByText('100001')).toBeInTheDocument()
-    expect(screen.getByText('Lusaka Central Clinic')).toBeInTheDocument()
+    expect(screen.getByText('Juba Central Clinic')).toBeInTheDocument()
     // The child's name appears both as the record and as the diff's previous
     // value, so it is present more than once.
-    expect(screen.getAllByText('Chipo Mwale').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Ayen Deng').length).toBeGreaterThan(0)
 
     // The submitter is named because approval is a separation-of-duties check.
-    expect(screen.getByText('Grace Banda')).toBeInTheDocument()
+    expect(screen.getByText('Nyandeng Lado')).toBeInTheDocument()
 
     // The diff, previous → new.
     expect(screen.getByText('ChildFullName')).toBeInTheDocument()
-    expect(screen.getByText('Chipo Mwale Banda')).toBeInTheDocument()
+    expect(screen.getByText('Ayen Deng Lado')).toBeInTheDocument()
   })
 
   it('shows an empty queue as the good outcome it is', async () => {

@@ -45,8 +45,8 @@ public class DeviceCaptureTimeTests : IDisposable
         db.Facilities.Add(new Facility
         {
             FacilityId = FacilityId,
-            Name = "Kabwe Village Health Post",
-            DistrictId = "D-CENTRAL-07",
+            Name = "Terekeka Village Health Post",
+            DistrictId = "SS-CE-TER",
             BrnBlockStart = 100_000,
             BrnBlockEnd = 199_999,
             BrnBlockNextAvailable = 100_000
@@ -57,7 +57,7 @@ public class DeviceCaptureTimeTests : IDisposable
             RegistrarId = RegistrarId,
             FacilityId = FacilityId,
             ExternalSubjectId = AuthTestContext.DefaultSubject,
-            DisplayName = "Nurse A. Banda",
+            DisplayName = "Nurse A. Lado",
             CredentialHash = "test"
         });
 
@@ -184,7 +184,7 @@ public class DeviceCaptureTimeTests : IDisposable
             {
                 EvidenceType = LateRegistrationEvidenceType.BirthAttendantAttestation,
                 EvidenceReference = "TBA attestation 44/2026",
-                DeclarantName = "Grace Mwale",
+                DeclarantName = "Nyandeng Deng",
                 DeclarantRelationship = "mother"
             }));
 
@@ -269,7 +269,7 @@ public class DeviceCaptureTimeTests : IDisposable
         {
             Brn = brn,
             FacilityId = FacilityId,
-            ChildFullName = "Chipo Mwale",
+            ChildFullName = "Ayen Deng",
             DateOfBirth = DateTime.UtcNow.Date.AddDays(-bornDaysAgo),
             Sex = Sex.Female,
             Plurality = BirthPlurality.Singleton,

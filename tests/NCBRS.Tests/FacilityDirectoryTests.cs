@@ -17,13 +17,13 @@ public class FacilityDirectoryTests : IDisposable
 {
     private static readonly Guid PostId = Guid.Parse("0199a1b2-0001-7000-8000-000000000001");
     private static readonly Guid HospitalId = Guid.Parse("0199a1b2-0003-7000-8000-000000000003");
-    private static readonly Guid LusakaId = Guid.Parse("0199a1b2-0002-7000-8000-000000000002");
+    private static readonly Guid JubaId = Guid.Parse("0199a1b2-0002-7000-8000-000000000002");
 
     private static readonly Guid NurseId = Guid.Parse("0199a1b2-1001-7000-8000-000000000001");
     private static readonly Guid MinistryId = Guid.Parse("0199a1b2-1004-7000-8000-000000000004");
 
-    private const string CentralDistrict = "D-CENTRAL-07";
-    private const string LusakaDistrict = "D-LUSAKA-01";
+    private const string TerekekaDistrict = "SS-CE-TER";
+    private const string JubaDistrict = "SS-CE-JUB";
     private const string MinistrySubject = "44444444-4444-4444-8444-444444444444";
 
     private readonly TestDatabase _database;
@@ -42,8 +42,8 @@ public class FacilityDirectoryTests : IDisposable
             new Facility
             {
                 FacilityId = PostId,
-                Name = "Kabwe Village Health Post",
-                DistrictId = CentralDistrict,
+                Name = "Terekeka Village Health Post",
+                DistrictId = TerekekaDistrict,
                 Tier = FacilityTier.VillageHealthPost,
                 ConnectivityProfile = ConnectivityProfile.OfflineFirst,
                 BrnBlockStart = 1, BrnBlockEnd = 1000, BrnBlockNextAvailable = 901,
@@ -52,25 +52,25 @@ public class FacilityDirectoryTests : IDisposable
             new Facility
             {
                 FacilityId = HospitalId,
-                Name = "Ndola Teaching Hospital",
-                DistrictId = CentralDistrict,
+                Name = "Terekeka County Hospital",
+                DistrictId = TerekekaDistrict,
                 Tier = FacilityTier.Hospital,
                 ConnectivityProfile = ConnectivityProfile.AlwaysOn,
                 BrnBlockStart = 1, BrnBlockEnd = 1000, BrnBlockNextAvailable = 901,
             },
             new Facility
             {
-                FacilityId = LusakaId,
-                Name = "Lusaka Central",
-                DistrictId = LusakaDistrict,
+                FacilityId = JubaId,
+                Name = "Juba Central",
+                DistrictId = JubaDistrict,
                 Tier = FacilityTier.Hospital,
                 ConnectivityProfile = ConnectivityProfile.AlwaysOn,
                 BrnBlockStart = 1, BrnBlockEnd = 1000, BrnBlockNextAvailable = 500,
             });
 
         db.Registrars.AddRange(
-            new Registrar { RegistrarId = NurseId, FacilityId = PostId, ExternalSubjectId = AuthTestContext.DefaultSubject, DisplayName = "Nurse A. Banda" },
-            new Registrar { RegistrarId = MinistryId, FacilityId = PostId, ExternalSubjectId = MinistrySubject, DisplayName = "Naledi Zulu", Role = RegistrarRole.MinistryAdmin });
+            new Registrar { RegistrarId = NurseId, FacilityId = PostId, ExternalSubjectId = AuthTestContext.DefaultSubject, DisplayName = "Nurse A. Lado" },
+            new Registrar { RegistrarId = MinistryId, FacilityId = PostId, ExternalSubjectId = MinistrySubject, DisplayName = "Aluel Lako", Role = RegistrarRole.MinistryAdmin });
 
         db.SaveChanges();
     }
@@ -83,7 +83,7 @@ public class FacilityDirectoryTests : IDisposable
         var page = Ok(await ListAsync(AuthTestContext.DefaultSubject, [NcbrsRoles.FacilityRegistrar]));
 
         Assert.Equal(2, page.Total);
-        Assert.All(page.Items, facility => Assert.Equal(CentralDistrict, facility.DistrictId));
+        Assert.All(page.Items, facility => Assert.Equal(TerekekaDistrict, facility.DistrictId));
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public class FacilityDirectoryTests : IDisposable
     [Fact]
     public async Task A_facility_in_another_district_is_not_found_rather_than_forbidden()
     {
-        var result = await GetAsync(AuthTestContext.DefaultSubject, [NcbrsRoles.FacilityRegistrar], LusakaId);
+        var result = await GetAsync(AuthTestContext.DefaultSubject, [NcbrsRoles.FacilityRegistrar], JubaId);
 
         AssertStatus(StatusCodes.Status404NotFound, result.Result);
     }
@@ -109,7 +109,7 @@ public class FacilityDirectoryTests : IDisposable
         // when the block runs out is the person who most needs the warning.
         var facility = OkOne(await GetAsync(AuthTestContext.DefaultSubject, [NcbrsRoles.FacilityRegistrar], PostId));
 
-        Assert.Equal("Kabwe Village Health Post", facility.Name);
+        Assert.Equal("Terekeka Village Health Post", facility.Name);
     }
 
     // ---- what a facility says about its block -----------------------------

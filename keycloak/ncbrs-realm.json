@@ -107,10 +107,10 @@
   "users": [
     {
       "id": "11111111-1111-4111-8111-111111111111",
-      "username": "nurse.banda",
+      "username": "nurse.lado",
       "firstName": "Alice",
-      "lastName": "Banda",
-      "email": "nurse.banda@ncbrs.test",
+      "lastName": "Lado",
+      "email": "nurse.lado@ncbrs.test",
       "enabled": true,
       "emailVerified": true,
       "credentials": [
@@ -126,10 +126,10 @@
     },
     {
       "id": "22222222-2222-4222-8222-222222222222",
-      "username": "dr.tembo",
+      "username": "dr.kenyi",
       "firstName": "Moses",
-      "lastName": "Tembo",
-      "email": "dr.tembo@ncbrs.test",
+      "lastName": "Kenyi",
+      "email": "dr.kenyi@ncbrs.test",
       "enabled": true,
       "emailVerified": true,
       "credentials": [
@@ -146,8 +146,8 @@
     {
       "id": "33333333-3333-4333-8333-333333333333",
       "username": "district.officer",
-      "firstName": "Grace",
-      "lastName": "Phiri",
+      "firstName": "Nyandeng",
+      "lastName": "Wani",
       "email": "district.officer@ncbrs.test",
       "enabled": true,
       "emailVerified": true,
@@ -165,8 +165,8 @@
     {
       "id": "44444444-4444-4444-8444-444444444444",
       "username": "ministry.admin",
-      "firstName": "Naledi",
-      "lastName": "Zulu",
+      "firstName": "Aluel",
+      "lastName": "Lako",
       "email": "ministry.admin@ncbrs.test",
       "enabled": true,
       "emailVerified": true,

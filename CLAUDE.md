@@ -149,8 +149,10 @@ Draft v1.3 was revised to match these; v1.2 still contradicts them.
 The system registers births in **South Sudan**, whose geography is
 Country → State → County → Payam (rural) / Block (urban) → Boma (rural) /
 Quarter (urban) → Village. The original scaffold carried a flat
-`Facility.DistrictId` string and Zambian dev data (Lusaka, Kabwe); both were
-wrong for this deployment and have been replaced.
+`Facility.DistrictId` string and dev/test data from an unrelated country;
+both were wrong for this deployment and have been replaced — the fixtures and
+dev seed now use Central Equatoria places (Juba, Terekeka) and South Sudanese
+names throughout.
 
 - **`AdministrativeArea` is one self-referencing tree, not a column per
   level.** `Level` (the `AdministrativeLevel` enum) says what a node is;

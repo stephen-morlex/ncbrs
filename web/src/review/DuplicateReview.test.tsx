@@ -35,9 +35,9 @@ const row = {
   score: 87,
   reasons: 'Same mother, same date and place of birth.',
   brn: '100001',
-  childFullName: 'Chipo Mwale',
+  childFullName: 'Ayen Deng',
   matchedBrn: '100002',
-  matchedChildFullName: 'Chipo Mwale',
+  matchedChildFullName: 'Ayen Deng',
   detectedAtUtc: '2026-09-10T08:00:00Z',
 }
 

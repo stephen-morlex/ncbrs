@@ -22,7 +22,7 @@ namespace NCBRS.Tests;
 public class Dhis2ExportTests : IDisposable
 {
     private const string Period = "202609";
-    private const string District = "D-CENTRAL-07";
+    private const string District = "SS-CE-TER";
     private const string OrgUnit = "OU-CENTRAL-07";
 
     private static readonly Guid FacilityId = Guid.Parse("0199a1b2-0001-7000-8000-000000000001");

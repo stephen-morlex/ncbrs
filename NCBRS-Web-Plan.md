@@ -381,7 +381,7 @@ exists to answer, so it must read the same in two offices in different
 offsets.
 
 Verified against the running stack: a search wrote
-`Search:name=Naledi;returned=4;total=4` against `D-CENTRAL-07`, opening the
+`Search:name=Aluel;returned=4;total=4` against `SS-CE-TER`, opening the
 trail wrote `Read:all;returned=50;total=116` against the same district, and
 rows written before the migration show "district not recorded" beside rows
 that carry one. The two eras are visually distinct on the screen.
@@ -879,8 +879,8 @@ restoring it exactly:
 | 300 | "grant a block" |
 | 0 | "issuing provisional numbers" |
 
-Scope held — a Central district officer saw only the Central facility, never
-Lusaka. Two grammar faults were caught and fixed in passing: "1 facilities",
+Scope held — a Terekeka county officer saw only the Terekeka facility, never
+Juba. Two grammar faults were caught and fixed in passing: "1 facilities",
 and "1 of 1 facility need".
 
 ### W1's privacy decision — decided
@@ -1354,7 +1354,7 @@ The total is shown as "N of M **in your district**", never a bare M.
 Verified against the running stack, signed in as a district officer: a search
 for a name present in two districts returned only the three records in the
 caller's own, and the trail recorded
-`Search:name=Amara;returned=3;total=3` against `D-CENTRAL-07`. A search with
+`Search:name=Amara;returned=3;total=3` against `SS-CE-TER`. A search with
 no criteria was refused and wrote **no** audit row.
 
 Two bugs found and fixed while verifying, neither visible from the code:

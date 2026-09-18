@@ -16,7 +16,7 @@ function aRecord(overrides: Partial<BirthRecord> = {}): BirthRecord {
   return {
     birthRecordId: '0199a1b2-0001-7000-8000-000000000001',
     brn: '100001',
-    childFullName: 'Chipo Mwale',
+    childFullName: 'Ayen Deng',
     dateOfBirth: '2026-06-01T00:00:00Z',
     sex: 'Female',
     status: 'Confirmed',

@@ -53,7 +53,7 @@ public class AuditLogImmutabilityTests : IDisposable
         var audit = new AuditLog
         {
             EntityType = nameof(BirthRecord),
-            DistrictId = "D-CENTRAL-07",
+            DistrictId = "SS-CE-TER",
             EntityId = "100001",
             Action = "Create",
             UserId = RegistrarId,
@@ -198,8 +198,8 @@ public class AuditLogImmutabilityTests : IDisposable
         db.Facilities.Add(new Facility
         {
             FacilityId = Guid.CreateVersion7(),
-            Name = "Kabwe Village Health Post",
-            DistrictId = "D-CENTRAL-07",
+            Name = "Terekeka Village Health Post",
+            DistrictId = "SS-CE-TER",
             BrnBlockStart = 100_000,
             BrnBlockEnd = 199_999,
             BrnBlockNextAvailable = 100_000
@@ -230,8 +230,8 @@ public class AuditLogImmutabilityTests : IDisposable
         db.Facilities.Add(new Facility
         {
             FacilityId = Guid.CreateVersion7(),
-            Name = "Lusaka Central Hospital",
-            DistrictId = "D-LUSAKA-01",
+            Name = "Juba Central Hospital",
+            DistrictId = "SS-CE-JUB",
             BrnBlockStart = 200_000,
             BrnBlockEnd = 299_999,
             BrnBlockNextAvailable = 200_000

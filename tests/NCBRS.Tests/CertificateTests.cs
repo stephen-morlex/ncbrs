@@ -44,7 +44,7 @@ public class CertificateSignerTests
     public void ASignedPayload_VerifiesBack()
     {
         using var signer = Signer();
-        const string canonical = "NCBRS|v1|100001|Chipo Mwale|2026-09-10|Female|fac|2026-09-14T10:00:00Z";
+        const string canonical = "NCBRS|v1|100001|Ayen Deng|2026-09-10|Female|fac|2026-09-14T10:00:00Z";
 
         var (qr, _) = signer.Sign(canonical);
 
@@ -55,7 +55,7 @@ public class CertificateSignerTests
     public void ATamperedPayload_DoesNotVerify()
     {
         using var signer = Signer();
-        var (qr, _) = signer.Sign("NCBRS|v1|100001|Chipo Mwale|2026-09-10|Female|fac|2026-09-14T10:00:00Z");
+        var (qr, _) = signer.Sign("NCBRS|v1|100001|Ayen Deng|2026-09-10|Female|fac|2026-09-14T10:00:00Z");
 
         // Swap the child's name while keeping the original signature -- the
         // forgery this whole mechanism exists to catch.
@@ -76,7 +76,7 @@ public class CertificateSignerTests
         using var ministry = Signer();
         using var impostor = Signer();
 
-        var (forged, _) = impostor.Sign("NCBRS|v1|100001|Chipo Mwale|2026-09-10|Female|fac|2026-09-14T10:00:00Z");
+        var (forged, _) = impostor.Sign("NCBRS|v1|100001|Ayen Deng|2026-09-10|Female|fac|2026-09-14T10:00:00Z");
 
         Assert.Null(ministry.Verify(forged));
     }
@@ -151,15 +151,15 @@ public class CertificateServiceTests : IDisposable
         db.Database.EnsureCreated();
 
         db.Facilities.AddRange(
-            new Facility { FacilityId = FacilityId, Name = "Kabwe Village Health Post", DistrictId = "D-CENTRAL-07" },
-            new Facility { FacilityId = OtherFacilityId, Name = "Lusaka Central", DistrictId = "D-LUSAKA-01" });
+            new Facility { FacilityId = FacilityId, Name = "Terekeka Village Health Post", DistrictId = "SS-CE-TER" },
+            new Facility { FacilityId = OtherFacilityId, Name = "Juba Central", DistrictId = "SS-CE-JUB" });
 
         db.Registrars.Add(new Registrar
         {
             RegistrarId = RegistrarId,
             FacilityId = FacilityId,
             ExternalSubjectId = AuthTestContext.DefaultSubject,
-            DisplayName = "Nurse A. Banda",
+            DisplayName = "Nurse A. Lado",
             CredentialHash = "test"
         });
 

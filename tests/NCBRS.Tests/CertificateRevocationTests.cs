@@ -50,7 +50,7 @@ public class CertificateRevocationTests : IDisposable
 
         db.Facilities.Add(new Facility
         {
-            FacilityId = FacilityId, Name = "Kabwe Village Health Post", DistrictId = "D-CENTRAL-07"
+            FacilityId = FacilityId, Name = "Terekeka Village Health Post", DistrictId = "SS-CE-TER"
         });
 
         db.Registrars.AddRange(
@@ -59,7 +59,7 @@ public class CertificateRevocationTests : IDisposable
                 RegistrarId = RegistrarId,
                 FacilityId = FacilityId,
                 ExternalSubjectId = AuthTestContext.DefaultSubject,
-                DisplayName = "Nurse A. Banda",
+                DisplayName = "Nurse A. Lado",
                 CredentialHash = "test"
             },
             // Correcting a child's name now needs a second person to approve
@@ -69,7 +69,7 @@ public class CertificateRevocationTests : IDisposable
                 RegistrarId = ReviewerId,
                 FacilityId = FacilityId,
                 ExternalSubjectId = ReviewerSubject,
-                DisplayName = "District Officer M. Tembo",
+                DisplayName = "District Officer M. Kenyi",
                 Role = RegistrarRole.DistrictOfficer
             });
 

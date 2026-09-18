@@ -7,7 +7,7 @@ namespace NCBRS.Tests;
 
 /// <summary>
 /// Facilities placed in the administrative hierarchy, and the Development
-/// reseed that replaces the old Zambian sample rows with South Sudan ones.
+/// reseed that replaces the old placeholder sample rows with South Sudan ones.
 /// </summary>
 public class FacilityAdministrativeAreaTests : IDisposable
 {
@@ -60,7 +60,7 @@ public class FacilityAdministrativeAreaTests : IDisposable
         Assert.Equal(2, facilities.Count);
 
         // Every dev facility is linked to an area, and its transitional
-        // DistrictId carries that area's county code — no Zambian strings.
+        // DistrictId carries that area's county code — no placeholder strings.
         Assert.All(facilities, f =>
         {
             Assert.NotNull(f.AdministrativeAreaId);
