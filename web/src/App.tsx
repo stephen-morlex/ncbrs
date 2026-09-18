@@ -99,6 +99,10 @@ const DeviceAlerts = lazy(() =>
   import('@/devices/DeviceAlerts').then((module) => ({ default: module.DeviceAlerts })),
 )
 
+const Dashboard = lazy(() =>
+  import('@/dashboard/Dashboard').then((module) => ({ default: module.Dashboard })),
+)
+
 /**
  * Routing for the shell.
  *
@@ -192,6 +196,15 @@ export default function App() {
           element={
             <RequireAuth policy="CanEnrolDevices">
               <DeviceAlerts />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/dashboard"
+          element={
+            <RequireAuth policy="CanReadReporting">
+              <Dashboard />
             </RequireAuth>
           }
         />

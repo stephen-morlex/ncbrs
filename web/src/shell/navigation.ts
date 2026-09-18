@@ -146,7 +146,6 @@ export const navigation: NavGroup[] = [
         to: '/dashboard',
         icon: BarChart3,
         policy: 'CanReadReporting',
-        pending: true,
       },
     ],
   },
