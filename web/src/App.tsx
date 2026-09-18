@@ -81,6 +81,12 @@ const RegistrarDirectory = lazy(() =>
   })),
 )
 
+const VerifyCertificate = lazy(() =>
+  import('@/certificates/VerifyCertificate').then((module) => ({
+    default: module.VerifyCertificate,
+  })),
+)
+
 /**
  * Routing for the shell.
  *
@@ -153,6 +159,10 @@ export default function App() {
           }
         />
         <Route path="/facilities" element={<Facilities />} />
+
+        {/* Signed-in is enough: verifying a presented certificate is not an
+            oversight act, and the endpoint behind it is anonymous by design. */}
+        <Route path="/certificates/verify" element={<VerifyCertificate />} />
 
         {/* Gated by the same policy its navigation entry names — listing who
             is provisioned is an oversight act. */}

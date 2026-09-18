@@ -9,6 +9,7 @@ import {
   Hourglass,
   ScrollText,
   Search,
+  ShieldCheck,
   Smartphone,
   Users,
   type LucideIcon,
@@ -116,6 +117,10 @@ export const navigation: NavGroup[] = [
         policy: 'CanEnrolDevices',
         pending: true,
       },
+      // Not gated: checking a certificate a family presents is something any
+      // signed-in officer does, and the verify endpoint is anonymous by
+      // design — it is meant to be usable by anyone holding the document.
+      { label: 'Verify a certificate', to: '/certificates/verify', icon: ShieldCheck, policy: null },
       // Under Oversight rather than beside the register: reading the trail
       // is checking on the work, not doing it.
       {
