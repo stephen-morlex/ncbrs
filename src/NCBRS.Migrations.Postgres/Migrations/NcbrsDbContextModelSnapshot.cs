@@ -562,6 +562,9 @@ namespace NCBRS.Migrations.Postgres
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("AdministrativeAreaId")
+                        .HasColumnType("uuid");
+
                     b.Property<long>("BrnBlockEnd")
                         .HasColumnType("bigint");
 
@@ -589,6 +592,8 @@ namespace NCBRS.Migrations.Postgres
                         .HasColumnType("text");
 
                     b.HasKey("FacilityId");
+
+                    b.HasIndex("AdministrativeAreaId");
 
                     b.ToTable("Facilities");
                 });
@@ -1178,6 +1183,16 @@ namespace NCBRS.Migrations.Postgres
                     b.Navigation("MatchedBirthRecord");
 
                     b.Navigation("ReviewedByRegistrar");
+                });
+
+            modelBuilder.Entity("NCBRS.Models.Facility", b =>
+                {
+                    b.HasOne("NCBRS.Models.AdministrativeArea", "AdministrativeArea")
+                        .WithMany()
+                        .HasForeignKey("AdministrativeAreaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("AdministrativeArea");
                 });
 
             modelBuilder.Entity("NCBRS.Models.LateRegistration", b =>

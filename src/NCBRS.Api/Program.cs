@@ -351,6 +351,11 @@ if (app.Environment.IsDevelopment())
     // corrected. Payam/Boma/Village are not seeded — they are created as
     // encountered.
     await NCBRS.Data.AdministrativeAreaSeeder.SeedAsync(db);
+
+    // Development-only sample facilities and registrars, placed in the seeded
+    // South Sudan counties. Never runs outside Development (this whole block
+    // is Development-only); production provisions these for real.
+    await NCBRS.Data.DevelopmentDataSeeder.SeedAsync(db);
 }
 
 // Before authentication, deliberately. A CORS preflight is an unauthenticated
