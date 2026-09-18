@@ -160,6 +160,7 @@ public class BrnConfirmationTests : IDisposable
             new DuplicateDetectionService(db, new DuplicateMatcher(),
                 new CertificateRevocationRecorder(db), NullLogger<DuplicateDetectionService>.Instance,
                 new DistrictLookup(db)),
+            new DistrictLookup(db),
             Options.Create(new StatutoryRegistrationOptions()));
 
         return await service.RegisterAsync(
