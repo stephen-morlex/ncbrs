@@ -26,9 +26,28 @@ public class NcbrsDbContext(DbContextOptions<NcbrsDbContext> options) : DbContex
     public DbSet<AmendmentConflict> AmendmentConflicts => Set<AmendmentConflict>();
     public DbSet<Device> Devices => Set<Device>();
     public DbSet<DeviceAlert> DeviceAlerts => Set<DeviceAlert>();
+    public DbSet<AdministrativeArea> AdministrativeAreas => Set<AdministrativeArea>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // South Sudan's administrative hierarchy: one self-referencing tree.
+        // Restrict on delete — an area with children (or facilities) must not
+        // be removed out from under them; the county code is a stable key that
+        // audit rows and the reporting projection snapshot.
+        modelBuilder.Entity<AdministrativeArea>()
+            .Property(a => a.Level)
+            .HasConversion<string>();
+
+        modelBuilder.Entity<AdministrativeArea>()
+            .HasIndex(a => a.Code)
+            .IsUnique();
+
+        modelBuilder.Entity<AdministrativeArea>()
+            .HasOne(a => a.Parent)
+            .WithMany()
+            .HasForeignKey(a => a.ParentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // BRN must be unique across the whole system -- this is the field
         // the offline block-allocation strategy (Facility.BrnBlockStart/End)
         // exists to protect.

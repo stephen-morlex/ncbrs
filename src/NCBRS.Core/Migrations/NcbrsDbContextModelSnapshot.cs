@@ -17,6 +17,37 @@ namespace NCBRS.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
 
+            modelBuilder.Entity("NCBRS.Models.AdministrativeArea", b =>
+                {
+                    b.Property<Guid>("AdministrativeAreaId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("AdministrativeAreaId");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("ParentId");
+
+                    b.ToTable("AdministrativeAreas");
+                });
+
             modelBuilder.Entity("NCBRS.Models.AmendmentConflict", b =>
                 {
                     b.Property<Guid>("AmendmentConflictId")
@@ -978,6 +1009,16 @@ namespace NCBRS.Migrations
                     b.HasIndex("FacilityId");
 
                     b.ToTable("SyncBatches");
+                });
+
+            modelBuilder.Entity("NCBRS.Models.AdministrativeArea", b =>
+                {
+                    b.HasOne("NCBRS.Models.AdministrativeArea", "Parent")
+                        .WithMany()
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Parent");
                 });
 
             modelBuilder.Entity("NCBRS.Models.AmendmentConflict", b =>
