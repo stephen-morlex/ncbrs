@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Namespaces stay NCBRS.* across every project. -->
+    <RootNamespace>NCBRS</RootNamespace>
+  </PropertyGroup>
+
+  <!-- WS-B, Tier-1 facility/village client — the offline-first *logic* the MAUI
+       app wraps: device-side BRN block consumption, the local outbox and sync
+       batch builder, offline certificate verification and device-key signing.
+       Kept UI-free and dependency-light (only NCBRS.Contracts, itself BCL-only)
+       so it builds and is unit-tested on any host, and so the MAUI shell — which
+       needs device tooling this repo's CI does not have — carries no logic of
+       its own that could drift from the centre. -->
+  <ItemGroup>
+    <ProjectReference Include="../../src/NCBRS.Contracts/NCBRS.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -11,4 +11,8 @@
   <Folder Name="/tests/">
     <Project Path="tests/NCBRS.Tests/NCBRS.Tests.csproj" />
   </Folder>
+  <Folder Name="/client/">
+    <Project Path="client/NCBRS.Client.Core/NCBRS.Client.Core.csproj" />
+    <Project Path="client/NCBRS.Client.Core.Tests/NCBRS.Client.Core.Tests.csproj" />
+  </Folder>
 </Solution>
