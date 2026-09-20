@@ -94,7 +94,7 @@ public class RegistrationFact
 
     public Guid BirthRecordId { get; set; }
 
-    public required string DistrictId { get; set; }
+    public required string CountyCode { get; set; }
 
     public Guid FacilityId { get; set; }
 
@@ -228,7 +228,7 @@ public class SyncBatchFact
 
     public Guid FacilityId { get; set; }
 
-    public required string DistrictId { get; set; }
+    public required string CountyCode { get; set; }
 
     public int Submitted { get; set; }
 

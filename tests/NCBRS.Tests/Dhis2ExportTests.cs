@@ -84,7 +84,7 @@ public class Dhis2ExportTests : IDisposable
             {
                 Brn = $"{brnPrefix}{index:D3}",
                 BirthRecordId = Guid.CreateVersion7(),
-                DistrictId = districtId,
+                CountyCode = districtId,
                 FacilityId = FacilityId,
                 DateOfBirth = new DateTime(2026, 9, 10, 0, 0, 0, DateTimeKind.Utc),
                 Sex = sex,

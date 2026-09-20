@@ -43,7 +43,7 @@ public record SyncBatchProcessedEvent(
     Guid SyncBatchId,
     string DeviceId,
     Guid FacilityId,
-    string DistrictId,
+    [property: System.Text.Json.Serialization.JsonPropertyName("DistrictId")] string County,
     Guid? UploadedByRegistrarId,
     int Submitted,
     int Registered,
