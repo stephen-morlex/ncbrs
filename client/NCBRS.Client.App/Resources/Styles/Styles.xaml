@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Minimal so App.xaml's merge resolves. `dotnet new maui` ships a full
+     Styles.xaml of implicit control styles; copy it here to match the template
+     look, or add the Ministry's own. -->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+</ResourceDictionary>
