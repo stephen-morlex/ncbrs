@@ -7,6 +7,10 @@ offline-first village health posts.
 
 Read these first — they explain *why* the architecture looks like this, not
 just what it does:
+- `ARCHITECTURE.md` — the system map: the three tiers, the services and why
+  they are split, how a birth flows, the event backbone, trust boundaries and
+  the client-core. Start here for the whole picture; this file holds the
+  decision-by-decision rationale behind it.
 - `NCBRS_Draft_v1.3.docx` — the current policy/legal/technical draft.
   v1.3 reconciles the draft with the platform as built; `NCBRS_Draft.docx`
   is the superseded v1.2, kept for reference. Cite v1.3 section numbers.
