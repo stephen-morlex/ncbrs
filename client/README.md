@@ -26,13 +26,16 @@ the centre uses rather than a reimplementation that could drift.
 
 - **`NCBRS.Client.Core`** — the offline-first *logic*, UI-free and
   dependency-light (only `NCBRS.Contracts`, itself BCL-only). It builds and is
-  unit-tested on any host, including CI, which has no mobile tooling. It holds:
-  - **B5** — `DeviceBrnAllocator`: device-side BRN block consumption, the
-    low-block warning, and the `PROV-` provisional fallback when a block runs
-    dry offline.
-  - *(coming)* B6 local outbox + sync-batch builder, B8 offline certificate
-    verification + bundle refresh, B9 device-key signing.
+  unit-tested on any host, including CI, which has no mobile tooling.
+  **Complete:** B3 offline PIN unlock (`OfflinePinLock`), B5 BRN allocation
+  (`DeviceBrnAllocator`), B6 local outbox + sync batch (`SyncOutbox`), B8
+  offline certificate verification (`CachedVerificationBundle`), B9 device-key
+  signing (`DeviceSigner`), and H2 signed offline transfer (`OfflineTransferFile`),
+  composed by the `FacilityClient` workflow.
 - **`NCBRS.Client.Core.Tests`** — xUnit tests for the above.
+
+See **[INTEGRATION.md](INTEGRATION.md)** for how the MAUI shell wires these
+together (lifecycle, what the shell must persist, the sync contract).
 
 The **MAUI application shell** (the guided registration form B4, certificate
 printing B7, PIN unlock B3) is a separate concern that needs device tooling and
