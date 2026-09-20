@@ -243,4 +243,6 @@ enum-typing rules in the generator are pinned by tests.
   forced.
 - **`client/README.md` and `client/INTEGRATION.md`** — the Tier-1 client and
   how a MAUI shell wires onto it.
+- **`RUNBOOK.md`** — operational first response for the central tier (stalled
+  relay, consumer lag, read-model rebuild, WAL archiver, stale offline bundle).
 - **`CONTRIBUTING.md`** — the delivery workflow and approval gates.
