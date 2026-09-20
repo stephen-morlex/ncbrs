@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { Award, CircleCheck, FileWarning, History, Info, PenLine, ShieldOff, TriangleAlert } from 'lucide-react'
+import { Activity, Award, CircleCheck, FileWarning, History, Info, PenLine, ShieldOff, TriangleAlert } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -77,6 +77,18 @@ export function RecordDetail({ record }: { record: BirthRecord }) {
               <Link to={`/records/certificate?brn=${encodeURIComponent(record.brn)}`}>
                 <Award />
                 Certificate
+              </Link>
+            </Button>
+          )}
+
+          {/* A death after a live birth is a second vital event, recorded
+              against the record rather than editing it. Not offered on an
+              annulled record — every acting path refuses one. */}
+          {record.annulment ? null : (
+            <Button asChild variant="outline" size="sm">
+              <Link to={`/records/outcome?brn=${encodeURIComponent(record.brn)}`}>
+                <Activity />
+                Record an outcome
               </Link>
             </Button>
           )}

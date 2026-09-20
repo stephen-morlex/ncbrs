@@ -49,6 +49,10 @@ const CertificateManage = lazy(() =>
   import('@/records/CertificateManage').then((module) => ({ default: module.CertificateManage })),
 )
 
+const RecordOutcome = lazy(() =>
+  import('@/records/RecordOutcome').then((module) => ({ default: module.RecordOutcome })),
+)
+
 const Facilities = lazy(() =>
   import('@/facilities/Facilities').then((module) => ({ default: module.Facilities })),
 )
@@ -168,6 +172,17 @@ export default function App() {
           element={
             <RequireAuth policy="CanRegisterBirths">
               <CertificateManage />
+            </RequireAuth>
+          }
+        />
+
+        {/* A death after a birth is a second vital event recorded against the
+            record, gated by the same policy as the outcome endpoints. */}
+        <Route
+          path="/records/outcome"
+          element={
+            <RequireAuth policy="CanRegisterBirths">
+              <RecordOutcome />
             </RequireAuth>
           }
         />
