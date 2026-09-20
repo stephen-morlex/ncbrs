@@ -6,20 +6,26 @@ using NCBRS.Models;
 namespace NCBRS.Services;
 
 /// <summary>
-/// Which district a caller may see, resolved from their token.
+/// Which county a caller may see, resolved from their token.
 ///
 /// One place, because two would drift — and the way they drift is that one
 /// endpoint keeps enforcing the boundary while another quietly stops. The
-/// rule is the same wherever it is applied: the caller's district comes from
-/// their registrar record, naming a different one is refused rather than
-/// narrowed, and only `ministry-admin` is exempt.
+/// rule is the same wherever it is applied: the caller's county comes from
+/// their registrar's facility, resolved up the administrative hierarchy;
+/// naming a different one is refused rather than narrowed; and only
+/// `ministry-admin` is exempt.
 ///
 /// **Refused rather than narrowed** is the part that must not be
-/// "simplified". Silently substituting the caller's own district answers a
+/// "simplified". Silently substituting the caller's own county answers a
 /// question they did not ask, and an empty result then reads as "there is
 /// nothing there" rather than "you may not look there".
+///
+/// The county is resolved through <see cref="DistrictLookup"/> (the same walk
+/// up the area tree audit and reporting use), so scope, audit and the read
+/// model are keyed the same way. During the transition a facility not yet
+/// linked to an area falls back to its legacy district string.
 /// </summary>
-public class DistrictScopeResolver(NcbrsDbContext db)
+public class DistrictScopeResolver(DistrictLookup districts)
 {
     public async Task<ScopeResolution> ResolveAsync(
         ClaimsPrincipal user,
@@ -29,36 +35,33 @@ public class DistrictScopeResolver(NcbrsDbContext db)
     {
         if (user.IsInRole(NcbrsRoles.MinistryAdmin))
         {
-            // The Ministry may narrow to a district, or see the whole
-            // register by naming none. National oversight is their function.
+            // The Ministry may narrow to a county, or see the whole register
+            // by naming none. National oversight is their function.
             return ScopeResolution.Allowed(string.IsNullOrWhiteSpace(requestedDistrictId)
                 ? SearchScope.National
                 : SearchScope.District(requestedDistrictId));
         }
 
-        var district = await db.Facilities
-            .Where(facility => facility.FacilityId == registrar.FacilityId)
-            .Select(facility => facility.DistrictId)
-            .FirstOrDefaultAsync(cancellationToken);
+        var county = await districts.ForFacilityAsync(registrar.FacilityId, cancellationToken);
 
-        if (string.IsNullOrWhiteSpace(district))
+        if (string.IsNullOrWhiteSpace(county) || county == AuditLog.Unknown)
         {
             return ScopeResolution.Denied(
-                "No district for this account.",
+                "No county for this account.",
                 string.Empty,
-                "This account's facility has no district, so the request cannot be scoped.");
+                "This account's facility has no county, so the request cannot be scoped.");
         }
 
         if (!string.IsNullOrWhiteSpace(requestedDistrictId)
-            && !string.Equals(requestedDistrictId, district, StringComparison.OrdinalIgnoreCase))
+            && !string.Equals(requestedDistrictId, county, StringComparison.OrdinalIgnoreCase))
         {
             return ScopeResolution.Denied(
-                "Another district is not yours to see.",
+                "Another county is not yours to see.",
                 "districtId",
-                "This is confined to your own district.");
+                "This is confined to your own county.");
         }
 
-        return ScopeResolution.Allowed(SearchScope.District(district));
+        return ScopeResolution.Allowed(SearchScope.District(county));
     }
 }
 
