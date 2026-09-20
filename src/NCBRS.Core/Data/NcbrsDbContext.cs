@@ -305,7 +305,7 @@ public class NcbrsDbContext(DbContextOptions<NcbrsDbContext> options) : DbContex
 
         // The district officer's queue: open alerts for my district.
         modelBuilder.Entity<DeviceAlert>()
-            .HasIndex(alert => new { alert.DistrictId, alert.Status });
+            .HasIndex(alert => new { alert.CountyCode, alert.Status });
 
         // At most one alert per device may be outstanding. Without this the
         // sweep raises the same fact again every time it runs, and a queue of
@@ -425,7 +425,7 @@ public class NcbrsDbContext(DbContextOptions<NcbrsDbContext> options) : DbContex
     /// </list>
     ///
     /// Applied as a sweep rather than relationship by relationship, for the
-    /// same reason <c>AuditLog.DistrictId</c> is <c>required</c>: naming each
+    /// same reason <c>AuditLog.CountyCode</c> is <c>required</c>: naming each
     /// one works only while somebody remembers, and the failure of
     /// remembering is silent. A relationship added next year is safe without
     /// anyone thinking about it, and a genuine need to cascade now has to be

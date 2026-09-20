@@ -25,7 +25,7 @@ const facility = {
   facilityId: '0199a1b2-fac0-7000-8000-000000000001',
   name: 'Juba Central Clinic',
   tier: 'Hospital',
-  districtId: 'lusaka',
+  countyCode: 'SS0101',
   connectivityProfile: 'AlwaysOn',
   brnBlockStart: 100000,
   brnBlockEnd: 200000,

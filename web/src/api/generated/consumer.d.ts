@@ -36,14 +36,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/dashboard/districts": {
+    "/api/dashboard/counties": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["GetDashboardDistricts"];
+        get: operations["GetDashboardCounties"];
         put?: never;
         post?: never;
         delete?: never;
@@ -107,9 +107,18 @@ export interface components {
         ApiError: {
             error: string;
         };
+        CountySummary: {
+            countyCode: string;
+            /** Format: int32 */
+            liveBirths: number;
+            /** Format: int32 */
+            annulled: number;
+            /** Format: double */
+            withinWindowShare: null | number;
+        };
         DashboardSummary: {
             period: components["schemas"]["ReportingPeriod"];
-            districtId: null | string;
+            countyCode: null | string;
             registrations: components["schemas"]["RegistrationCounts"];
             timeliness: components["schemas"]["Timeliness"];
             timeToConfirmation: components["schemas"]["TimeToConfirmation"];
@@ -137,15 +146,6 @@ export interface components {
         Dhis2Suppression: {
             orgUnit: string;
             reason: string;
-        };
-        DistrictSummary: {
-            districtId: string;
-            /** Format: int32 */
-            liveBirths: number;
-            /** Format: int32 */
-            annulled: number;
-            /** Format: double */
-            withinWindowShare: null | number;
         };
         DuplicateRate: {
             /** Format: int32 */
@@ -209,7 +209,7 @@ export interface components {
         };
         SilentDevice: {
             deviceId: string;
-            districtId: string;
+            countyCode: string;
             /** Format: uuid */
             facilityId: string;
             /** Format: date-time */
@@ -343,7 +343,7 @@ export interface operations {
             };
         };
     };
-    GetDashboardDistricts: {
+    GetDashboardCounties: {
         parameters: {
             query?: {
                 from?: string;
@@ -361,7 +361,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DistrictSummary"][];
+                    "application/json": components["schemas"]["CountySummary"][];
                 };
             };
             /** @description Bad Request */

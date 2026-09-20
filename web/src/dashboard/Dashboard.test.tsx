@@ -38,7 +38,7 @@ const user = () => userEvent.setup({ delay: null })
 function summary(overrides: Record<string, unknown> = {}) {
   return {
     period: { fromUtc: '2026-08-01T00:00:00Z', toUtc: '2026-08-31T00:00:00Z', stillFilling: false },
-    districtId: null,
+    countyCode: null,
     registrations: { liveBirths: 1200, fetalDeaths: 15, vitalEventTypeUnknown: 0, annulled: 2, male: 610, female: 590, sexRatio: 103.4 },
     timeliness: { withinWindow: 1000, outsideWindow: 200, unknown: 0, withinWindowShare: 83.3 },
     timeToConfirmation: { confirmed: 1100, stillUnconfirmed: 100, medianDays: 2.5, byFacilityTier: [] },
@@ -82,8 +82,8 @@ function respond(options: {
     if (url === '/api/dashboard/trends') {
       return Promise.resolve(okc(options.trends ?? [trendPoint(7), trendPoint(8, { period: { fromUtc: '2026-08-01T00:00:00Z', toUtc: '2026-09-01T00:00:00Z', stillFilling: true } })]))
     }
-    if (url === '/api/dashboard/districts') {
-      return Promise.resolve(okc(options.districts ?? [{ districtId: 'lusaka', liveBirths: 100, annulled: 1, withinWindowShare: 80 }]))
+    if (url === '/api/dashboard/counties') {
+      return Promise.resolve(okc(options.districts ?? [{ countyCode: 'SS0101', liveBirths: 100, annulled: 1, withinWindowShare: 80 }]))
     }
     return Promise.resolve(okc(null))
   })
@@ -141,9 +141,9 @@ describe('Dashboard', () => {
     await screen.findByText('1,200')
 
     await typist.click(screen.getByRole('combobox'))
-    await typist.click(await screen.findByRole('option', { name: 'lusaka' }))
+    await typist.click(await screen.findByRole('option', { name: 'SS0101' }))
 
-    await waitFor(() => expect(lastSummaryQuery?.districtId).toBe('lusaka'))
+    await waitFor(() => expect(lastSummaryQuery?.countyCode).toBe('SS0101'))
   })
 
   it('can be paused, and refreshes on demand', async () => {

@@ -30,16 +30,16 @@ public class CountyScopeResolver(CountyLookup districts)
     public async Task<ScopeResolution> ResolveAsync(
         ClaimsPrincipal user,
         Registrar registrar,
-        string? requestedDistrictId,
+        string? requestedCountyCode,
         CancellationToken cancellationToken = default)
     {
         if (user.IsInRole(NcbrsRoles.MinistryAdmin))
         {
             // The Ministry may narrow to a county, or see the whole register
             // by naming none. National oversight is their function.
-            return ScopeResolution.Allowed(string.IsNullOrWhiteSpace(requestedDistrictId)
+            return ScopeResolution.Allowed(string.IsNullOrWhiteSpace(requestedCountyCode)
                 ? SearchScope.National
-                : SearchScope.District(requestedDistrictId));
+                : SearchScope.District(requestedCountyCode));
         }
 
         var county = await districts.ForFacilityAsync(registrar.FacilityId, cancellationToken);
@@ -52,8 +52,8 @@ public class CountyScopeResolver(CountyLookup districts)
                 "This account's facility has no county, so the request cannot be scoped.");
         }
 
-        if (!string.IsNullOrWhiteSpace(requestedDistrictId)
-            && !string.Equals(requestedDistrictId, county, StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrWhiteSpace(requestedCountyCode)
+            && !string.Equals(requestedCountyCode, county, StringComparison.OrdinalIgnoreCase))
         {
             return ScopeResolution.Denied(
                 "Another county is not yours to see.",

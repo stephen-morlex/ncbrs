@@ -461,14 +461,14 @@ namespace NCBRS.Migrations.Postgres
                     b.Property<string>("AcknowledgementNote")
                         .HasColumnType("text");
 
+                    b.Property<string>("CountyCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<int>("DaysSilentWhenRaised")
                         .HasColumnType("integer");
 
                     b.Property<string>("DeviceId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("DistrictId")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -503,7 +503,7 @@ namespace NCBRS.Migrations.Postgres
 
                     b.HasIndex("FacilityId");
 
-                    b.HasIndex("DistrictId", "Status");
+                    b.HasIndex("CountyCode", "Status");
 
                     b.ToTable("DeviceAlerts");
                 });

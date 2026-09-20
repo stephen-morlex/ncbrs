@@ -151,7 +151,7 @@ public class NamedActorTests : IDisposable
         {
             DeviceId = "TABLET-01",
             FacilityId = FacilityId,
-            DistrictId = District,
+            CountyCode = District,
             Kind = DeviceAlertKind.Silent,
             Status = DeviceAlertStatus.Open,
             RaisedAtUtc = DateTime.UtcNow,

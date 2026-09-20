@@ -459,13 +459,13 @@ public class DashboardReadModelTests : IDisposable
             Birth("200001", districtId: "SS-CE-JUB"));
 
         await using var db = NewDb();
-        var districts = await Dashboard(db).DistrictsAsync(PeriodFrom, PeriodTo);
+        var districts = await Dashboard(db).CountiesAsync(PeriodFrom, PeriodTo);
 
-        var central = districts.Single(district => district.DistrictId == "SS-CE-TER");
+        var central = districts.Single(district => district.CountyCode == "SS-CE-TER");
 
         Assert.Equal(2, central.LiveBirths);
         Assert.Equal(1, central.Annulled);
-        Assert.Equal(1, districts.Single(district => district.DistrictId == "SS-CE-JUB").LiveBirths);
+        Assert.Equal(1, districts.Single(district => district.CountyCode == "SS-CE-JUB").LiveBirths);
     }
 
     [Fact]
@@ -478,7 +478,7 @@ public class DashboardReadModelTests : IDisposable
 
         var summary = await SummaryAsync("SS-CE-JUB");
 
-        Assert.Equal("SS-CE-JUB", summary.DistrictId);
+        Assert.Equal("SS-CE-JUB", summary.CountyCode);
         Assert.Equal(2, summary.Registrations.LiveBirths);
     }
 
@@ -519,7 +519,7 @@ public class DashboardReadModelTests : IDisposable
 
         Assert.Equal("TABLET-QUIET", quiet.DeviceId);
         Assert.Equal(30, quiet.DaysSilent);
-        Assert.Equal("SS-CE-TER", quiet.DistrictId);
+        Assert.Equal("SS-CE-TER", quiet.CountyCode);
     }
 
     /// <summary>

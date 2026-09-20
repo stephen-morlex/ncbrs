@@ -71,7 +71,7 @@ public class RecordSearchTests : IDisposable
             SearchScope.District(TerekekaDistrict));
 
         Assert.Equal(2, results.Items.Count);
-        Assert.All(results.Items, hit => Assert.Equal(TerekekaDistrict, hit.DistrictId));
+        Assert.All(results.Items, hit => Assert.Equal(TerekekaDistrict, hit.CountyCode));
         Assert.DoesNotContain(results.Items, hit => hit.Brn == "200001");
     }
 
@@ -96,7 +96,7 @@ public class RecordSearchTests : IDisposable
             SearchScope.National);
 
         Assert.Equal(3, results.Total);
-        Assert.Contains(results.Items, hit => hit.DistrictId == JubaDistrict);
+        Assert.Contains(results.Items, hit => hit.CountyCode == JubaDistrict);
     }
 
     // ---- what counts as a search -----------------------------------------

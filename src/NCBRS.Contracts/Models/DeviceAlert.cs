@@ -66,7 +66,7 @@ public class DeviceAlert
     /// a district officer's queue should not change shape retrospectively if
     /// a facility is later moved between districts.
     /// </summary>
-    public required string DistrictId { get; set; }
+    public required string CountyCode { get; set; }
 
     public DeviceAlertKind Kind { get; set; }
 
@@ -105,7 +105,7 @@ public record DeviceAlertResponse(
     Guid DeviceAlertId,
     string DeviceId,
     Guid FacilityId,
-    string DistrictId,
+    string CountyCode,
     DeviceAlertKind Kind,
     DeviceAlertStatus Status,
     DateTime RaisedAtUtc,

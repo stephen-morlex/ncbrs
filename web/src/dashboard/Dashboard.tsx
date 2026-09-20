@@ -38,13 +38,13 @@ import { PageHeader } from '@/shell/PageHeader'
 import { formatDate } from '@/records/RecordDetail'
 
 type Summary = components['schemas']['DashboardSummary']
-type District = components['schemas']['DistrictSummary']
+type District = components['schemas']['CountySummary']
 type TrendPoint = components['schemas']['TrendPoint']
 
 const National = 'national'
 const PollMs = 30_000
 
-type Query = { districtId: string; from: string; to: string }
+type Query = { countyCode: string; from: string; to: string }
 
 /**
  * The Ministry's dashboard, over the reporting projection — a live, charted
@@ -72,7 +72,7 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
-  const [applied, setApplied] = useState<Query>({ districtId: National, from: '', to: '' })
+  const [applied, setApplied] = useState<Query>({ countyCode: National, from: '', to: '' })
   const [live, setLive] = useState(true)
   const [draft, setDraft] = useState({ from: '', to: '' })
 
@@ -84,7 +84,7 @@ export function Dashboard() {
       setError(null)
 
       const scoped = {
-        ...(query.districtId !== National ? { districtId: query.districtId } : {}),
+        ...(query.countyCode !== National ? { countyCode: query.countyCode } : {}),
         ...(query.from ? { from: query.from } : {}),
         ...(query.to ? { to: query.to } : {}),
       }
@@ -97,7 +97,7 @@ export function Dashboard() {
         const [summaryResult, trendsResult, districtsResult] = await Promise.all([
           consumer.GET('/api/dashboard/summary', { params: { query: scoped } }),
           consumer.GET('/api/dashboard/trends', { params: { query: scoped } }),
-          consumer.GET('/api/dashboard/districts', { params: { query: dates } }),
+          consumer.GET('/api/dashboard/counties', { params: { query: dates } }),
         ])
 
         // The summary is the screen; if it fails, the screen failed. Trends and
@@ -136,8 +136,8 @@ export function Dashboard() {
     return () => clearInterval(id)
   }, [applied, live, load])
 
-  function selectDistrict(districtId: string) {
-    setApplied((current) => ({ ...current, districtId }))
+  function selectDistrict(countyCode: string) {
+    setApplied((current) => ({ ...current, countyCode }))
   }
 
   function applyDates(event: FormEvent) {
@@ -153,7 +153,7 @@ export function Dashboard() {
       />
 
       <Controls
-        districtId={applied.districtId}
+        countyCode={applied.countyCode}
         districts={districts}
         onDistrict={selectDistrict}
         draft={draft}
@@ -175,7 +175,7 @@ export function Dashboard() {
 }
 
 function Controls({
-  districtId,
+  countyCode,
   districts,
   onDistrict,
   draft,
@@ -186,7 +186,7 @@ function Controls({
   onRefresh,
   lastUpdated,
 }: {
-  districtId: string
+  countyCode: string
   districts: District[]
   onDistrict: (id: string) => void
   draft: { from: string; to: string }
@@ -203,15 +203,15 @@ function Controls({
         <div className="flex flex-wrap items-end gap-4">
           <div className="grid gap-2">
             <Label htmlFor="dash-district">Area</Label>
-            <Select value={districtId} onValueChange={onDistrict}>
+            <Select value={countyCode} onValueChange={onDistrict}>
               <SelectTrigger id="dash-district" className="w-56">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={National}>National</SelectItem>
                 {districts.map((district) => (
-                  <SelectItem key={district.districtId} value={district.districtId}>
-                    {district.districtId}
+                  <SelectItem key={district.countyCode} value={district.countyCode}>
+                    {district.countyCode}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -278,7 +278,7 @@ function DashboardBody({
     <div className="space-y-6">
       <p className="text-muted-foreground text-sm">
         {formatDate(summary.period.fromUtc)} to {formatDate(summary.period.toUtc)}
-        {summary.districtId ? ` · ${summary.districtId}` : ' · National'}
+        {summary.countyCode ? ` · ${summary.countyCode}` : ' · National'}
       </p>
 
       {summary.period.stillFilling ? (
@@ -463,7 +463,7 @@ function DistrictChart({ districts }: { districts: District[] }) {
   const data = [...districts]
     .sort((a, b) => b.liveBirths - a.liveBirths)
     .slice(0, 12)
-    .map((district) => ({ districtId: district.districtId, liveBirths: district.liveBirths }))
+    .map((district) => ({ countyCode: district.countyCode, liveBirths: district.liveBirths }))
 
   if (data.length === 0) {
     return (
@@ -479,7 +479,7 @@ function DistrictChart({ districts }: { districts: District[] }) {
         <BarChart data={data} layout="vertical" accessibilityLayer margin={{ left: 12 }}>
           <CartesianGrid horizontal={false} />
           <XAxis type="number" allowDecimals={false} />
-          <YAxis type="category" dataKey="districtId" width={110} tickLine={false} axisLine={false} />
+          <YAxis type="category" dataKey="countyCode" width={110} tickLine={false} axisLine={false} />
           <ChartTooltip content={<ChartTooltipContent />} />
           <Bar dataKey="liveBirths" fill="var(--color-liveBirths)" radius={[0, 4, 4, 0]} />
         </BarChart>

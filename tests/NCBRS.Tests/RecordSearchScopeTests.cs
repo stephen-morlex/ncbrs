@@ -137,7 +137,7 @@ public class RecordSearchScopeTests : IDisposable
         var page = Assert.IsType<Page<BirthRecordSearchHit>>(Assert.IsType<ActionResult<Page<BirthRecordSearchHit>>>(result).Value);
 
         Assert.Single(page.Items);
-        Assert.Equal(TerekekaDistrict, page.Items[0].DistrictId);
+        Assert.Equal(TerekekaDistrict, page.Items[0].CountyCode);
     }
 
     [Fact]

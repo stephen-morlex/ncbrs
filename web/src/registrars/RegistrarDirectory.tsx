@@ -245,7 +245,7 @@ export function RegistrarDirectory() {
                         <Badge variant="secondary">{RoleLabels[registrar.role]}</Badge>
                       </TableCell>
                       <TableCell>{registrar.facilityName}</TableCell>
-                      <TableCell className="text-muted-foreground">{registrar.districtId}</TableCell>
+                      <TableCell className="text-muted-foreground">{registrar.countyCode}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

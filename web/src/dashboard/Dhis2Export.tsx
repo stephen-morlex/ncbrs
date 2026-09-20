@@ -201,9 +201,9 @@ function ExportResult({ result }: { result: Export }) {
               no national total. They are listed rather than dropped — a silent gap would be worse.
             </p>
             <div className="flex flex-wrap gap-2">
-              {result.unmapped.map((districtId) => (
-                <Badge key={districtId} variant="outline" className="font-mono">
-                  {districtId}
+              {result.unmapped.map((countyCode) => (
+                <Badge key={countyCode} variant="outline" className="font-mono">
+                  {countyCode}
                 </Badge>
               ))}
             </div>

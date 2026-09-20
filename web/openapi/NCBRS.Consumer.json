@@ -85,12 +85,12 @@
         ]
       }
     },
-    "/api/dashboard/districts": {
+    "/api/dashboard/counties": {
       "get": {
         "tags": [
           "NCBRS.Consumer"
         ],
-        "operationId": "GetDashboardDistricts",
+        "operationId": "GetDashboardCounties",
         "parameters": [
           {
             "name": "from",
@@ -117,7 +117,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/DistrictSummary"
+                    "$ref": "#/components/schemas/CountySummary"
                   }
                 }
               }
@@ -318,10 +318,39 @@
           }
         }
       },
+      "CountySummary": {
+        "required": [
+          "countyCode",
+          "liveBirths",
+          "annulled",
+          "withinWindowShare"
+        ],
+        "type": "object",
+        "properties": {
+          "countyCode": {
+            "type": "string"
+          },
+          "liveBirths": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "annulled": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "withinWindowShare": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          }
+        }
+      },
       "DashboardSummary": {
         "required": [
           "period",
-          "districtId",
+          "countyCode",
           "registrations",
           "timeliness",
           "timeToConfirmation",
@@ -336,7 +365,7 @@
           "period": {
             "$ref": "#/components/schemas/ReportingPeriod"
           },
-          "districtId": {
+          "countyCode": {
             "type": [
               "null",
               "string"
@@ -449,35 +478,6 @@
           },
           "reason": {
             "type": "string"
-          }
-        }
-      },
-      "DistrictSummary": {
-        "required": [
-          "districtId",
-          "liveBirths",
-          "annulled",
-          "withinWindowShare"
-        ],
-        "type": "object",
-        "properties": {
-          "districtId": {
-            "type": "string"
-          },
-          "liveBirths": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "annulled": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "withinWindowShare": {
-            "type": [
-              "null",
-              "number"
-            ],
-            "format": "double"
           }
         }
       },
@@ -676,7 +676,7 @@
       "SilentDevice": {
         "required": [
           "deviceId",
-          "districtId",
+          "countyCode",
           "facilityId",
           "lastSyncAtUtc",
           "daysSilent"
@@ -686,7 +686,7 @@
           "deviceId": {
             "type": "string"
           },
-          "districtId": {
+          "countyCode": {
             "type": "string"
           },
           "facilityId": {
