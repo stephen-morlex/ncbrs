@@ -201,7 +201,7 @@ public class FacilityDirectoryTests : IDisposable
     }
 
     private static FacilitiesController Controller(NcbrsDbContext db, HttpContext http) =>
-        new(db, AuthTestContext.RegistrarService(db, http), new DistrictScopeResolver(new DistrictLookup(db)),
+        new(db, AuthTestContext.RegistrarService(db, http), new CountyScopeResolver(new CountyLookup(db)),
             new BrnBlockOptions())
         {
             ControllerContext = new ControllerContext { HttpContext = http }

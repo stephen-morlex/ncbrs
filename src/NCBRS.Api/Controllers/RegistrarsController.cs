@@ -29,7 +29,7 @@ namespace NCBRS.Controllers;
 public class RegistrarsController(
     NcbrsDbContext db,
     CurrentRegistrarService currentRegistrar,
-    DistrictScopeResolver scopes) : ControllerBase
+    CountyScopeResolver scopes) : ControllerBase
 {
     /// <summary>
     /// The registrars in the caller's district, or nationally for the

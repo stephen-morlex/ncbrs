@@ -24,7 +24,7 @@ public class DeviceCredentialsController(
     NcbrsDbContext db,
     DevicePinHasher hasher,
     CurrentRegistrarService currentRegistrar,
-    DistrictLookup districts) : ControllerBase
+    CountyLookup districts) : ControllerBase
 {
     /// <summary>
     /// Sets or replaces the caller's own offline PIN.

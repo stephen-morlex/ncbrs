@@ -131,7 +131,7 @@ public class MaternalStatisticsServiceTests : IDisposable
         var current = AuthTestContext.RegistrarService(db, http);
         var registrar = db.Registrars.Single(r => r.RegistrarId == RegistrarId);
 
-        return await new MaternalStatisticsService(db, current, new DistrictLookup(db))
+        return await new MaternalStatisticsService(db, current, new CountyLookup(db))
             .CaptureAsync(brn, request ?? Questionnaire(), registrar, "TABLET-07", Guid.CreateVersion7());
     }
 
@@ -345,7 +345,7 @@ public class MaternalStatisticsServiceTests : IDisposable
         var current = AuthTestContext.RegistrarService(db, http);
         var registrar = db.Registrars.Single(r => r.RegistrarId == RegistrarId);
 
-        var result = await new CertificateService(db, _signer, current, new DistrictLookup(db))
+        var result = await new CertificateService(db, _signer, current, new CountyLookup(db))
             .IssueAsync(Brn, registrar, "TABLET-07", Guid.CreateVersion7());
 
         Assert.True(result.Succeeded);
@@ -365,7 +365,7 @@ public class MaternalStatisticsServiceTests : IDisposable
         var current = AuthTestContext.RegistrarService(db, http);
         var registrar = db.Registrars.Single(r => r.RegistrarId == RegistrarId);
 
-        var result = await new CertificateService(db, _signer, current, new DistrictLookup(db))
+        var result = await new CertificateService(db, _signer, current, new CountyLookup(db))
             .IssueAsync(Brn, registrar, "TABLET-07", Guid.CreateVersion7());
 
         var payload = _signer.Verify(result.Response!.QrPayload);
@@ -392,8 +392,8 @@ public class MaternalStatisticsServiceTests : IDisposable
                 db, new NoOpEventPublisher(), current,
                 new DuplicateDetectionService(db, new DuplicateMatcher(),
                     new CertificateRevocationRecorder(db), NullLogger<DuplicateDetectionService>.Instance,
-                    new DistrictLookup(db)),
-                new DistrictLookup(db),
+                    new CountyLookup(db)),
+                new CountyLookup(db),
                 Options.Create(new StatutoryRegistrationOptions()))
             .RegisterAsync(new RegisterBirthRequest
             {
@@ -427,7 +427,7 @@ public class MaternalStatisticsServiceTests : IDisposable
 
             var outcome = await new AnnulmentService(
                     annul, new NoOpEventPublisher(), new CertificateRevocationRecorder(annul), current,
-                    new DistrictLookup(annul))
+                    new CountyLookup(annul))
                 .AnnulAsync(Brn, new AnnulRecordRequest
                 {
                     Reason = AnnulmentReason.RegisteredInError,

@@ -28,7 +28,7 @@ namespace NCBRS.Controllers;
 public class FacilitiesController(
     NcbrsDbContext db,
     CurrentRegistrarService currentRegistrar,
-    DistrictScopeResolver scopes,
+    CountyScopeResolver scopes,
     BrnBlockOptions blockOptions) : ControllerBase
 {
     /// <summary>

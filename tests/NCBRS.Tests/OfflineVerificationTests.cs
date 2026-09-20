@@ -118,7 +118,7 @@ public class OfflineVerificationTests : IDisposable
         var current = AuthTestContext.RegistrarService(db, http);
         var registrar = db.Registrars.Single(r => r.RegistrarId == RegistrarId);
 
-        var result = await new CertificateService(db, _signer, current, new DistrictLookup(db))
+        var result = await new CertificateService(db, _signer, current, new CountyLookup(db))
             .IssueAsync(brn, registrar, "TABLET-07", Guid.CreateVersion7());
 
         Assert.True(result.Succeeded);
@@ -142,7 +142,7 @@ public class OfflineVerificationTests : IDisposable
 
             var outcome = await new AmendmentService(
                     db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db), current,
-                    new DistrictLookup(db))
+                    new CountyLookup(db))
                 .AmendAsync(brn, new AmendBirthRecordRequest
                 {
                     ChildFullName = newName,
@@ -162,7 +162,7 @@ public class OfflineVerificationTests : IDisposable
 
             var review = await new AmendmentService(
                     db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db), current,
-                    new DistrictLookup(db))
+                    new CountyLookup(db))
                 .ReviewAsync(requestId, approve: true, reviewer, "Verified.", Guid.CreateVersion7());
 
             Assert.True(review.Succeeded);

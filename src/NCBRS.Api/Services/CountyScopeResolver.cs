@@ -20,12 +20,12 @@ namespace NCBRS.Services;
 /// question they did not ask, and an empty result then reads as "there is
 /// nothing there" rather than "you may not look there".
 ///
-/// The county is resolved through <see cref="DistrictLookup"/> (the same walk
+/// The county is resolved through <see cref="CountyLookup"/> (the same walk
 /// up the area tree audit and reporting use), so scope, audit and the read
 /// model are keyed the same way. During the transition a facility not yet
 /// linked to an area falls back to its legacy district string.
 /// </summary>
-public class DistrictScopeResolver(DistrictLookup districts)
+public class CountyScopeResolver(CountyLookup districts)
 {
     public async Task<ScopeResolution> ResolveAsync(
         ClaimsPrincipal user,

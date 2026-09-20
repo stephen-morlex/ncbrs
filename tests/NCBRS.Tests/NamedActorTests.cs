@@ -201,7 +201,7 @@ public class NamedActorTests : IDisposable
     private static BirthRecordsController RecordsController(NcbrsDbContext db, HttpContext http)
     {
         var current = AuthTestContext.RegistrarService(db, http);
-        var districts = new DistrictLookup(db);
+        var districts = new CountyLookup(db);
 
         return new BirthRecordsController(
             db,
@@ -228,7 +228,7 @@ public class NamedActorTests : IDisposable
     }
 
     private static DevicesController DevicesController(NcbrsDbContext db, HttpContext http) =>
-        new(db, AuthTestContext.RegistrarService(db, http), new DistrictLookup(db))
+        new(db, AuthTestContext.RegistrarService(db, http), new CountyLookup(db))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };

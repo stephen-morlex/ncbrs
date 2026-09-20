@@ -89,7 +89,7 @@ public class DeviceEnrolmentTests : IDisposable
     {
         var http = AuthTestContext.HttpContextFor(roles: NcbrsRoles.DistrictOfficer);
 
-        return new DevicesController(db, AuthTestContext.RegistrarService(db, http), new DistrictLookup(db))
+        return new DevicesController(db, AuthTestContext.RegistrarService(db, http), new CountyLookup(db))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };
@@ -679,15 +679,15 @@ public class DeviceEnrolmentTests : IDisposable
                 new DuplicateDetectionService(db, new DuplicateMatcher(),
                     new CertificateRevocationRecorder(db),
                     NullLogger<DuplicateDetectionService>.Instance,
-                    new DistrictLookup(db)),
-                new DistrictLookup(db),
+                    new CountyLookup(db)),
+                new CountyLookup(db),
                 Options.Create(new StatutoryRegistrationOptions())),
             currentRegistrar,
             publisher,
-            new ProvisionalRecordReconciler(db, new DistrictLookup(db)),
+            new ProvisionalRecordReconciler(db, new CountyLookup(db)),
             new DeviceEnrolmentService(db, new DeviceEnrolmentOptions { RequireSignature = requireSignature }),
             new RegisterBirthRequestValidator(),
-            new DistrictLookup(db))
+            new CountyLookup(db))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };

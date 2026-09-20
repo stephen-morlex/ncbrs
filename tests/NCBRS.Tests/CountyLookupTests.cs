@@ -13,7 +13,7 @@ namespace NCBRS.Tests;
 /// yet linked to an area falls back to its legacy district so nothing goes
 /// unstamped during the transition.
 /// </summary>
-public class DistrictLookupTests : IDisposable
+public class CountyLookupTests : IDisposable
 {
     private readonly TestDatabase _database = TestDatabase.Create();
 
@@ -55,7 +55,7 @@ public class DistrictLookupTests : IDisposable
             facilityId = facility.FacilityId;
         }
 
-        var lookup = new DistrictLookup(NewDb());
+        var lookup = new CountyLookup(NewDb());
         Assert.Equal("SS0101", await lookup.ForFacilityAsync(facilityId));
     }
 
@@ -78,7 +78,7 @@ public class DistrictLookupTests : IDisposable
             facilityId = facility.FacilityId;
         }
 
-        var lookup = new DistrictLookup(NewDb());
+        var lookup = new CountyLookup(NewDb());
         Assert.Equal("D-LEGACY-01", await lookup.ForFacilityAsync(facilityId));
     }
 }

@@ -94,18 +94,18 @@ public class SyncBatchTests : IDisposable
         return new SyncController(
             db,
             new BirthRegistrationService(db, publisher, currentRegistrar,
-                new DuplicateDetectionService(db, new DuplicateMatcher(), new CertificateRevocationRecorder(db), NullLogger<DuplicateDetectionService>.Instance, new DistrictLookup(db)),
-                new DistrictLookup(db),
+                new DuplicateDetectionService(db, new DuplicateMatcher(), new CertificateRevocationRecorder(db), NullLogger<DuplicateDetectionService>.Instance, new CountyLookup(db)),
+                new CountyLookup(db),
                 Options.Create(new StatutoryRegistrationOptions())),
             currentRegistrar,
             publisher,
-            new ProvisionalRecordReconciler(db, new DistrictLookup(db)),
+            new ProvisionalRecordReconciler(db, new CountyLookup(db)),
             // Enrolment enforced, signatures not: these tests exercise batch
             // processing, and a signature needs a real request body. The
             // signature itself is covered in DeviceEnrolmentTests.
             new DeviceEnrolmentService(db, new DeviceEnrolmentOptions { RequireSignature = false }),
             new RegisterBirthRequestValidator(),
-            new DistrictLookup(db))
+            new CountyLookup(db))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };

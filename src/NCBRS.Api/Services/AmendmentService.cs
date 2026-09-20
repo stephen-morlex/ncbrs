@@ -76,7 +76,7 @@ public class AmendmentService(
     IEventPublisher eventPublisher,
     CertificateRevocationRecorder revocations,
     CurrentRegistrarService currentRegistrar,
-    DistrictLookup districts)
+    CountyLookup districts)
 {
     /// <summary>
     /// Fields the certificate's signature covers. Changing any of them means

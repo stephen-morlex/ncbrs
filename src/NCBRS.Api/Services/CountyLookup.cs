@@ -10,7 +10,7 @@ namespace NCBRS.Services;
 /// to its county ancestor. It is what audit rows and the reporting projection
 /// snapshot: a stable, human-meaningful county code rather than a surrogate id.
 ///
-/// Named <c>DistrictLookup</c> for continuity while the legacy
+/// Named <c>CountyLookup</c> for continuity while the legacy
 /// <see cref="Facility.DistrictId"/> string is retired across the codebase; the
 /// callers are unchanged, only what they receive is now a county code. During
 /// the transition a facility may not be linked to an area yet, or may sit at a
@@ -22,7 +22,7 @@ namespace NCBRS.Services;
 /// would turn one insert into many round trips. The area rows walked are cached
 /// too, so a chain is loaded at most once per request.
 /// </summary>
-public class DistrictLookup(NcbrsDbContext db)
+public class CountyLookup(NcbrsDbContext db)
 {
     private readonly Dictionary<Guid, string> _byFacility = [];
     private readonly Dictionary<string, string> _byBrn = [];

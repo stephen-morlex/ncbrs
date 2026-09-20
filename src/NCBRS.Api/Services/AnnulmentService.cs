@@ -47,7 +47,7 @@ public class AnnulmentService(
     IEventPublisher eventPublisher,
     CertificateRevocationRecorder revocations,
     CurrentRegistrarService currentRegistrar,
-    DistrictLookup districts)
+    CountyLookup districts)
 {
     public async Task<AnnulmentOutcome> AnnulAsync(
         string brn,

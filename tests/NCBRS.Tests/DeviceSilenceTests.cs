@@ -498,7 +498,7 @@ public class DeviceSilenceTests : IDisposable
     {
         var http = AuthTestContext.HttpContextFor(roles: NcbrsRoles.DistrictOfficer);
 
-        return new DevicesController(db, AuthTestContext.RegistrarService(db, http), new DistrictLookup(db))
+        return new DevicesController(db, AuthTestContext.RegistrarService(db, http), new CountyLookup(db))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };

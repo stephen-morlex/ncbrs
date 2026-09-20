@@ -110,7 +110,7 @@ public class AmendmentConflictTests : IDisposable
 
         return await new AmendmentService(
                 db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db), current,
-                new DistrictLookup(db))
+                new CountyLookup(db))
             .AmendAsync(Brn, request, registrar, Guid.CreateVersion7());
     }
 
@@ -131,7 +131,7 @@ public class AmendmentConflictTests : IDisposable
         var page = await new AmendmentService(
                 db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db),
                 AuthTestContext.RegistrarService(db, http),
-                new DistrictLookup(db))
+                new CountyLookup(db))
             .ConflictsAsync(null, new PageRequest());
 
         return page.Items;
@@ -329,7 +329,7 @@ public class AmendmentConflictTests : IDisposable
 
         return await new AmendmentService(
                 db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db), current,
-                new DistrictLookup(db))
+                new CountyLookup(db))
             .ReviewConflictAsync(conflictId, uphold, "Checked against the ward register.",
                 reviewer, Guid.CreateVersion7());
     }
