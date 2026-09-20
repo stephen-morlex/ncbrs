@@ -37,7 +37,7 @@ const user = () => userEvent.setup({ delay: null })
 
 const facility = {
   facilityId: '0199a1b2-fac0-7000-8000-000000000001',
-  name: 'Lusaka Central Clinic',
+  name: 'Juba Central Clinic',
   tier: 'Hospital',
   connectivityProfile: 'AlwaysOn',
   brnRemaining: 300,
@@ -68,7 +68,7 @@ describe('Facilities — granting a block', () => {
   it('offers a grant to someone permitted to register births', async () => {
     renderScreen()
 
-    expect(await screen.findByText('Lusaka Central Clinic')).toBeInTheDocument()
+    expect(await screen.findByText('Juba Central Clinic')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /grant a block/i })).toBeInTheDocument()
   })
 
@@ -76,7 +76,7 @@ describe('Facilities — granting a block', () => {
     roles.value = []
     renderScreen()
 
-    await screen.findByText('Lusaka Central Clinic')
+    await screen.findByText('Juba Central Clinic')
     expect(screen.queryByRole('button', { name: /grant a block/i })).not.toBeInTheDocument()
   })
 
@@ -85,7 +85,7 @@ describe('Facilities — granting a block', () => {
 
     const typist = user()
     renderScreen()
-    await screen.findByText('Lusaka Central Clinic')
+    await screen.findByText('Juba Central Clinic')
 
     await typist.click(screen.getByRole('button', { name: /grant a block/i }))
 
@@ -114,7 +114,7 @@ describe('Facilities — granting a block', () => {
 
     const typist = user()
     renderScreen()
-    await screen.findByText('Lusaka Central Clinic')
+    await screen.findByText('Juba Central Clinic')
 
     await typist.click(screen.getByRole('button', { name: /grant a block/i }))
     const dialog = await screen.findByRole('dialog')

@@ -30,11 +30,11 @@ function accepted<T>(data: T) {
 const record = {
   birthRecordId: '0199a1b2-0001-7000-8000-000000000001',
   brn: '100001',
-  childFullName: 'Chipo Mwale',
+  childFullName: 'Ayen Deng',
   dateOfBirth: '2026-06-01T00:00:00Z',
   sex: 'Female',
   status: 'Confirmed',
-  motherFullName: 'Grace Mwale',
+  motherFullName: 'Nyandeng Deng',
   fatherFullName: null,
   birthWeightGrams: 3200,
   gestationalAgeWeeks: 39.5,
@@ -83,8 +83,8 @@ describe('RequestCorrection', () => {
     await loaded()
 
     expect(screen.getByLabelText(/birth weight/i)).toHaveValue(3200)
-    expect(screen.getByLabelText(/mother/i)).toHaveValue('Grace Mwale')
-    expect(screen.getByLabelText(/child’s full name/i)).toHaveValue('Chipo Mwale')
+    expect(screen.getByLabelText(/mother/i)).toHaveValue('Nyandeng Deng')
+    expect(screen.getByLabelText(/child’s full name/i)).toHaveValue('Ayen Deng')
   })
 
   it('says which track a field is on before anything is submitted', async () => {
@@ -160,7 +160,7 @@ describe('RequestCorrection', () => {
         brn: '100001',
         applied: [],
         pendingApproval: [
-          { field: 'ChildFullName', previousValue: 'Chipo Mwale', newValue: 'Chipo Mwale Banda' },
+          { field: 'ChildFullName', previousValue: 'Ayen Deng', newValue: 'Ayen Deng Lado' },
         ],
         certificateInvalidated: false,
       }),
@@ -170,7 +170,7 @@ describe('RequestCorrection', () => {
 
     const name = screen.getByLabelText(/child’s full name/i)
     await typist.clear(name)
-    await typist.type(name, 'Chipo Mwale Banda')
+    await typist.type(name, 'Ayen Deng Lado')
     await typist.type(screen.getByLabelText(/why is this/i), 'Family name omitted at intake.')
     await typist.click(screen.getByRole('button', { name: /submit the correction/i }))
 

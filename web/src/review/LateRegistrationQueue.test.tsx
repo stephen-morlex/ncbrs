@@ -28,18 +28,18 @@ const user = () => userEvent.setup({ delay: null })
 const row = {
   lateRegistrationId: '0199a1b2-1a7e-7000-8000-000000000001',
   brn: '100001',
-  childFullName: 'Chipo Mwale',
+  childFullName: 'Ayen Deng',
   dateOfBirth: '2025-01-05T00:00:00Z',
   daysLate: 240,
   windowDaysAtFiling: 90,
   evidenceType: 'AntenatalOrDeliveryCard',
   evidenceReference: 'ANC-7781',
-  declarantName: 'Grace Mwale',
+  declarantName: 'Nyandeng Deng',
   declarantRelationship: 'Mother',
   facilityId: '0199a1b2-fac0-7000-8000-000000000001',
-  facilityName: 'Lusaka Central Clinic',
+  facilityName: 'Juba Central Clinic',
   submittedByRegistrarId: '0199a1b2-reg0-7000-8000-000000000001',
-  submittedByRegistrarName: 'John Phiri',
+  submittedByRegistrarName: 'John Wani',
   submittedAtUtc: '2026-09-10T08:00:00Z',
 }
 
@@ -89,7 +89,7 @@ describe('LateRegistrationQueue', () => {
     // The evidence enum reads as English, not a token.
     expect(screen.getByText('Antenatal or delivery card')).toBeInTheDocument()
     expect(screen.getByText('ANC-7781')).toBeInTheDocument()
-    expect(screen.getByText('Grace Mwale')).toBeInTheDocument()
+    expect(screen.getByText('Nyandeng Deng')).toBeInTheDocument()
   })
 
   it('shows an empty queue as the good outcome it is', async () => {
@@ -160,7 +160,7 @@ describe('LateRegistrationQueue', () => {
 
   it('names the filer on the review, since the verifier may not be them', async () => {
     const dialog = await openReview()
-    expect(within(dialog).getByText(/John Phiri/)).toBeInTheDocument()
+    expect(within(dialog).getByText(/John Wani/)).toBeInTheDocument()
   })
 
   it('clears a registration another registrar already reviewed', async () => {

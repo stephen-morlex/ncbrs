@@ -38,8 +38,8 @@ public class SyncBatchTests : IDisposable
             new Facility
             {
                 FacilityId = FacilityId,
-                Name = "Kabwe Village Health Post",
-                DistrictId = "D-CENTRAL-07",
+                Name = "Terekeka Village Health Post",
+                DistrictId = "SS-CE-TER",
                 BrnBlockStart = 100_000,
                 BrnBlockEnd = 199_999,
                 BrnBlockNextAvailable = 100_000
@@ -47,8 +47,8 @@ public class SyncBatchTests : IDisposable
             new Facility
             {
                 FacilityId = OtherFacilityId,
-                Name = "Lusaka Central Hospital",
-                DistrictId = "D-LUSAKA-01",
+                Name = "Juba Central Hospital",
+                DistrictId = "SS-CE-JUB",
                 BrnBlockStart = 200_000,
                 BrnBlockEnd = 299_999,
                 BrnBlockNextAvailable = 200_000
@@ -70,7 +70,7 @@ public class SyncBatchTests : IDisposable
             RegistrarId = RegistrarId,
             FacilityId = FacilityId,
             ExternalSubjectId = AuthTestContext.DefaultSubject,
-            DisplayName = "Nurse A. Banda",
+            DisplayName = "Nurse A. Lado",
             CredentialHash = "dev-placeholder"
         });
 
@@ -113,7 +113,7 @@ public class SyncBatchTests : IDisposable
 
     private static RegisterBirthRequest Record(
         string brn,
-        string childFullName = "Chipo Mwale",
+        string childFullName = "Ayen Deng",
         Guid? facilityId = null,
         int? birthWeightGrams = 3200,
         BirthPlurality plurality = BirthPlurality.Singleton,
@@ -322,7 +322,7 @@ public class SyncBatchTests : IDisposable
             {
                 RegistrarId = ColleagueId,
                 FacilityId = FacilityId,
-                DisplayName = "Nurse B. Phiri",
+                DisplayName = "Nurse B. Wani",
                 CredentialHash = "pbkdf2-sha256$210000$c2FsdA==$aGFzaA=="
             },
             new Registrar
@@ -501,7 +501,7 @@ public class SyncBatchTests : IDisposable
         Assert.Equal(response.SyncBatchId, published.SyncBatchId);
         Assert.Equal("TABLET-07", published.DeviceId);
         Assert.Equal(FacilityId, published.FacilityId);
-        Assert.Equal("D-CENTRAL-07", published.DistrictId);
+        Assert.Equal("SS-CE-TER", published.DistrictId);
         Assert.Equal(RegistrarId, published.UploadedByRegistrarId);
         Assert.Equal(2, published.Submitted);
         Assert.Equal(1, published.Registered);
@@ -518,7 +518,7 @@ public class SyncBatchTests : IDisposable
     {
         var (_, publisher) = await SubmitWithPublisherAsync(Batch(Record("100001")));
 
-        Assert.Contains(("sync-audit", "D-CENTRAL-07"), publisher.Enqueued);
+        Assert.Contains(("sync-audit", "SS-CE-TER"), publisher.Enqueued);
     }
 
     /// <summary>

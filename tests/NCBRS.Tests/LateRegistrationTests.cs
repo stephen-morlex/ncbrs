@@ -48,8 +48,8 @@ public class LateRegistrationTests : IDisposable
         db.Facilities.Add(new Facility
         {
             FacilityId = FacilityId,
-            Name = "Kabwe Village Health Post",
-            DistrictId = "D-CENTRAL-07",
+            Name = "Terekeka Village Health Post",
+            DistrictId = "SS-CE-TER",
             BrnBlockStart = 100_000,
             BrnBlockEnd = 199_999,
             BrnBlockNextAvailable = 100_000
@@ -61,7 +61,7 @@ public class LateRegistrationTests : IDisposable
                 RegistrarId = RegistrarId,
                 FacilityId = FacilityId,
                 ExternalSubjectId = AuthTestContext.DefaultSubject,
-                DisplayName = "Nurse A. Banda",
+                DisplayName = "Nurse A. Lado",
                 CredentialHash = "test"
             },
             new Registrar
@@ -69,7 +69,7 @@ public class LateRegistrationTests : IDisposable
                 RegistrarId = ReviewerId,
                 FacilityId = FacilityId,
                 ExternalSubjectId = ReviewerSubject,
-                DisplayName = "District Officer M. Tembo",
+                DisplayName = "District Officer M. Kenyi",
                 Role = RegistrarRole.DistrictOfficer
             });
 
@@ -103,7 +103,7 @@ public class LateRegistrationTests : IDisposable
         {
             Brn = brn,
             FacilityId = FacilityId,
-            ChildFullName = "Chipo Mwale",
+            ChildFullName = "Ayen Deng",
             DateOfBirth = DateTime.UtcNow.Date.AddDays(-bornDaysAgo),
             Sex = Sex.Female,
             Plurality = BirthPlurality.Singleton,
@@ -119,7 +119,7 @@ public class LateRegistrationTests : IDisposable
         {
             EvidenceType = type,
             EvidenceReference = "TBA attestation 44/2026",
-            DeclarantName = "Grace Mwale",
+            DeclarantName = "Nyandeng Deng",
             DeclarantRelationship = "mother"
         };
 
@@ -302,7 +302,7 @@ public class LateRegistrationTests : IDisposable
         var late = await db.LateRegistrations.SingleAsync();
 
         Assert.Equal(LateRegistrationEvidenceType.SwornAffidavit, late.EvidenceType);
-        Assert.Equal("Grace Mwale", late.DeclarantName);
+        Assert.Equal("Nyandeng Deng", late.DeclarantName);
         Assert.Equal("mother", late.DeclarantRelationship);
         Assert.Equal(200, late.DaysLate);
         Assert.Equal(RegistrarId, late.SubmittedByRegistrarId);
@@ -574,8 +574,8 @@ public class LateRegistrationTests : IDisposable
         Assert.Equal(2, queue.Items.Count);
         Assert.Null(queue.NextCursor);
         Assert.Equal("100001", queue.Items[0].Brn);
-        Assert.Equal("Nurse A. Banda", queue.Items[0].SubmittedByRegistrarName);
-        Assert.Equal("Kabwe Village Health Post", queue.Items[0].FacilityName);
+        Assert.Equal("Nurse A. Lado", queue.Items[0].SubmittedByRegistrarName);
+        Assert.Equal("Terekeka Village Health Post", queue.Items[0].FacilityName);
         Assert.Equal(400, queue.Items[1].DaysLate);
     }
 

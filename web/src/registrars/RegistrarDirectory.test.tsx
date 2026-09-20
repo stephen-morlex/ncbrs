@@ -26,10 +26,10 @@ const user = () => userEvent.setup({ delay: null })
 
 const registrar = {
   registrarId: '0199a1b2-reg0-7000-8000-000000000001',
-  displayName: 'Grace Banda',
+  displayName: 'Nyandeng Lado',
   role: 'DistrictOfficer',
   facilityId: '0199a1b2-fac0-7000-8000-000000000001',
-  facilityName: 'Lusaka Central Clinic',
+  facilityName: 'Juba Central Clinic',
   districtId: 'lusaka',
 }
 
@@ -72,17 +72,17 @@ describe('RegistrarDirectory', () => {
   it('lists registrars with their role, facility and district', async () => {
     renderDirectory()
 
-    expect(await screen.findByText('Grace Banda')).toBeInTheDocument()
+    expect(await screen.findByText('Nyandeng Lado')).toBeInTheDocument()
     // The role reads as words, not the enum token.
     expect(screen.getByText('District officer')).toBeInTheDocument()
-    expect(screen.getByText('Lusaka Central Clinic')).toBeInTheDocument()
+    expect(screen.getByText('Juba Central Clinic')).toBeInTheDocument()
     expect(screen.getByText('lusaka')).toBeInTheDocument()
   })
 
   it('searches by name only on submit, and sends the term', async () => {
     const typist = user()
     renderDirectory()
-    await screen.findByText('Grace Banda')
+    await screen.findByText('Nyandeng Lado')
 
     await typist.type(screen.getByLabelText(/name/i), 'banda')
 
@@ -96,7 +96,7 @@ describe('RegistrarDirectory', () => {
 
   it('shows a distinct empty state when a search matches nobody', async () => {
     renderDirectory()
-    await screen.findByText('Grace Banda')
+    await screen.findByText('Nyandeng Lado')
 
     respondWith(ok(page([])))
     const typist = user()

@@ -16,12 +16,12 @@ namespace NCBRS.Tests;
 /// </summary>
 public class RecordSearchTests : IDisposable
 {
-    private static readonly Guid CentralFacilityId = Guid.Parse("0199a1b2-0001-7000-8000-000000000001");
-    private static readonly Guid LusakaFacilityId = Guid.Parse("0199a1b2-0002-7000-8000-000000000002");
+    private static readonly Guid TerekekaFacilityId = Guid.Parse("0199a1b2-0001-7000-8000-000000000001");
+    private static readonly Guid JubaFacilityId = Guid.Parse("0199a1b2-0002-7000-8000-000000000002");
     private static readonly Guid RegistrarId = Guid.Parse("0199a1b2-1001-7000-8000-000000000001");
 
-    private const string CentralDistrict = "D-CENTRAL-07";
-    private const string LusakaDistrict = "D-LUSAKA-01";
+    private const string TerekekaDistrict = "SS-CE-TER";
+    private const string JubaDistrict = "SS-CE-JUB";
 
     private static readonly DateTime Born2026 = new(2026, 9, 10, 4, 30, 0, DateTimeKind.Utc);
     private static readonly DateTime Born2024 = new(2024, 3, 2, 8, 0, 0, DateTimeKind.Utc);
@@ -38,23 +38,23 @@ public class RecordSearchTests : IDisposable
         db.Database.EnsureCreated();
 
         db.Facilities.AddRange(
-            new Facility { FacilityId = CentralFacilityId, Name = "Kabwe Village Health Post", DistrictId = CentralDistrict },
-            new Facility { FacilityId = LusakaFacilityId, Name = "Lusaka Central", DistrictId = LusakaDistrict });
+            new Facility { FacilityId = TerekekaFacilityId, Name = "Terekeka Village Health Post", DistrictId = TerekekaDistrict },
+            new Facility { FacilityId = JubaFacilityId, Name = "Juba Central", DistrictId = JubaDistrict });
 
         db.Registrars.Add(new Registrar
         {
             RegistrarId = RegistrarId,
-            FacilityId = CentralFacilityId,
+            FacilityId = TerekekaFacilityId,
             ExternalSubjectId = AuthTestContext.DefaultSubject,
-            DisplayName = "Nurse A. Banda"
+            DisplayName = "Nurse A. Lado"
         });
 
         db.BirthRecords.AddRange(
-            Record("100001", CentralFacilityId, "Chipo Mwale", Born2026),
-            Record("100002", CentralFacilityId, "Naledi Banda", Born2026.AddDays(-1)),
-            Record("100003", CentralFacilityId, "Thabo Banda", Born2024),
+            Record("100001", TerekekaFacilityId, "Ayen Deng", Born2026),
+            Record("100002", TerekekaFacilityId, "Aluel Lado", Born2026.AddDays(-1)),
+            Record("100003", TerekekaFacilityId, "Garang Lado", Born2024),
             // Same surname, different district. The scope test turns on this.
-            Record("200001", LusakaFacilityId, "Grace Banda", Born2026));
+            Record("200001", JubaFacilityId, "Nyandeng Lado", Born2026));
 
         db.SaveChanges();
     }
@@ -64,14 +64,14 @@ public class RecordSearchTests : IDisposable
     [Fact]
     public async Task A_district_search_never_returns_another_districts_records()
     {
-        // "Banda" matches three children; one of them is in Lusaka. A
-        // registrar in Central must not learn that the Lusaka child exists.
+        // "Lado" matches three children; one of them is in Juba. A
+        // registrar in Central must not learn that the Juba child exists.
         var results = await SearchAsync(
-            new RecordSearchCriteria { Name = "Banda" },
-            SearchScope.District(CentralDistrict));
+            new RecordSearchCriteria { Name = "Lado" },
+            SearchScope.District(TerekekaDistrict));
 
         Assert.Equal(2, results.Items.Count);
-        Assert.All(results.Items, hit => Assert.Equal(CentralDistrict, hit.DistrictId));
+        Assert.All(results.Items, hit => Assert.Equal(TerekekaDistrict, hit.DistrictId));
         Assert.DoesNotContain(results.Items, hit => hit.Brn == "200001");
     }
 
@@ -80,10 +80,10 @@ public class RecordSearchTests : IDisposable
     {
         // A total that counted nationally would leak the existence of records
         // the caller may not see -- "2 shown of 3" tells them there is one
-        // more Banda somewhere, which is the disclosure the scope prevents.
+        // more Lado somewhere, which is the disclosure the scope prevents.
         var results = await SearchAsync(
-            new RecordSearchCriteria { Name = "Banda" },
-            SearchScope.District(CentralDistrict));
+            new RecordSearchCriteria { Name = "Lado" },
+            SearchScope.District(TerekekaDistrict));
 
         Assert.Equal(2, results.Total);
     }
@@ -92,11 +92,11 @@ public class RecordSearchTests : IDisposable
     public async Task The_ministry_searches_nationally()
     {
         var results = await SearchAsync(
-            new RecordSearchCriteria { Name = "Banda" },
+            new RecordSearchCriteria { Name = "Lado" },
             SearchScope.National);
 
         Assert.Equal(3, results.Total);
-        Assert.Contains(results.Items, hit => hit.DistrictId == LusakaDistrict);
+        Assert.Contains(results.Items, hit => hit.DistrictId == JubaDistrict);
     }
 
     // ---- what counts as a search -----------------------------------------
@@ -121,7 +121,7 @@ public class RecordSearchTests : IDisposable
         // "Every birth at this clinic" is not a search for a child.
         var criteria = new RecordSearchCriteria
         {
-            FacilityId = CentralFacilityId,
+            FacilityId = TerekekaFacilityId,
             Status = RecordStatus.Confirmed
         };
 
@@ -144,14 +144,14 @@ public class RecordSearchTests : IDisposable
     public async Task Every_search_is_written_to_the_audit_trail()
     {
         await SearchAsync(
-            new RecordSearchCriteria { Name = "Banda" },
-            SearchScope.District(CentralDistrict));
+            new RecordSearchCriteria { Name = "Lado" },
+            SearchScope.District(TerekekaDistrict));
 
         await using var db = new NcbrsDbContext(_options);
         var entry = await db.AuditLogs.SingleAsync(log => log.EntityType == "BirthRecordSearch");
 
         Assert.Equal(RegistrarId, entry.UserId);
-        Assert.Equal(CentralDistrict, entry.EntityId);
+        Assert.Equal(TerekekaDistrict, entry.EntityId);
     }
 
     [Fact]
@@ -160,13 +160,13 @@ public class RecordSearchTests : IDisposable
         // Twelve rows saying "a search occurred" cannot distinguish a
         // registrar helping one family from someone enumerating a district.
         await SearchAsync(
-            new RecordSearchCriteria { Name = "Banda", BornFrom = Born2024 },
-            SearchScope.District(CentralDistrict));
+            new RecordSearchCriteria { Name = "Lado", BornFrom = Born2024 },
+            SearchScope.District(TerekekaDistrict));
 
         await using var db = new NcbrsDbContext(_options);
         var entry = await db.AuditLogs.SingleAsync(log => log.EntityType == "BirthRecordSearch");
 
-        Assert.Contains("name=Banda", entry.Action);
+        Assert.Contains("name=Lado", entry.Action);
         Assert.Contains("from=2024-03-02", entry.Action);
     }
 
@@ -177,8 +177,8 @@ public class RecordSearchTests : IDisposable
         // are different acts, and the difference is only visible if the
         // count is kept.
         await SearchAsync(
-            new RecordSearchCriteria { Name = "Banda" },
-            SearchScope.District(CentralDistrict));
+            new RecordSearchCriteria { Name = "Lado" },
+            SearchScope.District(TerekekaDistrict));
 
         await using var db = new NcbrsDbContext(_options);
         var entry = await db.AuditLogs.SingleAsync(log => log.EntityType == "BirthRecordSearch");
@@ -195,7 +195,7 @@ public class RecordSearchTests : IDisposable
         // be blind to exactly that.
         var results = await SearchAsync(
             new RecordSearchCriteria { Name = "Nobody" },
-            SearchScope.District(CentralDistrict));
+            SearchScope.District(TerekekaDistrict));
 
         Assert.Empty(results.Items);
 
@@ -209,7 +209,7 @@ public class RecordSearchTests : IDisposable
     [Fact]
     public async Task A_national_search_is_audited_as_national()
     {
-        await SearchAsync(new RecordSearchCriteria { Name = "Banda" }, SearchScope.National);
+        await SearchAsync(new RecordSearchCriteria { Name = "Lado" }, SearchScope.National);
 
         await using var db = new NcbrsDbContext(_options);
         var entry = await db.AuditLogs.SingleAsync(log => log.EntityType == "BirthRecordSearch");
@@ -224,7 +224,7 @@ public class RecordSearchTests : IDisposable
     {
         var results = await SearchAsync(
             new RecordSearchCriteria { BornFrom = Born2026.AddDays(-2), BornTo = Born2026.AddDays(1) },
-            SearchScope.District(CentralDistrict));
+            SearchScope.District(TerekekaDistrict));
 
         Assert.Equal(2, results.Total);
         Assert.DoesNotContain(results.Items, hit => hit.Brn == "100003");
@@ -237,7 +237,7 @@ public class RecordSearchTests : IDisposable
         // registration than an old one.
         var results = await SearchAsync(
             new RecordSearchCriteria { BornFrom = Born2024.AddYears(-1) },
-            SearchScope.District(CentralDistrict));
+            SearchScope.District(TerekekaDistrict));
 
         Assert.Equal(["100001", "100002", "100003"], results.Items.Select(hit => hit.Brn));
     }
@@ -249,15 +249,15 @@ public class RecordSearchTests : IDisposable
         // weights, nothing a result list would spread across every search
         // that happened to match.
         var results = await SearchAsync(
-            new RecordSearchCriteria { Name = "Chipo" },
-            SearchScope.District(CentralDistrict));
+            new RecordSearchCriteria { Name = "Ayen" },
+            SearchScope.District(TerekekaDistrict));
 
         var hit = Assert.Single(results.Items);
 
         Assert.Equal("100001", hit.Brn);
-        Assert.Equal("Chipo Mwale", hit.ChildFullName);
+        Assert.Equal("Ayen Deng", hit.ChildFullName);
         Assert.Equal(Sex.Female, hit.Sex);
-        Assert.Equal("Kabwe Village Health Post", hit.FacilityName);
+        Assert.Equal("Terekeka Village Health Post", hit.FacilityName);
     }
 
     [Fact]
@@ -265,7 +265,7 @@ public class RecordSearchTests : IDisposable
     {
         var first = await SearchAsync(
             new RecordSearchCriteria { BornFrom = Born2024.AddYears(-1) },
-            SearchScope.District(CentralDistrict),
+            SearchScope.District(TerekekaDistrict),
             new PageRequest { Limit = 2 });
 
         Assert.Equal(2, first.Items.Count);
@@ -273,7 +273,7 @@ public class RecordSearchTests : IDisposable
 
         var second = await SearchAsync(
             new RecordSearchCriteria { BornFrom = Born2024.AddYears(-1) },
-            SearchScope.District(CentralDistrict),
+            SearchScope.District(TerekekaDistrict),
             new PageRequest { Limit = 2, After = first.NextCursor });
 
         var seen = first.Items.Concat(second.Items).Select(hit => hit.Brn).ToList();
@@ -313,7 +313,7 @@ public class RecordSearchTests : IDisposable
             FacilityId = facilityId,
             RegisteredByRegistrarId = RegistrarId,
             DateOfBirth = bornAt,
-            Sex = childName.StartsWith("Thabo", StringComparison.Ordinal) ? Sex.Male : Sex.Female,
+            Sex = childName.StartsWith("Garang", StringComparison.Ordinal) ? Sex.Male : Sex.Female,
             BirthWeightGrams = 3200,
             Plurality = BirthPlurality.Singleton,
             Status = RecordStatus.Confirmed

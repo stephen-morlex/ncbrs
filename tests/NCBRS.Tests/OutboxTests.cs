@@ -21,7 +21,7 @@ public class OutboxTests : IDisposable
 {
     private static readonly Guid FacilityId = Guid.Parse("0199a1b2-0001-7000-8000-000000000001");
     private static readonly Guid RegistrarId = Guid.Parse("0199a1b2-1001-7000-8000-000000000001");
-    private const string District = "D-CENTRAL-07";
+    private const string District = "SS-CE-TER";
 
     private readonly TestDatabase _database;
     private readonly DbContextOptions<NcbrsDbContext> _options;
@@ -36,7 +36,7 @@ public class OutboxTests : IDisposable
         db.Facilities.Add(new Facility
         {
             FacilityId = FacilityId,
-            Name = "Kabwe Village Health Post",
+            Name = "Terekeka Village Health Post",
             DistrictId = District,
             BrnBlockStart = 100_000,
             BrnBlockEnd = 199_999,
@@ -48,7 +48,7 @@ public class OutboxTests : IDisposable
             RegistrarId = RegistrarId,
             FacilityId = FacilityId,
             ExternalSubjectId = AuthTestContext.DefaultSubject,
-            DisplayName = "Nurse A. Banda",
+            DisplayName = "Nurse A. Lado",
             CredentialHash = "test"
         });
 
@@ -85,12 +85,12 @@ public class OutboxTests : IDisposable
         {
             Brn = brn,
             FacilityId = FacilityId,
-            ChildFullName = "Chipo Mwale",
+            ChildFullName = "Ayen Deng",
             DateOfBirth = new DateTime(2026, 9, 10, 4, 30, 0, DateTimeKind.Utc),
             Sex = Sex.Female,
             Plurality = BirthPlurality.Singleton,
             BirthOrder = 1,
-            MotherFullName = "Grace Mwale",
+            MotherFullName = "Nyandeng Deng",
             DeviceId = "TABLET-07"
         };
 

@@ -53,8 +53,8 @@ public class MaternalStatisticsServiceTests : IDisposable
         db.Facilities.Add(new Facility
         {
             FacilityId = FacilityId,
-            Name = "Kabwe Village Health Post",
-            DistrictId = "D-CENTRAL-07",
+            Name = "Terekeka Village Health Post",
+            DistrictId = "SS-CE-TER",
             BrnBlockStart = 100_000,
             BrnBlockNextAvailable = 100_200,
             BrnBlockEnd = 199_999
@@ -66,7 +66,7 @@ public class MaternalStatisticsServiceTests : IDisposable
                 RegistrarId = RegistrarId,
                 FacilityId = FacilityId,
                 ExternalSubjectId = AuthTestContext.DefaultSubject,
-                DisplayName = "Nurse A. Banda",
+                DisplayName = "Nurse A. Lado",
                 CredentialHash = "test"
             },
             new Registrar
@@ -74,7 +74,7 @@ public class MaternalStatisticsServiceTests : IDisposable
                 RegistrarId = AdminId,
                 FacilityId = FacilityId,
                 ExternalSubjectId = AdminSubject,
-                DisplayName = "Ministry Admin P. Zulu",
+                DisplayName = "Ministry Admin P. Lako",
                 Role = RegistrarRole.MinistryAdmin
             });
 
@@ -82,7 +82,7 @@ public class MaternalStatisticsServiceTests : IDisposable
         {
             Brn = Brn,
             VitalEventType = VitalEventType.LiveBirth,
-            ChildPerson = new Person { FullName = "Chipo Mwale" },
+            ChildPerson = new Person { FullName = "Ayen Deng" },
             FacilityId = FacilityId,
             RegisteredByRegistrarId = RegistrarId,
             DateOfBirth = BornAt,
@@ -399,7 +399,7 @@ public class MaternalStatisticsServiceTests : IDisposable
             {
                 Brn = "100002",
                 FacilityId = FacilityId,
-                ChildFullName = "Nyasha Banda",
+                ChildFullName = "Nyasha Lado",
                 DateOfBirth = DateTime.UtcNow.Date.AddDays(-3),
                 Sex = Sex.Male,
                 Plurality = BirthPlurality.Singleton,

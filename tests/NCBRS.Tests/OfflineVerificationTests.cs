@@ -54,7 +54,7 @@ public class OfflineVerificationTests : IDisposable
 
         db.Facilities.Add(new Facility
         {
-            FacilityId = FacilityId, Name = "Kabwe Village Health Post", DistrictId = "D-CENTRAL-07"
+            FacilityId = FacilityId, Name = "Terekeka Village Health Post", DistrictId = "SS-CE-TER"
         });
 
         db.Registrars.AddRange(
@@ -63,7 +63,7 @@ public class OfflineVerificationTests : IDisposable
                 RegistrarId = RegistrarId,
                 FacilityId = FacilityId,
                 ExternalSubjectId = AuthTestContext.DefaultSubject,
-                DisplayName = "Nurse A. Banda",
+                DisplayName = "Nurse A. Lado",
                 CredentialHash = "test"
             },
             // A correction to a child's name needs a second person to approve
@@ -73,7 +73,7 @@ public class OfflineVerificationTests : IDisposable
                 RegistrarId = ReviewerId,
                 FacilityId = FacilityId,
                 ExternalSubjectId = ReviewerSubject,
-                DisplayName = "District Officer M. Tembo",
+                DisplayName = "District Officer M. Kenyi",
                 Role = RegistrarRole.DistrictOfficer
             });
 

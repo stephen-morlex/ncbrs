@@ -27,7 +27,7 @@ const user = () => userEvent.setup({ delay: null })
 const baseRecord = {
   birthRecordId: '0199a1b2-0001-7000-8000-000000000001',
   brn: '100001',
-  childFullName: 'Chipo Mwale',
+  childFullName: 'Ayen Deng',
   dateOfBirth: '2026-06-01T00:00:00Z',
   sex: 'Female',
   status: 'Confirmed',
@@ -39,10 +39,10 @@ const baseRecord = {
 const issuedCertificate = {
   certificateId: '0199a1b2-cert-7000-8000-000000000001',
   brn: '100001',
-  childFullName: 'Chipo Mwale',
+  childFullName: 'Ayen Deng',
   dateOfBirth: '2026-06-01T00:00:00Z',
   sex: 'Female',
-  facilityName: 'Lusaka Central Clinic',
+  facilityName: 'Juba Central Clinic',
   issueDateUtc: '2026-09-15T10:00:00Z',
   qrPayload: 'NCBRS.v1.eyJicm4iOiIxMDAwMDEifQ.SIGNED',
   signature: 'SIGNED',

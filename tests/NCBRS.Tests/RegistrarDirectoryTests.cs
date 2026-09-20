@@ -19,16 +19,16 @@ namespace NCBRS.Tests;
 /// </summary>
 public class RegistrarDirectoryTests : IDisposable
 {
-    private static readonly Guid CentralFacilityId = Guid.Parse("0199a1b2-0001-7000-8000-000000000001");
-    private static readonly Guid LusakaFacilityId = Guid.Parse("0199a1b2-0002-7000-8000-000000000002");
+    private static readonly Guid TerekekaFacilityId = Guid.Parse("0199a1b2-0001-7000-8000-000000000001");
+    private static readonly Guid JubaFacilityId = Guid.Parse("0199a1b2-0002-7000-8000-000000000002");
 
     private static readonly Guid NurseId = Guid.Parse("0199a1b2-1001-7000-8000-000000000001");
     private static readonly Guid OfficerId = Guid.Parse("0199a1b2-1003-7000-8000-000000000003");
     private static readonly Guid MinistryId = Guid.Parse("0199a1b2-1004-7000-8000-000000000004");
-    private static readonly Guid LusakaNurseId = Guid.Parse("0199a1b2-1005-7000-8000-000000000005");
+    private static readonly Guid JubaNurseId = Guid.Parse("0199a1b2-1005-7000-8000-000000000005");
 
-    private const string CentralDistrict = "D-CENTRAL-07";
-    private const string LusakaDistrict = "D-LUSAKA-01";
+    private const string TerekekaDistrict = "SS-CE-TER";
+    private const string JubaDistrict = "SS-CE-JUB";
     private const string OfficerSubject = "33333333-3333-4333-8333-333333333333";
     private const string MinistrySubject = "44444444-4444-4444-8444-444444444444";
 
@@ -44,38 +44,38 @@ public class RegistrarDirectoryTests : IDisposable
         db.Database.EnsureCreated();
 
         db.Facilities.AddRange(
-            new Facility { FacilityId = CentralFacilityId, Name = "Kabwe Village Health Post", DistrictId = CentralDistrict },
-            new Facility { FacilityId = LusakaFacilityId, Name = "Lusaka Central", DistrictId = LusakaDistrict });
+            new Facility { FacilityId = TerekekaFacilityId, Name = "Terekeka Village Health Post", DistrictId = TerekekaDistrict },
+            new Facility { FacilityId = JubaFacilityId, Name = "Juba Central", DistrictId = JubaDistrict });
 
         db.Registrars.AddRange(
             new Registrar
             {
                 RegistrarId = NurseId,
-                FacilityId = CentralFacilityId,
+                FacilityId = TerekekaFacilityId,
                 ExternalSubjectId = AuthTestContext.DefaultSubject,
-                DisplayName = "Nurse A. Banda",
+                DisplayName = "Nurse A. Lado",
                 CredentialHash = "a-pin-hash-that-must-never-be-published"
             },
             new Registrar
             {
                 RegistrarId = OfficerId,
-                FacilityId = CentralFacilityId,
+                FacilityId = TerekekaFacilityId,
                 ExternalSubjectId = OfficerSubject,
-                DisplayName = "Grace Phiri",
+                DisplayName = "Nyandeng Wani",
                 Role = RegistrarRole.DistrictOfficer
             },
             new Registrar
             {
                 RegistrarId = MinistryId,
-                FacilityId = CentralFacilityId,
+                FacilityId = TerekekaFacilityId,
                 ExternalSubjectId = MinistrySubject,
-                DisplayName = "Naledi Zulu",
+                DisplayName = "Aluel Lako",
                 Role = RegistrarRole.MinistryAdmin
             },
             new Registrar
             {
-                RegistrarId = LusakaNurseId,
-                FacilityId = LusakaFacilityId,
+                RegistrarId = JubaNurseId,
+                FacilityId = JubaFacilityId,
                 ExternalSubjectId = "55555555-5555-4555-8555-555555555555",
                 DisplayName = "Thandi Nkosi"
             });
@@ -90,7 +90,7 @@ public class RegistrarDirectoryTests : IDisposable
     {
         var page = Ok(await ListAsync(OfficerSubject, [NcbrsRoles.DistrictOfficer]));
 
-        Assert.All(page.Items, entry => Assert.Equal(CentralDistrict, entry.DistrictId));
+        Assert.All(page.Items, entry => Assert.Equal(TerekekaDistrict, entry.DistrictId));
         Assert.DoesNotContain(page.Items, entry => entry.DisplayName == "Thandi Nkosi");
     }
 
@@ -110,14 +110,14 @@ public class RegistrarDirectoryTests : IDisposable
         var page = Ok(await ListAsync(MinistrySubject, [NcbrsRoles.MinistryAdmin]));
 
         Assert.Equal(4, page.Total);
-        Assert.Contains(page.Items, entry => entry.DistrictId == LusakaDistrict);
+        Assert.Contains(page.Items, entry => entry.DistrictId == JubaDistrict);
     }
 
     [Fact]
     public async Task Naming_another_district_is_refused_rather_than_narrowed()
     {
         var result = await ListAsync(OfficerSubject, [NcbrsRoles.DistrictOfficer],
-            districtId: LusakaDistrict);
+            districtId: JubaDistrict);
 
         AssertStatus(StatusCodes.Status403Forbidden, result.Result);
     }
@@ -132,9 +132,9 @@ public class RegistrarDirectoryTests : IDisposable
         // row naming a district officer can be questioned.
         var entry = OkOne(await GetAsync(AuthTestContext.DefaultSubject, [NcbrsRoles.FacilityRegistrar], OfficerId));
 
-        Assert.Equal("Grace Phiri", entry.DisplayName);
+        Assert.Equal("Nyandeng Wani", entry.DisplayName);
         Assert.Equal(RegistrarRole.DistrictOfficer, entry.Role);
-        Assert.Equal("Kabwe Village Health Post", entry.FacilityName);
+        Assert.Equal("Terekeka Village Health Post", entry.FacilityName);
     }
 
     [Fact]
@@ -143,7 +143,7 @@ public class RegistrarDirectoryTests : IDisposable
         // 403 would confirm the id exists somewhere, which is exactly what
         // the scope withholds. 404 says only that the caller's district has
         // no such person.
-        var result = await GetAsync(AuthTestContext.DefaultSubject, [NcbrsRoles.FacilityRegistrar], LusakaNurseId);
+        var result = await GetAsync(AuthTestContext.DefaultSubject, [NcbrsRoles.FacilityRegistrar], JubaNurseId);
 
         AssertStatus(StatusCodes.Status404NotFound, result.Result);
     }
@@ -193,11 +193,11 @@ public class RegistrarDirectoryTests : IDisposable
     [Fact]
     public async Task A_name_fragment_narrows_the_directory()
     {
-        var page = Ok(await ListAsync(OfficerSubject, [NcbrsRoles.DistrictOfficer], name: "Grace"));
+        var page = Ok(await ListAsync(OfficerSubject, [NcbrsRoles.DistrictOfficer], name: "Nyandeng"));
 
         var entry = Assert.Single(page.Items);
 
-        Assert.Equal("Grace Phiri", entry.DisplayName);
+        Assert.Equal("Nyandeng Wani", entry.DisplayName);
     }
 
     [Fact]
@@ -205,7 +205,7 @@ public class RegistrarDirectoryTests : IDisposable
     {
         var page = Ok(await ListAsync(OfficerSubject, [NcbrsRoles.DistrictOfficer]));
 
-        Assert.Equal(["Grace Phiri", "Naledi Zulu", "Nurse A. Banda"],
+        Assert.Equal(["Aluel Lako", "Nurse A. Lado", "Nyandeng Wani"],
             page.Items.Select(entry => entry.DisplayName));
     }
 
@@ -222,7 +222,7 @@ public class RegistrarDirectoryTests : IDisposable
 
         var seen = first.Items.Concat(second.Items).Select(entry => entry.DisplayName).ToList();
 
-        Assert.Equal(["Grace Phiri", "Naledi Zulu", "Nurse A. Banda"], seen);
+        Assert.Equal(["Aluel Lako", "Nurse A. Lado", "Nyandeng Wani"], seen);
         Assert.Equal(seen.Count, seen.Distinct().Count());
     }
 

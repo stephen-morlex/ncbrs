@@ -64,7 +64,7 @@ public class ReadModelProjectionTests : IDisposable
 
     private static BirthRegisteredEvent Registered(
         string brn = "100001",
-        string districtId = "D-CENTRAL-07",
+        string districtId = "SS-CE-TER",
         string sex = "Female")
         => new(
             brn,
@@ -76,7 +76,7 @@ public class ReadModelProjectionTests : IDisposable
             DateTime.UtcNow,
             Guid.CreateVersion7());
 
-    private async Task<int> LiveBirthsAsync(string districtId = "D-CENTRAL-07")
+    private async Task<int> LiveBirthsAsync(string districtId = "SS-CE-TER")
     {
         await using var db = NewDb();
 
@@ -188,7 +188,7 @@ public class ReadModelProjectionTests : IDisposable
         var repaired = await db.RegistrationFacts.SingleAsync();
 
         Assert.Equal("Female", repaired.Sex);
-        Assert.Equal("D-CENTRAL-07", repaired.DistrictId);
+        Assert.Equal("SS-CE-TER", repaired.DistrictId);
     }
 
     // --- what the projection holds -------------------------------------------
@@ -196,7 +196,7 @@ public class ReadModelProjectionTests : IDisposable
     [Fact]
     public async Task ARegistration_BecomesAFact()
     {
-        var evt = Registered("100001", "D-LUSAKA-01", "Male");
+        var evt = Registered("100001", "SS-CE-JUB", "Male");
 
         await ApplyAsync(RegisteredTopic, Guid.CreateVersion7(), evt);
 
@@ -204,7 +204,7 @@ public class ReadModelProjectionTests : IDisposable
         var fact = await db.RegistrationFacts.SingleAsync();
 
         Assert.Equal("100001", fact.Brn);
-        Assert.Equal("D-LUSAKA-01", fact.DistrictId);
+        Assert.Equal("SS-CE-JUB", fact.DistrictId);
         Assert.Equal("Male", fact.Sex);
         Assert.Equal(FacilityId, fact.FacilityId);
         Assert.Null(fact.AnnulledAtUtc);
@@ -213,12 +213,12 @@ public class ReadModelProjectionTests : IDisposable
     [Fact]
     public async Task TotalsAreGroupedByDistrict()
     {
-        await ApplyAsync(RegisteredTopic, Guid.CreateVersion7(), Registered("100001", "D-CENTRAL-07"));
-        await ApplyAsync(RegisteredTopic, Guid.CreateVersion7(), Registered("100002", "D-CENTRAL-07"));
-        await ApplyAsync(RegisteredTopic, Guid.CreateVersion7(), Registered("200001", "D-LUSAKA-01"));
+        await ApplyAsync(RegisteredTopic, Guid.CreateVersion7(), Registered("100001", "SS-CE-TER"));
+        await ApplyAsync(RegisteredTopic, Guid.CreateVersion7(), Registered("100002", "SS-CE-TER"));
+        await ApplyAsync(RegisteredTopic, Guid.CreateVersion7(), Registered("200001", "SS-CE-JUB"));
 
-        Assert.Equal(2, await LiveBirthsAsync("D-CENTRAL-07"));
-        Assert.Equal(1, await LiveBirthsAsync("D-LUSAKA-01"));
+        Assert.Equal(2, await LiveBirthsAsync("SS-CE-TER"));
+        Assert.Equal(1, await LiveBirthsAsync("SS-CE-JUB"));
     }
 
     /// <summary>
@@ -401,7 +401,7 @@ public class ReadModelProjectionTests : IDisposable
         var batchId = Guid.CreateVersion7();
 
         var sync = new SyncBatchProcessedEvent(
-            batchId, "TABLET-07", FacilityId, "D-CENTRAL-07", RegistrarId,
+            batchId, "TABLET-07", FacilityId, "SS-CE-TER", RegistrarId,
             10, 9, 1, 0, "Reconciled", DateTime.UtcNow, null);
 
         await ApplyAsync(SyncAuditTopic, null, sync);

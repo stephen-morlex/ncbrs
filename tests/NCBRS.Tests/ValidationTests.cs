@@ -22,7 +22,7 @@ public class ValidationTests
 
     private static RegisterBirthRequest ValidBirth(
         string? brn = "100000",
-        string? childFullName = "Chipo Mwale",
+        string? childFullName = "Ayen Deng",
         DateTime? dateOfBirth = null,
         int? birthWeightGrams = 3200,
         decimal? gestationalAgeWeeks = 39.5m,
@@ -41,7 +41,7 @@ public class ValidationTests
             GestationalAgeWeeks = gestationalAgeWeeks,
             Plurality = plurality,
             BirthOrder = birthOrder,
-            MotherFullName = "Grace Mwale",
+            MotherFullName = "Nyandeng Deng",
             FatherFullName = null,
             DeviceId = deviceId!
         };

@@ -37,7 +37,7 @@ describe('realmRolesFromToken', () => {
   it('handles a base64url payload containing characters that need translating', () => {
     // Keycloak signs real names; a display name with non-ASCII produces
     // padding and +/ characters that plain atob would mishandle.
-    const payload = { realm_access: { roles: ['ministry-admin'] }, name: 'Chipo Mwansa-Phiri ø' }
+    const payload = { realm_access: { roles: ['ministry-admin'] }, name: 'Ayen Deng-Wani ø' }
 
     expect(realmRolesFromToken(token(payload))).toEqual(['ministry-admin'])
   })

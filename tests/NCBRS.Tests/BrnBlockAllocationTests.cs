@@ -58,7 +58,7 @@ public class BrnBlockAllocationTests
             RegistrarId = RegistrarId,
             FacilityId = FacilityId,
             ExternalSubjectId = AuthTestContext.DefaultSubject,
-            DisplayName = "Nurse A. Banda",
+            DisplayName = "Nurse A. Lado",
             Role = RegistrarRole.FacilityRegistrar,
             CredentialHash = "test"
         };
@@ -365,7 +365,7 @@ public class BrnBlockAllocationTests
             {
                 Brn = brn,
                 VitalEventType = VitalEventType.LiveBirth,
-                ChildPerson = new Person { FullName = "Chipo Mwale" },
+                ChildPerson = new Person { FullName = "Ayen Deng" },
                 FacilityId = FacilityId,
                 RegisteredByRegistrarId = RegistrarId,
                 DateOfBirth = new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc),

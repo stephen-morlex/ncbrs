@@ -93,8 +93,8 @@ public class ProvisionalRecordReconcilerTests : IDisposable
         db.Facilities.Add(new Facility
         {
             FacilityId = FacilityId,
-            Name = "Kabwe Village Health Post",
-            DistrictId = "D-CENTRAL-07",
+            Name = "Terekeka Village Health Post",
+            DistrictId = "SS-CE-TER",
             BrnBlockStart = 100_000,
             BrnBlockNextAvailable = 100_200,
             BrnBlockEnd = 199_999
@@ -105,7 +105,7 @@ public class ProvisionalRecordReconcilerTests : IDisposable
             RegistrarId = RegistrarId,
             FacilityId = FacilityId,
             ExternalSubjectId = AuthTestContext.DefaultSubject,
-            DisplayName = "Nurse A. Banda",
+            DisplayName = "Nurse A. Lado",
             CredentialHash = "test"
         });
 
@@ -126,7 +126,7 @@ public class ProvisionalRecordReconcilerTests : IDisposable
         {
             Brn = identifier,
             FacilityId = FacilityId,
-            ChildFullName = "Chipo Mwale",
+            ChildFullName = "Ayen Deng",
             DateOfBirth = DateTime.UtcNow.Date.AddDays(-4),
             Sex = Sex.Female,
             Plurality = BirthPlurality.Singleton,
@@ -401,7 +401,7 @@ public class ProvisionalIdentifierValidationTests
     {
         Brn = brn,
         FacilityId = Guid.Parse("0199a1b2-0001-7000-8000-000000000001"),
-        ChildFullName = "Chipo Mwale",
+        ChildFullName = "Ayen Deng",
         DateOfBirth = DateTime.UtcNow.Date.AddDays(-4),
         Sex = Sex.Female,
         Plurality = BirthPlurality.Singleton,

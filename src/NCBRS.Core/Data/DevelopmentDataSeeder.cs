@@ -8,7 +8,7 @@ namespace NCBRS.Data;
 /// that map to the imported Keycloak realm users, so a fresh dev database is
 /// usable immediately and reproducibly.
 ///
-/// This replaces the old hand-inserted Zambian dev rows. The facilities are
+/// This replaces the earlier hand-inserted dev rows. The facilities are
 /// placed in seeded South Sudan counties (their legacy <c>DistrictId</c> now
 /// carries the county code during the transition), and the registrars carry
 /// the same subject claims the dev realm issues — so existing dev logins keep
@@ -75,9 +75,9 @@ public static class DevelopmentDataSeeder
         await EnsureRegistrar(db, "0199c000-0000-7000-8000-0000000000a2", JubaHospitalId,
             "22222222-2222-4222-8222-222222222222", "Dr. M. Lado", RegistrarRole.FacilityRegistrar, cancellationToken);
         await EnsureRegistrar(db, "0199c000-0000-7000-8000-0000000000a3", JubaHospitalId,
-            "33333333-3333-4333-8333-333333333333", "Grace Deng (County Officer)", RegistrarRole.DistrictOfficer, cancellationToken);
+            "33333333-3333-4333-8333-333333333333", "Nyandeng Deng (County Officer)", RegistrarRole.DistrictOfficer, cancellationToken);
         await EnsureRegistrar(db, "0199c000-0000-7000-8000-0000000000a4", JubaHospitalId,
-            "44444444-4444-4444-8444-444444444444", "Naledi Akol (Ministry)", RegistrarRole.MinistryAdmin, cancellationToken);
+            "44444444-4444-4444-8444-444444444444", "Aluel Akol (Ministry)", RegistrarRole.MinistryAdmin, cancellationToken);
 
         await db.SaveChangesAsync(cancellationToken);
     }

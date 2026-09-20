@@ -21,7 +21,7 @@ namespace NCBRS.Services;
 ///    in a query string is a district id a caller can change. The caller's
 ///    district is resolved from their registrar record, and a request naming
 ///    a different one is refused rather than quietly narrowed -- a caller who
-///    thinks they searched Lusaka and actually searched their own district
+///    thinks they searched Juba and actually searched their own district
 ///    reads an empty result as "no such child".
 /// 2. **`ministry-admin` is exempt**, because national oversight is their
 ///    function. Nobody else is, including a district officer: overseeing

@@ -54,8 +54,8 @@ public class AmendmentServiceTests : IDisposable
         db.Database.EnsureCreated();
 
         db.Facilities.AddRange(
-            new Facility { FacilityId = FacilityId, Name = "Kabwe Village Health Post", DistrictId = "D-CENTRAL-07" },
-            new Facility { FacilityId = OtherFacilityId, Name = "Lusaka Central", DistrictId = "D-LUSAKA-01" });
+            new Facility { FacilityId = FacilityId, Name = "Terekeka Village Health Post", DistrictId = "SS-CE-TER" },
+            new Facility { FacilityId = OtherFacilityId, Name = "Juba Central", DistrictId = "SS-CE-JUB" });
 
         db.Registrars.AddRange(
             new Registrar
@@ -63,7 +63,7 @@ public class AmendmentServiceTests : IDisposable
                 RegistrarId = RegistrarId,
                 FacilityId = FacilityId,
                 ExternalSubjectId = AuthTestContext.DefaultSubject,
-                DisplayName = "Nurse A. Banda",
+                DisplayName = "Nurse A. Lado",
                 CredentialHash = "test"
             },
             new Registrar
@@ -71,7 +71,7 @@ public class AmendmentServiceTests : IDisposable
                 RegistrarId = ReviewerId,
                 FacilityId = FacilityId,
                 ExternalSubjectId = ReviewerSubject,
-                DisplayName = "District Officer M. Tembo",
+                DisplayName = "District Officer M. Kenyi",
                 Role = RegistrarRole.DistrictOfficer
             });
 
@@ -91,7 +91,7 @@ public class AmendmentServiceTests : IDisposable
         {
             Brn = brn,
             VitalEventType = VitalEventType.LiveBirth,
-            ChildPerson = new Person { FullName = "Chipo Mwale" },
+            ChildPerson = new Person { FullName = "Ayen Deng" },
             FacilityId = facilityId,
             RegisteredByRegistrarId = RegistrarId,
             DateOfBirth = BornAt,
@@ -210,13 +210,13 @@ public class AmendmentServiceTests : IDisposable
     [Fact]
     public async Task NamingAParentNotRecordedBefore_AddsThemOnApproval()
     {
-        var (submitted, _) = await AmendAsync(Amendment(motherFullName: "Grace Mwale"));
+        var (submitted, _) = await AmendAsync(Amendment(motherFullName: "Nyandeng Deng"));
         await ReviewAsync(submitted.Response!.AmendmentRequestId, approve: true);
 
         await using var db = NewDb();
         var record = await db.BirthRecords.Include(r => r.MotherPerson).SingleAsync(r => r.Brn == Brn);
 
-        Assert.Equal("Grace Mwale", record.MotherPerson!.FullName);
+        Assert.Equal("Nyandeng Deng", record.MotherPerson!.FullName);
         Assert.Null((await db.BirthRecordAmendments.SingleAsync()).PreviousValue);
     }
 
@@ -232,8 +232,8 @@ public class AmendmentServiceTests : IDisposable
     public async Task CorrectingAParentsName_WaitsForApproval(string parent)
     {
         var request = parent == "mother"
-            ? Amendment(motherFullName: "Grace Mwale")
-            : Amendment() with { FatherFullName = "Joseph Mwale" };
+            ? Amendment(motherFullName: "Nyandeng Deng")
+            : Amendment() with { FatherFullName = "Joseph Deng" };
 
         var (outcome, publisher) = await AmendAsync(request);
 
@@ -262,9 +262,9 @@ public class AmendmentServiceTests : IDisposable
             BirthWeightGrams = 3250,
             GestationalAgeWeeks = 38.5m,
             BirthOrder = 1,
-            ChildFullName = "Chipo Mwale-Banda",
-            MotherFullName = "Grace Mwale",
-            FatherFullName = "Joseph Mwale",
+            ChildFullName = "Ayen Deng-Lado",
+            MotherFullName = "Nyandeng Deng",
+            FatherFullName = "Joseph Deng",
             Sex = Sex.Male,
             Reason = Reason,
             DeviceId = "TABLET-07"
@@ -288,7 +288,7 @@ public class AmendmentServiceTests : IDisposable
     [Fact]
     public async Task ANameCorrection_WaitsForApproval()
     {
-        var (outcome, publisher) = await AmendAsync(Amendment(childFullName: "Chipo Mwale-Banda"));
+        var (outcome, publisher) = await AmendAsync(Amendment(childFullName: "Ayen Deng-Lado"));
 
         Assert.True(outcome.Succeeded);
         Assert.True(outcome.EverythingPending);
@@ -299,7 +299,7 @@ public class AmendmentServiceTests : IDisposable
         var record = await db.BirthRecords.Include(r => r.ChildPerson).SingleAsync(r => r.Brn == Brn);
 
         // Unchanged, and nothing downstream has been told otherwise.
-        Assert.Equal("Chipo Mwale", record.ChildPerson!.FullName);
+        Assert.Equal("Ayen Deng", record.ChildPerson!.FullName);
         Assert.Equal(RecordStatus.Confirmed, record.Status);
         Assert.Empty(publisher.Amendments);
     }
@@ -307,7 +307,7 @@ public class AmendmentServiceTests : IDisposable
     [Fact]
     public async Task AnApprovedCorrection_TakesEffect()
     {
-        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Chipo Mwale-Banda"));
+        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Ayen Deng-Lado"));
         var (review, publisher) = await ReviewAsync(submitted.Response!.AmendmentRequestId, approve: true);
 
         Assert.True(review.Succeeded);
@@ -316,7 +316,7 @@ public class AmendmentServiceTests : IDisposable
         await using var db = NewDb();
         var record = await db.BirthRecords.Include(r => r.ChildPerson).SingleAsync(r => r.Brn == Brn);
 
-        Assert.Equal("Chipo Mwale-Banda", record.ChildPerson!.FullName);
+        Assert.Equal("Ayen Deng-Lado", record.ChildPerson!.FullName);
         Assert.Equal(RecordStatus.Amended, record.Status);
 
         // Only now does anything downstream hear about it.
@@ -326,7 +326,7 @@ public class AmendmentServiceTests : IDisposable
     [Fact]
     public async Task ARefusedCorrection_LeavesTheRecordAlone()
     {
-        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Chipo Mwale-Banda"));
+        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Ayen Deng-Lado"));
         var (review, publisher) = await ReviewAsync(
             submitted.Response!.AmendmentRequestId, approve: false, note: "Not supported by the hospital register.");
 
@@ -336,7 +336,7 @@ public class AmendmentServiceTests : IDisposable
         await using var db = NewDb();
         var record = await db.BirthRecords.Include(r => r.ChildPerson).SingleAsync(r => r.Brn == Brn);
 
-        Assert.Equal("Chipo Mwale", record.ChildPerson!.FullName);
+        Assert.Equal("Ayen Deng", record.ChildPerson!.FullName);
         Assert.Equal(RecordStatus.Confirmed, record.Status);
         Assert.Empty(publisher.Amendments);
     }
@@ -348,7 +348,7 @@ public class AmendmentServiceTests : IDisposable
     [Fact]
     public async Task ARefusedCorrection_IsKeptWithItsReason()
     {
-        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Chipo Mwale-Banda"));
+        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Ayen Deng-Lado"));
         await ReviewAsync(submitted.Response!.AmendmentRequestId, approve: false, note: "Unsupported.");
 
         await using var db = NewDb();
@@ -367,7 +367,7 @@ public class AmendmentServiceTests : IDisposable
     [Fact]
     public async Task TheSubmitter_CannotApproveTheirOwnCorrection()
     {
-        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Chipo Mwale-Banda"));
+        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Ayen Deng-Lado"));
         var (review, _) = await ReviewAsync(
             submitted.Response!.AmendmentRequestId, approve: true, reviewerId: RegistrarId);
 
@@ -380,7 +380,7 @@ public class AmendmentServiceTests : IDisposable
     [Fact]
     public async Task ReviewingTwice_IsRefused()
     {
-        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Chipo Mwale-Banda"));
+        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Ayen Deng-Lado"));
         await ReviewAsync(submitted.Response!.AmendmentRequestId, approve: true);
 
         var (second, _) = await ReviewAsync(submitted.Response.AmendmentRequestId, approve: false);
@@ -401,11 +401,11 @@ public class AmendmentServiceTests : IDisposable
     [Fact]
     public async Task ApprovingAgainstAStaleRecord_IsAConflict()
     {
-        var (first, _) = await AmendAsync(Amendment(childFullName: "Chipo Mwale-Banda"));
+        var (first, _) = await AmendAsync(Amendment(childFullName: "Ayen Deng-Lado"));
 
         // A second correction is approved first, moving the name underneath
         // the one still pending.
-        var (second, _) = await AmendAsync(Amendment(childFullName: "Chipo M. Banda"));
+        var (second, _) = await AmendAsync(Amendment(childFullName: "Ayen M. Lado"));
         await ReviewAsync(second.Response!.AmendmentRequestId, approve: true);
 
         var (stale, _) = await ReviewAsync(first.Response!.AmendmentRequestId, approve: true);
@@ -415,7 +415,7 @@ public class AmendmentServiceTests : IDisposable
 
         await using var db = NewDb();
         var record = await db.BirthRecords.Include(r => r.ChildPerson).SingleAsync(r => r.Brn == Brn);
-        Assert.Equal("Chipo M. Banda", record.ChildPerson!.FullName);
+        Assert.Equal("Ayen M. Lado", record.ChildPerson!.FullName);
     }
 
     /// <summary>
@@ -425,8 +425,8 @@ public class AmendmentServiceTests : IDisposable
     [Fact]
     public async Task ApprovingAChangeSomeoneElseAlreadyMade_Succeeds()
     {
-        var (first, _) = await AmendAsync(Amendment(childFullName: "Chipo Mwale-Banda"));
-        var (second, _) = await AmendAsync(Amendment(childFullName: "Chipo Mwale-Banda"));
+        var (first, _) = await AmendAsync(Amendment(childFullName: "Ayen Deng-Lado"));
+        var (second, _) = await AmendAsync(Amendment(childFullName: "Ayen Deng-Lado"));
 
         await ReviewAsync(second.Response!.AmendmentRequestId, approve: true);
         var (duplicate, _) = await ReviewAsync(first.Response!.AmendmentRequestId, approve: true);
@@ -435,7 +435,7 @@ public class AmendmentServiceTests : IDisposable
 
         await using var db = NewDb();
         var record = await db.BirthRecords.Include(r => r.ChildPerson).SingleAsync(r => r.Brn == Brn);
-        Assert.Equal("Chipo Mwale-Banda", record.ChildPerson!.FullName);
+        Assert.Equal("Ayen Deng-Lado", record.ChildPerson!.FullName);
     }
 
     // --- the split --------------------------------------------------------
@@ -448,7 +448,7 @@ public class AmendmentServiceTests : IDisposable
     public async Task AMixedSubmission_SplitsAcrossBothTracks()
     {
         var (outcome, _) = await AmendAsync(
-            Amendment(childFullName: "Chipo Mwale-Banda", birthWeightGrams: 3250));
+            Amendment(childFullName: "Ayen Deng-Lado", birthWeightGrams: 3250));
 
         Assert.False(outcome.EverythingPending);
         Assert.Equal(nameof(AmendBirthRecordRequest.BirthWeightGrams),
@@ -460,14 +460,14 @@ public class AmendmentServiceTests : IDisposable
         var record = await db.BirthRecords.Include(r => r.ChildPerson).SingleAsync(r => r.Brn == Brn);
 
         Assert.Equal(3250, record.BirthWeightGrams);
-        Assert.Equal("Chipo Mwale", record.ChildPerson!.FullName);
+        Assert.Equal("Ayen Deng", record.ChildPerson!.FullName);
     }
 
     [Fact]
     public async Task BothHalvesOfAMixedSubmission_ShareOneRequestId()
     {
         var (outcome, _) = await AmendAsync(
-            Amendment(childFullName: "Chipo Mwale-Banda", birthWeightGrams: 3250));
+            Amendment(childFullName: "Ayen Deng-Lado", birthWeightGrams: 3250));
 
         await using var db = NewDb();
         var rows = await db.BirthRecordAmendments.ToListAsync();
@@ -485,15 +485,15 @@ public class AmendmentServiceTests : IDisposable
     [Fact]
     public async Task ThePreviousValue_SurvivesTheCorrection()
     {
-        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Chipo Mwale-Banda"));
+        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Ayen Deng-Lado"));
         await ReviewAsync(submitted.Response!.AmendmentRequestId, approve: true);
 
         await using var db = NewDb();
         var amendment = await db.BirthRecordAmendments.SingleAsync();
 
         Assert.Equal(nameof(AmendBirthRecordRequest.ChildFullName), amendment.Field);
-        Assert.Equal("Chipo Mwale", amendment.PreviousValue);
-        Assert.Equal("Chipo Mwale-Banda", amendment.NewValue);
+        Assert.Equal("Ayen Deng", amendment.PreviousValue);
+        Assert.Equal("Ayen Deng-Lado", amendment.NewValue);
         Assert.Equal(Reason, amendment.Reason);
         Assert.Equal(RegistrarId, amendment.AmendedByRegistrarId);
         Assert.NotNull(amendment.AppliedAtUtc);
@@ -502,7 +502,7 @@ public class AmendmentServiceTests : IDisposable
     [Fact]
     public async Task AValueIdenticalToTheCurrentOne_RecordsNothing()
     {
-        var (outcome, publisher) = await AmendAsync(Amendment(childFullName: "Chipo Mwale"));
+        var (outcome, publisher) = await AmendAsync(Amendment(childFullName: "Ayen Deng"));
 
         Assert.Equal(AmendmentResult.NothingToChange, outcome.Result);
 
@@ -519,7 +519,7 @@ public class AmendmentServiceTests : IDisposable
         await using var db = NewDb();
         var record = await db.BirthRecords.Include(r => r.ChildPerson).SingleAsync(r => r.Brn == Brn);
 
-        Assert.Equal("Chipo Mwale", record.ChildPerson!.FullName);
+        Assert.Equal("Ayen Deng", record.ChildPerson!.FullName);
         Assert.Equal(Sex.Female, record.Sex);
     }
 
@@ -578,7 +578,7 @@ public class AmendmentServiceTests : IDisposable
     [Fact]
     public async Task SubmissionAndApproval_AreAuditedSeparately()
     {
-        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Chipo Mwale-Banda"));
+        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Ayen Deng-Lado"));
         await ReviewAsync(submitted.Response!.AmendmentRequestId, approve: true);
 
         await using var db = NewDb();
@@ -652,7 +652,7 @@ public class AmendmentServiceTests : IDisposable
     {
         await IssueCertificateAsync();
 
-        var (outcome, _) = await AmendAsync(Amendment(childFullName: "Chipo Mwale-Banda"));
+        var (outcome, _) = await AmendAsync(Amendment(childFullName: "Ayen Deng-Lado"));
 
         Assert.False(outcome.Response!.CertificateInvalidated);
 
@@ -666,7 +666,7 @@ public class AmendmentServiceTests : IDisposable
     {
         await IssueCertificateAsync();
 
-        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Chipo Mwale-Banda"));
+        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Ayen Deng-Lado"));
         var (review, _) = await ReviewAsync(submitted.Response!.AmendmentRequestId, approve: true);
 
         Assert.True(review.Response!.CertificateInvalidated);
@@ -684,7 +684,7 @@ public class AmendmentServiceTests : IDisposable
     {
         await IssueCertificateAsync();
 
-        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Chipo Mwale-Banda"));
+        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Ayen Deng-Lado"));
         var (review, _) = await ReviewAsync(submitted.Response!.AmendmentRequestId, approve: false);
 
         Assert.False(review.Response!.CertificateInvalidated);
@@ -716,7 +716,7 @@ public class AmendmentServiceTests : IDisposable
     [Fact]
     public async Task PendingCorrections_AppearInTheQueueGroupedByRequest()
     {
-        await AmendAsync(Amendment(childFullName: "Chipo Mwale-Banda", birthWeightGrams: 3250));
+        await AmendAsync(Amendment(childFullName: "Ayen Deng-Lado", birthWeightGrams: 3250));
 
         await using var db = NewDb();
         var http = AuthTestContext.HttpContextFor(ReviewerSubject, NcbrsRoles.DistrictOfficer);
@@ -726,8 +726,8 @@ public class AmendmentServiceTests : IDisposable
         var item = Assert.Single(queue.Items);
 
         Assert.Equal(Brn, item.Brn);
-        Assert.Equal("Nurse A. Banda", item.SubmittedByRegistrarName);
-        Assert.Equal("Kabwe Village Health Post", item.FacilityName);
+        Assert.Equal("Nurse A. Lado", item.SubmittedByRegistrarName);
+        Assert.Equal("Terekeka Village Health Post", item.FacilityName);
 
         // Only the half that actually needs a decision.
         Assert.Equal(nameof(AmendBirthRecordRequest.ChildFullName), Assert.Single(item.Changes).Field);
@@ -736,7 +736,7 @@ public class AmendmentServiceTests : IDisposable
     [Fact]
     public async Task AReviewedCorrection_LeavesTheQueue()
     {
-        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Chipo Mwale-Banda"));
+        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Ayen Deng-Lado"));
         await ReviewAsync(submitted.Response!.AmendmentRequestId, approve: true);
 
         await using var db = NewDb();
@@ -756,7 +756,7 @@ public class AmendmentServiceTests : IDisposable
     [Fact]
     public async Task TheApprovedEvent_IsAttributedToTheAuthorNotTheReviewer()
     {
-        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Chipo Mwale-Banda"));
+        var (submitted, _) = await AmendAsync(Amendment(childFullName: "Ayen Deng-Lado"));
         var (_, publisher) = await ReviewAsync(submitted.Response!.AmendmentRequestId, approve: true);
 
         var published = Assert.Single(publisher.Amendments);
@@ -766,8 +766,8 @@ public class AmendmentServiceTests : IDisposable
         Assert.True(published.CertificateInvalidated == false);
 
         var change = Assert.Single(published.Changes);
-        Assert.Equal("Chipo Mwale", change.PreviousValue);
-        Assert.Equal("Chipo Mwale-Banda", change.NewValue);
+        Assert.Equal("Ayen Deng", change.PreviousValue);
+        Assert.Equal("Ayen Deng-Lado", change.NewValue);
     }
 
     [Fact]
@@ -775,7 +775,7 @@ public class AmendmentServiceTests : IDisposable
     {
         var (_, publisher) = await AmendAsync(Amendment(birthWeightGrams: 3250));
 
-        Assert.Equal(("birth-record-amended", "D-CENTRAL-07"), Assert.Single(publisher.Enqueued));
+        Assert.Equal(("birth-record-amended", "SS-CE-TER"), Assert.Single(publisher.Enqueued));
     }
 
     /// <summary>
@@ -804,7 +804,7 @@ public class AmendmentServiceTests : IDisposable
         var message = await verify.OutboxMessages.SingleAsync();
 
         Assert.Equal("ncbrs.birth-records.amended", message.Topic);
-        Assert.Equal("D-CENTRAL-07", message.PartitionKey);
+        Assert.Equal("SS-CE-TER", message.PartitionKey);
         Assert.Contains("BirthWeightGrams", message.Payload);
     }
 }
@@ -819,7 +819,7 @@ public class AmendBirthRecordRequestValidatorTests
 
     private static AmendBirthRecordRequest Valid() => new()
     {
-        ChildFullName = "Chipo Mwale-Banda",
+        ChildFullName = "Ayen Deng-Lado",
         Reason = "Name misspelled on the original form.",
         DeviceId = "TABLET-07"
     };

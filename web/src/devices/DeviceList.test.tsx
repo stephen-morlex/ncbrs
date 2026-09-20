@@ -47,7 +47,7 @@ const neverReported = {
 
 const facility = {
   facilityId: '0199a1b2-fac0-7000-8000-000000000001',
-  name: 'Lusaka Central Clinic',
+  name: 'Juba Central Clinic',
   tier: 'Hospital',
   connectivityProfile: 'AlwaysOn',
   brnRemaining: 5000,
@@ -86,7 +86,7 @@ describe('DeviceList', () => {
     renderScreen()
 
     expect(await screen.findByText('tablet-001')).toBeInTheDocument()
-    expect(screen.getAllByText('Lusaka Central Clinic').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Juba Central Clinic').length).toBeGreaterThan(0)
     // Both fixtures are enrolled, so "in service" appears on each.
     expect(screen.getAllByText('in service').length).toBe(2)
   })

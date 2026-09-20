@@ -46,8 +46,8 @@ public class AmendmentConflictTests : IDisposable
         db.Facilities.Add(new Facility
         {
             FacilityId = FacilityId,
-            Name = "Kabwe Village Health Post",
-            DistrictId = "D-CENTRAL-07",
+            Name = "Terekeka Village Health Post",
+            DistrictId = "SS-CE-TER",
             BrnBlockStart = 100_000,
             BrnBlockNextAvailable = 100_200,
             BrnBlockEnd = 199_999
@@ -59,7 +59,7 @@ public class AmendmentConflictTests : IDisposable
                 RegistrarId = RegistrarId,
                 FacilityId = FacilityId,
                 ExternalSubjectId = AuthTestContext.DefaultSubject,
-                DisplayName = "Nurse A. Banda",
+                DisplayName = "Nurse A. Lado",
                 CredentialHash = "test"
             },
             new Registrar
@@ -67,7 +67,7 @@ public class AmendmentConflictTests : IDisposable
                 RegistrarId = ReviewerId,
                 FacilityId = FacilityId,
                 ExternalSubjectId = ReviewerSubject,
-                DisplayName = "District Officer M. Tembo",
+                DisplayName = "District Officer M. Kenyi",
                 Role = RegistrarRole.DistrictOfficer
             });
 
@@ -75,7 +75,7 @@ public class AmendmentConflictTests : IDisposable
         {
             Brn = Brn,
             VitalEventType = VitalEventType.LiveBirth,
-            ChildPerson = new Person { FullName = "Chipo Mwale" },
+            ChildPerson = new Person { FullName = "Ayen Deng" },
             FacilityId = FacilityId,
             RegisteredByRegistrarId = RegistrarId,
             DateOfBirth = new DateTime(2026, 9, 10, 4, 30, 0, DateTimeKind.Utc),
@@ -160,7 +160,7 @@ public class AmendmentConflictTests : IDisposable
         Assert.Equal("3200", conflict.ExpectedPreviousValue);
         Assert.Equal("3300", conflict.ActualPreviousValue);
         Assert.Equal(Brn, conflict.Brn);
-        Assert.Equal("Nurse A. Banda", conflict.SubmittedByRegistrarName);
+        Assert.Equal("Nurse A. Lado", conflict.SubmittedByRegistrarName);
     }
 
     /// <summary>
@@ -253,7 +253,7 @@ public class AmendmentConflictTests : IDisposable
         // Centre corrects the mother's name; that queues for approval.
         await AmendAsync(new AmendBirthRecordRequest
         {
-            MotherFullName = "Grace Mwale",
+            MotherFullName = "Nyandeng Deng",
             Reason = "Mother was not recorded at registration.",
             DeviceId = "DO-LAPTOP"
         }, asRegistrar: ReviewerId);
@@ -300,7 +300,7 @@ public class AmendmentConflictTests : IDisposable
     {
         await AmendAsync(new AmendBirthRecordRequest
         {
-            ChildFullName = "Chipo M. Banda",
+            ChildFullName = "Ayen M. Lado",
             Reason = "Surname corrected at the parents request.",
             DeviceId = "TABLET-07",
             ObservedValues = [new ObservedValue("ChildFullName", "Someone Else")]
@@ -310,12 +310,12 @@ public class AmendmentConflictTests : IDisposable
 
         Assert.Equal("ChildFullName", conflict.Field);
         Assert.Equal("Someone Else", conflict.ExpectedPreviousValue);
-        Assert.Equal("Chipo Mwale", conflict.ActualPreviousValue);
+        Assert.Equal("Ayen Deng", conflict.ActualPreviousValue);
         Assert.Null(conflict.ResolvedValue);
 
         await using var db = NewDb();
         var record = await db.BirthRecords.Include(r => r.ChildPerson).SingleAsync();
-        Assert.Equal("Chipo Mwale", record.ChildPerson!.FullName);
+        Assert.Equal("Ayen Deng", record.ChildPerson!.FullName);
     }
 
     // --- review -------------------------------------------------------------
