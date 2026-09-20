@@ -303,6 +303,7 @@ public class RecordDetailTests : IDisposable
                     new CertificateRevocationRecorder(db),
                     NullLogger<DuplicateDetectionService>.Instance,
                     districts),
+                districts,
                 Options.Create(new StatutoryRegistrationOptions { WindowDays = windowDays })),
             new AmendmentService(
                 db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db), current, districts),

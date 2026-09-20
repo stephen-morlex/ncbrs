@@ -5,95 +5,134 @@ using NCBRS.Models;
 namespace NCBRS.Services;
 
 /// <summary>
-/// The district a facility belongs to, for stamping on audit rows.
+/// The administrative area an act is accountable to — the <b>county</b>,
+/// resolved by walking up a facility's <see cref="Facility.AdministrativeArea"/>
+/// to its county ancestor. It is what audit rows and the reporting projection
+/// snapshot: a stable, human-meaningful county code rather than a surrogate id.
 ///
-/// Scoped and memoised, because a single request can write several audit
-/// entries against the same facility — a registration writes three — and
-/// asking the database once per row would turn one insert into four
-/// round trips.
+/// Named <c>DistrictLookup</c> for continuity while the legacy
+/// <see cref="Facility.DistrictId"/> string is retired across the codebase; the
+/// callers are unchanged, only what they receive is now a county code. During
+/// the transition a facility may not be linked to an area yet, or may sit at a
+/// level with no county ancestor — then the legacy <c>DistrictId</c> is the
+/// fallback, so no act goes unstamped.
 ///
-/// Returns <see cref="AuditLog.Unknown"/> rather than throwing when a
-/// facility cannot be resolved. An audit row must never be the reason a
-/// registration fails: the act being recorded already happened, and losing
-/// the record of it to protect a column would be the wrong trade in exactly
-/// the place this table exists to hold.
+/// Scoped and memoised: a single request writes several audit rows against the
+/// same facility — a registration writes three — and resolving once per row
+/// would turn one insert into many round trips. The area rows walked are cached
+/// too, so a chain is loaded at most once per request.
 /// </summary>
 public class DistrictLookup(NcbrsDbContext db)
 {
     private readonly Dictionary<Guid, string> _byFacility = [];
     private readonly Dictionary<string, string> _byBrn = [];
+    private readonly Dictionary<Guid, AreaRow?> _areas = [];
 
-    public async ValueTask<string> ForFacilityAsync(
-        Guid facilityId,
-        CancellationToken cancellationToken = default)
+    private sealed record AreaRow(Guid? ParentId, AdministrativeLevel Level, string Code);
+
+    public async ValueTask<string> ForFacilityAsync(Guid facilityId, CancellationToken cancellationToken = default)
     {
         if (_byFacility.TryGetValue(facilityId, out var cached))
         {
             return cached;
         }
 
-        var district = await db.Facilities
-            .Where(facility => facility.FacilityId == facilityId)
-            .Select(facility => facility.DistrictId)
+        var facility = await db.Facilities
+            .Where(f => f.FacilityId == facilityId)
+            .Select(f => new { f.DistrictId, f.AdministrativeAreaId })
             .FirstOrDefaultAsync(cancellationToken);
 
-        var resolved = string.IsNullOrWhiteSpace(district) ? AuditLog.Unknown : district;
+        var resolved = facility is null
+            ? AuditLog.Unknown
+            : await ResolveCountyAsync(facility.AdministrativeAreaId, facility.DistrictId, cancellationToken);
 
         _byFacility[facilityId] = resolved;
-
         return resolved;
     }
 
     /// <summary>
-    /// The district of the facility a record was registered at.
-    ///
-    /// Note this is the facility's district, not the mother's or the child's
-    /// residence. The trail records where the *act* took place, which is what
-    /// a district is being asked to account for.
+    /// The county of the facility a record was registered at — the area the
+    /// act belongs to, not the mother's or child's residence.
     /// </summary>
-    public ValueTask<string> ForRecordAsync(
-        BirthRecord record,
-        CancellationToken cancellationToken = default)
-        => record.Facility is { } facility
-            ? ValueTask.FromResult(facility.DistrictId)
-            : ForFacilityAsync(record.FacilityId, cancellationToken);
+    public ValueTask<string> ForRecordAsync(BirthRecord record, CancellationToken cancellationToken = default)
+        => ForFacilityAsync(record.FacilityId, cancellationToken);
 
     /// <summary>
-    /// The district of the record with this number, resolving a provisional
-    /// identifier as readily as a BRN — a device's slip names the same birth.
-    ///
-    /// The commonest shape by far: almost every audited act names a record,
-    /// and the record decides which district must account for it. Note that
-    /// is **not** always the actor's district: a ministry admin annulling a
-    /// record in another district produces a row that belongs to the district
-    /// whose register changed, not to the Ministry.
+    /// The county of the record with this number, resolving a provisional
+    /// identifier as readily as a BRN. Not always the actor's county: a
+    /// ministry admin annulling a record elsewhere produces a row that belongs
+    /// to the county whose register changed.
     /// </summary>
-    public async ValueTask<string> ForBrnAsync(
-        string brn,
-        CancellationToken cancellationToken = default)
+    public async ValueTask<string> ForBrnAsync(string brn, CancellationToken cancellationToken = default)
     {
         if (_byBrn.TryGetValue(brn, out var cached))
         {
             return cached;
         }
 
-        var district = await db.BirthRecords
+        var facility = await db.BirthRecords
             .Where(record => record.Brn == brn || record.ProvisionalIdentifier == brn)
-            .Select(record => record.Facility!.DistrictId)
+            .Select(record => new { record.Facility!.DistrictId, record.Facility!.AdministrativeAreaId })
             .FirstOrDefaultAsync(cancellationToken);
 
-        var resolved = string.IsNullOrWhiteSpace(district) ? AuditLog.Unknown : district;
+        var resolved = facility is null
+            ? AuditLog.Unknown
+            : await ResolveCountyAsync(facility.AdministrativeAreaId, facility.DistrictId, cancellationToken);
 
         _byBrn[brn] = resolved;
-
         return resolved;
     }
 
-    /// <summary>The district of the facility a registrar belongs to.</summary>
-    public ValueTask<string> ForRegistrarAsync(
-        Registrar registrar,
-        CancellationToken cancellationToken = default)
-        => registrar.Facility is { } facility
-            ? ValueTask.FromResult(facility.DistrictId)
-            : ForFacilityAsync(registrar.FacilityId, cancellationToken);
+    /// <summary>The county of the facility a registrar belongs to.</summary>
+    public ValueTask<string> ForRegistrarAsync(Registrar registrar, CancellationToken cancellationToken = default)
+        => ForFacilityAsync(registrar.FacilityId, cancellationToken);
+
+    /// <summary>
+    /// The county code for an area, walking up its parent chain. Falls back to
+    /// the facility's legacy district string when there is no area yet or no
+    /// county ancestor, so a transitional facility is still stamped rather than
+    /// recorded as unknown.
+    /// </summary>
+    private async ValueTask<string> ResolveCountyAsync(
+        Guid? areaId, string? fallbackDistrict, CancellationToken cancellationToken)
+    {
+        var fallback = string.IsNullOrWhiteSpace(fallbackDistrict) ? AuditLog.Unknown : fallbackDistrict;
+
+        // Bounded walk: the hierarchy is at most a handful deep, and the guard
+        // stops a cycle from a malformed tree turning this into a hang.
+        var current = areaId;
+        for (var step = 0; current is { } id && step < 16; step++)
+        {
+            var area = await LoadAreaAsync(id, cancellationToken);
+            if (area is null)
+            {
+                break;
+            }
+
+            if (area.Level == AdministrativeLevel.County)
+            {
+                return area.Code;
+            }
+
+            current = area.ParentId;
+        }
+
+        return fallback;
+    }
+
+    private async ValueTask<AreaRow?> LoadAreaAsync(Guid id, CancellationToken cancellationToken)
+    {
+        if (_areas.TryGetValue(id, out var cached))
+        {
+            return cached;
+        }
+
+        var area = await db.AdministrativeAreas
+            .Where(a => a.AdministrativeAreaId == id)
+            .Select(a => new AreaRow(a.ParentId, a.Level, a.Code))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        _areas[id] = area;
+        return area;
+    }
 }
