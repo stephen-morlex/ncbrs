@@ -148,7 +148,7 @@ public class DashboardQueryService(ReadModelDbContext db, TimeProvider clock)
         => new(value.Year, value.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
     /// <summary>The district drill-down behind the national view.</summary>
-    public async Task<IReadOnlyList<DistrictSummary>> DistrictsAsync(
+    public async Task<IReadOnlyList<CountySummary>> CountiesAsync(
         DateTime fromUtc,
         DateTime toUtc,
         CancellationToken cancellationToken = default)
@@ -161,7 +161,7 @@ public class DashboardQueryService(ReadModelDbContext db, TimeProvider clock)
             {
                 var births = group.Where(fact => fact.AnnulledAtUtc is null).ToList();
 
-                return new DistrictSummary(
+                return new CountySummary(
                     group.Key,
                     births.Count(fact => fact.VitalEventType != "FetalDeath"),
                     group.Count() - births.Count,
@@ -170,7 +170,7 @@ public class DashboardQueryService(ReadModelDbContext db, TimeProvider clock)
                         births.Count(fact => fact.WithinStatutoryWindow.HasValue)));
             })
             .OrderByDescending(summary => summary.LiveBirths)
-            .ThenBy(summary => summary.DistrictId)];
+            .ThenBy(summary => summary.CountyCode)];
     }
 
     /// <summary>

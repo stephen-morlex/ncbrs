@@ -90,7 +90,7 @@ public class RegistrarDirectoryTests : IDisposable
     {
         var page = Ok(await ListAsync(OfficerSubject, [NcbrsRoles.DistrictOfficer]));
 
-        Assert.All(page.Items, entry => Assert.Equal(TerekekaDistrict, entry.DistrictId));
+        Assert.All(page.Items, entry => Assert.Equal(TerekekaDistrict, entry.CountyCode));
         Assert.DoesNotContain(page.Items, entry => entry.DisplayName == "Thandi Nkosi");
     }
 
@@ -110,7 +110,7 @@ public class RegistrarDirectoryTests : IDisposable
         var page = Ok(await ListAsync(MinistrySubject, [NcbrsRoles.MinistryAdmin]));
 
         Assert.Equal(4, page.Total);
-        Assert.Contains(page.Items, entry => entry.DistrictId == JubaDistrict);
+        Assert.Contains(page.Items, entry => entry.CountyCode == JubaDistrict);
     }
 
     [Fact]
@@ -184,7 +184,7 @@ public class RegistrarDirectoryTests : IDisposable
         Assert.DoesNotContain("CredentialHash", published);
         Assert.DoesNotContain("ExternalSubjectId", published);
         Assert.Equal(
-            ["RegistrarId", "DisplayName", "Role", "FacilityId", "FacilityName", "DistrictId"],
+            ["RegistrarId", "DisplayName", "Role", "FacilityId", "FacilityName", "CountyCode"],
             published);
     }
 

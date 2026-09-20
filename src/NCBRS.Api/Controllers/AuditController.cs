@@ -116,7 +116,7 @@ public class AuditController(
             // The record must be one the caller could already see. Answering
             // otherwise would let the trail disclose what the record itself
             // withholds -- that a given BRN exists in another district.
-            if (scope.Scope.DistrictId is { } district)
+            if (scope.Scope.CountyCode is { } district)
             {
                 var visible = await db.BirthRecords
                     .AnyAsync(record =>
@@ -137,7 +137,7 @@ public class AuditController(
 
             query = query.Where(entry => entry.EntityId == wanted);
         }
-        else if (scope.Scope.DistrictId is { } district)
+        else if (scope.Scope.CountyCode is { } district)
         {
             // Rows written since the district column exists carry it, and it
             // is the accurate answer: it names the district whose register
@@ -285,8 +285,8 @@ public class AuditController(
         db.AuditLogs.Add(new AuditLog
         {
             EntityType = "AuditTrail",
-            EntityId = scope.DistrictId ?? AuditLog.Unattributed,
-            CountyCode = scope.DistrictId ?? AuditLog.Unattributed,
+            EntityId = scope.CountyCode ?? AuditLog.Unattributed,
+            CountyCode = scope.CountyCode ?? AuditLog.Unattributed,
             Action = $"Read:{(filters.Count > 0 ? string.Join(",", filters) : "all")};"
                      + $"returned={returned};total={total}",
             UserId = caller.RegistrarId,
@@ -316,7 +316,7 @@ public record AuditEntryResponse(
     /// Mostly of interest to the Ministry, who read across districts; a
     /// district officer sees their own on every row that has one.
     /// </summary>
-    string DistrictId,
+    string CountyCode,
     string Action,
     Guid? ActorId,
     string? ActorName,

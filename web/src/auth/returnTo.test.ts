@@ -7,8 +7,8 @@ describe('returnTo', () => {
   })
 
   it('keeps the query string, which carries search and paging state', () => {
-    expect(returnTo({ returnTo: '/records?district=lusaka&after=abc' })).toBe(
-      '/records?district=lusaka&after=abc',
+    expect(returnTo({ returnTo: '/records?district=SS0101&after=abc' })).toBe(
+      '/records?district=SS0101&after=abc',
     )
   })
 

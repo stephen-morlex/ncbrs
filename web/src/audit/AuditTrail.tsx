@@ -138,7 +138,7 @@ export function AuditTrail() {
                 id={BrnField}
                 value={form.brn}
                 onChange={(event) => setForm({ ...form, brn: event.target.value })}
-                placeholder="Leave blank for everything in your district"
+                placeholder="Leave blank for everything in your county"
                 autoComplete="off"
                 aria-invalid={brnMessages.length > 0 || undefined}
                 aria-describedby={brnMessages.length > 0 ? `${BrnField}-error` : undefined}
@@ -284,9 +284,9 @@ function Entries({
                   {/* Empty means the row predates the district column and can
                       never be given one. Said explicitly, because a blank
                       cell reads as a bug. */}
-                  {entry.districtId ? null : (
+                  {entry.countyCode ? null : (
                     <span className="text-muted-foreground block text-xs">
-                      district not recorded
+                      county not recorded
                     </span>
                   )}
                 </TableCell>

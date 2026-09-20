@@ -68,7 +68,7 @@ public class RecordSearchService(NcbrsDbContext db, TimeProvider clock)
         // whose own facility list is empty still gets their district, because
         // the scope is the district and not the facilities they happen to
         // have.
-        if (scope.DistrictId is { } districtId)
+        if (scope.CountyCode is { } districtId)
         {
             query = query.Where(record =>
                 record.Facility != null && record.Facility.CountyCode == districtId);
@@ -190,8 +190,8 @@ public class RecordSearchService(NcbrsDbContext db, TimeProvider clock)
             // The register, scoped. Keeps "every search in this district"
             // answerable without overloading the column that everywhere else
             // holds a record's own identifier.
-            EntityId = scope.DistrictId ?? AuditLog.Unattributed,
-            CountyCode = scope.DistrictId ?? AuditLog.Unattributed,
+            EntityId = scope.CountyCode ?? AuditLog.Unattributed,
+            CountyCode = scope.CountyCode ?? AuditLog.Unattributed,
 
             Action = $"Search:{criteria.Describe()};returned={returned};total={total}",
             UserId = audit.RegistrarId,
@@ -213,7 +213,7 @@ public readonly record struct AuditContext(Guid? RegistrarId, string DeviceId, G
 /// The district a search is confined to, or null for the Ministry, who are
 /// the only callers entitled to the whole register.
 /// </summary>
-public readonly record struct SearchScope(string? DistrictId)
+public readonly record struct SearchScope(string? CountyCode)
 {
     public static SearchScope National => new((string?)null);
 
@@ -294,5 +294,5 @@ public record BirthRecordSearchHit(
     Sex Sex,
     RecordStatus Status,
     string FacilityName,
-    string DistrictId,
+    string CountyCode,
     string? ProvisionalIdentifier);

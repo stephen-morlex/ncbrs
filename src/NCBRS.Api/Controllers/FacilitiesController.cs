@@ -141,7 +141,7 @@ public class FacilitiesController(
         }
 
         var scope = await scopes.ResolveAsync(
-            User, caller, requestedDistrictId: null, HttpContext.RequestAborted);
+            User, caller, requestedCountyCode: null, HttpContext.RequestAborted);
 
         if (!scope.IsAllowed)
         {
@@ -171,7 +171,7 @@ public class FacilitiesController(
     {
         var query = db.Facilities.AsNoTracking();
 
-        return scope.DistrictId is { } districtId
+        return scope.CountyCode is { } districtId
             ? query.Where(facility => facility.CountyCode == districtId)
             : query;
     }
@@ -207,7 +207,7 @@ public record FacilityResponse(
     Guid FacilityId,
     string Name,
     FacilityTier Tier,
-    string DistrictId,
+    string CountyCode,
     ConnectivityProfile ConnectivityProfile,
     long BrnBlockStart,
     long BrnBlockEnd,

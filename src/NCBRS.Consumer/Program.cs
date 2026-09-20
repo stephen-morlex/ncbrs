@@ -70,7 +70,7 @@ builder.Services.AddCors(cors => cors.AddPolicy(WebClientCorsOptions.PolicyName,
         .AllowAnyMethod();
 }));
 // W9. These endpoints had no authentication at all: GET
-// /api/dashboard/districts returned national vital statistics to an
+// /api/dashboard/counties returned national vital statistics to an
 // anonymous caller — including districts with a single live birth, which is
 // precisely the small-cell disclosure the DHIS2 export goes to lengths to
 // suppress. The export withheld that district; the dashboard handed it over.
@@ -243,7 +243,7 @@ app.MapGet("/api/dashboard/summary", async (
 .Produces<ApiError>(StatusCodes.Status400BadRequest)
 .RequireAuthorization(ReportingPolicy);
 
-app.MapGet("/api/dashboard/districts", async (
+app.MapGet("/api/dashboard/counties", async (
     DateTime? from,
     DateTime? to,
     DashboardQueryService dashboard,
@@ -253,10 +253,10 @@ app.MapGet("/api/dashboard/districts", async (
 
     return toUtc <= fromUtc
         ? Results.BadRequest(new ApiError("'to' must be after 'from'."))
-        : Results.Ok(await dashboard.DistrictsAsync(fromUtc, toUtc, cancellationToken));
+        : Results.Ok(await dashboard.CountiesAsync(fromUtc, toUtc, cancellationToken));
 })
-.WithName("GetDashboardDistricts")
-.Produces<IReadOnlyList<DistrictSummary>>()
+.WithName("GetDashboardCounties")
+.Produces<IReadOnlyList<CountySummary>>()
 .Produces<ApiError>(StatusCodes.Status400BadRequest)
 .RequireAuthorization(ReportingPolicy);
 

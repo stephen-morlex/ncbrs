@@ -152,7 +152,7 @@ public record DuplicateRate(int DuplicatesSeen, decimal? PerTenThousandBirths, s
 /// <summary>A device that has synced before and has not synced lately.</summary>
 public record SilentDevice(
     string DeviceId,
-    string DistrictId,
+    string CountyCode,
     Guid FacilityId,
     DateTime LastSyncAtUtc,
     int DaysSilent);
@@ -161,7 +161,7 @@ public record DashboardSummary(
     ReportingPeriod Period,
 
     /// <summary>Null for the national view.</summary>
-    string? DistrictId,
+    string? CountyCode,
 
     RegistrationCounts Registrations,
     Timeliness Timeliness,
@@ -179,7 +179,7 @@ public record DashboardSummary(
     /// </summary>
     IReadOnlyList<string> NotAvailable);
 
-public record DistrictSummary(string DistrictId, int LiveBirths, int Annulled, decimal? WithinWindowShare);
+public record CountySummary(string CountyCode, int LiveBirths, int Annulled, decimal? WithinWindowShare);
 
 /// <summary>
 /// One calendar month of the headline figures, for charting a trend across the

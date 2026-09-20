@@ -56,7 +56,7 @@ public class DevicesController(
 
         if (districtId is not null)
         {
-            query = query.Where(alert => alert.DistrictId == districtId);
+            query = query.Where(alert => alert.CountyCode == districtId);
         }
 
         var alerts = await query
@@ -117,7 +117,7 @@ public class DevicesController(
         db.AuditLogs.Add(new AuditLog
         {
             EntityType = nameof(DeviceAlert),
-            CountyCode = alert.DistrictId,
+            CountyCode = alert.CountyCode,
             EntityId = alert.DeviceId,
             Action = "AcknowledgeDeviceAlert",
             UserId = registrar.RegistrarId,
@@ -430,7 +430,7 @@ public class DevicesController(
             alert.DeviceAlertId,
             alert.DeviceId,
             alert.FacilityId,
-            alert.DistrictId,
+            alert.CountyCode,
             alert.Kind,
             alert.Status,
             alert.RaisedAtUtc,

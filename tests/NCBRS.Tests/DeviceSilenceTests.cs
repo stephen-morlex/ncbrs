@@ -165,7 +165,7 @@ public class DeviceSilenceTests : IDisposable
         Assert.Equal(DeviceAlertKind.Silent, alert.Kind);
         Assert.Equal(30, alert.DaysSilentWhenRaised);
         Assert.Equal(21, alert.ThresholdDays);
-        Assert.Equal("SS-CE-TER", alert.DistrictId);
+        Assert.Equal("SS-CE-TER", alert.CountyCode);
     }
 
     [Fact]

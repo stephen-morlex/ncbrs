@@ -30,7 +30,7 @@ const registrar = {
   role: 'DistrictOfficer',
   facilityId: '0199a1b2-fac0-7000-8000-000000000001',
   facilityName: 'Juba Central Clinic',
-  districtId: 'lusaka',
+  countyCode: 'SS0101',
 }
 
 function page(items: unknown[], nextCursor: string | null = null) {
@@ -76,7 +76,7 @@ describe('RegistrarDirectory', () => {
     // The role reads as words, not the enum token.
     expect(screen.getByText('District officer')).toBeInTheDocument()
     expect(screen.getByText('Juba Central Clinic')).toBeInTheDocument()
-    expect(screen.getByText('lusaka')).toBeInTheDocument()
+    expect(screen.getByText('SS0101')).toBeInTheDocument()
   })
 
   it('searches by name only on submit, and sends the term', async () => {

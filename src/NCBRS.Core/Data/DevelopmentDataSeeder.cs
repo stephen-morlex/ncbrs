@@ -13,7 +13,7 @@ namespace NCBRS.Data;
 ///
 /// Each facility sits at its true sub-county level: <see cref="Facility.AdministrativeAreaId"/>
 /// points at the <b>payam</b> it is in (seeded from the official COD), and the
-/// transitional <see cref="Facility.DistrictId"/> carries the <b>county</b>
+/// transitional <see cref="Facility.CountyCode"/> carries the <b>county</b>
 /// p-code — the level scoping and reporting resolve to by walking up the tree.
 ///
 /// Idempotent, keyed by fixed ids, by registrar subject and by device id.
@@ -27,7 +27,7 @@ public static class DevelopmentDataSeeder
 
     /// <summary>
     /// The fleet: name, tier, connectivity, the payam p-code it sits in, the
-    /// county p-code its <c>DistrictId</c> carries, and the first number of its
+    /// county p-code its <c>CountyCode</c> carries, and the first number of its
     /// 100 000-wide BRN block (blocks never overlap). Connectivity follows the
     /// tier — hospitals on the grid, village posts offline-first — as it does in
     /// the field.

@@ -10765,7 +10765,7 @@
           "auditLogId",
           "entityType",
           "entityId",
-          "districtId",
+          "countyCode",
           "action",
           "actorId",
           "actorName",
@@ -10785,7 +10785,7 @@
           "entityId": {
             "type": "string"
           },
-          "districtId": {
+          "countyCode": {
             "type": "string"
           },
           "action": {
@@ -10980,7 +10980,7 @@
           "sex",
           "status",
           "facilityName",
-          "districtId",
+          "countyCode",
           "provisionalIdentifier"
         ],
         "type": "object",
@@ -11004,7 +11004,7 @@
           "facilityName": {
             "type": "string"
           },
-          "districtId": {
+          "countyCode": {
             "type": "string"
           },
           "provisionalIdentifier": {
@@ -11304,7 +11304,7 @@
           "deviceAlertId",
           "deviceId",
           "facilityId",
-          "districtId",
+          "countyCode",
           "kind",
           "status",
           "raisedAtUtc",
@@ -11330,7 +11330,7 @@
             "type": "string",
             "format": "uuid"
           },
-          "districtId": {
+          "countyCode": {
             "type": "string"
           },
           "kind": {
@@ -11600,7 +11600,7 @@
           "facilityId",
           "name",
           "tier",
-          "districtId",
+          "countyCode",
           "connectivityProfile",
           "brnBlockStart",
           "brnBlockEnd",
@@ -11621,7 +11621,7 @@
           "tier": {
             "$ref": "#/components/schemas/FacilityTier"
           },
-          "districtId": {
+          "countyCode": {
             "type": "string"
           },
           "connectivityProfile": {
@@ -12555,7 +12555,7 @@
           "role",
           "facilityId",
           "facilityName",
-          "districtId"
+          "countyCode"
         ],
         "type": "object",
         "properties": {
@@ -12576,7 +12576,7 @@
           "facilityName": {
             "type": "string"
           },
-          "districtId": {
+          "countyCode": {
             "type": "string"
           }
         }

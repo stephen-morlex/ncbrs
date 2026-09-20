@@ -854,7 +854,7 @@ export interface components {
             auditLogId: string;
             entityType: string;
             entityId: string;
-            districtId: string;
+            countyCode: string;
             action: string;
             /** Format: uuid */
             actorId: null | string;
@@ -908,7 +908,7 @@ export interface components {
             sex: components["schemas"]["Sex"];
             status: components["schemas"]["RecordStatus"];
             facilityName: string;
-            districtId: string;
+            countyCode: string;
             provisionalIdentifier: null | string;
         };
         BrnBlockRequest: {
@@ -997,7 +997,7 @@ export interface components {
             deviceId: string;
             /** Format: uuid */
             facilityId: string;
-            districtId: string;
+            countyCode: string;
             kind: components["schemas"]["DeviceAlertKind"];
             status: components["schemas"]["DeviceAlertStatus"];
             /** Format: date-time */
@@ -1077,7 +1077,7 @@ export interface components {
             facilityId: string;
             name: string;
             tier: components["schemas"]["FacilityTier"];
-            districtId: string;
+            countyCode: string;
             connectivityProfile: components["schemas"]["ConnectivityProfile"];
             /** Format: int64 */
             brnBlockStart: number;
@@ -1326,7 +1326,7 @@ export interface components {
             /** Format: uuid */
             facilityId: string;
             facilityName: string;
-            districtId: string;
+            countyCode: string;
         };
         /** @enum {string} */
         RegistrarRole: "FacilityRegistrar" | "CommunityHealthWorker" | "DistrictOfficer" | "MinistryAdmin";

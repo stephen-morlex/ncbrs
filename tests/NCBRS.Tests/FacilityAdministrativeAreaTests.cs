@@ -61,7 +61,7 @@ public class FacilityAdministrativeAreaTests : IDisposable
             .ToListAsync();
         Assert.Equal(8, facilities.Count);
 
-        // Every fleet facility sits at a payam, and its transitional DistrictId
+        // Every fleet facility sits at a payam, and its transitional CountyCode
         // carries the county p-code — the level scoping resolves up to.
         Assert.All(facilities, f =>
         {

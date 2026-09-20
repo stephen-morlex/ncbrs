@@ -26,7 +26,7 @@ public class Facility
 
     /// <summary>
     /// The facility's county code — the flat, indexed scope-and-reporting key
-    /// (formerly <c>DistrictId</c>). It is a denormalisation of the county the
+    /// (formerly <c>CountyCode</c>). It is a denormalisation of the county the
     /// hierarchy resolves to: scope filters and reporting group on it in SQL,
     /// which a variable-depth walk up <see cref="AdministrativeAreaId"/> cannot
     /// do. It must equal the county <see cref="AdministrativeArea"/> resolves

@@ -83,7 +83,7 @@ public class FacilityDirectoryTests : IDisposable
         var page = Ok(await ListAsync(AuthTestContext.DefaultSubject, [NcbrsRoles.FacilityRegistrar]));
 
         Assert.Equal(2, page.Total);
-        Assert.All(page.Items, facility => Assert.Equal(TerekekaDistrict, facility.DistrictId));
+        Assert.All(page.Items, facility => Assert.Equal(TerekekaDistrict, facility.CountyCode));
     }
 
     [Fact]

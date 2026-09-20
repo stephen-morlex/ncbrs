@@ -148,7 +148,7 @@ public class RegistrarsController(
         }
 
         var scope = await scopes.ResolveAsync(
-            User, caller, requestedDistrictId: null, HttpContext.RequestAborted);
+            User, caller, requestedCountyCode: null, HttpContext.RequestAborted);
 
         if (!scope.IsAllowed)
         {
@@ -180,7 +180,7 @@ public class RegistrarsController(
     {
         var query = db.Registrars.AsNoTracking();
 
-        return scope.DistrictId is { } districtId
+        return scope.CountyCode is { } districtId
             ? query.Where(registrar =>
                 registrar.Facility != null && registrar.Facility.CountyCode == districtId)
             : query;
@@ -217,4 +217,4 @@ public record RegistrarResponse(
     RegistrarRole Role,
     Guid FacilityId,
     string FacilityName,
-    string DistrictId);
+    string CountyCode);

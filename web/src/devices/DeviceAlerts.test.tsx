@@ -27,7 +27,7 @@ const silent = {
   deviceAlertId: '0199a1b2-al00-7000-8000-000000000001',
   deviceId: 'tablet-001',
   facilityId: '0199a1b2-fac0-7000-8000-000000000001',
-  districtId: 'lusaka',
+  countyCode: 'SS0101',
   kind: 'Silent',
   status: 'Open',
   raisedAtUtc: '2026-09-14T00:00:00Z',
