@@ -10,15 +10,17 @@ namespace NCBRS.Data;
 /// <see cref="AdministrativeArea.Code"/> is not already present, so it is safe
 /// to run on every startup and safe to re-run after the data file is corrected.
 ///
-/// Only the country, states and counties are seeded. The three administrative
-/// areas (Abyei, Greater Pibor, Ruweng) are seeded at the state tier, being
-/// state-equivalent. Payam/Block/Boma/Quarter/Village are never seeded — the
-/// file does not carry them and the draft's rule is that they are created as
-/// they are encountered, not invented ahead of a birth.
+/// The data file is the official Common Operational Dataset (COD-AB) for South
+/// Sudan — country, admin-1 (states plus Abyei Region), admin-2 (counties) and
+/// admin-3 (payams), with the official p-codes as the stable <c>Code</c>. All
+/// four levels are seeded. Abyei Region is admin-1 in this vintage and is seeded
+/// at the state tier; Pibor sits as a county under Jonglei (see the file's
+/// <c>provenance</c> for the vintage caveat).
 ///
-/// The county list in the data file is explicitly unverified (see its
-/// <c>provenance</c>): correct it there and re-run, rather than hard-coding
-/// places here.
+/// Boma (admin-4) and finer levels are <b>not</b> in the COD and are never
+/// seeded — the draft's rule is that they are created as they are encountered,
+/// not invented ahead of a birth. Correct the geography in the data file and
+/// re-run, rather than hard-coding places here.
 /// </summary>
 public static class AdministrativeAreaSeeder
 {
@@ -59,6 +61,11 @@ public static class AdministrativeAreaSeeder
             foreach (var county in state.Counties)
             {
                 Ensure(county.Code, county.Name, AdministrativeLevel.County, state.Code);
+
+                foreach (var payam in county.Payams)
+                {
+                    Ensure(payam.Code, payam.Name, AdministrativeLevel.Payam, county.Code);
+                }
             }
         }
 
@@ -81,7 +88,9 @@ public static class AdministrativeAreaSeeder
 
     private sealed record SeedData(AreaNode Country, IReadOnlyList<StateNode> States);
 
-    private sealed record StateNode(string Code, string Name, bool AdministrativeArea, IReadOnlyList<AreaNode> Counties);
+    private sealed record StateNode(string Code, string Name, bool AdministrativeArea, IReadOnlyList<CountyNode> Counties);
+
+    private sealed record CountyNode(string Code, string Name, IReadOnlyList<AreaNode> Payams);
 
     private sealed record AreaNode(string Code, string Name);
 }

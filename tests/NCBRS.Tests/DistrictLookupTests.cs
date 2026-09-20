@@ -34,21 +34,21 @@ public class DistrictLookupTests : IDisposable
             db.Database.EnsureCreated();
             await AdministrativeAreaSeeder.SeedAsync(db);
 
-            var juba = await db.AdministrativeAreas.FirstAsync(a => a.Code == "SS-CE-JUB");
-            var payam = new AdministrativeArea
+            var juba = await db.AdministrativeAreas.FirstAsync(a => a.Code == "SS0101");
+            var boma = new AdministrativeArea
             {
-                Name = "Northern Bari", Level = AdministrativeLevel.Payam,
-                Code = "SS-CE-JUB-NB", ParentId = juba.AdministrativeAreaId,
+                Name = "A boma under a Juba payam", Level = AdministrativeLevel.Boma,
+                Code = "SS0101-TEST-BOMA", ParentId = juba.AdministrativeAreaId,
             };
-            db.AdministrativeAreas.Add(payam);
+            db.AdministrativeAreas.Add(boma);
 
             var facility = new Facility
             {
-                Name = "Northern Bari Health Post",
+                Name = "A deep village health post",
                 Tier = FacilityTier.VillageHealthPost,
                 ConnectivityProfile = ConnectivityProfile.OfflineFirst,
                 DistrictId = "legacy-should-be-ignored",
-                AdministrativeAreaId = payam.AdministrativeAreaId,
+                AdministrativeAreaId = boma.AdministrativeAreaId,
             };
             db.Facilities.Add(facility);
             await db.SaveChangesAsync();
@@ -56,7 +56,7 @@ public class DistrictLookupTests : IDisposable
         }
 
         var lookup = new DistrictLookup(NewDb());
-        Assert.Equal("SS-CE-JUB", await lookup.ForFacilityAsync(facilityId));
+        Assert.Equal("SS0101", await lookup.ForFacilityAsync(facilityId));
     }
 
     [Fact]

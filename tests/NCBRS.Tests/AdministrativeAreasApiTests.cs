@@ -56,8 +56,8 @@ public class AdministrativeAreasApiTests : IDisposable
 
         var states = (await Controller(db).List(parentId: null, level: AdministrativeLevel.State)).Value!;
 
-        // 10 states + Abyei, Greater Pibor, Ruweng.
-        Assert.Equal(13, states.Count);
+        // 10 states + Abyei Region (admin-1 in the operational COD).
+        Assert.Equal(11, states.Count);
         Assert.All(states, state => Assert.Equal(AdministrativeLevel.State, state.Level));
     }
 
@@ -65,7 +65,7 @@ public class AdministrativeAreasApiTests : IDisposable
     public async Task ByParent_ReturnsThatAreasChildren()
     {
         await using var db = await SeededAsync();
-        var centralEquatoria = await db.AdministrativeAreas.FirstAsync(a => a.Code == "SS-CE");
+        var centralEquatoria = await db.AdministrativeAreas.FirstAsync(a => a.Code == "SS01");
 
         var counties = (await Controller(db).List(parentId: centralEquatoria.AdministrativeAreaId)).Value!;
 
@@ -75,6 +75,6 @@ public class AdministrativeAreasApiTests : IDisposable
             Assert.Equal(AdministrativeLevel.County, county.Level);
             Assert.Equal(centralEquatoria.AdministrativeAreaId, county.ParentId);
         });
-        Assert.Contains(counties, county => county.Code == "SS-CE-JUB");
+        Assert.Contains(counties, county => county.Code == "SS0101");
     }
 }

@@ -6,11 +6,11 @@ using Xunit;
 namespace NCBRS.Tests;
 
 /// <summary>
-/// Seeding the national geography from the committed data file. The counties
-/// in that file are unverified and will change; these tests pin the shape and
-/// the invariants (the reliable top of the tree, idempotency, county→state
-/// resolution) rather than exact county counts, so correcting the file does
-/// not break them.
+/// Seeding the national geography from the committed data file — the official
+/// COD-AB for South Sudan (1 country, 11 admin-1, 79 counties, 512 payams).
+/// These tests pin the COD totals and the invariants (idempotency, walking a
+/// county up to its state, the vintage's treatment of Abyei and Pibor); a newer
+/// COD vintage would update the totals here deliberately.
 /// </summary>
 public class AdministrativeAreaSeederTests : IDisposable
 {
@@ -25,7 +25,7 @@ public class AdministrativeAreaSeederTests : IDisposable
     private NcbrsDbContext NewDb() => new(_database.Options);
 
     [Fact]
-    public async Task SeedsTheCountryTheTenStatesAndTheThreeAdministrativeAreas()
+    public async Task SeedsTheWholeCodTree_CountryStatesCountiesAndPayams()
     {
         await using var db = NewDb();
         db.Database.EnsureCreated();
@@ -33,9 +33,10 @@ public class AdministrativeAreaSeederTests : IDisposable
         await AdministrativeAreaSeeder.SeedAsync(db);
 
         Assert.Equal(1, await db.AdministrativeAreas.CountAsync(a => a.Level == AdministrativeLevel.Country));
-        // 10 states + Abyei, Greater Pibor, Ruweng (state-equivalent).
-        Assert.Equal(13, await db.AdministrativeAreas.CountAsync(a => a.Level == AdministrativeLevel.State));
-        Assert.True(await db.AdministrativeAreas.CountAsync(a => a.Level == AdministrativeLevel.County) > 0);
+        // COD-AB totals: 10 states + Abyei Region (admin-1), 79 counties, 512 payams.
+        Assert.Equal(11, await db.AdministrativeAreas.CountAsync(a => a.Level == AdministrativeLevel.State));
+        Assert.Equal(79, await db.AdministrativeAreas.CountAsync(a => a.Level == AdministrativeLevel.County));
+        Assert.Equal(512, await db.AdministrativeAreas.CountAsync(a => a.Level == AdministrativeLevel.Payam));
     }
 
     [Fact]
@@ -60,25 +61,28 @@ public class AdministrativeAreaSeederTests : IDisposable
         db.Database.EnsureCreated();
         await AdministrativeAreaSeeder.SeedAsync(db);
 
-        var juba = await db.AdministrativeAreas.Include(a => a.Parent!).FirstAsync(a => a.Code == "SS-CE-JUB");
+        var juba = await db.AdministrativeAreas.Include(a => a.Parent!).FirstAsync(a => a.Code == "SS0101");
 
         Assert.Equal(AdministrativeLevel.County, juba.Level);
         Assert.Equal("Central Equatoria", juba.Parent!.Name);
-        Assert.Equal("SS-CE", AdministrativeLevels.AncestorOfLevel(juba, AdministrativeLevel.State)!.Code);
+        Assert.Equal("SS01", AdministrativeLevels.AncestorOfLevel(juba, AdministrativeLevel.State)!.Code);
     }
 
     [Fact]
-    public async Task TheAdministrativeAreasSitAtTheStateTierWithNoCounties()
+    public async Task AbyeiIsAdmin1AndPiborIsACounty_AsThisCodVintageEncodesThem()
     {
         await using var db = NewDb();
         db.Database.EnsureCreated();
         await AdministrativeAreaSeeder.SeedAsync(db);
 
-        foreach (var code in new[] { "SS-AB", "SS-GP", "SS-RW" })
-        {
-            var area = await db.AdministrativeAreas.FirstAsync(a => a.Code == code);
-            Assert.Equal(AdministrativeLevel.State, area.Level);
-            Assert.Equal(0, await db.AdministrativeAreas.CountAsync(a => a.ParentId == area.AdministrativeAreaId));
-        }
+        // Abyei Region is an admin-1 unit here, seeded at the state tier.
+        var abyei = await db.AdministrativeAreas.FirstAsync(a => a.Code == "SS00");
+        Assert.Equal(AdministrativeLevel.State, abyei.Level);
+
+        // Pibor is a county under Jonglei in this vintage, not a separate
+        // administrative area (see the data file's provenance note).
+        var pibor = await db.AdministrativeAreas.Include(a => a.Parent!).FirstAsync(a => a.Code == "SS0308");
+        Assert.Equal(AdministrativeLevel.County, pibor.Level);
+        Assert.Equal("Jonglei", pibor.Parent!.Name);
     }
 }
