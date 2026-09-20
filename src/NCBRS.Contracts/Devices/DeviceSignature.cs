@@ -120,4 +120,32 @@ public static class DeviceSignature
             ? new DeviceSignatureResult(true)
             : new DeviceSignatureResult(false, $"An ECDSA P-256 key is required; this key is {curve}-bit.");
     }
+
+    /// <summary>
+    /// The device side of <see cref="Verify"/> — sign the raw request body with
+    /// the device's private key, byte for byte, producing the base64 IEEE P1363
+    /// signature that goes in the <see cref="HeaderName"/> header. Kept beside
+    /// Verify on purpose: the format (P-256, SHA-256, r||s, base64) is defined
+    /// once, so the device and the centre cannot drift apart on it.
+    /// </summary>
+    public static string Sign(string privateKeyPem, ReadOnlySpan<byte> body)
+    {
+        using var ecdsa = ECDsa.Create();
+        ecdsa.ImportFromPem(privateKeyPem);
+
+        var signature = ecdsa.SignData(body, HashAlgorithmName.SHA256, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
+        return Convert.ToBase64String(signature);
+    }
+
+    /// <summary>
+    /// A fresh ECDSA P-256 key pair for a device: the private half stays on the
+    /// device, the public half (SubjectPublicKeyInfo PEM) is what enrolment
+    /// records. The centre never sees the private key — <see cref="ValidateEnrolmentKey"/>
+    /// refuses one offered by mistake.
+    /// </summary>
+    public static (string PrivateKeyPem, string PublicKeyPem) GenerateKeyPair()
+    {
+        using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        return (ecdsa.ExportPkcs8PrivateKeyPem(), ecdsa.ExportSubjectPublicKeyInfoPem());
+    }
 }
