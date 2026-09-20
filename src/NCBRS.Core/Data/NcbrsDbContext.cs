@@ -48,6 +48,14 @@ public class NcbrsDbContext(DbContextOptions<NcbrsDbContext> options) : DbContex
             .HasForeignKey(a => a.ParentId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // A facility sits in an administrative area. Restrict on delete — an
+        // area with facilities in it must not be removed out from under them.
+        modelBuilder.Entity<Facility>()
+            .HasOne(f => f.AdministrativeArea)
+            .WithMany()
+            .HasForeignKey(f => f.AdministrativeAreaId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // BRN must be unique across the whole system -- this is the field
         // the offline block-allocation strategy (Facility.BrnBlockStart/End)
         // exists to protect.
