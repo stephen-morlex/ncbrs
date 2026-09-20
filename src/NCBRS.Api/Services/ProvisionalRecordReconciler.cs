@@ -116,7 +116,7 @@ public class ProvisionalRecordReconciler(NcbrsDbContext db, CountyLookup distric
             {
                 EntityType = nameof(BirthRecord),
                 EntityId = brn,
-                DistrictId = await districts.ForBrnAsync(brn, cancellationToken),
+                CountyCode = await districts.ForBrnAsync(brn, cancellationToken),
                 // Names the identifier it replaced, so the audit trail links
                 // the provisional slip to the number that superseded it.
                 Action = $"ReconcileProvisional:{record.ProvisionalIdentifier}",

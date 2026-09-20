@@ -121,11 +121,11 @@ namespace NCBRS.Migrations.Postgres
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("DeviceId")
+                    b.Property<string>("CountyCode")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("DistrictId")
+                    b.Property<string>("DeviceId")
                         .IsRequired()
                         .HasColumnType("text");
 

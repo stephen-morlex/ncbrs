@@ -529,7 +529,7 @@ public class BirthRecordsController(
             db.AuditLogs.Add(new AuditLog
             {
                 EntityType = nameof(Facility),
-                DistrictId = await districts.ForFacilityAsync(facilityId, HttpContext.RequestAborted),
+                CountyCode = await districts.ForFacilityAsync(facilityId, HttpContext.RequestAborted),
                 EntityId = facilityId.ToString(),
                 // Skipping is recorded rather than done quietly. A counter
                 // behind the register means records reached this facility's

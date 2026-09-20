@@ -53,7 +53,7 @@ public class AuditLogImmutabilityTests : IDisposable
         var audit = new AuditLog
         {
             EntityType = nameof(BirthRecord),
-            DistrictId = "SS-CE-TER",
+            CountyCode = "SS-CE-TER",
             EntityId = "100001",
             Action = "Create",
             UserId = RegistrarId,

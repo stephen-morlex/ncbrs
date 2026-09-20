@@ -288,7 +288,7 @@ public class CertificateService(
         {
             EntityType = nameof(Certificate),
             EntityId = brn,
-            DistrictId = await districts.ForBrnAsync(brn, cancellationToken),
+            CountyCode = await districts.ForBrnAsync(brn, cancellationToken),
             Action = action,
             UserId = registrar.RegistrarId,
             DeviceId = deviceId,

@@ -191,7 +191,7 @@ public class RecordSearchService(NcbrsDbContext db, TimeProvider clock)
             // answerable without overloading the column that everywhere else
             // holds a record's own identifier.
             EntityId = scope.DistrictId ?? AuditLog.Unattributed,
-            DistrictId = scope.DistrictId ?? AuditLog.Unattributed,
+            CountyCode = scope.DistrictId ?? AuditLog.Unattributed,
 
             Action = $"Search:{criteria.Describe()};returned={returned};total={total}",
             UserId = audit.RegistrarId,

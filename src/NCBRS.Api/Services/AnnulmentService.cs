@@ -134,7 +134,7 @@ public class AnnulmentService(
         {
             EntityType = nameof(BirthRecord),
             EntityId = brn,
-            DistrictId = await districts.ForBrnAsync(brn, cancellationToken),
+            CountyCode = await districts.ForBrnAsync(brn, cancellationToken),
             Action = "Annul",
             UserId = registrar.RegistrarId,
             DeviceId = "annulment",
