@@ -117,7 +117,7 @@ public class DevicesController(
         db.AuditLogs.Add(new AuditLog
         {
             EntityType = nameof(DeviceAlert),
-            DistrictId = alert.DistrictId,
+            CountyCode = alert.DistrictId,
             EntityId = alert.DeviceId,
             Action = "AcknowledgeDeviceAlert",
             UserId = registrar.RegistrarId,
@@ -214,7 +214,7 @@ public class DevicesController(
         db.AuditLogs.Add(new AuditLog
         {
             EntityType = nameof(Device),
-            DistrictId = await districts.ForFacilityAsync(device.FacilityId, HttpContext.RequestAborted),
+            CountyCode = await districts.ForFacilityAsync(device.FacilityId, HttpContext.RequestAborted),
             EntityId = device.DeviceId,
             Action = "EnrolDevice",
             UserId = registrar.RegistrarId,
@@ -374,7 +374,7 @@ public class DevicesController(
         db.AuditLogs.Add(new AuditLog
         {
             EntityType = nameof(Device),
-            DistrictId = await districts.ForFacilityAsync(device.FacilityId, HttpContext.RequestAborted),
+            CountyCode = await districts.ForFacilityAsync(device.FacilityId, HttpContext.RequestAborted),
             EntityId = device.DeviceId,
             Action = action,
             UserId = registrar.RegistrarId,

@@ -233,7 +233,7 @@ public class DuplicateDetectionService(
             {
                 EntityType = nameof(BirthRecord),
                 EntityId = superseded.Brn,
-                DistrictId = await districts.ForBrnAsync(superseded.Brn, cancellationToken),
+                CountyCode = await districts.ForBrnAsync(superseded.Brn, cancellationToken),
                 Action = "SupersededAsDuplicate",
                 UserId = reviewer.RegistrarId,
                 DeviceId = "review",
@@ -247,7 +247,7 @@ public class DuplicateDetectionService(
             EntityId = duplicateCandidateId.ToString(),
             // The record under review, which exists whichever way the
             // decision goes -- `superseded` only exists on the confirm path.
-            DistrictId = await districts.ForRecordAsync(link.BirthRecord!, cancellationToken),
+            CountyCode = await districts.ForRecordAsync(link.BirthRecord!, cancellationToken),
             Action = isDuplicate ? "ConfirmDuplicate" : "DismissDuplicate",
             UserId = reviewer.RegistrarId,
             DeviceId = "review",

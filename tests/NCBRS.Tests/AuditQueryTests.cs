@@ -347,7 +347,7 @@ public class AuditQueryTests : IDisposable
         {
             EntityType = entityType,
             EntityId = entityId,
-            DistrictId = district,
+            CountyCode = district,
             Action = action,
             UserId = actor,
             DeviceId = "web",

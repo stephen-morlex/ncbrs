@@ -149,7 +149,7 @@ public class LateRegistrationService(
         {
             EntityType = nameof(LateRegistration),
             EntityId = late.BirthRecord.Brn,
-            DistrictId = await districts.ForRecordAsync(late.BirthRecord, cancellationToken),
+            CountyCode = await districts.ForRecordAsync(late.BirthRecord, cancellationToken),
             Action = approve ? "ApproveLateRegistration" : "RejectLateRegistration",
             UserId = reviewer.RegistrarId,
             DeviceId = "review",

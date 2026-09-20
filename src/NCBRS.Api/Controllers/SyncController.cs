@@ -115,7 +115,7 @@ public class SyncController(
             db.AuditLogs.Add(new AuditLog
             {
                 EntityType = nameof(SyncBatch),
-                DistrictId = await districts.ForFacilityAsync(batch.FacilityId, HttpContext.RequestAborted),
+                CountyCode = await districts.ForFacilityAsync(batch.FacilityId, HttpContext.RequestAborted),
                 EntityId = batch.DeviceId,
                 Action = $"DeviceRefused:{deviceCheck.Outcome}",
                 UserId = registrar.RegistrarId,
@@ -176,7 +176,7 @@ public class SyncController(
         db.AuditLogs.Add(new AuditLog
         {
             EntityType = nameof(SyncBatch),
-            DistrictId = await districts.ForFacilityAsync(batch.FacilityId, HttpContext.RequestAborted),
+            CountyCode = await districts.ForFacilityAsync(batch.FacilityId, HttpContext.RequestAborted),
             EntityId = syncBatch.SyncBatchId.ToString(),
             Action = "SyncBatchProcessed",
             UserId = registrar.RegistrarId,

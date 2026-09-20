@@ -235,7 +235,7 @@ public class BirthRegistrationService(
             db.AuditLogs.Add(new AuditLog
             {
                 EntityType = nameof(BirthRecord),
-                DistrictId = districtStamp,
+                CountyCode = districtStamp,
                 EntityId = request.Brn,
                 // A provisional identifier is an expected consequence of an
                 // exhausted block, not a device issuing numbers it was never
@@ -268,7 +268,7 @@ public class BirthRegistrationService(
             db.AuditLogs.Add(new AuditLog
             {
                 EntityType = nameof(BirthRecord),
-                DistrictId = districtStamp,
+                CountyCode = districtStamp,
                 EntityId = request.Brn,
                 Action = $"StatutoryWindowMetOnDeviceTime:{daysLate}/{daysLateOnArrival}",
                 UserId = registrar.RegistrarId,
@@ -305,7 +305,7 @@ public class BirthRegistrationService(
             db.AuditLogs.Add(new AuditLog
             {
                 EntityType = nameof(LateRegistration),
-                DistrictId = districtStamp,
+                CountyCode = districtStamp,
                 EntityId = request.Brn,
                 Action = "LateRegistrationFiled",
                 UserId = registrar.RegistrarId,
@@ -341,7 +341,7 @@ public class BirthRegistrationService(
         db.AuditLogs.Add(new AuditLog
         {
             EntityType = nameof(BirthRecord),
-            DistrictId = districtStamp,
+            CountyCode = districtStamp,
             EntityId = request.Brn,
             Action = "Create",
             UserId = registrar.RegistrarId,

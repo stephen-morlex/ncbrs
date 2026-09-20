@@ -71,7 +71,7 @@ public class DeviceCredentialsController(
         db.AuditLogs.Add(new AuditLog
         {
             EntityType = nameof(Registrar),
-            DistrictId = await districts.ForRegistrarAsync(registrar, HttpContext.RequestAborted),
+            CountyCode = await districts.ForRegistrarAsync(registrar, HttpContext.RequestAborted),
             EntityId = registrar.RegistrarId.ToString(),
             Action = isFirstPin ? "SetDevicePin" : "ChangeDevicePin",
             UserId = registrar.RegistrarId,
@@ -139,7 +139,7 @@ public class DeviceCredentialsController(
         db.AuditLogs.Add(new AuditLog
         {
             EntityType = nameof(Facility),
-            DistrictId = await districts.ForFacilityAsync(facilityId, HttpContext.RequestAborted),
+            CountyCode = await districts.ForFacilityAsync(facilityId, HttpContext.RequestAborted),
             EntityId = facilityId.ToString(),
             Action = "IssueDeviceCredentials",
             UserId = registrar.RegistrarId,

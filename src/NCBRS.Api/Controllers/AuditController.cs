@@ -53,7 +53,7 @@ public class AuditController(
     ///   it. A ministry admin annulling a record here produces a row this
     ///   district can read.
     ///
-    /// Rows written before `AuditLog.DistrictId` existed fall back to the
+    /// Rows written before `AuditLog.CountyCode` existed fall back to the
     /// actor's district, which is the best that can be said of them. They can
     /// never be given one — the table is append-only and enforced so at the
     /// database — so for that era an act on this district's records by
@@ -155,8 +155,8 @@ public class AuditController(
                 .Select(registrar => registrar.RegistrarId);
 
             query = query.Where(entry =>
-                entry.DistrictId == district
-                || (entry.DistrictId == AuditLog.Unknown
+                entry.CountyCode == district
+                || (entry.CountyCode == AuditLog.Unknown
                     && entry.UserId != null
                     && actors.Contains(entry.UserId.Value)));
         }
@@ -244,7 +244,7 @@ public class AuditController(
                 entry.AuditLogId,
                 entry.EntityType,
                 entry.EntityId,
-                entry.DistrictId,
+                entry.CountyCode,
                 entry.Action,
                 entry.UserId,
                 entry.UserId is { } id && names.TryGetValue(id, out var name) ? name : null,
@@ -286,7 +286,7 @@ public class AuditController(
         {
             EntityType = "AuditTrail",
             EntityId = scope.DistrictId ?? AuditLog.Unattributed,
-            DistrictId = scope.DistrictId ?? AuditLog.Unattributed,
+            CountyCode = scope.DistrictId ?? AuditLog.Unattributed,
             Action = $"Read:{(filters.Count > 0 ? string.Join(",", filters) : "all")};"
                      + $"returned={returned};total={total}",
             UserId = caller.RegistrarId,

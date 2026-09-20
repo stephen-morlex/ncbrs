@@ -122,7 +122,7 @@ public class MaternalStatisticsService(
         {
             EntityType = nameof(MaternalStatistics),
             EntityId = brn,
-            DistrictId = await districts.ForBrnAsync(brn, cancellationToken),
+            CountyCode = await districts.ForBrnAsync(brn, cancellationToken),
             Action = revised ? "ReviseMaternalStatistics" : "RecordMaternalStatistics",
             UserId = registrar.RegistrarId,
             DeviceId = deviceId,

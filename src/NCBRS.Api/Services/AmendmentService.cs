@@ -235,7 +235,7 @@ public class AmendmentService(
         {
             EntityType = nameof(BirthRecord),
             EntityId = brn,
-            DistrictId = district,
+            CountyCode = district,
             Action = immediate.Count == 0 ? "AmendSubmitted" : "Amend",
             UserId = registrar.RegistrarId,
             DeviceId = request.DeviceId,
@@ -248,7 +248,7 @@ public class AmendmentService(
             {
                 EntityType = nameof(AmendmentConflict),
                 EntityId = brn,
-                DistrictId = district,
+                CountyCode = district,
                 Action = $"AmendmentConflict:{string.Join(",", stale.Select(conflict => conflict.Field))}",
                 UserId = registrar.RegistrarId,
                 DeviceId = request.DeviceId,
@@ -677,7 +677,7 @@ public class AmendmentService(
         {
             EntityType = nameof(BirthRecord),
             EntityId = brn,
-            DistrictId = await districts.ForBrnAsync(brn, cancellationToken),
+            CountyCode = await districts.ForBrnAsync(brn, cancellationToken),
             Action = action,
             UserId = actor.RegistrarId,
             DeviceId = "review",

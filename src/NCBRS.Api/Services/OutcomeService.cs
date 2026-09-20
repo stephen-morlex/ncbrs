@@ -123,7 +123,7 @@ public class OutcomeService(
         {
             EntityType = nameof(NeonatalOutcome),
             EntityId = brn,
-            DistrictId = await districts.ForBrnAsync(brn, cancellationToken),
+            CountyCode = await districts.ForBrnAsync(brn, cancellationToken),
             Action = "RecordNeonatalOutcome",
             UserId = registrar.RegistrarId,
             DeviceId = request.DeviceId,
@@ -204,7 +204,7 @@ public class OutcomeService(
         {
             EntityType = nameof(MaternalOutcome),
             EntityId = brn,
-            DistrictId = await districts.ForBrnAsync(brn, cancellationToken),
+            CountyCode = await districts.ForBrnAsync(brn, cancellationToken),
             Action = "RecordMaternalOutcome",
             UserId = registrar.RegistrarId,
             DeviceId = request.DeviceId,

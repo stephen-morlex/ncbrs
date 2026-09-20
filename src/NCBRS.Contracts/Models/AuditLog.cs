@@ -24,27 +24,27 @@ public class AuditLog
     ///
     /// **`required` rather than nullable, deliberately.** Twenty-five places
     /// write to this table, and a nullable column would let any one of them
-    /// omit the district silently — reintroducing, one call site at a time,
+    /// omit the county silently — reintroducing, one call site at a time,
     /// exactly the gap this closes. Making the compiler refuse is the only
     /// enforcement that cannot be forgotten.
     ///
     /// <see cref="Unattributed"/> is the honest answer where an act belongs
-    /// to no district — a national export, a Ministry-wide read — and
+    /// to no county — a national export, a Ministry-wide read — and
     /// <see cref="Unknown"/> is what rows written before this column existed
     /// carry. They are different facts and must not be conflated: the first
     /// is a decision, the second is an absence.
     ///
     /// Rows written before the migration keep <see cref="Unknown"/> forever.
     /// `AuditLogs` is append-only and enforced so at the database, so they
-    /// can never be given a district retroactively — which is precisely why
+    /// can never be given a county retroactively — which is precisely why
     /// this column had to be added before the table grew rather than after.
     /// </summary>
-    public required string DistrictId { get; set; }
+    public required string CountyCode { get; set; }
 
     /// <summary>Written before this column existed. Never assigned by code.</summary>
     public const string Unknown = "";
 
-    /// <summary>An act that genuinely belongs to no single district.</summary>
+    /// <summary>An act that genuinely belongs to no single county.</summary>
     public const string Unattributed = "national";
 
     /// <summary>
