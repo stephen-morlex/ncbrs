@@ -158,7 +158,7 @@ public class BirthRecordProjector(ReadModelDbContext db, ILogger<BirthRecordProj
             fact = new RegistrationFact
             {
                 Brn = evt.Brn,
-                DistrictId = evt.DistrictId,
+                CountyCode = evt.County,
                 Sex = evt.Sex
             };
 
@@ -169,7 +169,7 @@ public class BirthRecordProjector(ReadModelDbContext db, ILogger<BirthRecordProj
         // the same values rather than skip -- skipping would leave a fact
         // that an earlier partial write had got wrong.
         fact.BirthRecordId = evt.BirthRecordId;
-        fact.DistrictId = evt.DistrictId;
+        fact.CountyCode = evt.County;
         fact.FacilityId = evt.FacilityId;
         fact.DateOfBirth = evt.DateOfBirth;
         fact.Sex = evt.Sex;
@@ -325,7 +325,7 @@ public class BirthRecordProjector(ReadModelDbContext db, ILogger<BirthRecordProj
             {
                 SyncBatchId = evt.SyncBatchId,
                 DeviceId = evt.DeviceId,
-                DistrictId = evt.DistrictId,
+                CountyCode = evt.County,
                 Status = evt.Status
             };
 
@@ -334,7 +334,7 @@ public class BirthRecordProjector(ReadModelDbContext db, ILogger<BirthRecordProj
 
         fact.DeviceId = evt.DeviceId;
         fact.FacilityId = evt.FacilityId;
-        fact.DistrictId = evt.DistrictId;
+        fact.CountyCode = evt.County;
         fact.Submitted = evt.Submitted;
         fact.Registered = evt.Registered;
         fact.Duplicates = evt.Duplicates;

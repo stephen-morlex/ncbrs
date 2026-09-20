@@ -65,7 +65,7 @@ public class Dhis2ExportService(ReadModelDbContext db, Dhis2ExportOptions option
             .Select(fact => fact.Brn)
             .ToListAsync(cancellationToken);
 
-        var district = births.ToLookup(fact => fact.DistrictId);
+        var district = births.ToLookup(fact => fact.CountyCode);
 
         var values = new List<Dhis2DataValue>();
         var suppressed = new List<Dhis2Suppression>();

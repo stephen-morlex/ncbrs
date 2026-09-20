@@ -501,7 +501,7 @@ public class SyncBatchTests : IDisposable
         Assert.Equal(response.SyncBatchId, published.SyncBatchId);
         Assert.Equal("TABLET-07", published.DeviceId);
         Assert.Equal(FacilityId, published.FacilityId);
-        Assert.Equal("SS-CE-TER", published.DistrictId);
+        Assert.Equal("SS-CE-TER", published.County);
         Assert.Equal(RegistrarId, published.UploadedByRegistrarId);
         Assert.Equal(2, published.Submitted);
         Assert.Equal(1, published.Registered);

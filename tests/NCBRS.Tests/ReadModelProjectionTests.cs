@@ -82,7 +82,7 @@ public class ReadModelProjectionTests : IDisposable
 
         // Derived, never stored. There is no counter to double.
         return await db.RegistrationFacts
-            .CountAsync(fact => fact.DistrictId == districtId && fact.AnnulledAtUtc == null);
+            .CountAsync(fact => fact.CountyCode == districtId && fact.AnnulledAtUtc == null);
     }
 
     // --- the exit criterion -------------------------------------------------
@@ -178,7 +178,7 @@ public class ReadModelProjectionTests : IDisposable
         {
             var fact = await corrupt.RegistrationFacts.SingleAsync();
             fact.Sex = "Wrong";
-            fact.DistrictId = "D-WRONG";
+            fact.CountyCode = "D-WRONG";
             await corrupt.SaveChangesAsync();
         }
 
@@ -188,7 +188,7 @@ public class ReadModelProjectionTests : IDisposable
         var repaired = await db.RegistrationFacts.SingleAsync();
 
         Assert.Equal("Female", repaired.Sex);
-        Assert.Equal("SS-CE-TER", repaired.DistrictId);
+        Assert.Equal("SS-CE-TER", repaired.CountyCode);
     }
 
     // --- what the projection holds -------------------------------------------
@@ -204,7 +204,7 @@ public class ReadModelProjectionTests : IDisposable
         var fact = await db.RegistrationFacts.SingleAsync();
 
         Assert.Equal("100001", fact.Brn);
-        Assert.Equal("SS-CE-JUB", fact.DistrictId);
+        Assert.Equal("SS-CE-JUB", fact.CountyCode);
         Assert.Equal("Male", fact.Sex);
         Assert.Equal(FacilityId, fact.FacilityId);
         Assert.Null(fact.AnnulledAtUtc);

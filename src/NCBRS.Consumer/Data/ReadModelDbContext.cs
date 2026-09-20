@@ -38,7 +38,7 @@ public class ReadModelDbContext(DbContextOptions<ReadModelDbContext> options) : 
         // Every aggregate is grouped by district and filtered on annulment,
         // so this is the index they all run on.
         modelBuilder.Entity<RegistrationFact>()
-            .HasIndex(fact => new { fact.DistrictId, fact.AnnulledAtUtc });
+            .HasIndex(fact => new { fact.CountyCode, fact.AnnulledAtUtc });
 
         modelBuilder.Entity<RegistrationFact>()
             .HasIndex(fact => fact.PublishedAtUtc);
@@ -61,6 +61,6 @@ public class ReadModelDbContext(DbContextOptions<ReadModelDbContext> options) : 
             .HasIndex(fact => new { fact.DeviceId, fact.SyncedAtUtc });
 
         modelBuilder.Entity<SyncBatchFact>()
-            .HasIndex(fact => new { fact.DistrictId, fact.SyncedAtUtc });
+            .HasIndex(fact => new { fact.CountyCode, fact.SyncedAtUtc });
     }
 }

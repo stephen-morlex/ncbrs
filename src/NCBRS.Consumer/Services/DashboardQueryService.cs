@@ -156,7 +156,7 @@ public class DashboardQueryService(ReadModelDbContext db, TimeProvider clock)
         var inPeriod = await InPeriod(fromUtc, toUtc, districtId: null).ToListAsync(cancellationToken);
 
         return [.. inPeriod
-            .GroupBy(fact => fact.DistrictId)
+            .GroupBy(fact => fact.CountyCode)
             .Select(group =>
             {
                 var births = group.Where(fact => fact.AnnulledAtUtc is null).ToList();
@@ -194,7 +194,7 @@ public class DashboardQueryService(ReadModelDbContext db, TimeProvider clock)
 
         if (districtId is not null)
         {
-            query = query.Where(fact => fact.DistrictId == districtId);
+            query = query.Where(fact => fact.CountyCode == districtId);
         }
 
         var lastSeen = await query
@@ -219,7 +219,7 @@ public class DashboardQueryService(ReadModelDbContext db, TimeProvider clock)
 
             silent.Add(new SilentDevice(
                 device.DeviceId,
-                latest.DistrictId,
+                latest.CountyCode,
                 latest.FacilityId,
                 device.LastSyncAtUtc,
                 (int)(now - device.LastSyncAtUtc).TotalDays));
@@ -240,7 +240,7 @@ public class DashboardQueryService(ReadModelDbContext db, TimeProvider clock)
         var query = db.RegistrationFacts
             .Where(fact => fact.DateOfBirth >= fromUtc && fact.DateOfBirth < toUtc);
 
-        return districtId is null ? query : query.Where(fact => fact.DistrictId == districtId);
+        return districtId is null ? query : query.Where(fact => fact.CountyCode == districtId);
     }
 
     private IQueryable<SyncBatchFact> Syncs(DateTime fromUtc, DateTime toUtc, string? districtId)
@@ -250,7 +250,7 @@ public class DashboardQueryService(ReadModelDbContext db, TimeProvider clock)
         var query = db.SyncBatchFacts
             .Where(fact => fact.SyncedAtUtc >= fromUtc && fact.SyncedAtUtc < toUtc);
 
-        return districtId is null ? query : query.Where(fact => fact.DistrictId == districtId);
+        return districtId is null ? query : query.Where(fact => fact.CountyCode == districtId);
     }
 
     private ReportingPeriod Period(DateTime fromUtc, DateTime toUtc)

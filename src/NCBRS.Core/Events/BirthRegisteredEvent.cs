@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace NCBRS.Events;
 
 /// <summary>
@@ -10,7 +12,14 @@ public record BirthRegisteredEvent(
     string Brn,
     Guid BirthRecordId,
     Guid FacilityId,
-    string DistrictId,
+
+    /// <summary>
+    /// The county the registration is accountable to. The wire name stays
+    /// <c>DistrictId</c> (pinned) so events published before this rename still
+    /// deserialise on replay — an event contract is not renamed under its
+    /// readers, only the code that reads it.
+    /// </summary>
+    [property: JsonPropertyName("DistrictId")] string County,
     DateTime DateOfBirth,
     string Sex,
     DateTime EventTimestampUtc,

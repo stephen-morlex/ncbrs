@@ -99,7 +99,7 @@ public class DashboardReadModelTests : IDisposable
         {
             Brn = brn,
             BirthRecordId = Guid.CreateVersion7(),
-            DistrictId = districtId,
+            CountyCode = districtId,
             FacilityId = FacilityId,
             DateOfBirth = born,
             Sex = sex,
@@ -126,7 +126,7 @@ public class DashboardReadModelTests : IDisposable
             SyncBatchId = Guid.CreateVersion7(),
             DeviceId = deviceId,
             FacilityId = FacilityId,
-            DistrictId = districtId,
+            CountyCode = districtId,
             Submitted = submitted,
             Registered = registered,
             Duplicates = duplicates,
