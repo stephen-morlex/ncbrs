@@ -303,9 +303,9 @@ Verified against the running codebase. 262 tests passing.
 
 | Requirement | Draft | State | Closed by |
 |---|---|---|---|
-| Facility / village client application | 6.4, 7.3 | Not started | WS-B |
-| Device enrolment & device certificates | 6.7 | **Server side built** — registry, signature over the raw batch, refusal audited | WS-B |
-| Encryption at rest on device | 6.7 | Not started | WS-B |
+| Facility / village client application | 6.4, 7.3 | **Client-core built & tested** (BRN allocation, outbox/sync, offline verification, PIN, signing, composed by `FacilityClient`); MAUI shell scaffolded | WS-B |
+| Device enrolment & device certificates | 6.7 | **Both sides built** — server registry + raw-batch signature; device-side `DeviceSigner` over the shared `DeviceSignature` | WS-B |
+| Encryption at rest on device | 6.7 | Not started (device shell) | WS-B |
 | Statutory window & late registration | 4.1, 5.3 | **Built** | WS-C |
 | Amendment approval workflow | 5.3 | **Built** — two-track | WS-C |
 | Conflict handling on concurrent amendment | 6.3 | **Built** | WS-C |
@@ -387,20 +387,29 @@ using it under pressure, which needs a staging instance.
 
 ### WS-B — Facility and village client
 
-*Why it is the long pole:* the entire Tier-1 experience, none of which exists.
+*Why it is the long pole:* the entire Tier-1 experience.
 *Depends on:* nothing — start immediately.
+
+**Status: the offline-first client-core is built, tested (34 tests) and
+composed** — `client/NCBRS.Client.Core`, driven by the workflow facade
+`FacilityClient` and exercised end to end by `client/NCBRS.Client.Harness`
+(enrol → unlock → register incl. block exhaustion → signed upload → transfer →
+settle → offline verify). A **MAUI shell is scaffolded** at
+`client/NCBRS.Client.App` (wired to the core, kept out of `NCBRS.slnx` since CI
+has no MAUI workload). What remains needs a **device environment**: the screens,
+the encrypted store and printing. See `client/INTEGRATION.md`.
 
 | # | Step | Exit condition |
 |---|---|---|
-| B1 | Decide .NET MAUI vs PWA (recommend MAUI; printing is a hard requirement) | Decision recorded with printing/storage evidence |
-| B2 | Local encrypted SQLite store mirroring Core schema | Database file unreadable without the device key |
-| B3 | Offline PIN unlock against cached credential bundle | Registrar unlocks with no connectivity; wrong PIN rate-limited locally |
-| B4 | Guided registration form, designed with actual midwives/CHWs | Untrained CHW completes a registration unaided |
-| B5 | BRN block consumption and low-block warning | Simulated three-week offline period, no collision |
-| B6 | Local outbox and batch sync | Partially rejected batch leaves exactly the rejected records queued |
-| B7 | Provisional certificate printing with QR | Printed certificate scans and verifies on a second device |
-| B8 | Offline verification + bundle refresh each connectivity window | A revoked certificate is refused with no network |
-| B9 | Device enrolment (device certificate required for sync) — **server side done**; device-side key handling awaits the client | Valid user token from an unenrolled device is refused |
+| B1 | Decide .NET MAUI vs PWA — **done** (MAUI: printing, encrypted storage, weeks-offline) | Decision recorded with printing/storage evidence |
+| B2 | Local encrypted SQLite store mirroring Core schema — **shell scaffolded; store awaits device build** | Database file unreadable without the device key |
+| B3 | Offline PIN unlock against cached credential bundle — **logic done** (`OfflinePinLock`, rate-limited); unlock screen in the shell | Registrar unlocks with no connectivity; wrong PIN rate-limited locally |
+| B4 | Guided registration form, designed with actual midwives/CHWs — **not started** (needs field research) | Untrained CHW completes a registration unaided |
+| B5 | BRN block consumption and low-block warning — **done** (`DeviceBrnAllocator`) | Simulated three-week offline period, no collision |
+| B6 | Local outbox and batch sync — **done** (`SyncOutbox`) | Partially rejected batch leaves exactly the rejected records queued |
+| B7 | Provisional certificate printing with QR — **not started** (device/printer) | Printed certificate scans and verifies on a second device |
+| B8 | Offline verification + bundle refresh each connectivity window — **done** (`CachedVerificationBundle`) | A revoked certificate is refused with no network |
+| B9 | Device enrolment (device certificate required for sync) — **done both sides** (server enrolment + device-side `DeviceSigner` over the shared `DeviceSignature`) | Valid user token from an unenrolled device is refused |
 
 > Without B8's scheduled refresh the cache expires and the device correctly but
 > uselessly answers *unknown* to everything.
