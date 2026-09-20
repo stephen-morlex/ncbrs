@@ -14,5 +14,6 @@
   <Folder Name="/client/">
     <Project Path="client/NCBRS.Client.Core/NCBRS.Client.Core.csproj" />
     <Project Path="client/NCBRS.Client.Core.Tests/NCBRS.Client.Core.Tests.csproj" />
+    <Project Path="client/NCBRS.Client.Harness/NCBRS.Client.Harness.csproj" />
   </Folder>
 </Solution>
