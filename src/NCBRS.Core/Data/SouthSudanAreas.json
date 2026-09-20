@@ -1,30 +1,2616 @@
 {
-  "provenance": "Country, the 10 states, and the 3 administrative areas (Abyei, Greater Pibor, Ruweng) reflect South Sudan's post-2020 administrative structure and are considered reliable. The county lists below are the commonly-documented counties per state but are NOT an authoritative gazette: spellings, codes and completeness MUST be confirmed against the South Sudan National Bureau of Statistics / relevant authority before production use. Payam, Block, Boma, Quarter, Village and Community are deliberately NOT seeded here — they are created as needed, never invented.",
-  "verified": false,
-  "country": { "code": "SS", "name": "South Sudan" },
+  "provenance": "Sourced from the Common Operational Dataset on administrative boundaries (COD-AB) for South Sudan: OCHA / South Sudan National Bureau of Statistics (NBS) / Inter-Cluster Information Management Working Group (ICIWG) / MapAction, 2020 boundaries, obtained via fieldmaps.io (data.fieldmaps.io/cod/originals/ssd.gpkg). Codes are the official p-codes (ADM1 = SSxx, ADM2 = SSxxyy, ADM3 = SSxxyyzz); names are the official ADM_EN spellings. Structure: 1 country, 11 admin-1 units (10 states + Abyei Region), 79 counties, 512 payams. NOTE ON VINTAGE: this operational COD carries Abyei Region as an admin-1 unit and places Pibor as a county within Jonglei; the R-ARCSS 2020 framing of three administrative areas (Abyei, Greater Pibor, Ruweng) is not separately encoded here, and a deployment should reconcile against the current NBS gazette. Boma (admin-4) and finer levels are NOT part of the official COD and are created as they are encountered, never invented.",
+  "verified": true,
+  "source": {
+    "dataset": "COD-AB South Sudan (admin 0-3)",
+    "publisher": "OCHA / NBS / ICIWG / MapAction",
+    "retrievedFrom": "https://data.fieldmaps.io/cod/originals/ssd.gpkg.zip",
+    "retrievedOn": "2026-09-20",
+    "boundaryVintage": "2020"
+  },
+  "country": {
+    "code": "SS",
+    "name": "South Sudan"
+  },
   "states": [
-    { "code": "SS-CE", "name": "Central Equatoria", "administrativeArea": false, "counties": [
-      { "code": "SS-CE-JUB", "name": "Juba" }, { "code": "SS-CE-YEI", "name": "Yei" }, { "code": "SS-CE-TER", "name": "Terekeka" }, { "code": "SS-CE-KAJ", "name": "Kajo-Keji" }, { "code": "SS-CE-LAI", "name": "Lainya" }, { "code": "SS-CE-MOR", "name": "Morobo" } ] },
-    { "code": "SS-EE", "name": "Eastern Equatoria", "administrativeArea": false, "counties": [
-      { "code": "SS-EE-TOR", "name": "Torit" }, { "code": "SS-EE-MAG", "name": "Magwi" }, { "code": "SS-EE-BUD", "name": "Budi" }, { "code": "SS-EE-IKW", "name": "Ikwoto" }, { "code": "SS-EE-LAF", "name": "Lopa/Lafon" }, { "code": "SS-EE-KPE", "name": "Kapoeta East" }, { "code": "SS-EE-KPN", "name": "Kapoeta North" }, { "code": "SS-EE-KPS", "name": "Kapoeta South" } ] },
-    { "code": "SS-WE", "name": "Western Equatoria", "administrativeArea": false, "counties": [
-      { "code": "SS-WE-YAM", "name": "Yambio" }, { "code": "SS-WE-NZA", "name": "Nzara" }, { "code": "SS-WE-EZO", "name": "Ezo" }, { "code": "SS-WE-TAM", "name": "Tambura" }, { "code": "SS-WE-MAR", "name": "Maridi" }, { "code": "SS-WE-MDE", "name": "Mundri East" }, { "code": "SS-WE-MDW", "name": "Mundri West" }, { "code": "SS-WE-IBB", "name": "Ibba" }, { "code": "SS-WE-MVO", "name": "Mvolo" }, { "code": "SS-WE-NAG", "name": "Nagero" } ] },
-    { "code": "SS-JG", "name": "Jonglei", "administrativeArea": false, "counties": [
-      { "code": "SS-JG-BOR", "name": "Bor South" }, { "code": "SS-JG-TWE", "name": "Twic East" }, { "code": "SS-JG-DUK", "name": "Duk" }, { "code": "SS-JG-AYO", "name": "Ayod" }, { "code": "SS-JG-NYI", "name": "Nyirol" }, { "code": "SS-JG-URO", "name": "Uror" }, { "code": "SS-JG-AKO", "name": "Akobo" }, { "code": "SS-JG-PIG", "name": "Pigi" }, { "code": "SS-JG-FAN", "name": "Fangak" } ] },
-    { "code": "SS-UN", "name": "Unity", "administrativeArea": false, "counties": [
-      { "code": "SS-UN-RUB", "name": "Rubkona" }, { "code": "SS-UN-GUI", "name": "Guit" }, { "code": "SS-UN-KOC", "name": "Koch" }, { "code": "SS-UN-LEE", "name": "Leer" }, { "code": "SS-UN-MYD", "name": "Mayendit" }, { "code": "SS-UN-PAN", "name": "Panyijiar" }, { "code": "SS-UN-MYM", "name": "Mayom" } ] },
-    { "code": "SS-UP", "name": "Upper Nile", "administrativeArea": false, "counties": [
-      { "code": "SS-UP-MAL", "name": "Malakal" }, { "code": "SS-UP-REN", "name": "Renk" }, { "code": "SS-UP-MEL", "name": "Melut" }, { "code": "SS-UP-MAB", "name": "Maban" }, { "code": "SS-UP-BAL", "name": "Baliet" }, { "code": "SS-UP-FAS", "name": "Fashoda" }, { "code": "SS-UP-NAS", "name": "Nasir" }, { "code": "SS-UP-ULA", "name": "Ulang" }, { "code": "SS-UP-MAN", "name": "Manyo" }, { "code": "SS-UP-PKG", "name": "Panyikang" }, { "code": "SS-UP-LON", "name": "Longochuk" }, { "code": "SS-UP-MAI", "name": "Maiwut" } ] },
-    { "code": "SS-WR", "name": "Warrap", "administrativeArea": false, "counties": [
-      { "code": "SS-WR-GGW", "name": "Gogrial West" }, { "code": "SS-WR-GGE", "name": "Gogrial East" }, { "code": "SS-WR-TJN", "name": "Tonj North" }, { "code": "SS-WR-TJS", "name": "Tonj South" }, { "code": "SS-WR-TJE", "name": "Tonj East" }, { "code": "SS-WR-TWI", "name": "Twic" } ] },
-    { "code": "SS-NB", "name": "Northern Bahr el Ghazal", "administrativeArea": false, "counties": [
-      { "code": "SS-NB-AWC", "name": "Aweil Centre" }, { "code": "SS-NB-AWE", "name": "Aweil East" }, { "code": "SS-NB-AWN", "name": "Aweil North" }, { "code": "SS-NB-AWS", "name": "Aweil South" }, { "code": "SS-NB-AWW", "name": "Aweil West" } ] },
-    { "code": "SS-WB", "name": "Western Bahr el Ghazal", "administrativeArea": false, "counties": [
-      { "code": "SS-WB-WAU", "name": "Wau" }, { "code": "SS-WB-JUR", "name": "Jur River" }, { "code": "SS-WB-RAJ", "name": "Raja" } ] },
-    { "code": "SS-LK", "name": "Lakes", "administrativeArea": false, "counties": [
-      { "code": "SS-LK-RBC", "name": "Rumbek Centre" }, { "code": "SS-LK-RBE", "name": "Rumbek East" }, { "code": "SS-LK-RBN", "name": "Rumbek North" }, { "code": "SS-LK-CUE", "name": "Cueibet" }, { "code": "SS-LK-WUL", "name": "Wulu" }, { "code": "SS-LK-YRE", "name": "Yirol East" }, { "code": "SS-LK-YRW", "name": "Yirol West" }, { "code": "SS-LK-AWE", "name": "Awerial" } ] },
-    { "code": "SS-AB", "name": "Abyei", "administrativeArea": true, "counties": [] },
-    { "code": "SS-GP", "name": "Greater Pibor", "administrativeArea": true, "counties": [] },
-    { "code": "SS-RW", "name": "Ruweng", "administrativeArea": true, "counties": [] }
+    {
+      "code": "SS00",
+      "name": "Abyei Region",
+      "administrativeArea": true,
+      "counties": [
+        {
+          "code": "SS0001",
+          "name": "Abyei Region",
+          "payams": [
+            {
+              "code": "SS000101",
+              "name": "Abyei Region"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "SS01",
+      "name": "Central Equatoria",
+      "administrativeArea": false,
+      "counties": [
+        {
+          "code": "SS0101",
+          "name": "Juba",
+          "payams": [
+            {
+              "code": "SS010101",
+              "name": "Bungu"
+            },
+            {
+              "code": "SS010102",
+              "name": "Dolo"
+            },
+            {
+              "code": "SS010103",
+              "name": "Ganji"
+            },
+            {
+              "code": "SS010104",
+              "name": "Gondokoro"
+            },
+            {
+              "code": "SS010105",
+              "name": "Juba Town"
+            },
+            {
+              "code": "SS010106",
+              "name": "Kator"
+            },
+            {
+              "code": "SS010107",
+              "name": "Lirya"
+            },
+            {
+              "code": "SS010108",
+              "name": "Lokiliri"
+            },
+            {
+              "code": "SS010109",
+              "name": "Lobonok"
+            },
+            {
+              "code": "SS010110",
+              "name": "Mangala South"
+            },
+            {
+              "code": "SS010111",
+              "name": "Munuki"
+            },
+            {
+              "code": "SS010112",
+              "name": "Northern Bari"
+            },
+            {
+              "code": "SS010113",
+              "name": "Rejaf"
+            },
+            {
+              "code": "SS010114",
+              "name": "Rokon"
+            },
+            {
+              "code": "SS010115",
+              "name": "Tijor"
+            },
+            {
+              "code": "SS010116",
+              "name": "Wonduruba"
+            },
+            {
+              "code": "SS010117",
+              "name": "Mangala North"
+            }
+          ]
+        },
+        {
+          "code": "SS0102",
+          "name": "Kajo-keji",
+          "payams": [
+            {
+              "code": "SS010201",
+              "name": "Kangapo I"
+            },
+            {
+              "code": "SS010202",
+              "name": "Kangapo II"
+            },
+            {
+              "code": "SS010203",
+              "name": "Lire"
+            },
+            {
+              "code": "SS010204",
+              "name": "Liwolo"
+            },
+            {
+              "code": "SS010205",
+              "name": "Nyepo"
+            }
+          ]
+        },
+        {
+          "code": "SS0103",
+          "name": "Lainya",
+          "payams": [
+            {
+              "code": "SS010301",
+              "name": "Kenyi"
+            },
+            {
+              "code": "SS010302",
+              "name": "Kupera"
+            },
+            {
+              "code": "SS010303",
+              "name": "Lainya"
+            },
+            {
+              "code": "SS010304",
+              "name": "Mukaya"
+            },
+            {
+              "code": "SS010305",
+              "name": "Wuji"
+            }
+          ]
+        },
+        {
+          "code": "SS0104",
+          "name": "Morobo",
+          "payams": [
+            {
+              "code": "SS010401",
+              "name": "Gulumbi"
+            },
+            {
+              "code": "SS010402",
+              "name": "Kimba"
+            },
+            {
+              "code": "SS010403",
+              "name": "Lujulo"
+            },
+            {
+              "code": "SS010404",
+              "name": "Panyume"
+            },
+            {
+              "code": "SS010405",
+              "name": "Wudabi"
+            }
+          ]
+        },
+        {
+          "code": "SS0105",
+          "name": "Terekeka",
+          "payams": [
+            {
+              "code": "SS010501",
+              "name": "Gameiza"
+            },
+            {
+              "code": "SS010502",
+              "name": "Muni"
+            },
+            {
+              "code": "SS010503",
+              "name": "Nyori"
+            },
+            {
+              "code": "SS010504",
+              "name": "Reggo"
+            },
+            {
+              "code": "SS010505",
+              "name": "Rijong"
+            },
+            {
+              "code": "SS010506",
+              "name": "Tali"
+            },
+            {
+              "code": "SS010507",
+              "name": "Terekeka"
+            },
+            {
+              "code": "SS010508",
+              "name": "Tindilo"
+            },
+            {
+              "code": "SS010509",
+              "name": "Tombek"
+            }
+          ]
+        },
+        {
+          "code": "SS0106",
+          "name": "Yei",
+          "payams": [
+            {
+              "code": "SS010601",
+              "name": "Lasu"
+            },
+            {
+              "code": "SS010602",
+              "name": "Mugwo"
+            },
+            {
+              "code": "SS010603",
+              "name": "Otogo"
+            },
+            {
+              "code": "SS010604",
+              "name": "Tore"
+            },
+            {
+              "code": "SS010605",
+              "name": "Yei"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "SS02",
+      "name": "Eastern Equatoria",
+      "administrativeArea": false,
+      "counties": [
+        {
+          "code": "SS0201",
+          "name": "Budi",
+          "payams": [
+            {
+              "code": "SS020101",
+              "name": "Kimotong"
+            },
+            {
+              "code": "SS020102",
+              "name": "Komori"
+            },
+            {
+              "code": "SS020103",
+              "name": "Nauro"
+            },
+            {
+              "code": "SS020104",
+              "name": "Loriyok"
+            },
+            {
+              "code": "SS020105",
+              "name": "Lotukei"
+            },
+            {
+              "code": "SS020106",
+              "name": "Loudo"
+            },
+            {
+              "code": "SS020107",
+              "name": "Nagishot"
+            },
+            {
+              "code": "SS020108",
+              "name": "Napak"
+            }
+          ]
+        },
+        {
+          "code": "SS0202",
+          "name": "Ikotos",
+          "payams": [
+            {
+              "code": "SS020201",
+              "name": "Hatire"
+            },
+            {
+              "code": "SS020202",
+              "name": "Ikotos"
+            },
+            {
+              "code": "SS020203",
+              "name": "Imotong"
+            },
+            {
+              "code": "SS020204",
+              "name": "Lomohidang North"
+            },
+            {
+              "code": "SS020205",
+              "name": "Lomohidang South"
+            },
+            {
+              "code": "SS020206",
+              "name": "Losite"
+            }
+          ]
+        },
+        {
+          "code": "SS0203",
+          "name": "Kapoeta East",
+          "payams": [
+            {
+              "code": "SS020301",
+              "name": "Jie"
+            },
+            {
+              "code": "SS020302",
+              "name": "Katodori"
+            },
+            {
+              "code": "SS020303",
+              "name": "Kauto"
+            },
+            {
+              "code": "SS020304",
+              "name": "Lotimor"
+            },
+            {
+              "code": "SS020305",
+              "name": "Mogos"
+            },
+            {
+              "code": "SS020306",
+              "name": "Narus"
+            },
+            {
+              "code": "SS020307",
+              "name": "Natinga"
+            }
+          ]
+        },
+        {
+          "code": "SS0204",
+          "name": "Kapoeta North",
+          "payams": [
+            {
+              "code": "SS020401",
+              "name": "Chumakori"
+            },
+            {
+              "code": "SS020402",
+              "name": "Karukomuge"
+            },
+            {
+              "code": "SS020403",
+              "name": "Lomeyen"
+            },
+            {
+              "code": "SS020404",
+              "name": "Mosingo"
+            },
+            {
+              "code": "SS020405",
+              "name": "Najie"
+            },
+            {
+              "code": "SS020406",
+              "name": "Paringa"
+            }
+          ]
+        },
+        {
+          "code": "SS0205",
+          "name": "Kapoeta South",
+          "payams": [
+            {
+              "code": "SS020501",
+              "name": "Kapoeta Town"
+            },
+            {
+              "code": "SS020502",
+              "name": "Longeleya"
+            },
+            {
+              "code": "SS020503",
+              "name": "Machi One"
+            },
+            {
+              "code": "SS020504",
+              "name": "Machi Two"
+            },
+            {
+              "code": "SS020505",
+              "name": "Pwata"
+            }
+          ]
+        },
+        {
+          "code": "SS0206",
+          "name": "Lafon",
+          "payams": [
+            {
+              "code": "SS020601",
+              "name": "Arihilo"
+            },
+            {
+              "code": "SS020602",
+              "name": "Burgilo"
+            },
+            {
+              "code": "SS020603",
+              "name": "Imehejek"
+            },
+            {
+              "code": "SS020604",
+              "name": "Kurumi"
+            },
+            {
+              "code": "SS020605",
+              "name": "Lohutok"
+            },
+            {
+              "code": "SS020606",
+              "name": "Longiro"
+            },
+            {
+              "code": "SS020607",
+              "name": "Marguna"
+            },
+            {
+              "code": "SS020608",
+              "name": "Pachidi"
+            }
+          ]
+        },
+        {
+          "code": "SS0207",
+          "name": "Magwi",
+          "payams": [
+            {
+              "code": "SS020701",
+              "name": "Lobone"
+            },
+            {
+              "code": "SS020702",
+              "name": "Magwi"
+            },
+            {
+              "code": "SS020703",
+              "name": "Mugali"
+            },
+            {
+              "code": "SS020704",
+              "name": "Nimule"
+            },
+            {
+              "code": "SS020705",
+              "name": "Pageri"
+            },
+            {
+              "code": "SS020706",
+              "name": "Pajok"
+            }
+          ]
+        },
+        {
+          "code": "SS0208",
+          "name": "Torit",
+          "payams": [
+            {
+              "code": "SS020801",
+              "name": "Bur"
+            },
+            {
+              "code": "SS020802",
+              "name": "Hiyala"
+            },
+            {
+              "code": "SS020803",
+              "name": "Himodonge"
+            },
+            {
+              "code": "SS020804",
+              "name": "Ifwotu"
+            },
+            {
+              "code": "SS020805",
+              "name": "Imurok"
+            },
+            {
+              "code": "SS020806",
+              "name": "Kudo"
+            },
+            {
+              "code": "SS020807",
+              "name": "Torit"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "SS03",
+      "name": "Jonglei",
+      "administrativeArea": false,
+      "counties": [
+        {
+          "code": "SS0301",
+          "name": "Akobo",
+          "payams": [
+            {
+              "code": "SS030101",
+              "name": "Alali"
+            },
+            {
+              "code": "SS030102",
+              "name": "Barmach"
+            },
+            {
+              "code": "SS030103",
+              "name": "Bilkey"
+            },
+            {
+              "code": "SS030104",
+              "name": "Buong"
+            },
+            {
+              "code": "SS030105",
+              "name": "Dengjok"
+            },
+            {
+              "code": "SS030106",
+              "name": "Diror"
+            },
+            {
+              "code": "SS030107",
+              "name": "Nyandit"
+            },
+            {
+              "code": "SS030108",
+              "name": "Walgak"
+            }
+          ]
+        },
+        {
+          "code": "SS0302",
+          "name": "Ayod",
+          "payams": [
+            {
+              "code": "SS030201",
+              "name": "Ayod"
+            },
+            {
+              "code": "SS030202",
+              "name": "Kurwai"
+            },
+            {
+              "code": "SS030203",
+              "name": "Kuach-deng"
+            },
+            {
+              "code": "SS030204",
+              "name": "Mogok"
+            },
+            {
+              "code": "SS030205",
+              "name": "Pagil"
+            },
+            {
+              "code": "SS030206",
+              "name": "Pajiek"
+            },
+            {
+              "code": "SS030207",
+              "name": "Wau"
+            }
+          ]
+        },
+        {
+          "code": "SS0303",
+          "name": "Bor South",
+          "payams": [
+            {
+              "code": "SS030301",
+              "name": "Anyidi"
+            },
+            {
+              "code": "SS030302",
+              "name": "Baidit"
+            },
+            {
+              "code": "SS030303",
+              "name": "Bor"
+            },
+            {
+              "code": "SS030304",
+              "name": "Jalle"
+            },
+            {
+              "code": "SS030305",
+              "name": "Kolnyang"
+            },
+            {
+              "code": "SS030306",
+              "name": "Makuach"
+            }
+          ]
+        },
+        {
+          "code": "SS0304",
+          "name": "Canal/Pigi",
+          "payams": [
+            {
+              "code": "SS030401",
+              "name": "Alam"
+            },
+            {
+              "code": "SS030402",
+              "name": "Atar"
+            },
+            {
+              "code": "SS030403",
+              "name": "Belewach"
+            },
+            {
+              "code": "SS030404",
+              "name": "Kaldak"
+            },
+            {
+              "code": "SS030405",
+              "name": "Korwach"
+            },
+            {
+              "code": "SS030406",
+              "name": "Mareng"
+            },
+            {
+              "code": "SS030407",
+              "name": "Nyainthokmalual"
+            },
+            {
+              "code": "SS030408",
+              "name": "Wunlem"
+            }
+          ]
+        },
+        {
+          "code": "SS0305",
+          "name": "Duk",
+          "payams": [
+            {
+              "code": "SS030501",
+              "name": "Ageer"
+            },
+            {
+              "code": "SS030502",
+              "name": "Dongchak"
+            },
+            {
+              "code": "SS030503",
+              "name": "Padiet"
+            },
+            {
+              "code": "SS030504",
+              "name": "Payuel"
+            },
+            {
+              "code": "SS030505",
+              "name": "Pagak"
+            },
+            {
+              "code": "SS030506",
+              "name": "Panyang"
+            }
+          ]
+        },
+        {
+          "code": "SS0306",
+          "name": "Fangak",
+          "payams": [
+            {
+              "code": "SS030601",
+              "name": "Manajang"
+            },
+            {
+              "code": "SS030602",
+              "name": "Mareang"
+            },
+            {
+              "code": "SS030603",
+              "name": "Old Fangak"
+            },
+            {
+              "code": "SS030604",
+              "name": "Paguir"
+            },
+            {
+              "code": "SS030605",
+              "name": "Phom"
+            }
+          ]
+        },
+        {
+          "code": "SS0307",
+          "name": "Nyirol",
+          "payams": [
+            {
+              "code": "SS030701",
+              "name": "Chuil"
+            },
+            {
+              "code": "SS030702",
+              "name": "Nyambor"
+            },
+            {
+              "code": "SS030703",
+              "name": "Pading"
+            },
+            {
+              "code": "SS030704",
+              "name": "Pulturuk"
+            },
+            {
+              "code": "SS030705",
+              "name": "Thol"
+            },
+            {
+              "code": "SS030706",
+              "name": "Waat"
+            }
+          ]
+        },
+        {
+          "code": "SS0308",
+          "name": "Pibor",
+          "payams": [
+            {
+              "code": "SS030801",
+              "name": "Boma"
+            },
+            {
+              "code": "SS030802",
+              "name": "Gumuruk"
+            },
+            {
+              "code": "SS030803",
+              "name": "Kiziongora"
+            },
+            {
+              "code": "SS030804",
+              "name": "Lekuangole"
+            },
+            {
+              "code": "SS030805",
+              "name": "Marow"
+            },
+            {
+              "code": "SS030806",
+              "name": "Mewun"
+            },
+            {
+              "code": "SS030807",
+              "name": "Pibor"
+            },
+            {
+              "code": "SS030808",
+              "name": "Verteth"
+            }
+          ]
+        },
+        {
+          "code": "SS0309",
+          "name": "Pochalla",
+          "payams": [
+            {
+              "code": "SS030901",
+              "name": "Adongo"
+            },
+            {
+              "code": "SS030902",
+              "name": "Akiela"
+            },
+            {
+              "code": "SS030903",
+              "name": "Burator"
+            },
+            {
+              "code": "SS030904",
+              "name": "Omiela"
+            },
+            {
+              "code": "SS030905",
+              "name": "Pochalla"
+            }
+          ]
+        },
+        {
+          "code": "SS0310",
+          "name": "Twic East",
+          "payams": [
+            {
+              "code": "SS031001",
+              "name": "Ajuong"
+            },
+            {
+              "code": "SS031002",
+              "name": "Kongor"
+            },
+            {
+              "code": "SS031003",
+              "name": "Lith"
+            },
+            {
+              "code": "SS031004",
+              "name": "Nyuak"
+            },
+            {
+              "code": "SS031005",
+              "name": "Pakeer"
+            }
+          ]
+        },
+        {
+          "code": "SS0311",
+          "name": "Uror",
+          "payams": [
+            {
+              "code": "SS031101",
+              "name": "Karam"
+            },
+            {
+              "code": "SS031102",
+              "name": "Motot"
+            },
+            {
+              "code": "SS031103",
+              "name": "Pathai"
+            },
+            {
+              "code": "SS031104",
+              "name": "Payai"
+            },
+            {
+              "code": "SS031105",
+              "name": "Pieri"
+            },
+            {
+              "code": "SS031106",
+              "name": "Puolchuol"
+            },
+            {
+              "code": "SS031107",
+              "name": "Tiam"
+            },
+            {
+              "code": "SS031108",
+              "name": "Uror"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "SS04",
+      "name": "Lakes",
+      "administrativeArea": false,
+      "counties": [
+        {
+          "code": "SS0401",
+          "name": "Awerial",
+          "payams": [
+            {
+              "code": "SS040101",
+              "name": "Abuyong"
+            },
+            {
+              "code": "SS040102",
+              "name": "Alel II"
+            },
+            {
+              "code": "SS040103",
+              "name": "Bun-agok"
+            },
+            {
+              "code": "SS040104",
+              "name": "Dor"
+            },
+            {
+              "code": "SS040105",
+              "name": "Magok"
+            },
+            {
+              "code": "SS040106",
+              "name": "Nile"
+            },
+            {
+              "code": "SS040107",
+              "name": "Puluk"
+            },
+            {
+              "code": "SS040108",
+              "name": "Alel I"
+            }
+          ]
+        },
+        {
+          "code": "SS0402",
+          "name": "Cueibet",
+          "payams": [
+            {
+              "code": "SS040201",
+              "name": "Abiriu"
+            },
+            {
+              "code": "SS040202",
+              "name": "Citcok"
+            },
+            {
+              "code": "SS040203",
+              "name": "Duony"
+            },
+            {
+              "code": "SS040204",
+              "name": "Malou Pec"
+            },
+            {
+              "code": "SS040205",
+              "name": "Ngap"
+            },
+            {
+              "code": "SS040206",
+              "name": "Pagor"
+            },
+            {
+              "code": "SS040207",
+              "name": "Ngap 1"
+            }
+          ]
+        },
+        {
+          "code": "SS0403",
+          "name": "Rumbek Centre",
+          "payams": [
+            {
+              "code": "SS040301",
+              "name": "Amongpiny"
+            },
+            {
+              "code": "SS040302",
+              "name": "Jiir"
+            },
+            {
+              "code": "SS040303",
+              "name": "Malek 2"
+            },
+            {
+              "code": "SS040304",
+              "name": "Matangai"
+            },
+            {
+              "code": "SS040305",
+              "name": "Mayom"
+            }
+          ]
+        },
+        {
+          "code": "SS0404",
+          "name": "Rumbek East",
+          "payams": [
+            {
+              "code": "SS040401",
+              "name": "Aduel"
+            },
+            {
+              "code": "SS040402",
+              "name": "Akot"
+            },
+            {
+              "code": "SS040403",
+              "name": "Atiaba"
+            },
+            {
+              "code": "SS040404",
+              "name": "Cueicok"
+            },
+            {
+              "code": "SS040405",
+              "name": "Maleng-agok"
+            },
+            {
+              "code": "SS040406",
+              "name": "Pacong"
+            },
+            {
+              "code": "SS040407",
+              "name": "Paloc"
+            }
+          ]
+        },
+        {
+          "code": "SS0405",
+          "name": "Rumbek North",
+          "payams": [
+            {
+              "code": "SS040501",
+              "name": "Aloor"
+            },
+            {
+              "code": "SS040502",
+              "name": "Madol"
+            },
+            {
+              "code": "SS040503",
+              "name": "Malueeth"
+            },
+            {
+              "code": "SS040504",
+              "name": "Maper"
+            },
+            {
+              "code": "SS040505",
+              "name": "Mayen"
+            },
+            {
+              "code": "SS040506",
+              "name": "Wun-rieng"
+            }
+          ]
+        },
+        {
+          "code": "SS0406",
+          "name": "Wulu",
+          "payams": [
+            {
+              "code": "SS040601",
+              "name": "Bargel"
+            },
+            {
+              "code": "SS040602",
+              "name": "Domoloto"
+            },
+            {
+              "code": "SS040603",
+              "name": "Makundi"
+            },
+            {
+              "code": "SS040604",
+              "name": "Wulu"
+            }
+          ]
+        },
+        {
+          "code": "SS0407",
+          "name": "Yirol East",
+          "payams": [
+            {
+              "code": "SS040701",
+              "name": "Adior"
+            },
+            {
+              "code": "SS040702",
+              "name": "Lekakedu"
+            },
+            {
+              "code": "SS040703",
+              "name": "Malek"
+            },
+            {
+              "code": "SS040704",
+              "name": "Pagarau"
+            },
+            {
+              "code": "SS040705",
+              "name": "Tinagau"
+            },
+            {
+              "code": "SS040706",
+              "name": "Yali"
+            }
+          ]
+        },
+        {
+          "code": "SS0408",
+          "name": "Yirol West",
+          "payams": [
+            {
+              "code": "SS040801",
+              "name": "Abang"
+            },
+            {
+              "code": "SS040802",
+              "name": "Aluakluak"
+            },
+            {
+              "code": "SS040803",
+              "name": "Anuol"
+            },
+            {
+              "code": "SS040804",
+              "name": "Geng-geng"
+            },
+            {
+              "code": "SS040805",
+              "name": "Gher"
+            },
+            {
+              "code": "SS040806",
+              "name": "Mapuordit"
+            },
+            {
+              "code": "SS040807",
+              "name": "Yirol"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "SS05",
+      "name": "Northern Bahr el Ghazal",
+      "administrativeArea": false,
+      "counties": [
+        {
+          "code": "SS0501",
+          "name": "Aweil Centre",
+          "payams": [
+            {
+              "code": "SS050101",
+              "name": "Abul"
+            },
+            {
+              "code": "SS050102",
+              "name": "Achana"
+            },
+            {
+              "code": "SS050103",
+              "name": "Aroyo"
+            },
+            {
+              "code": "SS050104",
+              "name": "Awiil"
+            },
+            {
+              "code": "SS050105",
+              "name": "Bahr Mayen"
+            },
+            {
+              "code": "SS050106",
+              "name": "Chel South"
+            },
+            {
+              "code": "SS050107",
+              "name": "Nyalath"
+            }
+          ]
+        },
+        {
+          "code": "SS0502",
+          "name": "Aweil East",
+          "payams": [
+            {
+              "code": "SS050201",
+              "name": "Baach"
+            },
+            {
+              "code": "SS050202",
+              "name": "Madhol"
+            },
+            {
+              "code": "SS050203",
+              "name": "Malual-bai"
+            },
+            {
+              "code": "SS050204",
+              "name": "Mangar-tong I"
+            },
+            {
+              "code": "SS050205",
+              "name": "Mangok"
+            },
+            {
+              "code": "SS050206",
+              "name": "Wunlang"
+            },
+            {
+              "code": "SS050207",
+              "name": "Yargot"
+            },
+            {
+              "code": "SS050208",
+              "name": "Mayom-wel"
+            }
+          ]
+        },
+        {
+          "code": "SS0503",
+          "name": "Aweil North",
+          "payams": [
+            {
+              "code": "SS050301",
+              "name": "Ariath"
+            },
+            {
+              "code": "SS050302",
+              "name": "Malual Centre"
+            },
+            {
+              "code": "SS050303",
+              "name": "Malual East"
+            },
+            {
+              "code": "SS050304",
+              "name": "Malual North"
+            },
+            {
+              "code": "SS050305",
+              "name": "Malual West"
+            }
+          ]
+        },
+        {
+          "code": "SS0504",
+          "name": "Aweil South",
+          "payams": [
+            {
+              "code": "SS050401",
+              "name": "Ayai"
+            },
+            {
+              "code": "SS050402",
+              "name": "Gakrol"
+            },
+            {
+              "code": "SS050403",
+              "name": "Nyieth"
+            },
+            {
+              "code": "SS050404",
+              "name": "Nyocawany I"
+            },
+            {
+              "code": "SS050405",
+              "name": "Nyocawany II"
+            },
+            {
+              "code": "SS050406",
+              "name": "Panthou"
+            },
+            {
+              "code": "SS050407",
+              "name": "Tar-weng"
+            },
+            {
+              "code": "SS050408",
+              "name": "Tiar-aleit"
+            },
+            {
+              "code": "SS050409",
+              "name": "Wathmuok"
+            }
+          ]
+        },
+        {
+          "code": "SS0505",
+          "name": "Aweil West",
+          "payams": [
+            {
+              "code": "SS050501",
+              "name": "Achana 2"
+            },
+            {
+              "code": "SS050502",
+              "name": "Aweil Town"
+            },
+            {
+              "code": "SS050503",
+              "name": "Ayat Centre"
+            },
+            {
+              "code": "SS050504",
+              "name": "Ayat East"
+            },
+            {
+              "code": "SS050505",
+              "name": "Ayat West"
+            },
+            {
+              "code": "SS050506",
+              "name": "Gomjuer Centre"
+            },
+            {
+              "code": "SS050507",
+              "name": "Gomjuer East"
+            },
+            {
+              "code": "SS050508",
+              "name": "Gomjuer West"
+            },
+            {
+              "code": "SS050509",
+              "name": "Mariem East"
+            },
+            {
+              "code": "SS050510",
+              "name": "Mariem West"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "SS06",
+      "name": "Unity",
+      "administrativeArea": false,
+      "counties": [
+        {
+          "code": "SS0601",
+          "name": "Abiemnhom",
+          "payams": [
+            {
+              "code": "SS060101",
+              "name": "Abiemnhom"
+            },
+            {
+              "code": "SS060102",
+              "name": "Aworpiny"
+            },
+            {
+              "code": "SS060103",
+              "name": "Manjonga"
+            },
+            {
+              "code": "SS060104",
+              "name": "Panyang 2"
+            }
+          ]
+        },
+        {
+          "code": "SS0602",
+          "name": "Guit",
+          "payams": [
+            {
+              "code": "SS060201",
+              "name": "Guit"
+            },
+            {
+              "code": "SS060202",
+              "name": "Kedad"
+            },
+            {
+              "code": "SS060203",
+              "name": "Kuach"
+            },
+            {
+              "code": "SS060204",
+              "name": "Kuerguini"
+            },
+            {
+              "code": "SS060205",
+              "name": "Niemni"
+            },
+            {
+              "code": "SS060206",
+              "name": "Nyathoar"
+            },
+            {
+              "code": "SS060207",
+              "name": "Wathnyona"
+            }
+          ]
+        },
+        {
+          "code": "SS0603",
+          "name": "Koch",
+          "payams": [
+            {
+              "code": "SS060301",
+              "name": "Boaw"
+            },
+            {
+              "code": "SS060302",
+              "name": "Gany"
+            },
+            {
+              "code": "SS060303",
+              "name": "Jaak"
+            },
+            {
+              "code": "SS060304",
+              "name": "Kuachlual"
+            },
+            {
+              "code": "SS060305",
+              "name": "Ngony"
+            },
+            {
+              "code": "SS060306",
+              "name": "Norbor"
+            },
+            {
+              "code": "SS060307",
+              "name": "Pakur"
+            }
+          ]
+        },
+        {
+          "code": "SS0604",
+          "name": "Leer",
+          "payams": [
+            {
+              "code": "SS060401",
+              "name": "Padeah"
+            },
+            {
+              "code": "SS060402",
+              "name": "Adok"
+            },
+            {
+              "code": "SS060403",
+              "name": "Bou"
+            },
+            {
+              "code": "SS060404",
+              "name": "Guat"
+            },
+            {
+              "code": "SS060405",
+              "name": "Juong Kang"
+            },
+            {
+              "code": "SS060406",
+              "name": "Leer"
+            },
+            {
+              "code": "SS060407",
+              "name": "Pilieny"
+            },
+            {
+              "code": "SS060408",
+              "name": "Yang"
+            }
+          ]
+        },
+        {
+          "code": "SS0605",
+          "name": "Mayendit",
+          "payams": [
+            {
+              "code": "SS060501",
+              "name": "Pabuong"
+            },
+            {
+              "code": "SS060502",
+              "name": "Bor 2"
+            },
+            {
+              "code": "SS060503",
+              "name": "Dablual"
+            },
+            {
+              "code": "SS060504",
+              "name": "Luom"
+            },
+            {
+              "code": "SS060505",
+              "name": "Maal"
+            },
+            {
+              "code": "SS060506",
+              "name": "Rubkuay"
+            },
+            {
+              "code": "SS060507",
+              "name": "Thaker"
+            },
+            {
+              "code": "SS060508",
+              "name": "Tharjiath"
+            },
+            {
+              "code": "SS060509",
+              "name": "Tutnyang"
+            }
+          ]
+        },
+        {
+          "code": "SS0606",
+          "name": "Mayom",
+          "payams": [
+            {
+              "code": "SS060601",
+              "name": "Bieh"
+            },
+            {
+              "code": "SS060602",
+              "name": "Kuerbuone"
+            },
+            {
+              "code": "SS060603",
+              "name": "Kueryiek"
+            },
+            {
+              "code": "SS060604",
+              "name": "Mankien"
+            },
+            {
+              "code": "SS060605",
+              "name": "Ngop 2"
+            },
+            {
+              "code": "SS060606",
+              "name": "Pup"
+            },
+            {
+              "code": "SS060607",
+              "name": "Riak"
+            },
+            {
+              "code": "SS060608",
+              "name": "Ruathnyibuol"
+            },
+            {
+              "code": "SS060609",
+              "name": "Wangbuor II"
+            },
+            {
+              "code": "SS060610",
+              "name": "Wangbuor I"
+            },
+            {
+              "code": "SS060611",
+              "name": "Wangbuor III"
+            },
+            {
+              "code": "SS060612",
+              "name": "Wangkei"
+            }
+          ]
+        },
+        {
+          "code": "SS0607",
+          "name": "Panyijiar",
+          "payams": [
+            {
+              "code": "SS060701",
+              "name": "Ganyliel"
+            },
+            {
+              "code": "SS060702",
+              "name": "Kol"
+            },
+            {
+              "code": "SS060703",
+              "name": "Mayom 2"
+            },
+            {
+              "code": "SS060704",
+              "name": "Nyal"
+            },
+            {
+              "code": "SS060705",
+              "name": "Pachak"
+            },
+            {
+              "code": "SS060706",
+              "name": "Pachaar"
+            },
+            {
+              "code": "SS060707",
+              "name": "Pachienjok"
+            },
+            {
+              "code": "SS060708",
+              "name": "Panyijiar"
+            },
+            {
+              "code": "SS060709",
+              "name": "Thoarnhoum"
+            },
+            {
+              "code": "SS060710",
+              "name": "Tiap"
+            }
+          ]
+        },
+        {
+          "code": "SS0608",
+          "name": "Pariang",
+          "payams": [
+            {
+              "code": "SS060801",
+              "name": "Aliiny"
+            },
+            {
+              "code": "SS060802",
+              "name": "Biu"
+            },
+            {
+              "code": "SS060803",
+              "name": "Jamjang"
+            },
+            {
+              "code": "SS060804",
+              "name": "Nyeel"
+            },
+            {
+              "code": "SS060805",
+              "name": "Pariang"
+            },
+            {
+              "code": "SS060806",
+              "name": "Werthen"
+            },
+            {
+              "code": "SS060807",
+              "name": "Wunkur"
+            }
+          ]
+        },
+        {
+          "code": "SS0609",
+          "name": "Rubkona",
+          "payams": [
+            {
+              "code": "SS060901",
+              "name": "Bentiu Town"
+            },
+            {
+              "code": "SS060902",
+              "name": "Budaang"
+            },
+            {
+              "code": "SS060903",
+              "name": "Dhorbor"
+            },
+            {
+              "code": "SS060904",
+              "name": "Kaljak"
+            },
+            {
+              "code": "SS060905",
+              "name": "Ngop"
+            },
+            {
+              "code": "SS060906",
+              "name": "Nhialdiu"
+            },
+            {
+              "code": "SS060907",
+              "name": "Panhiany"
+            },
+            {
+              "code": "SS060908",
+              "name": "Rubkotne"
+            },
+            {
+              "code": "SS060909",
+              "name": "Wathjaak"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "SS07",
+      "name": "Upper Nile",
+      "administrativeArea": false,
+      "counties": [
+        {
+          "code": "SS0701",
+          "name": "Baliet",
+          "payams": [
+            {
+              "code": "SS070101",
+              "name": "Abwong"
+            },
+            {
+              "code": "SS070102",
+              "name": "Adong"
+            },
+            {
+              "code": "SS070103",
+              "name": "Akoka"
+            },
+            {
+              "code": "SS070104",
+              "name": "Akotweng"
+            },
+            {
+              "code": "SS070105",
+              "name": "Gel Achiel"
+            },
+            {
+              "code": "SS070106",
+              "name": "Nyongkuach"
+            },
+            {
+              "code": "SS070107",
+              "name": "Nyongrial"
+            },
+            {
+              "code": "SS070108",
+              "name": "Rom"
+            },
+            {
+              "code": "SS070109",
+              "name": "Wunthow"
+            }
+          ]
+        },
+        {
+          "code": "SS0702",
+          "name": "Fashoda",
+          "payams": [
+            {
+              "code": "SS070201",
+              "name": "Dethok"
+            },
+            {
+              "code": "SS070202",
+              "name": "Kodok"
+            },
+            {
+              "code": "SS070203",
+              "name": "Kodok Town"
+            },
+            {
+              "code": "SS070204",
+              "name": "Lul"
+            }
+          ]
+        },
+        {
+          "code": "SS0703",
+          "name": "Longochuk",
+          "payams": [
+            {
+              "code": "SS070301",
+              "name": "Dajo"
+            },
+            {
+              "code": "SS070302",
+              "name": "Guelguk"
+            },
+            {
+              "code": "SS070303",
+              "name": "Longochuk"
+            },
+            {
+              "code": "SS070304",
+              "name": "Malual"
+            },
+            {
+              "code": "SS070305",
+              "name": "Pamach"
+            },
+            {
+              "code": "SS070306",
+              "name": "Wudier"
+            }
+          ]
+        },
+        {
+          "code": "SS0704",
+          "name": "Luakpiny/Nasir",
+          "payams": [
+            {
+              "code": "SS070401",
+              "name": "Dingkar"
+            },
+            {
+              "code": "SS070402",
+              "name": "Jikmir"
+            },
+            {
+              "code": "SS070403",
+              "name": "Kiech Kuon"
+            },
+            {
+              "code": "SS070404",
+              "name": "Kuerenge-Ke"
+            },
+            {
+              "code": "SS070405",
+              "name": "Mading"
+            },
+            {
+              "code": "SS070406",
+              "name": "Maker"
+            },
+            {
+              "code": "SS070407",
+              "name": "Nasir"
+            },
+            {
+              "code": "SS070408",
+              "name": "Roam"
+            }
+          ]
+        },
+        {
+          "code": "SS0705",
+          "name": "Maban",
+          "payams": [
+            {
+              "code": "SS070501",
+              "name": "Banashowa"
+            },
+            {
+              "code": "SS070502",
+              "name": "Boung"
+            },
+            {
+              "code": "SS070503",
+              "name": "Jinkuata"
+            },
+            {
+              "code": "SS070504",
+              "name": "Jinmakda"
+            },
+            {
+              "code": "SS070505",
+              "name": "Khor El Amer"
+            }
+          ]
+        },
+        {
+          "code": "SS0706",
+          "name": "Maiwut",
+          "payams": [
+            {
+              "code": "SS070601",
+              "name": "Jekow"
+            },
+            {
+              "code": "SS070602",
+              "name": "Jotoma"
+            },
+            {
+              "code": "SS070603",
+              "name": "Kigila"
+            },
+            {
+              "code": "SS070604",
+              "name": "Maiwut"
+            },
+            {
+              "code": "SS070605",
+              "name": "Olang"
+            }
+          ]
+        },
+        {
+          "code": "SS0707",
+          "name": "Malakal",
+          "payams": [
+            {
+              "code": "SS070701",
+              "name": "Lelo"
+            },
+            {
+              "code": "SS070702",
+              "name": "Central Malakal"
+            },
+            {
+              "code": "SS070703",
+              "name": "Eastern Malakal"
+            },
+            {
+              "code": "SS070704",
+              "name": "Northern Malakal"
+            },
+            {
+              "code": "SS070705",
+              "name": "Southern Malakal"
+            },
+            {
+              "code": "SS070706",
+              "name": "Ogot"
+            }
+          ]
+        },
+        {
+          "code": "SS0708",
+          "name": "Manyo",
+          "payams": [
+            {
+              "code": "SS070801",
+              "name": "Adhidwoi"
+            },
+            {
+              "code": "SS070802",
+              "name": "Kaka"
+            },
+            {
+              "code": "SS070803",
+              "name": "Magenist"
+            },
+            {
+              "code": "SS070804",
+              "name": "Wedakona"
+            }
+          ]
+        },
+        {
+          "code": "SS0709",
+          "name": "Melut",
+          "payams": [
+            {
+              "code": "SS070901",
+              "name": "Bimachuk"
+            },
+            {
+              "code": "SS070902",
+              "name": "Galdora"
+            },
+            {
+              "code": "SS070903",
+              "name": "Melut"
+            },
+            {
+              "code": "SS070904",
+              "name": "Panomdit"
+            },
+            {
+              "code": "SS070905",
+              "name": "Paloch"
+            },
+            {
+              "code": "SS070906",
+              "name": "Wunamum"
+            }
+          ]
+        },
+        {
+          "code": "SS0710",
+          "name": "Panyikang",
+          "payams": [
+            {
+              "code": "SS071001",
+              "name": "Dheteim"
+            },
+            {
+              "code": "SS071002",
+              "name": "Kuel"
+            },
+            {
+              "code": "SS071003",
+              "name": "Pakang"
+            },
+            {
+              "code": "SS071004",
+              "name": "Panyidwoi"
+            },
+            {
+              "code": "SS071005",
+              "name": "Panyikang"
+            },
+            {
+              "code": "SS071006",
+              "name": "Tonga"
+            },
+            {
+              "code": "SS071007",
+              "name": "Anakdiar"
+            }
+          ]
+        },
+        {
+          "code": "SS0711",
+          "name": "Renk",
+          "payams": [
+            {
+              "code": "SS071101",
+              "name": "Geger"
+            },
+            {
+              "code": "SS071102",
+              "name": "Jalhak"
+            },
+            {
+              "code": "SS071103",
+              "name": "North Renk"
+            },
+            {
+              "code": "SS071104",
+              "name": "Chemmedi"
+            },
+            {
+              "code": "SS071105",
+              "name": "South Renk"
+            }
+          ]
+        },
+        {
+          "code": "SS0712",
+          "name": "Ulang",
+          "payams": [
+            {
+              "code": "SS071201",
+              "name": "Doma"
+            },
+            {
+              "code": "SS071202",
+              "name": "Kurmuot"
+            },
+            {
+              "code": "SS071203",
+              "name": "Ulang"
+            },
+            {
+              "code": "SS071204",
+              "name": "Yomding"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "SS08",
+      "name": "Warrap",
+      "administrativeArea": false,
+      "counties": [
+        {
+          "code": "SS0801",
+          "name": "Gogrial East",
+          "payams": [
+            {
+              "code": "SS080101",
+              "name": "Nyang"
+            },
+            {
+              "code": "SS080102",
+              "name": "Pathuon East"
+            },
+            {
+              "code": "SS080103",
+              "name": "Pathuon West"
+            },
+            {
+              "code": "SS080104",
+              "name": "Toch East"
+            },
+            {
+              "code": "SS080105",
+              "name": "Toch North"
+            },
+            {
+              "code": "SS080106",
+              "name": "Toch West"
+            }
+          ]
+        },
+        {
+          "code": "SS0802",
+          "name": "Gogrial West",
+          "payams": [
+            {
+              "code": "SS080201",
+              "name": "Akon South"
+            },
+            {
+              "code": "SS080202",
+              "name": "Akon North"
+            },
+            {
+              "code": "SS080203",
+              "name": "Alek North"
+            },
+            {
+              "code": "SS080204",
+              "name": "Alek South"
+            },
+            {
+              "code": "SS080205",
+              "name": "Alek West"
+            },
+            {
+              "code": "SS080206",
+              "name": "Gogrial"
+            },
+            {
+              "code": "SS080207",
+              "name": "Kuac North"
+            },
+            {
+              "code": "SS080208",
+              "name": "Kuac South"
+            },
+            {
+              "code": "SS080209",
+              "name": "Riau"
+            }
+          ]
+        },
+        {
+          "code": "SS0803",
+          "name": "Tonj East",
+          "payams": [
+            {
+              "code": "SS080301",
+              "name": "Ananatak"
+            },
+            {
+              "code": "SS080302",
+              "name": "Makuac"
+            },
+            {
+              "code": "SS080303",
+              "name": "Malualcum"
+            },
+            {
+              "code": "SS080304",
+              "name": "Maparah"
+            },
+            {
+              "code": "SS080305",
+              "name": "Mayen 2"
+            },
+            {
+              "code": "SS080306",
+              "name": "Pagor 2"
+            },
+            {
+              "code": "SS080307",
+              "name": "Palal"
+            },
+            {
+              "code": "SS080308",
+              "name": "Paliang"
+            },
+            {
+              "code": "SS080309",
+              "name": "Pannhial"
+            },
+            {
+              "code": "SS080310",
+              "name": "Paweng"
+            },
+            {
+              "code": "SS080311",
+              "name": "Wun-liit"
+            }
+          ]
+        },
+        {
+          "code": "SS0804",
+          "name": "Tonj North",
+          "payams": [
+            {
+              "code": "SS080401",
+              "name": "Akop"
+            },
+            {
+              "code": "SS080402",
+              "name": "Alabek"
+            },
+            {
+              "code": "SS080403",
+              "name": "Aliek"
+            },
+            {
+              "code": "SS080404",
+              "name": "Awuul"
+            },
+            {
+              "code": "SS080405",
+              "name": "Kirik"
+            },
+            {
+              "code": "SS080406",
+              "name": "Manloor"
+            },
+            {
+              "code": "SS080407",
+              "name": "Marial-lou"
+            },
+            {
+              "code": "SS080408",
+              "name": "Pagol"
+            },
+            {
+              "code": "SS080409",
+              "name": "Rual-bet"
+            },
+            {
+              "code": "SS080410",
+              "name": "Warrap"
+            }
+          ]
+        },
+        {
+          "code": "SS0805",
+          "name": "Tonj South",
+          "payams": [
+            {
+              "code": "SS080501",
+              "name": "Jak"
+            },
+            {
+              "code": "SS080502",
+              "name": "Manyang-ngok"
+            },
+            {
+              "code": "SS080503",
+              "name": "Thiet"
+            },
+            {
+              "code": "SS080504",
+              "name": "Tonj"
+            },
+            {
+              "code": "SS080505",
+              "name": "Wath-alel"
+            }
+          ]
+        },
+        {
+          "code": "SS0806",
+          "name": "Twic",
+          "payams": [
+            {
+              "code": "SS080601",
+              "name": "Ajak-kuac"
+            },
+            {
+              "code": "SS080602",
+              "name": "Akoc"
+            },
+            {
+              "code": "SS080603",
+              "name": "Aweeng"
+            },
+            {
+              "code": "SS080604",
+              "name": "Pannyok"
+            },
+            {
+              "code": "SS080605",
+              "name": "Turalei"
+            },
+            {
+              "code": "SS080606",
+              "name": "Wunrok"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "SS09",
+      "name": "Western Bahr el Ghazal",
+      "administrativeArea": false,
+      "counties": [
+        {
+          "code": "SS0901",
+          "name": "Jur River",
+          "payams": [
+            {
+              "code": "SS090101",
+              "name": "Kangi"
+            },
+            {
+              "code": "SS090103",
+              "name": "Kuajiena"
+            },
+            {
+              "code": "SS090104",
+              "name": "Marial Bai"
+            },
+            {
+              "code": "SS090105",
+              "name": "Rocrocdong"
+            },
+            {
+              "code": "SS090106",
+              "name": "Udici"
+            },
+            {
+              "code": "SS090107",
+              "name": "Wau Bai"
+            }
+          ]
+        },
+        {
+          "code": "SS0902",
+          "name": "Raja",
+          "payams": [
+            {
+              "code": "SS090201",
+              "name": "Ere"
+            },
+            {
+              "code": "SS090202",
+              "name": "Raga"
+            },
+            {
+              "code": "SS090203",
+              "name": "Ringi"
+            },
+            {
+              "code": "SS090204",
+              "name": "Uyujuku"
+            }
+          ]
+        },
+        {
+          "code": "SS0903",
+          "name": "Wau",
+          "payams": [
+            {
+              "code": "SS090301",
+              "name": "Bagari"
+            },
+            {
+              "code": "SS090302",
+              "name": "Besselia"
+            },
+            {
+              "code": "SS090303",
+              "name": "Kpaile"
+            },
+            {
+              "code": "SS090304",
+              "name": "Wau North"
+            },
+            {
+              "code": "SS090305",
+              "name": "Wau South"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "SS10",
+      "name": "Western Equatoria",
+      "administrativeArea": false,
+      "counties": [
+        {
+          "code": "SS1001",
+          "name": "Ezo",
+          "payams": [
+            {
+              "code": "SS100101",
+              "name": "Andari"
+            },
+            {
+              "code": "SS100102",
+              "name": "Bagidi"
+            },
+            {
+              "code": "SS100103",
+              "name": "Bariguna"
+            },
+            {
+              "code": "SS100104",
+              "name": "Ezo Centre"
+            },
+            {
+              "code": "SS100105",
+              "name": "Naandi"
+            },
+            {
+              "code": "SS100106",
+              "name": "Yangiri"
+            }
+          ]
+        },
+        {
+          "code": "SS1002",
+          "name": "Ibba",
+          "payams": [
+            {
+              "code": "SS100201",
+              "name": "Ibba Centre"
+            },
+            {
+              "code": "SS100202",
+              "name": "Madebe"
+            },
+            {
+              "code": "SS100203",
+              "name": "Manikakara"
+            },
+            {
+              "code": "SS100204",
+              "name": "Maruko"
+            },
+            {
+              "code": "SS100205",
+              "name": "Nabanga"
+            }
+          ]
+        },
+        {
+          "code": "SS1003",
+          "name": "Maridi",
+          "payams": [
+            {
+              "code": "SS100301",
+              "name": "Kozi"
+            },
+            {
+              "code": "SS100302",
+              "name": "Landili"
+            },
+            {
+              "code": "SS100303",
+              "name": "Mambe"
+            },
+            {
+              "code": "SS100304",
+              "name": "Maridi"
+            },
+            {
+              "code": "SS100305",
+              "name": "Ngamunde"
+            }
+          ]
+        },
+        {
+          "code": "SS1004",
+          "name": "Mundri East",
+          "payams": [
+            {
+              "code": "SS100401",
+              "name": "Kediba"
+            },
+            {
+              "code": "SS100402",
+              "name": "Lakamadi"
+            },
+            {
+              "code": "SS100403",
+              "name": "Lozoh"
+            },
+            {
+              "code": "SS100404",
+              "name": "Minga"
+            },
+            {
+              "code": "SS100405",
+              "name": "Witto"
+            }
+          ]
+        },
+        {
+          "code": "SS1005",
+          "name": "Mundri West",
+          "payams": [
+            {
+              "code": "SS100501",
+              "name": "Amadi"
+            },
+            {
+              "code": "SS100502",
+              "name": "Bangolo"
+            },
+            {
+              "code": "SS100503",
+              "name": "Kotobi"
+            },
+            {
+              "code": "SS100504",
+              "name": "Mundri"
+            }
+          ]
+        },
+        {
+          "code": "SS1006",
+          "name": "Mvolo",
+          "payams": [
+            {
+              "code": "SS100601",
+              "name": "Bahr El Grindi"
+            },
+            {
+              "code": "SS100602",
+              "name": "Bagori"
+            },
+            {
+              "code": "SS100603",
+              "name": "Dari"
+            },
+            {
+              "code": "SS100604",
+              "name": "Kokori"
+            },
+            {
+              "code": "SS100605",
+              "name": "Lessi"
+            },
+            {
+              "code": "SS100606",
+              "name": "Mvolo"
+            },
+            {
+              "code": "SS100607",
+              "name": "Yeri"
+            }
+          ]
+        },
+        {
+          "code": "SS1007",
+          "name": "Nagero",
+          "payams": [
+            {
+              "code": "SS100701",
+              "name": "Nagero"
+            },
+            {
+              "code": "SS100702",
+              "name": "Namutina"
+            }
+          ]
+        },
+        {
+          "code": "SS1008",
+          "name": "Nzara",
+          "payams": [
+            {
+              "code": "SS100801",
+              "name": "Basukangbi"
+            },
+            {
+              "code": "SS100802",
+              "name": "Nzara Centre"
+            },
+            {
+              "code": "SS100803",
+              "name": "Ringasi"
+            },
+            {
+              "code": "SS100804",
+              "name": "Sakure"
+            },
+            {
+              "code": "SS100805",
+              "name": "Sangua"
+            }
+          ]
+        },
+        {
+          "code": "SS1009",
+          "name": "Tambura",
+          "payams": [
+            {
+              "code": "SS100901",
+              "name": "Mupoi"
+            },
+            {
+              "code": "SS100903",
+              "name": "Source Yubu"
+            },
+            {
+              "code": "SS100904",
+              "name": "Tambura"
+            }
+          ]
+        },
+        {
+          "code": "SS1010",
+          "name": "Yambio",
+          "payams": [
+            {
+              "code": "SS101001",
+              "name": "Bangasu"
+            },
+            {
+              "code": "SS101002",
+              "name": "Gangura"
+            },
+            {
+              "code": "SS101003",
+              "name": "Nadiangere"
+            },
+            {
+              "code": "SS101004",
+              "name": "Ri-rangu"
+            },
+            {
+              "code": "SS101005",
+              "name": "Yambio Town"
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

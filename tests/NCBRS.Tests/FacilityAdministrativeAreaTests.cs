@@ -28,7 +28,7 @@ public class FacilityAdministrativeAreaTests : IDisposable
         db.Database.EnsureCreated();
         await AdministrativeAreaSeeder.SeedAsync(db);
 
-        var juba = await db.AdministrativeAreas.FirstAsync(a => a.Code == "SS-CE-JUB");
+        var juba = await db.AdministrativeAreas.FirstAsync(a => a.Code == "SS0101");
         db.Facilities.Add(new Facility
         {
             Name = "A clinic in Juba",
@@ -44,11 +44,11 @@ public class FacilityAdministrativeAreaTests : IDisposable
             .FirstAsync(f => f.Name == "A clinic in Juba");
 
         Assert.Equal(AdministrativeLevel.County, loaded.AdministrativeArea!.Level);
-        Assert.Equal("SS-CE", AdministrativeLevels.AncestorOfLevel(loaded.AdministrativeArea!, AdministrativeLevel.State)!.Code);
+        Assert.Equal("SS01", AdministrativeLevels.AncestorOfLevel(loaded.AdministrativeArea!, AdministrativeLevel.State)!.Code);
     }
 
     [Fact]
-    public async Task TheDevelopmentReseedPlacesSouthSudanFacilitiesInSeededCounties()
+    public async Task TheDevelopmentReseedPlacesTheFleetInPayamsWithTheCountyAsDistrict()
     {
         await using var db = NewDb();
         db.Database.EnsureCreated();
@@ -56,16 +56,20 @@ public class FacilityAdministrativeAreaTests : IDisposable
 
         await DevelopmentDataSeeder.SeedAsync(db);
 
-        var facilities = await db.Facilities.Include(f => f.AdministrativeArea).ToListAsync();
-        Assert.Equal(2, facilities.Count);
+        var facilities = await db.Facilities
+            .Include(f => f.AdministrativeArea!).ThenInclude(a => a.Parent!)
+            .ToListAsync();
+        Assert.Equal(8, facilities.Count);
 
-        // Every dev facility is linked to an area, and its transitional
-        // DistrictId carries that area's county code — no placeholder strings.
+        // Every fleet facility sits at a payam, and its transitional DistrictId
+        // carries the county p-code — the level scoping resolves up to.
         Assert.All(facilities, f =>
         {
             Assert.NotNull(f.AdministrativeAreaId);
-            Assert.Equal(f.AdministrativeArea!.Code, f.DistrictId);
-            Assert.StartsWith("SS-", f.DistrictId);
+            Assert.Equal(AdministrativeLevel.Payam, f.AdministrativeArea!.Level);
+            var county = AdministrativeLevels.AncestorOfLevel(f.AdministrativeArea!, AdministrativeLevel.County);
+            Assert.NotNull(county);
+            Assert.Equal(county!.Code, f.DistrictId);
         });
     }
 
