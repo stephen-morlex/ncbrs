@@ -22,6 +22,12 @@
     <ProjectReference Include="..\NCBRS.Contracts\NCBRS.Contracts.csproj" />
   </ItemGroup>
 
+  <!-- The South Sudan administrative geography, embedded so the seeder finds
+       it in the assembly regardless of the host's working directory. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Data/SouthSudanAreas.json" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />

@@ -1,0 +1,30 @@
+{
+  "provenance": "Country, the 10 states, and the 3 administrative areas (Abyei, Greater Pibor, Ruweng) reflect South Sudan's post-2020 administrative structure and are considered reliable. The county lists below are the commonly-documented counties per state but are NOT an authoritative gazette: spellings, codes and completeness MUST be confirmed against the South Sudan National Bureau of Statistics / relevant authority before production use. Payam, Block, Boma, Quarter, Village and Community are deliberately NOT seeded here — they are created as needed, never invented.",
+  "verified": false,
+  "country": { "code": "SS", "name": "South Sudan" },
+  "states": [
+    { "code": "SS-CE", "name": "Central Equatoria", "administrativeArea": false, "counties": [
+      { "code": "SS-CE-JUB", "name": "Juba" }, { "code": "SS-CE-YEI", "name": "Yei" }, { "code": "SS-CE-TER", "name": "Terekeka" }, { "code": "SS-CE-KAJ", "name": "Kajo-Keji" }, { "code": "SS-CE-LAI", "name": "Lainya" }, { "code": "SS-CE-MOR", "name": "Morobo" } ] },
+    { "code": "SS-EE", "name": "Eastern Equatoria", "administrativeArea": false, "counties": [
+      { "code": "SS-EE-TOR", "name": "Torit" }, { "code": "SS-EE-MAG", "name": "Magwi" }, { "code": "SS-EE-BUD", "name": "Budi" }, { "code": "SS-EE-IKW", "name": "Ikwoto" }, { "code": "SS-EE-LAF", "name": "Lopa/Lafon" }, { "code": "SS-EE-KPE", "name": "Kapoeta East" }, { "code": "SS-EE-KPN", "name": "Kapoeta North" }, { "code": "SS-EE-KPS", "name": "Kapoeta South" } ] },
+    { "code": "SS-WE", "name": "Western Equatoria", "administrativeArea": false, "counties": [
+      { "code": "SS-WE-YAM", "name": "Yambio" }, { "code": "SS-WE-NZA", "name": "Nzara" }, { "code": "SS-WE-EZO", "name": "Ezo" }, { "code": "SS-WE-TAM", "name": "Tambura" }, { "code": "SS-WE-MAR", "name": "Maridi" }, { "code": "SS-WE-MDE", "name": "Mundri East" }, { "code": "SS-WE-MDW", "name": "Mundri West" }, { "code": "SS-WE-IBB", "name": "Ibba" }, { "code": "SS-WE-MVO", "name": "Mvolo" }, { "code": "SS-WE-NAG", "name": "Nagero" } ] },
+    { "code": "SS-JG", "name": "Jonglei", "administrativeArea": false, "counties": [
+      { "code": "SS-JG-BOR", "name": "Bor South" }, { "code": "SS-JG-TWE", "name": "Twic East" }, { "code": "SS-JG-DUK", "name": "Duk" }, { "code": "SS-JG-AYO", "name": "Ayod" }, { "code": "SS-JG-NYI", "name": "Nyirol" }, { "code": "SS-JG-URO", "name": "Uror" }, { "code": "SS-JG-AKO", "name": "Akobo" }, { "code": "SS-JG-PIG", "name": "Pigi" }, { "code": "SS-JG-FAN", "name": "Fangak" } ] },
+    { "code": "SS-UN", "name": "Unity", "administrativeArea": false, "counties": [
+      { "code": "SS-UN-RUB", "name": "Rubkona" }, { "code": "SS-UN-GUI", "name": "Guit" }, { "code": "SS-UN-KOC", "name": "Koch" }, { "code": "SS-UN-LEE", "name": "Leer" }, { "code": "SS-UN-MYD", "name": "Mayendit" }, { "code": "SS-UN-PAN", "name": "Panyijiar" }, { "code": "SS-UN-MYM", "name": "Mayom" } ] },
+    { "code": "SS-UP", "name": "Upper Nile", "administrativeArea": false, "counties": [
+      { "code": "SS-UP-MAL", "name": "Malakal" }, { "code": "SS-UP-REN", "name": "Renk" }, { "code": "SS-UP-MEL", "name": "Melut" }, { "code": "SS-UP-MAB", "name": "Maban" }, { "code": "SS-UP-BAL", "name": "Baliet" }, { "code": "SS-UP-FAS", "name": "Fashoda" }, { "code": "SS-UP-NAS", "name": "Nasir" }, { "code": "SS-UP-ULA", "name": "Ulang" }, { "code": "SS-UP-MAN", "name": "Manyo" }, { "code": "SS-UP-PKG", "name": "Panyikang" }, { "code": "SS-UP-LON", "name": "Longochuk" }, { "code": "SS-UP-MAI", "name": "Maiwut" } ] },
+    { "code": "SS-WR", "name": "Warrap", "administrativeArea": false, "counties": [
+      { "code": "SS-WR-GGW", "name": "Gogrial West" }, { "code": "SS-WR-GGE", "name": "Gogrial East" }, { "code": "SS-WR-TJN", "name": "Tonj North" }, { "code": "SS-WR-TJS", "name": "Tonj South" }, { "code": "SS-WR-TJE", "name": "Tonj East" }, { "code": "SS-WR-TWI", "name": "Twic" } ] },
+    { "code": "SS-NB", "name": "Northern Bahr el Ghazal", "administrativeArea": false, "counties": [
+      { "code": "SS-NB-AWC", "name": "Aweil Centre" }, { "code": "SS-NB-AWE", "name": "Aweil East" }, { "code": "SS-NB-AWN", "name": "Aweil North" }, { "code": "SS-NB-AWS", "name": "Aweil South" }, { "code": "SS-NB-AWW", "name": "Aweil West" } ] },
+    { "code": "SS-WB", "name": "Western Bahr el Ghazal", "administrativeArea": false, "counties": [
+      { "code": "SS-WB-WAU", "name": "Wau" }, { "code": "SS-WB-JUR", "name": "Jur River" }, { "code": "SS-WB-RAJ", "name": "Raja" } ] },
+    { "code": "SS-LK", "name": "Lakes", "administrativeArea": false, "counties": [
+      { "code": "SS-LK-RBC", "name": "Rumbek Centre" }, { "code": "SS-LK-RBE", "name": "Rumbek East" }, { "code": "SS-LK-RBN", "name": "Rumbek North" }, { "code": "SS-LK-CUE", "name": "Cueibet" }, { "code": "SS-LK-WUL", "name": "Wulu" }, { "code": "SS-LK-YRE", "name": "Yirol East" }, { "code": "SS-LK-YRW", "name": "Yirol West" }, { "code": "SS-LK-AWE", "name": "Awerial" } ] },
+    { "code": "SS-AB", "name": "Abyei", "administrativeArea": true, "counties": [] },
+    { "code": "SS-GP", "name": "Greater Pibor", "administrativeArea": true, "counties": [] },
+    { "code": "SS-RW", "name": "Ruweng", "administrativeArea": true, "counties": [] }
+  ]
+}
