@@ -506,13 +506,18 @@ nobody contemporaneous is left to contradict a claim made years later.
 
 ## Not yet done (natural next steps)
 Summary only — `NCBRS-Business-and-Delivery-Plan.md` §12 is the full list.
-The largest gap by far is the Tier-1 facility/village client (WS-B), which
-does not exist at all and is the programme's critical path.
-- **(WS-B8)** Offline verification exists as a library (`NCBRS.Certificates`,
-  `GET /api/certificates/offline-bundle`) but nothing calls it on a schedule.
-  The facility device app is not in this repo; when it is written it must
-  refetch the bundle whenever it has connectivity, alongside its BRN block,
-  or its cache expires and it starts answering Unknown.
+The Tier-1 facility/village client (WS-B) is the programme's critical path.
+Its **offline-first core now exists and is tested** in `client/` — BRN block
+allocation, the local outbox and sync-batch settlement, offline certificate
+verification, PIN unlock and device-key signing, composed by `FacilityClient`
+and exercised by `client/NCBRS.Client.Harness`. What remains is the **MAUI
+shell** (scaffolded at `client/NCBRS.Client.App`): the guided form (B4, needs
+field research), the encrypted store (B2) and QR printing (B7) — all needing a
+device-tooling environment the central-tier CI does not have.
+- **(WS-B8)** Offline verification lives in `NCBRS.Contracts` and the client
+  wraps it (`CachedVerificationBundle`, which signals when a refresh is due).
+  The scheduled refetch each connectivity window is the shell's to wire —
+  without it the cache expires and the device answers Unknown to everything.
 
 ## Reporting projection (WS-A5, draft 6.4.1, built)
 `NCBRS.Consumer` builds a read model from the event stream. Delivery is
