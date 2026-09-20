@@ -57,6 +57,10 @@ const AuditTrail = lazy(() =>
   import('@/audit/AuditTrail').then((module) => ({ default: module.AuditTrail })),
 )
 
+const AdministrativeAreas = lazy(() =>
+  import('@/admin/AdministrativeAreas').then((module) => ({ default: module.AdministrativeAreas })),
+)
+
 const AmendmentsReview = lazy(() =>
   import('@/review/AmendmentsReview').then((module) => ({ default: module.AmendmentsReview })),
 )
@@ -179,6 +183,10 @@ export default function App() {
           }
         />
         <Route path="/facilities" element={<Facilities />} />
+
+        {/* Signed-in is enough: the administrative geography is reference data
+            naming no person, the same lists a location picker draws on. */}
+        <Route path="/admin/areas" element={<AdministrativeAreas />} />
 
         {/* Signed-in is enough: verifying a presented certificate is not an
             oversight act, and the endpoint behind it is anonymous by design. */}

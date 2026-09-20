@@ -10,6 +10,7 @@ import {
   Hospital,
   Hourglass,
   ListX,
+  MapPinned,
   ScrollText,
   Search,
   ShieldCheck,
@@ -105,6 +106,10 @@ export const navigation: NavGroup[] = [
       // running low on numbers, because they are the one who will be handing
       // out provisional slips when it runs out.
       { label: 'Facilities', to: '/facilities', icon: Hospital, policy: null },
+      // Not gated: the geography is reference data naming no person, and a
+      // registrar recording a facility's location needs the same lists an
+      // oversight officer browsing the tree does.
+      { label: 'Administrative areas', to: '/admin/areas', icon: MapPinned, policy: null },
       // Listing who is provisioned is an oversight act — the same role that
       // enrols devices — so it names that policy, matching the list endpoint.
       {
