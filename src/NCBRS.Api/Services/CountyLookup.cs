@@ -10,12 +10,10 @@ namespace NCBRS.Services;
 /// to its county ancestor. It is what audit rows and the reporting projection
 /// snapshot: a stable, human-meaningful county code rather than a surrogate id.
 ///
-/// Named <c>CountyLookup</c> for continuity while the legacy
-/// <see cref="Facility.DistrictId"/> string is retired across the codebase; the
-/// callers are unchanged, only what they receive is now a county code. During
-/// the transition a facility may not be linked to an area yet, or may sit at a
-/// level with no county ancestor — then the legacy <c>DistrictId</c> is the
-/// fallback, so no act goes unstamped.
+/// The walk almost always reaches a county. A facility not linked to an area,
+/// or sitting at a level with no county ancestor, falls back to its flat
+/// <see cref="Facility.CountyCode"/> (the same key SQL scope filters use), so
+/// no act goes unstamped.
 ///
 /// Scoped and memoised: a single request writes several audit rows against the
 /// same facility — a registration writes three — and resolving once per row
@@ -39,12 +37,12 @@ public class CountyLookup(NcbrsDbContext db)
 
         var facility = await db.Facilities
             .Where(f => f.FacilityId == facilityId)
-            .Select(f => new { f.DistrictId, f.AdministrativeAreaId })
+            .Select(f => new { f.CountyCode, f.AdministrativeAreaId })
             .FirstOrDefaultAsync(cancellationToken);
 
         var resolved = facility is null
             ? AuditLog.Unknown
-            : await ResolveCountyAsync(facility.AdministrativeAreaId, facility.DistrictId, cancellationToken);
+            : await ResolveCountyAsync(facility.AdministrativeAreaId, facility.CountyCode, cancellationToken);
 
         _byFacility[facilityId] = resolved;
         return resolved;
@@ -72,12 +70,12 @@ public class CountyLookup(NcbrsDbContext db)
 
         var facility = await db.BirthRecords
             .Where(record => record.Brn == brn || record.ProvisionalIdentifier == brn)
-            .Select(record => new { record.Facility!.DistrictId, record.Facility!.AdministrativeAreaId })
+            .Select(record => new { record.Facility!.CountyCode, record.Facility!.AdministrativeAreaId })
             .FirstOrDefaultAsync(cancellationToken);
 
         var resolved = facility is null
             ? AuditLog.Unknown
-            : await ResolveCountyAsync(facility.AdministrativeAreaId, facility.DistrictId, cancellationToken);
+            : await ResolveCountyAsync(facility.AdministrativeAreaId, facility.CountyCode, cancellationToken);
 
         _byBrn[brn] = resolved;
         return resolved;
@@ -89,14 +87,15 @@ public class CountyLookup(NcbrsDbContext db)
 
     /// <summary>
     /// The county code for an area, walking up its parent chain. Falls back to
-    /// the facility's legacy district string when there is no area yet or no
-    /// county ancestor, so a transitional facility is still stamped rather than
-    /// recorded as unknown.
+    /// the facility's flat <see cref="Facility.CountyCode"/> when there is no
+    /// area linked or no county ancestor, so a facility is always stamped —
+    /// the two are kept consistent, and the flat key is what SQL scope filters
+    /// use in any case.
     /// </summary>
     private async ValueTask<string> ResolveCountyAsync(
-        Guid? areaId, string? fallbackDistrict, CancellationToken cancellationToken)
+        Guid? areaId, string? fallbackCounty, CancellationToken cancellationToken)
     {
-        var fallback = string.IsNullOrWhiteSpace(fallbackDistrict) ? AuditLog.Unknown : fallbackDistrict;
+        var fallback = string.IsNullOrWhiteSpace(fallbackCounty) ? AuditLog.Unknown : fallbackCounty;
 
         // Bounded walk: the hierarchy is at most a handful deep, and the guard
         // stops a cycle from a malformed tree turning this into a hang.

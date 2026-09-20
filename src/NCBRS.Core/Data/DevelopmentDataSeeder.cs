@@ -79,7 +79,7 @@ public static class DevelopmentDataSeeder
                 Name = member.Name,
                 Tier = member.Tier,
                 ConnectivityProfile = member.Connectivity,
-                DistrictId = member.CountyCode,
+                CountyCode = member.CountyCode,
                 AdministrativeAreaId = payams[member.PayamCode],
                 BrnBlockStart = member.BlockStart,
                 BrnBlockEnd = member.BlockStart + 99_999,

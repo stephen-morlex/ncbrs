@@ -142,7 +142,7 @@ public class OutcomeService(
                 days,
                 DateTime.UtcNow,
                 transactionId),
-            record.Facility?.DistrictId ?? string.Empty);
+            record.Facility?.CountyCode ?? string.Empty);
 
         await db.SaveChangesAsync(cancellationToken);
 
@@ -221,7 +221,7 @@ public class OutcomeService(
                 days,
                 DateTime.UtcNow,
                 transactionId),
-            record.Facility?.DistrictId ?? string.Empty);
+            record.Facility?.CountyCode ?? string.Empty);
 
         await db.SaveChangesAsync(cancellationToken);
 

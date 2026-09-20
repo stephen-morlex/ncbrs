@@ -20,7 +20,7 @@ public class BrnReconcilerTests
         {
             FacilityId = Guid.Parse("0199a1b2-0001-7000-8000-000000000001"),
             Name = "Terekeka Village Health Post",
-            DistrictId = "SS-CE-TER",
+            CountyCode = "SS-CE-TER",
             BrnBlockStart = start,
             BrnBlockNextAvailable = next,
             BrnBlockEnd = end
@@ -109,7 +109,7 @@ public class BrnConfirmationTests : IDisposable
         {
             FacilityId = FacilityId,
             Name = "Terekeka Village Health Post",
-            DistrictId = "SS-CE-TER",
+            CountyCode = "SS-CE-TER",
             BrnBlockStart = 100_000,
             BrnBlockNextAvailable = 100_200,
             BrnBlockEnd = 199_999

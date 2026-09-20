@@ -46,7 +46,7 @@ public class DeviceCaptureTimeTests : IDisposable
         {
             FacilityId = FacilityId,
             Name = "Terekeka Village Health Post",
-            DistrictId = "SS-CE-TER",
+            CountyCode = "SS-CE-TER",
             BrnBlockStart = 100_000,
             BrnBlockEnd = 199_999,
             BrnBlockNextAvailable = 100_000

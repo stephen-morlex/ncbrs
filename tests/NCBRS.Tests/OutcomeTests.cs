@@ -36,8 +36,8 @@ public class OutcomeTests : IDisposable
         using var db = new NcbrsDbContext(_options);
 
         db.Facilities.AddRange(
-            new Facility { FacilityId = FacilityId, Name = "Terekeka", DistrictId = "SS-CE-TER" },
-            new Facility { FacilityId = OtherFacilityId, Name = "Juba", DistrictId = "SS-CE-JUB" });
+            new Facility { FacilityId = FacilityId, Name = "Terekeka", CountyCode = "SS-CE-TER" },
+            new Facility { FacilityId = OtherFacilityId, Name = "Juba", CountyCode = "SS-CE-JUB" });
 
         db.Registrars.Add(new Registrar
         {

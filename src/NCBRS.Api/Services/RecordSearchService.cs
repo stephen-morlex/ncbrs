@@ -71,7 +71,7 @@ public class RecordSearchService(NcbrsDbContext db, TimeProvider clock)
         if (scope.DistrictId is { } districtId)
         {
             query = query.Where(record =>
-                record.Facility != null && record.Facility.DistrictId == districtId);
+                record.Facility != null && record.Facility.CountyCode == districtId);
         }
 
         if (!string.IsNullOrWhiteSpace(criteria.Name))
@@ -161,7 +161,7 @@ public class RecordSearchService(NcbrsDbContext db, TimeProvider clock)
         record.Sex,
         record.Status,
         record.Facility?.Name ?? string.Empty,
-        record.Facility?.DistrictId ?? string.Empty,
+        record.Facility?.CountyCode ?? string.Empty,
         record.ProvisionalIdentifier);
 
     /// <summary>

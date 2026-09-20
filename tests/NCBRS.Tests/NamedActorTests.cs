@@ -46,7 +46,7 @@ public class NamedActorTests : IDisposable
         {
             FacilityId = FacilityId,
             Name = "Terekeka Village Health Post",
-            DistrictId = District,
+            CountyCode = District,
             ConnectivityProfile = ConnectivityProfile.OfflineFirst,
         });
 

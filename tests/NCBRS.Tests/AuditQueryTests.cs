@@ -50,8 +50,8 @@ public class AuditQueryTests : IDisposable
         db.Database.EnsureCreated();
 
         db.Facilities.AddRange(
-            new Facility { FacilityId = TerekekaFacilityId, Name = "Terekeka Village Health Post", DistrictId = TerekekaDistrict },
-            new Facility { FacilityId = JubaFacilityId, Name = "Juba Central", DistrictId = JubaDistrict });
+            new Facility { FacilityId = TerekekaFacilityId, Name = "Terekeka Village Health Post", CountyCode = TerekekaDistrict },
+            new Facility { FacilityId = JubaFacilityId, Name = "Juba Central", CountyCode = JubaDistrict });
 
         db.Registrars.AddRange(
             new Registrar { RegistrarId = NurseId, FacilityId = TerekekaFacilityId, ExternalSubjectId = AuthTestContext.DefaultSubject, DisplayName = "Nurse A. Lado" },

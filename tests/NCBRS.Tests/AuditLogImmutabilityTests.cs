@@ -199,7 +199,7 @@ public class AuditLogImmutabilityTests : IDisposable
         {
             FacilityId = Guid.CreateVersion7(),
             Name = "Terekeka Village Health Post",
-            DistrictId = "SS-CE-TER",
+            CountyCode = "SS-CE-TER",
             BrnBlockStart = 100_000,
             BrnBlockEnd = 199_999,
             BrnBlockNextAvailable = 100_000
@@ -231,7 +231,7 @@ public class AuditLogImmutabilityTests : IDisposable
         {
             FacilityId = Guid.CreateVersion7(),
             Name = "Juba Central Hospital",
-            DistrictId = "SS-CE-JUB",
+            CountyCode = "SS-CE-JUB",
             BrnBlockStart = 200_000,
             BrnBlockEnd = 299_999,
             BrnBlockNextAvailable = 200_000

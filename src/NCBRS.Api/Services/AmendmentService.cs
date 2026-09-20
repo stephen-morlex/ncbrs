@@ -704,7 +704,7 @@ public class AmendmentService(
                 certificateInvalidated,
                 at,
                 transactionId),
-            record.Facility?.DistrictId ?? string.Empty);
+            record.Facility?.CountyCode ?? string.Empty);
 
     /// <summary>
     /// A certificate signs the child's name, date of birth and sex. Once any

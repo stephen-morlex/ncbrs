@@ -153,7 +153,7 @@ public class AnnulmentService(
                 certificateRevoked,
                 annulledAt,
                 transactionId),
-            record.Facility?.DistrictId ?? string.Empty);
+            record.Facility?.CountyCode ?? string.Empty);
 
         await db.SaveChangesAsync(cancellationToken);
 

@@ -193,8 +193,8 @@ public class DuplicateDetectionServiceTests : IDisposable
         using var db = new NcbrsDbContext(_options);
 
         db.Facilities.AddRange(
-            new Facility { FacilityId = VillagePost, Name = "Terekeka Village Post", DistrictId = "SS-CE-TER" },
-            new Facility { FacilityId = Hospital, Name = "Juba Central", DistrictId = "SS-CE-JUB" });
+            new Facility { FacilityId = VillagePost, Name = "Terekeka Village Post", CountyCode = "SS-CE-TER" },
+            new Facility { FacilityId = Hospital, Name = "Juba Central", CountyCode = "SS-CE-JUB" });
 
         db.Registrars.Add(new Registrar
         {

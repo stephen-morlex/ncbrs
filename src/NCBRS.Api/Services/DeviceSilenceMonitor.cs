@@ -122,7 +122,7 @@ public class DeviceSilenceMonitor(
             {
                 DeviceId = device.DeviceId,
                 FacilityId = device.FacilityId,
-                DistrictId = device.Facility?.DistrictId ?? "unknown",
+                DistrictId = device.Facility?.CountyCode ?? "unknown",
                 Kind = silence.Kind,
                 RaisedAtUtc = now,
                 LastSeenAtUtc = device.LastSeenAtUtc,

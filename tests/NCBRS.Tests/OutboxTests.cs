@@ -37,7 +37,7 @@ public class OutboxTests : IDisposable
         {
             FacilityId = FacilityId,
             Name = "Terekeka Village Health Post",
-            DistrictId = District,
+            CountyCode = District,
             BrnBlockStart = 100_000,
             BrnBlockEnd = 199_999,
             BrnBlockNextAvailable = 100_000

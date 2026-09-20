@@ -50,7 +50,7 @@ public class CertificateRevocationTests : IDisposable
 
         db.Facilities.Add(new Facility
         {
-            FacilityId = FacilityId, Name = "Terekeka Village Health Post", DistrictId = "SS-CE-TER"
+            FacilityId = FacilityId, Name = "Terekeka Village Health Post", CountyCode = "SS-CE-TER"
         });
 
         db.Registrars.AddRange(

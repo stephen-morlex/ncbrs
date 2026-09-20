@@ -25,20 +25,21 @@ public class Facility
     public FacilityTier Tier { get; set; }
 
     /// <summary>
-    /// The legacy flat scope key. Being superseded by
-    /// <see cref="AdministrativeAreaId"/>; kept until scoping, reporting and
-    /// audit are all reading the hierarchy instead, so the migration is
-    /// incremental rather than a single breaking cut-over. During the
-    /// transition it carries the facility's county code.
+    /// The facility's county code — the flat, indexed scope-and-reporting key
+    /// (formerly <c>DistrictId</c>). It is a denormalisation of the county the
+    /// hierarchy resolves to: scope filters and reporting group on it in SQL,
+    /// which a variable-depth walk up <see cref="AdministrativeAreaId"/> cannot
+    /// do. It must equal the county <see cref="AdministrativeArea"/> resolves
+    /// to; the two are kept consistent when a facility is placed.
     /// </summary>
-    public required string DistrictId { get; set; }
+    public required string CountyCode { get; set; }
 
     /// <summary>
     /// Where this facility sits in the administrative hierarchy — usually a
-    /// county, payam or boma. Nullable only for the length of the transition
-    /// off <see cref="DistrictId"/>; every facility is expected to have one.
-    /// The county and state a record is scoped and reported under are resolved
-    /// by walking up from here.
+    /// payam or boma. The precise location; the county and state a record is
+    /// scoped and reported under can also be resolved by walking up from here.
+    /// Nullable only for the length of the transition; every facility is
+    /// expected to have one.
     /// </summary>
     public Guid? AdministrativeAreaId { get; set; }
 

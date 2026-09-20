@@ -182,7 +182,7 @@ public class RegistrarsController(
 
         return scope.DistrictId is { } districtId
             ? query.Where(registrar =>
-                registrar.Facility != null && registrar.Facility.DistrictId == districtId)
+                registrar.Facility != null && registrar.Facility.CountyCode == districtId)
             : query;
     }
 
@@ -208,7 +208,7 @@ public class RegistrarsController(
         registrar.Role,
         registrar.FacilityId,
         registrar.Facility?.Name ?? string.Empty,
-        registrar.Facility?.DistrictId ?? string.Empty);
+        registrar.Facility?.CountyCode ?? string.Empty);
 }
 
 public record RegistrarResponse(

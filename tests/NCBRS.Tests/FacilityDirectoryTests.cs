@@ -43,7 +43,7 @@ public class FacilityDirectoryTests : IDisposable
             {
                 FacilityId = PostId,
                 Name = "Terekeka Village Health Post",
-                DistrictId = TerekekaDistrict,
+                CountyCode = TerekekaDistrict,
                 Tier = FacilityTier.VillageHealthPost,
                 ConnectivityProfile = ConnectivityProfile.OfflineFirst,
                 BrnBlockStart = 1, BrnBlockEnd = 1000, BrnBlockNextAvailable = 901,
@@ -53,7 +53,7 @@ public class FacilityDirectoryTests : IDisposable
             {
                 FacilityId = HospitalId,
                 Name = "Terekeka County Hospital",
-                DistrictId = TerekekaDistrict,
+                CountyCode = TerekekaDistrict,
                 Tier = FacilityTier.Hospital,
                 ConnectivityProfile = ConnectivityProfile.AlwaysOn,
                 BrnBlockStart = 1, BrnBlockEnd = 1000, BrnBlockNextAvailable = 901,
@@ -62,7 +62,7 @@ public class FacilityDirectoryTests : IDisposable
             {
                 FacilityId = JubaId,
                 Name = "Juba Central",
-                DistrictId = JubaDistrict,
+                CountyCode = JubaDistrict,
                 Tier = FacilityTier.Hospital,
                 ConnectivityProfile = ConnectivityProfile.AlwaysOn,
                 BrnBlockStart = 1, BrnBlockEnd = 1000, BrnBlockNextAvailable = 500,
