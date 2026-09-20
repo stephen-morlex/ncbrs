@@ -356,6 +356,13 @@ if (app.Environment.IsDevelopment())
     // South Sudan counties. Never runs outside Development (this whole block
     // is Development-only); production provisions these for real.
     await NCBRS.Data.DevelopmentDataSeeder.SeedAsync(db);
+
+    // Development-only demo births, registered through the real registration
+    // service so they stage outbox events the Relay publishes and the Consumer
+    // projects — a living dashboard on a fresh dev database. Idempotent: does
+    // nothing once any birth exists.
+    var registration = scope.ServiceProvider.GetRequiredService<BirthRegistrationService>();
+    await NCBRS.Data.DemoBirthSeeder.SeedAsync(db, registration);
 }
 
 // Before authentication, deliberately. A CORS preflight is an unauthenticated
