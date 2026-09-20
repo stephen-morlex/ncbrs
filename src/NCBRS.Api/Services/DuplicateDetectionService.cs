@@ -31,7 +31,7 @@ public class DuplicateDetectionService(
     DuplicateMatcher matcher,
     CertificateRevocationRecorder revocations,
     ILogger<DuplicateDetectionService> logger,
-    DistrictLookup districts)
+    CountyLookup districts)
 {
     /// <summary>
     /// Compares a newly registered birth against existing records and

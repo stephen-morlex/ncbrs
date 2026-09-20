@@ -124,7 +124,7 @@ public class AnnulmentServiceTests : IDisposable
 
         var outcome = await new AnnulmentService(
                 db, publisher, new CertificateRevocationRecorder(db), current,
-                new DistrictLookup(db))
+                new CountyLookup(db))
             .AnnulAsync(brn, request ?? Request(), admin, Guid.CreateVersion7());
 
         return (outcome, publisher);
@@ -137,7 +137,7 @@ public class AnnulmentServiceTests : IDisposable
         var current = AuthTestContext.RegistrarService(db, http);
         var registrar = db.Registrars.Single(r => r.RegistrarId == RegistrarId);
 
-        var result = await new CertificateService(db, _signer, current, new DistrictLookup(db))
+        var result = await new CertificateService(db, _signer, current, new CountyLookup(db))
             .IssueAsync(Brn, registrar, "TABLET-07", Guid.CreateVersion7());
 
         Assert.True(result.Succeeded);
@@ -315,7 +315,7 @@ public class AnnulmentServiceTests : IDisposable
         var current = AuthTestContext.RegistrarService(db, http);
         var registrar = db.Registrars.Single(r => r.RegistrarId == RegistrarId);
 
-        var result = await new CertificateService(db, _signer, current, new DistrictLookup(db))
+        var result = await new CertificateService(db, _signer, current, new CountyLookup(db))
             .IssueAsync(Brn, registrar, "TABLET-07", Guid.CreateVersion7());
 
         Assert.Equal(CertificateResult.RecordAnnulled, result.Result);
@@ -336,7 +336,7 @@ public class AnnulmentServiceTests : IDisposable
         var current = AuthTestContext.RegistrarService(db, http);
         var registrar = db.Registrars.Single(r => r.RegistrarId == RegistrarId);
 
-        var result = await new CertificateService(db, _signer, current, new DistrictLookup(db))
+        var result = await new CertificateService(db, _signer, current, new CountyLookup(db))
             .ReprintAsync(Brn, registrar, "TABLET-07", Guid.CreateVersion7());
 
         Assert.Equal(CertificateResult.RecordAnnulled, result.Result);
@@ -359,7 +359,7 @@ public class AnnulmentServiceTests : IDisposable
 
         var result = await new AmendmentService(
                 db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db), current,
-                new DistrictLookup(db))
+                new CountyLookup(db))
             .AmendAsync(Brn, new AmendBirthRecordRequest
             {
                 BirthWeightGrams = 3250,
@@ -385,7 +385,7 @@ public class AnnulmentServiceTests : IDisposable
         var current = AuthTestContext.RegistrarService(db, http);
         var registrar = db.Registrars.Single(r => r.RegistrarId == RegistrarId);
 
-        var result = await new OutcomeService(db, new NoOpEventPublisher(), current, new DistrictLookup(db))
+        var result = await new OutcomeService(db, new NoOpEventPublisher(), current, new CountyLookup(db))
             .RecordNeonatalAsync(Brn, new RecordNeonatalOutcomeRequest
             {
                 DeathDateUtc = new DateTime(2026, 9, 20, 0, 0, 0, DateTimeKind.Utc),
@@ -428,7 +428,7 @@ public class AnnulmentServiceTests : IDisposable
         var flagged = await new DuplicateDetectionService(
                 db, new DuplicateMatcher(), new CertificateRevocationRecorder(db),
                 NullLogger<DuplicateDetectionService>.Instance,
-                new DistrictLookup(db))
+                new CountyLookup(db))
             .ScanAsync(twin.BirthRecordId);
 
         Assert.Equal(0, flagged);
@@ -481,7 +481,7 @@ public class AnnulmentServiceTests : IDisposable
                     db, Options.Create(new NCBRS.Kafka.KafkaOptions { BootstrapServers = "unused" })),
                 new CertificateRevocationRecorder(db),
                 current,
-                new DistrictLookup(db))
+                new CountyLookup(db))
             .AnnulAsync(Brn, Request(), admin, Guid.CreateVersion7());
 
         await using var verify = NewDb();

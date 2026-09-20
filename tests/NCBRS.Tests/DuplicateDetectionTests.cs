@@ -218,7 +218,7 @@ public class DuplicateDetectionServiceTests : IDisposable
 
     private static DuplicateDetectionService Service(NcbrsDbContext db)
         => new(db, new DuplicateMatcher(), new CertificateRevocationRecorder(db),
-            NullLogger<DuplicateDetectionService>.Instance, new DistrictLookup(db));
+            NullLogger<DuplicateDetectionService>.Instance, new CountyLookup(db));
 
     private async Task<Guid> AddRecordAsync(
         string brn,

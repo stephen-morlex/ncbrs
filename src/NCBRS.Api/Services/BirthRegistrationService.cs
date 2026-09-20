@@ -70,7 +70,7 @@ public class BirthRegistrationService(
     IEventPublisher eventPublisher,
     CurrentRegistrarService currentRegistrar,
     DuplicateDetectionService duplicates,
-    DistrictLookup districts,
+    CountyLookup districts,
     IOptions<StatutoryRegistrationOptions> statutory)
 {
     private readonly StatutoryRegistrationOptions _statutory = statutory.Value;

@@ -23,7 +23,7 @@ namespace NCBRS.Controllers;
 public class DevicesController(
     NcbrsDbContext db,
     CurrentRegistrarService currentRegistrar,
-    DistrictLookup districts) : ControllerBase
+    CountyLookup districts) : ControllerBase
 {
     /// <summary>
     /// The district's queue of devices that have gone quiet (plan F4).

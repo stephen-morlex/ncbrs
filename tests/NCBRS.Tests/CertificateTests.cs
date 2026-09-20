@@ -200,7 +200,7 @@ public class CertificateServiceTests : IDisposable
         var current = AuthTestContext.RegistrarService(db, http);
         var registrar = db.Registrars.Single(r => r.RegistrarId == RegistrarId);
 
-        return await new CertificateService(db, _signer, current, new DistrictLookup(db))
+        return await new CertificateService(db, _signer, current, new CountyLookup(db))
             .IssueAsync(brn, registrar, "TABLET-07", Guid.CreateVersion7());
     }
 
@@ -211,7 +211,7 @@ public class CertificateServiceTests : IDisposable
         var current = AuthTestContext.RegistrarService(db, http);
         var registrar = db.Registrars.Single(r => r.RegistrarId == RegistrarId);
 
-        return await new CertificateService(db, _signer, current, new DistrictLookup(db))
+        return await new CertificateService(db, _signer, current, new CountyLookup(db))
             .ReprintAsync(brn, registrar, "TABLET-07", Guid.CreateVersion7());
     }
 

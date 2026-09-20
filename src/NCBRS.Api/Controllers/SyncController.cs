@@ -24,7 +24,7 @@ public class SyncController(
     ProvisionalRecordReconciler reconciler,
     DeviceEnrolmentService devices,
     IValidator<RegisterBirthRequest> recordValidator,
-    DistrictLookup districts) : ControllerBase
+    CountyLookup districts) : ControllerBase
 {
     /// <summary>
     /// The body exactly as it arrived, for signature verification.

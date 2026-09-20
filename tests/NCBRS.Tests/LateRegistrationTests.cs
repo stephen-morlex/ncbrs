@@ -90,8 +90,8 @@ public class LateRegistrationTests : IDisposable
         => new(db, new NoOpEventPublisher(), current,
             new DuplicateDetectionService(db, new DuplicateMatcher(),
                 new CertificateRevocationRecorder(db), NullLogger<DuplicateDetectionService>.Instance,
-                new DistrictLookup(db)),
-            new DistrictLookup(db),
+                new CountyLookup(db)),
+            new CountyLookup(db),
             Options.Create(new StatutoryRegistrationOptions { WindowDays = windowDays }));
 
     private static RegisterBirthRequest Request(
@@ -146,7 +146,7 @@ public class LateRegistrationTests : IDisposable
         var current = AuthTestContext.RegistrarService(db, http);
         var reviewer = db.Registrars.Single(r => r.RegistrarId == (reviewerId ?? ReviewerId));
 
-        return await new LateRegistrationService(db, current, new DistrictLookup(db))
+        return await new LateRegistrationService(db, current, new CountyLookup(db))
             .ReviewAsync(lateRegistrationId, approve, "Attestation checked against the TBA register.",
                 reviewer, Guid.CreateVersion7());
     }
@@ -158,7 +158,7 @@ public class LateRegistrationTests : IDisposable
         var current = AuthTestContext.RegistrarService(db, http);
         var registrar = db.Registrars.Single(r => r.RegistrarId == RegistrarId);
 
-        return await new CertificateService(db, _signer, current, new DistrictLookup(db))
+        return await new CertificateService(db, _signer, current, new CountyLookup(db))
             .IssueAsync(brn, registrar, "TABLET-07", Guid.CreateVersion7());
     }
 
@@ -513,7 +513,7 @@ public class LateRegistrationTests : IDisposable
             await using var db = NewDb();
             var http = AuthTestContext.HttpContextFor(ReviewerSubject, NcbrsRoles.DistrictOfficer);
 
-            var page = await new LateRegistrationService(db, AuthTestContext.RegistrarService(db, http), new DistrictLookup(db))
+            var page = await new LateRegistrationService(db, AuthTestContext.RegistrarService(db, http), new CountyLookup(db))
                 .PendingAsync(null, new PageRequest { Limit = 2, After = cursor });
 
             seen.AddRange(page.Items.Select(entry => entry.Brn));
@@ -542,7 +542,7 @@ public class LateRegistrationTests : IDisposable
 
         await using var db = NewDb();
         var http = AuthTestContext.HttpContextFor(ReviewerSubject, NcbrsRoles.DistrictOfficer);
-        var service = new LateRegistrationService(db, AuthTestContext.RegistrarService(db, http), new DistrictLookup(db));
+        var service = new LateRegistrationService(db, AuthTestContext.RegistrarService(db, http), new CountyLookup(db));
 
         var first = await service.PendingAsync(null, new PageRequest { Limit = 2 });
 
@@ -567,7 +567,7 @@ public class LateRegistrationTests : IDisposable
 
         await using var db = NewDb();
         var http = AuthTestContext.HttpContextFor(ReviewerSubject, NcbrsRoles.DistrictOfficer);
-        var queue = await new LateRegistrationService(db, AuthTestContext.RegistrarService(db, http), new DistrictLookup(db))
+        var queue = await new LateRegistrationService(db, AuthTestContext.RegistrarService(db, http), new CountyLookup(db))
             .PendingAsync(null, new PageRequest());
 
         Assert.Equal(2, queue.Total);
@@ -595,7 +595,7 @@ public class LateRegistrationTests : IDisposable
         await using var verify = NewDb();
         var http = AuthTestContext.HttpContextFor(ReviewerSubject, NcbrsRoles.DistrictOfficer);
         var queue = await new LateRegistrationService(verify, AuthTestContext.RegistrarService(verify, http),
-            new DistrictLookup(verify))
+            new CountyLookup(verify))
             .PendingAsync(null, new PageRequest());
 
         Assert.Empty(queue.Items);

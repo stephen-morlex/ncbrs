@@ -21,7 +21,7 @@ public class BirthRecordsController(
     BirthRegistrationService registrations,
     AmendmentService amendments,
     CurrentRegistrarService currentRegistrar,
-    DistrictLookup districts,
+    CountyLookup districts,
     IOptions<StatutoryRegistrationOptions> statutory) : ControllerBase
 {
     /// <summary>

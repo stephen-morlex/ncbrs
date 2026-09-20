@@ -40,7 +40,7 @@ public record ProvisionalReconciliationResult(
 /// certificates for no gain. What must never happen is the record quietly
 /// entering the register as though it had always had a proper number.
 /// </summary>
-public class ProvisionalRecordReconciler(NcbrsDbContext db, DistrictLookup districts)
+public class ProvisionalRecordReconciler(NcbrsDbContext db, CountyLookup districts)
 {
     /// <summary>
     /// Matches the retry count used when granting BRN blocks: the same

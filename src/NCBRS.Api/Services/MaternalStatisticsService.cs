@@ -46,7 +46,7 @@ public record MaternalStatisticsOutcome(
 public class MaternalStatisticsService(
     NcbrsDbContext db,
     CurrentRegistrarService currentRegistrar,
-    DistrictLookup districts)
+    CountyLookup districts)
 {
     /// <summary>WHO's 2016 antenatal care model recommends a minimum of eight contacts.</summary>
     public const int WhoAntenatalMinimumContacts = 8;

@@ -30,7 +30,7 @@ public class RecordSearchController(
     NcbrsDbContext db,
     RecordSearchService search,
     CurrentRegistrarService currentRegistrar,
-    DistrictScopeResolver scopes) : ControllerBase
+    CountyScopeResolver scopes) : ControllerBase
 {
     /// <summary>
     /// Searches within the caller's district, or nationally for the Ministry.

@@ -32,7 +32,7 @@ public record LateRegistrationReviewOutcome(
 public class LateRegistrationService(
     NcbrsDbContext db,
     CurrentRegistrarService currentRegistrar,
-    DistrictLookup districts)
+    CountyLookup districts)
 {
     /// <summary>
     /// The queue a district registrar works from, oldest first.

@@ -46,7 +46,7 @@ public class OutcomeService(
     NcbrsDbContext db,
     IEventPublisher eventPublisher,
     CurrentRegistrarService currentRegistrar,
-    DistrictLookup districts)
+    CountyLookup districts)
 {
     /// <summary>WHO: a neonatal death occurs within 28 completed days of a live birth.</summary>
     public const int NeonatalWindowDays = 28;

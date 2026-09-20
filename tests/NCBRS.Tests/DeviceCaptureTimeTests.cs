@@ -221,8 +221,8 @@ public class DeviceCaptureTimeTests : IDisposable
             db, publisher, current,
             new DuplicateDetectionService(db, new DuplicateMatcher(),
                 new CertificateRevocationRecorder(db), NullLogger<DuplicateDetectionService>.Instance,
-                new DistrictLookup(db)),
-            new DistrictLookup(db),
+                new CountyLookup(db)),
+            new CountyLookup(db),
             Options.Create(new StatutoryRegistrationOptions { WindowDays = WindowDays }));
 
         var result = await registrations.RegisterAsync(
@@ -291,8 +291,8 @@ public class DeviceCaptureTimeTests : IDisposable
             db, new NoOpEventPublisher(), current,
             new DuplicateDetectionService(db, new DuplicateMatcher(),
                 new CertificateRevocationRecorder(db), NullLogger<DuplicateDetectionService>.Instance,
-                new DistrictLookup(db)),
-            new DistrictLookup(db),
+                new CountyLookup(db)),
+            new CountyLookup(db),
             Options.Create(new StatutoryRegistrationOptions { WindowDays = windowDays }));
 
         return await registrations.RegisterAsync(request, registrar, Guid.CreateVersion7());

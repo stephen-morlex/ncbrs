@@ -321,7 +321,7 @@ public class AuditQueryTests : IDisposable
         var controller = new AuditController(
             db,
             AuthTestContext.RegistrarService(db, http),
-            new DistrictScopeResolver(new DistrictLookup(db)),
+            new CountyScopeResolver(new CountyLookup(db)),
             TimeProvider.System)
         {
             ControllerContext = new ControllerContext { HttpContext = http }

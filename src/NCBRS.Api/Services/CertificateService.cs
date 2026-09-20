@@ -60,7 +60,7 @@ public class CertificateService(
     NcbrsDbContext db,
     CertificateSigner signer,
     CurrentRegistrarService currentRegistrar,
-    DistrictLookup districts)
+    CountyLookup districts)
 {
     public const string CanonicalVersion = "v1";
 

@@ -289,7 +289,7 @@ public class RecordDetailTests : IDisposable
         NcbrsDbContext db, HttpContext http, int windowDays = 90)
     {
         var current = AuthTestContext.RegistrarService(db, http);
-        var districts = new DistrictLookup(db);
+        var districts = new CountyLookup(db);
 
         return new BirthRecordsController(
             db,

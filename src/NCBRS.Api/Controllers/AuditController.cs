@@ -34,7 +34,7 @@ namespace NCBRS.Controllers;
 public class AuditController(
     NcbrsDbContext db,
     CurrentRegistrarService currentRegistrar,
-    DistrictScopeResolver scopes,
+    CountyScopeResolver scopes,
     TimeProvider clock) : ControllerBase
 {
     /// <summary>
