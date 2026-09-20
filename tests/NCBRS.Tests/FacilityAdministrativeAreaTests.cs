@@ -34,7 +34,7 @@ public class FacilityAdministrativeAreaTests : IDisposable
             Name = "A clinic in Juba",
             Tier = FacilityTier.Clinic,
             ConnectivityProfile = ConnectivityProfile.Intermittent,
-            DistrictId = juba.Code,
+            CountyCode = juba.Code,
             AdministrativeAreaId = juba.AdministrativeAreaId,
         });
         await db.SaveChangesAsync();
@@ -69,7 +69,7 @@ public class FacilityAdministrativeAreaTests : IDisposable
             Assert.Equal(AdministrativeLevel.Payam, f.AdministrativeArea!.Level);
             var county = AdministrativeLevels.AncestorOfLevel(f.AdministrativeArea!, AdministrativeLevel.County);
             Assert.NotNull(county);
-            Assert.Equal(county!.Code, f.DistrictId);
+            Assert.Equal(county!.Code, f.CountyCode);
         });
     }
 

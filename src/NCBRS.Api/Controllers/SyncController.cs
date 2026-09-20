@@ -194,7 +194,7 @@ public class SyncController(
                 syncBatch.SyncBatchId,
                 batch.DeviceId,
                 batch.FacilityId,
-                facility.DistrictId,
+                facility.CountyCode,
                 registrar.RegistrarId,
                 batch.Records.Count,
                 registered,
@@ -203,7 +203,7 @@ public class SyncController(
                 syncBatch.Status.ToString(),
                 DateTime.UtcNow,
                 transactionId),
-            facility.DistrictId);
+            facility.CountyCode);
 
         await db.SaveChangesAsync(HttpContext.RequestAborted);
 

@@ -38,13 +38,13 @@ public class AuthorizationTests : IDisposable
             {
                 FacilityId = HomeFacility,
                 Name = "Terekeka Village Health Post",
-                DistrictId = "SS-CE-TER"
+                CountyCode = "SS-CE-TER"
             },
             new Facility
             {
                 FacilityId = OtherFacility,
                 Name = "Juba Central Hospital",
-                DistrictId = "SS-CE-JUB"
+                CountyCode = "SS-CE-JUB"
             });
 
         db.Registrars.Add(new Registrar

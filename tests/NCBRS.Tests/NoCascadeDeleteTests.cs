@@ -44,7 +44,7 @@ public class NoCascadeDeleteTests : IDisposable
         {
             FacilityId = FacilityId,
             Name = "Terekeka Village Health Post",
-            DistrictId = "SS-CE-TER",
+            CountyCode = "SS-CE-TER",
         });
 
         db.Registrars.Add(new Registrar

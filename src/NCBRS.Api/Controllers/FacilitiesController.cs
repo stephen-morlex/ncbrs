@@ -172,7 +172,7 @@ public class FacilitiesController(
         var query = db.Facilities.AsNoTracking();
 
         return scope.DistrictId is { } districtId
-            ? query.Where(facility => facility.DistrictId == districtId)
+            ? query.Where(facility => facility.CountyCode == districtId)
             : query;
     }
 
@@ -193,7 +193,7 @@ public class FacilitiesController(
         facility.FacilityId,
         facility.Name,
         facility.Tier,
-        facility.DistrictId,
+        facility.CountyCode,
         facility.ConnectivityProfile,
         facility.BrnBlockStart,
         facility.BrnBlockEnd,

@@ -579,7 +579,7 @@ namespace NCBRS.Migrations.Postgres
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("DistrictId")
+                    b.Property<string>("CountyCode")
                         .IsRequired()
                         .HasColumnType("text");
 

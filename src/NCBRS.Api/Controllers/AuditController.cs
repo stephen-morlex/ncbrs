@@ -122,7 +122,7 @@ public class AuditController(
                     .AnyAsync(record =>
                         (record.Brn == wanted || record.ProvisionalIdentifier == wanted)
                         && record.Facility != null
-                        && record.Facility.DistrictId == district,
+                        && record.Facility.CountyCode == district,
                         HttpContext.RequestAborted);
 
                 if (!visible)
@@ -151,7 +151,7 @@ public class AuditController(
             // someone outside it.
             var actors = db.Registrars
                 .Where(registrar =>
-                    registrar.Facility != null && registrar.Facility.DistrictId == district)
+                    registrar.Facility != null && registrar.Facility.CountyCode == district)
                 .Select(registrar => registrar.RegistrarId);
 
             query = query.Where(entry =>

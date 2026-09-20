@@ -42,7 +42,7 @@ public class BrnBlockAllocationTests
         {
             FacilityId = FacilityId,
             Name = name,
-            DistrictId = "D1",
+            CountyCode = "D1",
             BrnBlockStart = start,
             BrnBlockEnd = end,
             BrnBlockNextAvailable = nextAvailable

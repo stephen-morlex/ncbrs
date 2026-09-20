@@ -49,7 +49,7 @@ public class DeviceSilenceTests : IDisposable
             {
                 FacilityId = PostId,
                 Name = "Terekeka Village Health Post",
-                DistrictId = "SS-CE-TER",
+                CountyCode = "SS-CE-TER",
                 Tier = FacilityTier.VillageHealthPost,
                 ConnectivityProfile = ConnectivityProfile.OfflineFirst,
                 BrnBlockStart = 100_000,
@@ -60,7 +60,7 @@ public class DeviceSilenceTests : IDisposable
             {
                 FacilityId = HospitalId,
                 Name = "Juba Central Hospital",
-                DistrictId = "SS-CE-JUB",
+                CountyCode = "SS-CE-JUB",
                 Tier = FacilityTier.Hospital,
                 ConnectivityProfile = ConnectivityProfile.AlwaysOn,
                 BrnBlockStart = 200_000,

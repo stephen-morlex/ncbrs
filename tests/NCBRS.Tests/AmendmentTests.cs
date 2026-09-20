@@ -54,8 +54,8 @@ public class AmendmentServiceTests : IDisposable
         db.Database.EnsureCreated();
 
         db.Facilities.AddRange(
-            new Facility { FacilityId = FacilityId, Name = "Terekeka Village Health Post", DistrictId = "SS-CE-TER" },
-            new Facility { FacilityId = OtherFacilityId, Name = "Juba Central", DistrictId = "SS-CE-JUB" });
+            new Facility { FacilityId = FacilityId, Name = "Terekeka Village Health Post", CountyCode = "SS-CE-TER" },
+            new Facility { FacilityId = OtherFacilityId, Name = "Juba Central", CountyCode = "SS-CE-JUB" });
 
         db.Registrars.AddRange(
             new Registrar

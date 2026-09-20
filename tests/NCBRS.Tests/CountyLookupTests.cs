@@ -47,7 +47,7 @@ public class CountyLookupTests : IDisposable
                 Name = "A deep village health post",
                 Tier = FacilityTier.VillageHealthPost,
                 ConnectivityProfile = ConnectivityProfile.OfflineFirst,
-                DistrictId = "legacy-should-be-ignored",
+                CountyCode = "legacy-should-be-ignored",
                 AdministrativeAreaId = boma.AdministrativeAreaId,
             };
             db.Facilities.Add(facility);
@@ -71,7 +71,7 @@ public class CountyLookupTests : IDisposable
                 Name = "Unlinked clinic",
                 Tier = FacilityTier.Clinic,
                 ConnectivityProfile = ConnectivityProfile.Intermittent,
-                DistrictId = "D-LEGACY-01",
+                CountyCode = "D-LEGACY-01",
             };
             db.Facilities.Add(facility);
             await db.SaveChangesAsync();
