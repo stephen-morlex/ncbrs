@@ -76,4 +76,73 @@ public class DeviceBrnAllocatorTests
         Assert.Throws<ArgumentException>(() => new DeviceBrnAllocator("", 1, 10));
         Assert.Throws<ArgumentOutOfRangeException>(() => new DeviceBrnAllocator("D", 1, 10, nextAvailable: 12));
     }
+
+    [Fact]
+    public void RollsOverToAStagedBlockInsteadOfIssuingProvisionals()
+    {
+        // Topped up at the low-block warning, before running dry.
+        var allocator = new DeviceBrnAllocator("TABLET-1", 1, 2);
+        allocator.GrantNextBlock(100, 101);
+
+        Assert.Equal("1", allocator.Allocate().Value);
+        Assert.Equal("2", allocator.Allocate().Value); // current block now exhausted
+
+        var rolled = allocator.Allocate();              // rolls straight over
+        Assert.False(rolled.IsProvisional);
+        Assert.Equal("100", rolled.Value);
+        Assert.Equal("101", allocator.Allocate().Value);
+        Assert.Equal(0, allocator.ProvisionalSequence); // never fell back
+        Assert.False(allocator.HasPendingBlock);        // the staged block was consumed
+    }
+
+    [Fact]
+    public void SuppressesTheLowWarningOnceANextBlockIsStaged()
+    {
+        var allocator = new DeviceBrnAllocator("TABLET-1", 1, 3);
+        allocator.Allocate();                           // 2 remaining
+        Assert.True(allocator.IsLow(warnAtOrBelow: 2));
+
+        allocator.GrantNextBlock(10, 20);
+        Assert.False(allocator.IsLow(2));               // top-up is in hand; stop asking
+    }
+
+    [Fact]
+    public void FallsBackToProvisionalOnlyWhenNothingIsStaged()
+    {
+        // No top-up arrived (offline the whole time): the fallback still fires,
+        // and a block granted afterwards rolls the device back onto real numbers.
+        var allocator = new DeviceBrnAllocator("TABLET-9", 5, 5);
+        Assert.Equal("5", allocator.Allocate().Value);
+        Assert.True(allocator.Allocate().IsProvisional); // PROV-TABLET-9-1
+
+        allocator.GrantNextBlock(50, 51);
+        var rolled = allocator.Allocate();
+        Assert.False(rolled.IsProvisional);
+        Assert.Equal("50", rolled.Value);
+        Assert.Equal(1, allocator.ProvisionalSequence);  // the earlier PROV slip is not forgotten
+    }
+
+    [Fact]
+    public void RestoresAStagedBlockAcrossARestart()
+    {
+        var allocator = new DeviceBrnAllocator(
+            "TABLET-1", 1, 2, nextAvailable: 3, pendingBlockStart: 100, pendingBlockEnd: 101);
+
+        Assert.True(allocator.IsExhausted);
+        Assert.True(allocator.HasPendingBlock);
+        Assert.Equal("100", allocator.Allocate().Value); // rolls over to the persisted staged block
+    }
+
+    [Fact]
+    public void RejectsAnOverlappingOrDuplicateStagedBlock()
+    {
+        var allocator = new DeviceBrnAllocator("TABLET-1", 100, 200);
+
+        Assert.Throws<ArgumentException>(() => allocator.GrantNextBlock(150, 300)); // overlaps current
+        Assert.Throws<ArgumentException>(() => allocator.GrantNextBlock(50, 60));   // below current
+        Assert.Throws<ArgumentException>(() => allocator.GrantNextBlock(300, 250)); // end before start
+
+        allocator.GrantNextBlock(300, 400);
+        Assert.Throws<InvalidOperationException>(() => allocator.GrantNextBlock(500, 600)); // already staged
+    }
 }

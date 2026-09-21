@@ -35,9 +35,13 @@ vital-event models all come from `NCBRS.Contracts`, shared with the server.
    `LockedUntilUtc` after **every** attempt.
 4. **Register (offline).** Construct a `FacilityClient` for the unlocked
    session and call `RegisterBirth(...)`. Persist the allocator cursor and the
-   outbox after each call. Surface `RegistrationDraft.BlockLow` to prompt a
-   top-up while there is still connectivity, and `IsProvisional` so the slip is
-   shown as provisional.
+   outbox after each call. Surface `RegistrationDraft.BlockLow` so the slip is
+   shown, and `IsProvisional` so a provisional slip is marked as such.
+4b. **Top up the block (online).** When `NeedsMoreNumbers` is true, POST
+   `request-brn-block` and pass the granted range to `GrantNextBlock(start, end)`;
+   persist the staged block. The allocator rolls over to it when the current
+   block runs dry, so a device that tops up in time never issues a `PROV-`
+   identifier. The fallback still fires if no window came in time.
 5. **Sync (online).** `BuildSignedUpload()` → POST `Body` **verbatim** with the
    `HeaderName` header. Feed the `SyncBatchResponse` to `Settle(...)`; persist
    the outbox. Rejected records stay queued; `AssignedBrn` on a settled
@@ -55,7 +59,8 @@ The core is a set of pure state machines; it does no I/O. After each operation
 the shell saves the state so it survives offline across restarts:
 
 - Device private key (once).
-- BRN allocator: `NextAvailable`, `ProvisionalSequence`.
+- BRN allocator: `NextAvailable`, `ProvisionalSequence`, and any staged
+  `PendingBlockStart` / `PendingBlockEnd`.
 - Outbox: `Pending`.
 - PIN lock: `FailedAttempts`, `LockedUntilUtc`.
 - Offline bundle: the signing keys + revocation lists + fetched-at time.
