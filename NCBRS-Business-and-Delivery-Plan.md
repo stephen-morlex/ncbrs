@@ -354,7 +354,7 @@ for A1's hosting target.
 | A4 | Support key rotation (verifier accepts a key set; bundle carries several) — **done** | Cert signed by key B verifies on a device holding A and B |
 | A5 | Make consumers idempotent, **then** build read models — **done** | Replaying a partition leaves totals unchanged |
 | A6 | Backups and a tested restore — **drill done; PITR replay drill outstanding** | Restore drill completed and timed; RPO/RTO recorded (see below) |
-| A7 | Load and soak testing (burst shape, not average) | Sustained concurrent batch syncs at projected volume |
+| A7 | Load and soak testing (burst shape, not average) — **driver built; national-volume run outstanding** | Sustained concurrent batch syncs at projected volume |
 | A8 | Independent security audit and penetration test | Findings remediated or accepted by the DPO |
 
 #### A6 — recovery objectives, as measured
@@ -374,6 +374,26 @@ outright, restore, and confirm the system still works.
 volume; `pg_restore` time is dominated by row count and index rebuild, so the
 RTO must be re-measured at projected national volume under A7. Quoting 291 ms
 to a Steering Committee as the national recovery time would be false comfort.
+
+#### A7 — the driver, and what still owes a number
+
+The load-and-soak driver exists (`tools/NCBRS.LoadTest`, its README). A7 is a
+*burst* problem, not an average one — the load that matters is many village
+posts uploading weeks-long outboxes at once when a region reconnects — so the
+driver fires whole sync batches concurrently against the real
+`POST /api/sync/batches` and reports the latency **shape** (p50…p99, max), which
+is where a thundering herd shows up and a mean does not.
+
+What the tool does *not* yet provide is the A7 exit condition itself: a
+**sustained concurrent run at projected national volume against Postgres**. A
+smoke against the SQLite dev box already shows the point of the exercise —
+raising concurrency from 2 to 12 *lowered* throughput (~102 → ~61 records/s) and
+pushed p99 from ~1s to ~4s, the write-serialization signature of a single-writer
+store. That is a floor and a shape, not the figure: SQLite is the dev provider,
+and A7 is defined against the central Postgres tier. The outstanding work is to
+provision a facility/device/registrar in a Postgres environment sized to a real
+region's burst and run the same driver there — and, per §A6, to re-measure the
+restore RTO at that volume while the data is present.
 
 What the drill proved beyond the timings: the restored database is *functional*
 — a pre-loss record read back correctly, a new birth registered against it, and
