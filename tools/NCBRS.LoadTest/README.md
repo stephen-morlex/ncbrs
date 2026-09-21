@@ -77,11 +77,17 @@ facility** — so a conservative floor, not production hardware:
 | Concurrency 16, **1** device (`DEVICES=1`) | throughput collapses, ~55/200 batches time out (HTTP 500) — every batch contends on one `Device` row |
 
 Reading: concurrency scales throughput ~5× (1→16), so the write path is not
-globally serialised. The **~128 ms per-record floor** is the thing to watch — it
-is dominated by per-record work (duplicate-detection candidate scan within the
-±3-day birth-date window, plus the commit) and **grows with register size**, so
-it is the first place to look before national volume (index the duplicate query;
-consider a per-batch rather than per-record commit).
+globally serialised. The **~120 ms per-record floor** is the thing to watch. It is
+**not** the duplicate-detection scan — `EXPLAIN ANALYZE` on that query shows it
+uses `IX_BirthRecords_DateOfBirth` and runs in ~5 ms even over a dense ±3-day
+window. The floor is the **write + commit path**: per-record `SaveChanges` (the
+sync path commits per record so one bad row costs only itself), the append-only
+audit triggers, the outbox insert, and the WAL fsync (dev has WAL archiving on).
+The one duplicate-scan cost that *was* real — the scan change-tracked its ~900
+read-only candidates per record, bloating the change tracker across a batch and
+inflating the tail — is fixed with `AsNoTracking` (p90/p99 roughly halved,
+throughput +24% at concurrency 1). What remains before national volume is the
+commit path itself, which is a deliberate per-record-isolation choice, not a bug.
 
 ## Still not the national number
 

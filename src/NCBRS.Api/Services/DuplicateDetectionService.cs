@@ -53,9 +53,19 @@ public class DuplicateDetectionService(
             var windowStart = candidate.DateOfBirth.Date.AddDays(-DuplicateMatcher.DateWindowDays);
             var windowEnd = candidate.DateOfBirth.Date.AddDays(DuplicateMatcher.DateWindowDays + 1);
 
-            // Blocked on the date window so this stays a narrow indexed range
-            // scan rather than a comparison against the whole registry.
+            // Blocked on the date window (IX_BirthRecords_DateOfBirth) so this
+            // stays a narrow indexed range scan rather than a comparison against
+            // the whole registry.
+            //
+            // AsNoTracking because these rows are read only to be scored, never
+            // modified. It matters more than a usual read: this runs once per
+            // record inside the *same* request context that registers a whole
+            // sync batch, so tracking the window (hundreds of rows) on every
+            // record would pile tens of thousands of untouched entities into the
+            // change tracker, and each subsequent SaveChanges pays DetectChanges
+            // over all of them — a per-record cost that grows across the batch.
             var others = await db.BirthRecords
+                .AsNoTracking()
                 .Include(record => record.ChildPerson)
                 .Include(record => record.MotherPerson)
                 .Where(record => record.BirthRecordId != birthRecordId

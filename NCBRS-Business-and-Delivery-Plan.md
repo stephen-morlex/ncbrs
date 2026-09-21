@@ -397,11 +397,16 @@ Two things this settled. First, the write path is **not globally serialised** �
 concurrency scales throughput ~5× (1→16) once the load is spread across distinct
 devices, as a real burst is. The single-device collapse was a *test* artifact
 (one row, many writers), which is why the driver now enrols a device fleet.
-Second, the number to watch is the **~128 ms per-record floor**, dominated by
-per-record work — the duplicate-detection candidate scan within the ±3-day
-birth-date window, plus the commit — which **grows with register size**. Indexing
-that query (and a per-batch rather than per-record commit) is the first
-optimisation before national volume.
+Second, the **~120 ms per-record floor** was chased to its actual cause, which
+was **not** the duplicate-detection scan as first assumed: `EXPLAIN ANALYZE`
+shows that query uses `IX_BirthRecords_DateOfBirth` and runs in ~5 ms even over a
+dense window. The floor is the **write + commit path** — per-record `SaveChanges`
+(the sync path commits per record so one bad row costs only itself), the
+append-only audit triggers, the outbox insert and the WAL fsync. The one real
+duplicate-scan cost — it change-tracked its ~900 read-only candidates per record,
+bloating the change tracker across a batch — is fixed with `AsNoTracking`
+(p90/p99 roughly halved, throughput +24% at concurrency 1). The residual floor is
+the commit path, a deliberate per-record-isolation choice rather than a defect.
 
 What the tool still does *not* provide is the A7 exit condition itself: this same
 run on **production-grade Postgres**, with the fleet spread across **multiple
