@@ -31,6 +31,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import type { components } from '@/api/generated/consumer'
 import { type NcbrsError, toNcbrsError, unreachableError } from '@/api/errors'
 import { useConsumerClient } from '@/api/useApi'
@@ -40,6 +48,7 @@ import { formatDate } from '@/records/RecordDetail'
 type Summary = components['schemas']['DashboardSummary']
 type District = components['schemas']['CountySummary']
 type TrendPoint = components['schemas']['TrendPoint']
+type TierDelay = components['schemas']['TierRegistrationDelay']
 
 const National = 'national'
 const PollMs = 30_000
@@ -303,6 +312,8 @@ function DashboardBody({
 
       <Indicators summary={summary} />
 
+      <TierDelayCard delays={summary.registrationDelay.byFacilityTier} />
+
       {summary.notAvailable.length > 0 ? (
         <Card>
           <CardHeader>
@@ -529,6 +540,71 @@ function Tile({ label, value }: { label: string; value: ReactNode }) {
       <p className="text-lg">{value}</p>
     </div>
   )
+}
+
+/**
+ * The two delays, broken out by facility tier — the one view where they
+ * separate. How long a family took to reach a registrar (birth → registration)
+ * and how long the record then waited to reach the centre (registration →
+ * centre) are different problems with different remedies, and they diverge most
+ * by tier: a hospital terminal's sync lag is ~zero by construction, while for a
+ * village post the second delay can be most of the total. Reading the combined
+ * figure alone would say families near a village post are slow to register when
+ * they are not.
+ */
+function TierDelayCard({ delays }: { delays: TierDelay[] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Time to registration, by facility tier</CardTitle>
+        <p className="text-muted-foreground text-sm">
+          Median days a family took to reach a registrar, and days the record then waited to reach
+          the centre. The two diverge most by tier; a hospital's sync lag is near zero by
+          construction.
+        </p>
+      </CardHeader>
+      <CardContent>
+        {delays.length === 0 ? (
+          <p className="text-muted-foreground py-6 text-center text-sm">
+            No confirmed registrations in range.
+          </p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Facility tier</TableHead>
+                <TableHead className="text-right">Measured</TableHead>
+                <TableHead className="text-right">Birth → registration</TableHead>
+                <TableHead className="text-right">Registration → centre</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {delays.map((tier) => (
+                <TableRow key={tier.facilityTier}>
+                  <TableCell className="font-medium">{humanizeTier(tier.facilityTier)}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {tier.measured.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {nn(tier.medianDaysBirthToRegistration, days)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {nn(tier.medianDaysRegistrationToCentre, days)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+/** "VillageHealthPost" → "Village health post"; leaves already-spaced values be. */
+function humanizeTier(tier: string): string {
+  const spaced = tier.replace(/([a-z])([A-Z])/g, '$1 $2')
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1).toLowerCase()
 }
 
 function ChartCard({ title, note, children }: { title: string; note: string; children: ReactNode }) {
