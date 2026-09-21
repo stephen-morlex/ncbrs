@@ -163,7 +163,7 @@ export function AreaPicker({ onSelect }: { onSelect?: (area: Area | null) => voi
         <div key={index} className="grid gap-2">
           <Label htmlFor={`area-level-${index}`}>{labelFor(level.options)}</Label>
           <Select value={level.selected} onValueChange={(value) => void selectAt(index, value)}>
-            <SelectTrigger id={`area-level-${index}`} className="w-56">
+            <SelectTrigger id={`area-level-${index}`} className="w-full sm:w-56">
               <SelectValue placeholder="Choose" />
             </SelectTrigger>
             <SelectContent>

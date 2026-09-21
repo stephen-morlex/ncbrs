@@ -401,7 +401,10 @@ function ReviewConflictDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-3 text-sm">
+          {/* Stacked on a phone: three columns of values at 375px wraps each
+              one to a word per line, and this is the comparison a registrar
+              has to read carefully to rule on a conflict. */}
+          <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
             <div>
               <p className="text-muted-foreground text-xs">Device saw</p>
               <p>{row.expectedPreviousValue ?? '—'}</p>
