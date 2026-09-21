@@ -213,7 +213,7 @@ function Controls({
           <div className="grid gap-2">
             <Label htmlFor="dash-district">Area</Label>
             <Select value={countyCode} onValueChange={onDistrict}>
-              <SelectTrigger id="dash-district" className="w-56">
+              <SelectTrigger id="dash-district" className="w-full sm:w-56">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

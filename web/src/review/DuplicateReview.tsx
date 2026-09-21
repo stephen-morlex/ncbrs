@@ -396,7 +396,7 @@ function ReviewDuplicateDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <RecordCard label="This record" name={row.childFullName} brn={row.brn} />
             <RecordCard label="Possible match" name={row.matchedChildFullName} brn={row.matchedBrn} />
           </div>

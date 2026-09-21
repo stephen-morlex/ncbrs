@@ -159,7 +159,7 @@ export function DeviceList() {
         <div className="grid gap-2">
           <Label htmlFor="device-facility">Facility</Label>
           <Select value={facilityId} onValueChange={setFacilityId}>
-            <SelectTrigger id="device-facility" className="w-64">
+            <SelectTrigger id="device-facility" className="w-full sm:w-64">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

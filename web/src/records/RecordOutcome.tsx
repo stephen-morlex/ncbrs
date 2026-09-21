@@ -251,7 +251,7 @@ export function RecordOutcome() {
               <Field>
                 <FieldLabel htmlFor="outcome-kind">Type of outcome</FieldLabel>
                 <Select value={kind} onValueChange={(value) => setKind(value as Kind)}>
-                  <SelectTrigger id="outcome-kind" className="w-72">
+                  <SelectTrigger id="outcome-kind" className="w-full sm:w-72">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -281,7 +281,7 @@ export function RecordOutcome() {
                 <Field>
                   <FieldLabel htmlFor="timing">ICD-PM timing</FieldLabel>
                   <Select value={timing} onValueChange={(value) => setTiming(value as IcdPmTiming)}>
-                    <SelectTrigger id="timing" className="w-72">
+                    <SelectTrigger id="timing" className="w-full sm:w-72">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

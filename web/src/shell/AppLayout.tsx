@@ -1,4 +1,4 @@
-import { Fragment } from 'react'
+import { Fragment, useRef } from 'react'
 import { Outlet, useLocation } from 'react-router'
 import {
   Breadcrumb,
@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { SessionExpiry } from '@/auth/SessionExpiry'
+import { MainContentId, SkipLink, useFocusOnRouteChange, usePageTitle } from '@/shell/a11y'
 import { AppSidebar } from '@/shell/AppSidebar'
 import { navigation } from '@/shell/navigation'
 
@@ -26,10 +27,16 @@ import { navigation } from '@/shell/navigation'
  */
 export function AppLayout() {
   const trail = useBreadcrumbs()
+  const mainContent = useRef<HTMLDivElement>(null)
+
+  usePageTitle()
+  useFocusOnRouteChange(mainContent)
 
   return (
     <TooltipProvider delayDuration={300}>
       <SidebarProvider>
+        {/* First in the tab order, before the sidebar's twenty-odd links. */}
+        <SkipLink />
         <AppSidebar />
         <SidebarInset>
           {/* Sticky: on a long review queue the trigger and the trail are
@@ -62,7 +69,14 @@ export function AppLayout() {
             </div>
           </header>
 
-          <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+          {/* tabIndex -1 so it can receive focus from the skip link and from a
+              route change without becoming a tab stop of its own. */}
+          <div
+            id={MainContentId}
+            ref={mainContent}
+            tabIndex={-1}
+            className="flex flex-1 flex-col gap-4 p-4 outline-none md:p-6"
+          >
             {/* Above the page, inside the frame: the warning has to be visible
                 without scrolling on whichever page the registrar is on when
                 the session starts running out. */}
