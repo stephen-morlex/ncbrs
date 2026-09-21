@@ -119,4 +119,57 @@ describe('AreaPicker', () => {
     const comboboxes = screen.getAllByRole('combobox')
     expect(comboboxes).toHaveLength(2)
   })
+
+  /**
+   * A failed lookup and an empty register are different facts, and the picker
+   * must not state the second when it means the first: "no administrative
+   * areas are available yet" tells a registrar the country has no recorded
+   * geography, which is an affirmatively wrong thing to say because a request
+   * failed.
+   */
+  it('reports a failed load as a failure, not as an empty register', async () => {
+    get.mockReset()
+    get.mockResolvedValue({ data: undefined, error: {}, response: { ok: false, status: 503 } })
+
+    render(<AreaPicker />)
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(screen.getByText(/could not be loaded/i)).toBeInTheDocument()
+    expect(screen.queryByText(/no administrative areas are available/i)).not.toBeInTheDocument()
+  })
+
+  it('treats a thrown request the same way', async () => {
+    get.mockReset()
+    get.mockRejectedValue(new Error('offline'))
+
+    render(<AreaPicker />)
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(screen.queryByText(/no administrative areas are available/i)).not.toBeInTheDocument()
+  })
+
+  it('still says "none yet" when the register genuinely has no areas', async () => {
+    get.mockReset()
+    get.mockResolvedValue(ok([]))
+
+    render(<AreaPicker />)
+
+    expect(await screen.findByText(/no administrative areas are available/i)).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('recovers when the retry succeeds', async () => {
+    const typist = user()
+    get.mockReset()
+    get.mockResolvedValueOnce({ data: undefined, error: {}, response: { ok: false, status: 503 } })
+    get.mockImplementation(() => Promise.resolve(ok([centralEquatoria])))
+
+    render(<AreaPicker />)
+
+    await screen.findByRole('alert')
+    await typist.click(screen.getByRole('button', { name: /try again/i }))
+
+    await screen.findByLabelText(/state/i)
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
 })

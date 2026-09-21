@@ -1426,8 +1426,8 @@ each needs the reason for the decision captured.*
 ### Phase 7 — Fit for a Ministry — **the remaining web work**
 - [ ] Accessibility pass to WCAG 2.2 AA — this is a government service
 - [ ] Responsive down to a district officer's laptop; tablet-friendly for supervision visits
-- [ ] Session expiry that warns before it drops a half-completed registration form
-- [ ] Empty, loading and failure states for every queue
+- [x] Session expiry that warns before it drops a half-completed registration form — `auth/SessionExpiry.tsx`; fires on `accessTokenExpiring` (while still signed in), because once the token lapses `RequireAuth` redirects and the page is already gone
+- [x] Empty, loading and failure states for every queue — audited all twelve; the one real gap was `AreaPicker`, which reported a failed lookup as "no administrative areas are available yet"
 - [ ] End-to-end tests over the critical paths: register, amend and approve, issue, annul
 - [ ] Localisation scaffolding, even if only one language ships
 
