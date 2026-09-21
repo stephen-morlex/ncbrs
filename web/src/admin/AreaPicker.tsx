@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -36,14 +37,24 @@ export function AreaPicker({ onSelect }: { onSelect?: (area: Area | null) => voi
 
   const [levels, setLevels] = useState<Level[]>([])
   const [loading, setLoading] = useState(true)
+  const [failed, setFailed] = useState(false)
 
+  /**
+   * Areas, or a failure — the two kept apart deliberately.
+   *
+   * Returning an empty list for a failed request would render "no
+   * administrative areas are available yet", which tells a registrar the
+   * country has no recorded geography when the truth is that we could not ask.
+   * It is the same rule the dashboard follows for a null indicator: absence of
+   * an answer is not the answer zero.
+   */
   const fetchAreas = useCallback(
-    async (query: { level?: Area['level']; parentId?: string }): Promise<Area[]> => {
+    async (query: { level?: Area['level']; parentId?: string }): Promise<Area[] | null> => {
       try {
         const { data, response } = await api.GET('/api/administrative-areas', { params: { query } })
-        return response.ok ? (data?.data ?? []) : []
+        return response.ok ? (data?.data ?? []) : null
       } catch {
-        return []
+        return null
       }
     },
     [api],
@@ -51,14 +62,38 @@ export function AreaPicker({ onSelect }: { onSelect?: (area: Area | null) => voi
 
   // The top of the tree the caller starts from is the states (and the three
   // state-equivalent administrative areas), not the country root itself.
+  const loadStates = useCallback(async () => {
+    setLoading(true)
+    setFailed(false)
+
+    const states = await fetchAreas({ level: 'State' })
+
+    if (states === null) {
+      setFailed(true)
+      setLevels([])
+    } else {
+      setLevels(states.length > 0 ? [{ options: states, selected: '' }] : [])
+    }
+
+    setLoading(false)
+  }, [fetchAreas])
+
   useEffect(() => {
     let cancelled = false
     void (async () => {
       const states = await fetchAreas({ level: 'State' })
-      if (!cancelled) {
-        setLevels(states.length > 0 ? [{ options: states, selected: '' }] : [])
-        setLoading(false)
+      if (cancelled) {
+        return
       }
+
+      if (states === null) {
+        setFailed(true)
+        setLevels([])
+      } else {
+        setLevels(states.length > 0 ? [{ options: states, selected: '' }] : [])
+      }
+
+      setLoading(false)
     })()
     return () => {
       cancelled = true
@@ -79,6 +114,16 @@ export function AreaPicker({ onSelect }: { onSelect?: (area: Area | null) => voi
       onSelect?.(chosen)
 
       const children = await fetchAreas({ parentId: areaId })
+
+      // A failed lookup must not look like "this area has nothing beneath it",
+      // which is a real and ordinary answer here — plenty of branches end
+      // early. Saying so is the difference between a picker that stops because
+      // the tree stops and one that stopped because the network did.
+      if (children === null) {
+        setFailed(true)
+        return
+      }
+
       if (children.length > 0) {
         setLevels((current) =>
           // Only append if the selection is still the current deepest one.
@@ -91,6 +136,21 @@ export function AreaPicker({ onSelect }: { onSelect?: (area: Area | null) => voi
 
   if (loading) {
     return <Spinner />
+  }
+
+  if (failed) {
+    return (
+      <div className="space-y-2" role="alert">
+        <p className="text-sm">The administrative areas could not be loaded.</p>
+        <p className="text-muted-foreground text-sm">
+          This is a connection problem, not an empty register — do not read it as the areas being
+          missing.
+        </p>
+        <Button variant="outline" size="sm" onClick={() => void loadStates()}>
+          Try again
+        </Button>
+      </div>
+    )
   }
 
   if (levels.length === 0) {

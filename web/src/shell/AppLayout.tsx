@@ -11,6 +11,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { SessionExpiry } from '@/auth/SessionExpiry'
 import { AppSidebar } from '@/shell/AppSidebar'
 import { navigation } from '@/shell/navigation'
 
@@ -62,6 +63,10 @@ export function AppLayout() {
           </header>
 
           <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+            {/* Above the page, inside the frame: the warning has to be visible
+                without scrolling on whichever page the registrar is on when
+                the session starts running out. */}
+            <SessionExpiry />
             <Outlet />
           </div>
         </SidebarInset>
