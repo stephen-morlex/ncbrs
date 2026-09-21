@@ -69,6 +69,21 @@ public sealed class FacilityClient
     public long BlockRemaining => _brn.Remaining;
 
     /// <summary>
+    /// Whether the device should fetch another BRN block while it has
+    /// connectivity — running low, or already dry with nothing staged. False once
+    /// a next block is in hand, so it does not keep asking. Drives the shell's
+    /// top-up on a connectivity window.
+    /// </summary>
+    public bool NeedsMoreNumbers => !_brn.HasPendingBlock && (_brn.IsLow(_lowBlockThreshold) || _brn.IsExhausted);
+
+    /// <summary>
+    /// Stage the block the centre just granted (<c>request-brn-block</c>) to roll
+    /// over to when the current one runs dry, so registration keeps issuing real
+    /// BRNs instead of falling back to provisional identifiers.
+    /// </summary>
+    public void GrantNextBlock(long blockStart, long blockEnd) => _brn.GrantNextBlock(blockStart, blockEnd);
+
+    /// <summary>
     /// Register a birth offline: draw its number, stamp the facility and device
     /// on it, and stage it. The caller supplies the birth details; the number,
     /// facility and device are the client's to set, so a caller cannot assert

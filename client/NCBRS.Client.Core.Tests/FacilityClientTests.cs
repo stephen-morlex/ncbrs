@@ -69,6 +69,23 @@ public class FacilityClientTests
     }
 
     [Fact]
+    public void TopsUpTheBlockAtAConnectivityWindowAndStaysOnRealNumbers()
+    {
+        var (client, _) = Build(blockStart: 1, blockEnd: 2);
+
+        client.RegisterBirth(Birth());                 // 1 left -> low
+        Assert.True(client.NeedsMoreNumbers);
+
+        client.GrantNextBlock(100, 101);               // top-up fetched while online
+        Assert.False(client.NeedsMoreNumbers);         // in hand; stop asking
+
+        client.RegisterBirth(Birth());                 // drains the first block
+        var rolled = client.RegisterBirth(Birth());    // rolls over to the staged block
+        Assert.False(rolled.IsProvisional);
+        Assert.Equal("100", rolled.Brn);
+    }
+
+    [Fact]
     public void TheSignedUploadVerifiesWithTheCentresVerifier()
     {
         var (client, signer) = Build();

@@ -59,6 +59,26 @@ foreach (var name in names)
 }
 Console.WriteLine($"Queued in outbox: {client.PendingCount}; block numbers left: {client.BlockRemaining}");
 
+// 3b. The other side of B5: a device that reaches a connectivity window while
+//     low fetches the next block and rolls straight over to it, so it never
+//     falls back to a provisional identifier.
+Section("3b. Top up the block before it runs dry (WS-B5)");
+var toppedUp = new FacilityClient(
+    deviceId, facilityId,
+    new DeviceBrnAllocator(deviceId, blockStart: 300_000, blockEnd: 300_001),
+    new SyncOutbox(deviceId, facilityId),
+    signer,
+    lowBlockThreshold: 1);
+toppedUp.RegisterBirth(new RegisterBirthRequest { ChildFullName = "Nyakim Gatluak", Sex = Sex.Female });
+Console.WriteLine($"After one birth: needs more numbers? {toppedUp.NeedsMoreNumbers}");
+toppedUp.GrantNextBlock(300_100, 300_101); // request-brn-block granted the next range
+Console.WriteLine($"Next block staged: needs more numbers? {toppedUp.NeedsMoreNumbers}");
+foreach (var name in new[] { "Chol Bol", "Aluel Mayen" }) // drains 300_001, then rolls over
+{
+    var d = toppedUp.RegisterBirth(new RegisterBirthRequest { ChildFullName = name, Sex = Sex.Female });
+    Console.WriteLine($"  {name,-14} -> {d.Brn}{(d.IsProvisional ? " [provisional]" : "")}");
+}
+
 // 4. Build the signed upload and confirm the centre would accept the signature.
 Section("4. Build the signed upload (WS-B9)");
 var upload = client.BuildSignedUpload();
