@@ -1390,40 +1390,40 @@ regression.
 - [x] Online registration form, incl. late-registration evidence when the window has passed — PR #26
 - [x] Request a correction, with the two-track outcome made visible: applied now vs queued for approval (the 202 case must not look like a failure) — PR pending
 
-### Phase 3 — The review queues
+### Phase 3 — The review queues — **built**
 *The legal heart of the site. Each queue is a decision with consequences, and
 each needs the reason for the decision captured.*
-- [ ] Amendment approvals — including the refusal when the record moved since submission
-- [ ] Amendment conflicts — per-field, showing what the device saw against what the register held
-- [ ] Late registration verification — evidence, declarant, and the rule that the verifier may not be the filer
-- [ ] Duplicate review
-- [ ] Annulment (ministry only), with its three-way distinction from amendment and duplicate stated in the UI itself
-- [ ] **W3** Registrar directory so every queue shows a person, not a GUID
+- [x] Amendment approvals — including the refusal when the record moved since submission — `review/AmendmentQueue.tsx` (in `AmendmentsReview` tabs)
+- [x] Amendment conflicts — per-field, showing what the device saw against what the register held — `review/AmendmentConflicts.tsx`
+- [x] Late registration verification — evidence, declarant, and the rule that the verifier may not be the filer — `review/LateRegistrationQueue.tsx`
+- [x] Duplicate review — `review/DuplicateReview.tsx`
+- [x] Annulment (ministry only), with its three-way distinction from amendment and duplicate stated in the UI itself — `review/AnnulRegistration.tsx`
+- [x] **W3** Registrar directory so every queue shows a person, not a GUID — `registrars/RegistrarDirectory.tsx`
 
-### Phase 4 — Certificates
-- [ ] Issue, with the reasons issuance is refused shown plainly (fetal death, unverified late registration, unreconciled provisional, annulled)
-- [ ] Reprint, showing reprint count and that the signature and issue date do not change
-- [ ] Revocation list view
-- [ ] Verify a certificate by pasting a scanned QR payload
+### Phase 4 — Certificates — **built**
+- [x] Issue, with the reasons issuance is refused shown plainly (fetal death, unverified late registration, unreconciled provisional, annulled) — `records/CertificateManage.tsx`
+- [x] Reprint, showing reprint count and that the signature and issue date do not change — `records/CertificateManage.tsx`
+- [x] Revocation list view — `certificates/RevocationList.tsx`
+- [x] Verify a certificate by pasting a scanned QR payload — `certificates/VerifyCertificate.tsx`
 
-### Phase 5 — Devices and facilities
-- [ ] Device list with `lastSeenAtUtc`, including the never-reported state
-- [ ] Enrolment — public key only, with a visible refusal if a private key is pasted
-- [ ] Suspend, reinstate, revoke, each requiring a reason
-- [ ] Silence alert queue; acknowledge with a note, and make clear acknowledging is not resolving
+### Phase 5 — Devices and facilities — **built**
+- [x] Device list with `lastSeenAtUtc`, including the never-reported state — `devices/DeviceList.tsx`
+- [x] Enrolment — public key only, with a visible refusal if a private key is pasted — `devices/EnrolDeviceDialog.tsx`
+- [x] Suspend, reinstate, revoke, each requiring a reason — `devices/DeviceList.tsx`
+- [x] Silence alert queue; acknowledge with a note, and make clear acknowledging is not resolving — `devices/DeviceAlerts.tsx`
 - [x] **W2** Facilities list, BRN block state, low-block warning — PR #19
-- [ ] Grant a BRN block
+- [x] Grant a BRN block — `facilities/Facilities.tsx`
 
-### Phase 6 — Dashboard and exports
-- [ ] National summary with district drill-down
-- [ ] **Render "not available" distinctly from zero.** The API is careful to return null rather than 0; a UI that prints `0` throws that away and tells a Ministry the month went well
-- [ ] Show the `stillFilling` flag on recent periods
-- [ ] Show `notAvailable[]` so the missing §10 indicators are visible rather than absent
-- [ ] Time-to-registration by facility tier
-- [ ] DHIS2 export screen, listing suppressions alongside the values
-- [ ] **W4** Audit log viewer
+### Phase 6 — Dashboard and exports — **built**
+- [x] National summary with district drill-down — `dashboard/Dashboard.tsx`
+- [x] **Render "not available" distinctly from zero.** The API is careful to return null rather than 0; a UI that prints `0` throws that away and tells a Ministry the month went well
+- [x] Show the `stillFilling` flag on recent periods
+- [x] Show `notAvailable[]` so the missing §10 indicators are visible rather than absent
+- [x] Time-to-registration by facility tier — per-tier breakdown card, PR #81
+- [x] DHIS2 export screen, listing suppressions alongside the values — `dashboard/Dhis2Export.tsx`
+- [x] **W4** Audit log viewer — `audit/AuditTrail.tsx`
 
-### Phase 7 — Fit for a Ministry
+### Phase 7 — Fit for a Ministry — **the remaining web work**
 - [ ] Accessibility pass to WCAG 2.2 AA — this is a government service
 - [ ] Responsive down to a district officer's laptop; tablet-friendly for supervision visits
 - [ ] Session expiry that warns before it drops a half-completed registration form

@@ -322,9 +322,9 @@ Verified against the running codebase. 262 tests passing.
 | Civil registry two-way API | 6.8 | Not started | WS-E |
 | DHIS2 aggregate export | 6.8 | **Built** — district-month aggregates with small-cell suppression | WS-E |
 | Statistics office extract | 6.8 | Not started | WS-E |
-| Ministry dashboards & reporting replica | 6.4 | **Read models and indicator queries built**; no UI, no replica | WS-F |
-| Monitoring, alerting, runbooks | 10 | Not started | WS-G |
-| Remote device de-registration | 9 | Not started | WS-G |
+| Ministry dashboards & reporting replica | 6.4 | **Read models, indicator queries and dashboard UI built** (`web/`); reporting replica (F1) still needed | WS-F |
+| Monitoring, alerting, runbooks | 10 | **Runbook built** (`RUNBOOK.md`); live monitoring/alerting needs infra | WS-G |
+| Remote device de-registration | 9 | **Built** — suspend/reinstate/revoke (API + web); a non-`Enrolled` device is refused at sync | WS-G |
 | District Wi-Fi / USB / SMS fallbacks | 6.3, 7.4 | Not started | WS-H |
 | Annulment of a record registered in error | — | **Built** | WS-C |
 
@@ -482,7 +482,7 @@ already exists.
 |---|---|---|
 | F1 | Reporting replica | Dashboard load leaves registration latency unchanged |
 | F2 | Read models from the event stream — **done** | Read-model totals reconcile against the register |
-| F3 | Ministry dashboard with district drill-down — **query layer done, UI not started** | Every §10 KPI visible without a manual query (§8 in v1.2 numbering; three of the six are not derivable from the event stream — see the `NotAvailable` list the summary returns) |
+| F3 | Ministry dashboard with district drill-down — **built** (`web/`: charted summary, county drill-down, per-tier time-to-registration, null-vs-zero, `stillFilling`, `notAvailable[]`) | Every §10 KPI visible without a manual query (§8 in v1.2 numbering; three of the six are not derivable from the event stream — see the `NotAvailable` list the summary returns) |
 | F4 | Devices that have stopped reporting — **done**; alerts are raised to a district queue, with no email/SMS delivery channel | Device silent beyond threshold raises an alert to its district |
 
 > A silent device is indistinguishable from a district with no births, and only one of
@@ -494,8 +494,8 @@ already exists.
 
 | # | Step | Exit condition |
 |---|---|---|
-| G1 | Monitoring, alerting, runbooks | On-call engineer can diagnose a stalled relay from the runbook alone |
-| G2 | Device fleet management and remote de-registration | Reported-stolen device cannot sync within one connectivity window |
+| G1 | Monitoring, alerting, runbooks — **runbook done (`RUNBOOK.md`); live monitoring/alerting still needs infra** | On-call engineer can diagnose a stalled relay from the runbook alone |
+| G2 | Device fleet management and remote de-registration — **built (API + web)**: enrol/suspend/reinstate/revoke with a reason, and a non-`Enrolled` device is refused at sync even with enforcement off | Reported-stolen device cannot sync within one connectivity window |
 | G3 | Tiered support model | Pilot escalation data shows most issues resolved below the centre |
 | G4 | Training curriculum (workflow, not system) | District trainer delivers the course without central staff |
 
