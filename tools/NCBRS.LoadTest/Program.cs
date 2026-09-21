@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using NCBRS.Devices;
 using NCBRS.Models;
 
 // The idempotency key header the API reads (NCBRS.Api's TransactionContext).
@@ -36,7 +37,7 @@ Console.WriteLine($"""
     NCBRS load driver (WS-A7)
       API            {cfg.ApiBase}
       facility       {cfg.FacilityId}
-      device         {cfg.DeviceId}
+      devices        {(cfg.Devices <= 1 ? cfg.DeviceId : $"{cfg.Devices} enrolled per run (fleet)")}
       concurrency    {cfg.Concurrency} in-flight batches
       batch size     {cfg.BatchSize} records
       measured       {cfg.Batches} batches  ({cfg.Batches * cfg.BatchSize} records)
@@ -62,18 +63,41 @@ var token = await GetTokenAsync(http, cfg);
 http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 Console.WriteLine("ok");
 
+var runToken = Guid.NewGuid().ToString("N")[..8];
+var batchUri = new Uri(new Uri(cfg.ApiBase), "api/sync/batches");
+var enrolUri = new Uri(new Uri(cfg.ApiBase), "api/devices");
+
+// The device fleet the load is spread across. A real burst is many *distinct*
+// posts uploading at once; pinning every concurrent batch to one device would
+// serialise them all on that one Device row's last-seen update — measuring
+// row-lock contention, not the system. With Devices > 1 the driver enrols a
+// fleet of fresh devices up front and round-robins batches across them.
+string[] deviceIds;
+if (cfg.Devices <= 1)
+{
+    deviceIds = [cfg.DeviceId];
+}
+else
+{
+    Console.Write($"Enrolling {cfg.Devices} devices… ");
+    deviceIds = await EnrolFleetAsync(http, cfg, enrolUri, runToken, webJson);
+    Console.WriteLine($"ok ({deviceIds.Length} enrolled)");
+}
+
+var deviceCursor = -1;
+string NextDevice() => deviceIds[(uint)Interlocked.Increment(ref deviceCursor) % deviceIds.Length];
+
 // Start each run at a fresh random point in the synthetic range, so re-running
 // the tool doesn't replay BRNs already on file (which the centre would, rightly,
 // report as duplicates rather than new registrations).
 var brnCounter = cfg.BrnBase + Random.Shared.NextInt64(0, 80_000_000) * 1_000;
-var batchUri = new Uri(new Uri(cfg.ApiBase), "api/sync/batches");
 
 // A recent, in-window birth date base (well inside the 90-day statutory
 // window, so records don't route through late-registration).
 var dobBase = DateTime.UtcNow.Date.AddDays(-88);
 string[] firstNames = ["Ayen", "Deng", "Aluel", "Nyandeng", "Garang", "Chol", "Nyakim", "Majok", "Wani", "Lado"];
 
-ApiRequest<SyncBatchRequest> BuildBatch()
+ApiRequest<SyncBatchRequest> BuildBatch(string deviceId)
 {
     var records = new SyncBirthRecord[cfg.BatchSize];
     for (var i = 0; i < cfg.BatchSize; i++)
@@ -96,7 +120,7 @@ ApiRequest<SyncBatchRequest> BuildBatch()
             {
                 Brn = n.ToString(),
                 FacilityId = cfg.FacilityId,
-                DeviceId = cfg.DeviceId,
+                DeviceId = deviceId,
                 ChildFullName = $"{firstNames[n % firstNames.Length]} {token}",
                 DateOfBirth = dobBase.AddDays(n % 80),
                 Sex = (n & 1) == 0 ? Sex.Female : Sex.Male,
@@ -112,7 +136,7 @@ ApiRequest<SyncBatchRequest> BuildBatch()
     {
         Data = new SyncBatchRequest
         {
-            DeviceId = cfg.DeviceId,
+            DeviceId = deviceId,
             FacilityId = cfg.FacilityId,
             Records = records,
         },
@@ -123,7 +147,7 @@ async Task<(bool Ok, double Ms, int Registered, int Rejected, int Duplicates, st
 {
     var request = new HttpRequestMessage(HttpMethod.Post, batchUri)
     {
-        Content = JsonContent.Create(BuildBatch(), options: webJson),
+        Content = JsonContent.Create(BuildBatch(NextDevice()), options: webJson),
     };
     // A fresh transaction id per batch: this is new work, not a replay of an
     // earlier answer.
@@ -196,6 +220,51 @@ wall.Stop();
 
 Report(cfg, wall.Elapsed, lat, ctr);
 return ctr.FailedBatches == 0 ? 0 : 1;
+
+// Enrol a fleet of fresh devices at the target facility, public-key only (no
+// private key leaves this process; with RequireSignature off none is needed to
+// sync). Returns the enrolled device ids. Needs a CanEnrolDevices identity
+// (district officer or ministry admin) — the same token used to sync.
+static async Task<string[]> EnrolFleetAsync(
+    HttpClient http, Config cfg, Uri enrolUri, string runToken, JsonSerializerOptions json)
+{
+    var ids = new string[cfg.Devices];
+    for (var i = 0; i < cfg.Devices; i++)
+    {
+        var deviceId = $"LOADTEST-{runToken}-{i:D3}";
+        var (_, publicKeyPem) = DeviceSignature.GenerateKeyPair();
+
+        var body = new ApiRequest<EnrolDeviceRequest>
+        {
+            Data = new EnrolDeviceRequest
+            {
+                DeviceId = deviceId,
+                FacilityId = cfg.FacilityId,
+                PublicKeyPem = publicKeyPem,
+                Label = $"A7 load driver, run {runToken}",
+            },
+        };
+
+        var request = new HttpRequestMessage(HttpMethod.Post, enrolUri)
+        {
+            Content = JsonContent.Create(body, options: json),
+        };
+        request.Headers.TryAddWithoutValidation("X-Transaction-Id", Guid.NewGuid().ToString());
+
+        using var response = await http.SendAsync(request);
+        if (!response.IsSuccessStatusCode)
+        {
+            var detail = await response.Content.ReadAsStringAsync();
+            throw new InvalidOperationException(
+                $"Enrolling '{deviceId}' failed: HTTP {(int)response.StatusCode}. The sync identity must have "
+                + $"CanEnrolDevices (district officer / ministry admin). Response: {detail}");
+        }
+
+        ids[i] = deviceId;
+    }
+
+    return ids;
+}
 
 static async Task<string> GetTokenAsync(HttpClient http, Config cfg)
 {
@@ -287,6 +356,7 @@ internal sealed record Config(
     string Password,
     Guid FacilityId,
     string DeviceId,
+    int Devices,
     int Concurrency,
     int BatchSize,
     int Batches,
@@ -312,6 +382,9 @@ internal sealed record Config(
             Password: S("PASSWORD", "password"),
             FacilityId: Guid.TryParse(S("FACILITY_ID", ""), out var f) ? f : new Guid("0199c000-0000-7000-8000-0000000f0001"),
             DeviceId: S("DEVICE_ID", "TERMINAL-JUBA-01"),
+            // A fleet spreads the burst across distinct devices, as a real region
+            // does; 1 keeps the single seeded device (and hits its row-lock ceiling).
+            Devices: I("DEVICES", 32),
             Concurrency: I("CONCURRENCY", 16),
             BatchSize: I("BATCH_SIZE", 25),
             Batches: I("BATCHES", 200),

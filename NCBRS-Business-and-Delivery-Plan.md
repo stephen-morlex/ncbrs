@@ -384,16 +384,32 @@ driver fires whole sync batches concurrently against the real
 `POST /api/sync/batches` and reports the latency **shape** (p50…p99, max), which
 is where a thundering herd shows up and a mean does not.
 
-What the tool does *not* yet provide is the A7 exit condition itself: a
-**sustained concurrent run at projected national volume against Postgres**. A
-smoke against the SQLite dev box already shows the point of the exercise —
-raising concurrency from 2 to 12 *lowered* throughput (~102 → ~61 records/s) and
-pushed p99 from ~1s to ~4s, the write-serialization signature of a single-writer
-store. That is a floor and a shape, not the figure: SQLite is the dev provider,
-and A7 is defined against the central Postgres tier. The outstanding work is to
-provision a facility/device/registrar in a Postgres environment sized to a real
-region's burst and run the same driver there — and, per §A6, to re-measure the
-restore RTO at that volume while the data is present.
+The driver has now been run against the **Postgres** tier (dev hardware, WAL
+archiving on, all devices at one facility — a conservative floor, not production):
+
+| Run | Result |
+|---|---|
+| Concurrency 1, batches of 25 | ~6.6 records/s → **~128 ms per record** |
+| Concurrency 16, 32-device fleet, 5000 records | **~32 records/s, 0 failures**; p50 12.2s / p99 16.4s per 25-record batch |
+| Concurrency 16, **single** device | throughput collapses, ~55/200 batches time out — every batch contends on one `Device` row's last-seen update |
+
+Two things this settled. First, the write path is **not globally serialised** —
+concurrency scales throughput ~5× (1→16) once the load is spread across distinct
+devices, as a real burst is. The single-device collapse was a *test* artifact
+(one row, many writers), which is why the driver now enrols a device fleet.
+Second, the number to watch is the **~128 ms per-record floor**, dominated by
+per-record work — the duplicate-detection candidate scan within the ±3-day
+birth-date window, plus the commit — which **grows with register size**. Indexing
+that query (and a per-batch rather than per-record commit) is the first
+optimisation before national volume.
+
+What the tool still does *not* provide is the A7 exit condition itself: this same
+run on **production-grade Postgres**, with the fleet spread across **multiple
+facilities** and volumes sized to a real region's reconnect burst — and, per §A6,
+the restore RTO re-measured at that volume while the data is present. (On the
+**SQLite** dev provider the same driver shows the opposite curve — throughput
+*falls* as concurrency rises, the single-writer signature — which is exactly why
+A7 is defined against Postgres.)
 
 What the drill proved beyond the timings: the restored database is *functional*
 — a pre-loss record read back correctly, a new birth registered against it, and
