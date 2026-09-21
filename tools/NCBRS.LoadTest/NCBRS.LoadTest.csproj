@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>NCBRS.LoadTest</RootNamespace>
+  </PropertyGroup>
+
+  <!-- WS-A7 load and soak driver: fires concurrent sync batches at the central
+       tier in a burst shape (many posts uploading at once when connectivity
+       returns) and reports throughput and latency percentiles. References
+       Contracts for the wire DTOs so the payload matches the service exactly.
+       It measures a live deployment; the meaningful A7 figure is against
+       Postgres at projected national volume, not the SQLite dev box. -->
+  <ItemGroup>
+    <ProjectReference Include="../../src/NCBRS.Contracts/NCBRS.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>
