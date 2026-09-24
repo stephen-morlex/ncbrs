@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { CircleAlert, CircleCheck, Clock, PenLine, ShieldOff } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -116,7 +116,12 @@ export function RequestCorrection() {
     }
   }, [api, brn])
 
-  const changes = original && draft ? changedFields(original, draft) : {}
+  // Memoised so the submit callback below is not rebuilt on every render —
+  // a fresh object here each time made its dependency list meaningless.
+  const changes = useMemo(
+    () => (original && draft ? changedFields(original, draft) : {}),
+    [original, draft],
+  )
   const changedNames = Object.keys(changes)
 
   const submit = useCallback(

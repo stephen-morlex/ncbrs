@@ -1,8 +1,29 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["unicorn", "oxc", "typescript", "jsx-a11y"],
+  // The defaults (unicorn, oxc, typescript) plus jsx-a11y, so accessibility
+  // regressions fail the build, and react, so hook mistakes do.
+  "plugins": ["unicorn", "oxc", "typescript", "jsx-a11y", "react"],
   "rules": {
-    "jsx-a11y/prefer-tag-over-role": "off"
+    // A conditional or looped hook call breaks at runtime and silently
+    // mismatches state between renders. Not on by default; it is the one React
+    // rule that catches an actual crash rather than a style, so it is an error.
+    "react-hooks/rules-of-hooks": "error",
+
+    // A preference for semantic tags over an equivalent ARIA role, not a WCAG
+    // criterion: role="status" with aria-live is correct and conventional. It
+    // fires mostly inside the vendored shadcn components, where gratuitous
+    // edits add friction to porting upstream fixes (web plan section 2).
+    "jsx-a11y/prefer-tag-over-role": "off",
+
+    // Every hit is the same fetch-on-mount pattern: an effect that marks itself
+    // loading and then asks the server. Fetching is the synchronisation with an
+    // external system that effects exist for, and React's own data-fetching
+    // example sets state synchronously in the effect in exactly this way. The
+    // "cascading render" the rule warns about is the intended loading state on
+    // a refetch; on mount the value is unchanged and React bails out of it.
+    // Rewriting sixteen working screens to satisfy a compiler heuristic would be
+    // churn with no user-visible change. Revisit if the React Compiler is adopted.
+    "react/set-state-in-effect": "off"
   },
   "overrides": [
     {
