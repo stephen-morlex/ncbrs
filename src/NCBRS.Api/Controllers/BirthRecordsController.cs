@@ -471,7 +471,7 @@ public class BirthRecordsController(
 
         // BRNs are the registry's scarce, permanent identifiers -- a caller
         // must not be able to drain another facility's range.
-        if (!currentRegistrar.CanActForFacility(registrar, facilityId))
+        if (!await currentRegistrar.CanActForFacilityAsync(registrar, facilityId, HttpContext.RequestAborted))
         {
             return ApiErrors.Result(ApiErrors.Single(
                 StatusCodes.Status403Forbidden, "Not permitted for this facility.",

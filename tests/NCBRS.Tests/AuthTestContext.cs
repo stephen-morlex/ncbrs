@@ -38,5 +38,5 @@ public static class AuthTestContext
     }
 
     public static CurrentRegistrarService RegistrarService(NcbrsDbContext db, HttpContext http)
-        => new(db, new HttpContextAccessor { HttpContext = http });
+        => new(db, new HttpContextAccessor { HttpContext = http }, new CountyLookup(db));
 }

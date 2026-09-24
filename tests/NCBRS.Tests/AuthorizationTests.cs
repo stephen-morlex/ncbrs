@@ -21,7 +21,16 @@ public class AuthorizationTests : IDisposable
 {
     private static readonly Guid HomeFacility = Guid.Parse("0199a1b2-0001-7000-8000-000000000001");
     private static readonly Guid OtherFacility = Guid.Parse("0199a1b2-0002-7000-8000-000000000002");
+
+    /// <summary>A second facility in the home facility's county (Terekeka).</summary>
+    private static readonly Guid SameCountyFacility = Guid.Parse("0199a1b2-0003-7000-8000-000000000003");
+
+    /// <summary>A facility the hierarchy cannot place in any county.</summary>
+    private static readonly Guid UnplacedFacility = Guid.Parse("0199a1b2-0004-7000-8000-000000000004");
+
     private static readonly Guid RegistrarId = Guid.Parse("0199a1b2-1001-7000-8000-000000000001");
+    private static readonly Guid UnplacedRegistrarId = Guid.Parse("0199a1b2-1002-7000-8000-000000000002");
+    private const string UnplacedSubject = "22222222-2222-4222-8222-222222222222";
 
     private readonly TestDatabase _database;
     private readonly DbContextOptions<NcbrsDbContext> _options;
@@ -45,17 +54,39 @@ public class AuthorizationTests : IDisposable
                 FacilityId = OtherFacility,
                 Name = "Juba Central Hospital",
                 CountyCode = "SS-CE-JUB"
+            },
+            new Facility
+            {
+                FacilityId = SameCountyFacility,
+                Name = "Tali Primary Health Care Unit",
+                CountyCode = "SS-CE-TER"
+            },
+            new Facility
+            {
+                FacilityId = UnplacedFacility,
+                Name = "Unplaced Health Post",
+                CountyCode = AuditLog.Unknown
             });
 
-        db.Registrars.Add(new Registrar
-        {
-            RegistrarId = RegistrarId,
-            FacilityId = HomeFacility,
-            ExternalSubjectId = AuthTestContext.DefaultSubject,
-            DisplayName = "Nurse A. Lado",
-            Role = RegistrarRole.FacilityRegistrar,
-            CredentialHash = "test"
-        });
+        db.Registrars.AddRange(
+            new Registrar
+            {
+                RegistrarId = RegistrarId,
+                FacilityId = HomeFacility,
+                ExternalSubjectId = AuthTestContext.DefaultSubject,
+                DisplayName = "Nurse A. Lado",
+                Role = RegistrarRole.FacilityRegistrar,
+                CredentialHash = "test"
+            },
+            new Registrar
+            {
+                RegistrarId = UnplacedRegistrarId,
+                FacilityId = UnplacedFacility,
+                ExternalSubjectId = UnplacedSubject,
+                DisplayName = "Officer at an unplaced facility",
+                Role = RegistrarRole.DistrictOfficer,
+                CredentialHash = "test"
+            });
 
         db.SaveChanges();
     }
@@ -111,7 +142,7 @@ public class AuthorizationTests : IDisposable
 
         var registrar = await service.GetAsync();
 
-        Assert.True(service.CanActForFacility(registrar!, HomeFacility));
+        Assert.True(await service.CanActForFacilityAsync(registrar!, HomeFacility));
     }
 
     [Fact]
@@ -123,21 +154,102 @@ public class AuthorizationTests : IDisposable
 
         var registrar = await service.GetAsync();
 
-        Assert.False(service.CanActForFacility(registrar!, OtherFacility));
+        Assert.False(await service.CanActForFacilityAsync(registrar!, OtherFacility));
     }
 
-    [Theory]
-    [InlineData(NcbrsRoles.DistrictOfficer)]
-    [InlineData(NcbrsRoles.MinistryAdmin)]
-    public async Task OversightRoles_MayActAcrossFacilities(string role)
+    /// <summary>
+    /// Even a facility in the same county: a registrar's reach is their own
+    /// facility, not their county. County reach is an oversight role's.
+    /// </summary>
+    [Fact]
+    public async Task AFacilityRegistrar_MayNotActForAnotherFacilityInTheirCounty()
     {
         await using var db = NewDb();
-        var http = AuthTestContext.HttpContextFor(roles: role);
+        var http = AuthTestContext.HttpContextFor();
         var service = AuthTestContext.RegistrarService(db, http);
 
         var registrar = await service.GetAsync();
 
-        Assert.True(service.CanActForFacility(registrar!, OtherFacility));
+        Assert.False(await service.CanActForFacilityAsync(registrar!, SameCountyFacility));
+    }
+
+    [Fact]
+    public async Task AMinistryAdmin_ActsNationally()
+    {
+        await using var db = NewDb();
+        var http = AuthTestContext.HttpContextFor(roles: NcbrsRoles.MinistryAdmin);
+        var service = AuthTestContext.RegistrarService(db, http);
+
+        var registrar = await service.GetAsync();
+
+        Assert.True(await service.CanActForFacilityAsync(registrar!, OtherFacility));
+        Assert.True(await service.CanActForFacilityAsync(registrar!, UnplacedFacility));
+    }
+
+    [Fact]
+    public async Task ADistrictOfficer_MayActAcrossTheirOwnCounty()
+    {
+        await using var db = NewDb();
+        var http = AuthTestContext.HttpContextFor(roles: NcbrsRoles.DistrictOfficer);
+        var service = AuthTestContext.RegistrarService(db, http);
+
+        var registrar = await service.GetAsync();
+
+        Assert.True(await service.CanActForFacilityAsync(registrar!, SameCountyFacility));
+    }
+
+    /// <summary>
+    /// The gap this closes. Reads were already confined to the officer's
+    /// county, but writes were national, so a Terekeka district officer could
+    /// approve an amendment, verify a late registration or enrol a device for
+    /// a Juba record they were not permitted even to search for.
+    /// </summary>
+    [Fact]
+    public async Task ADistrictOfficer_MayNotActInAnotherCounty()
+    {
+        await using var db = NewDb();
+        var http = AuthTestContext.HttpContextFor(roles: NcbrsRoles.DistrictOfficer);
+        var service = AuthTestContext.RegistrarService(db, http);
+
+        var registrar = await service.GetAsync();
+
+        Assert.False(await service.CanActForFacilityAsync(registrar!, OtherFacility));
+    }
+
+    /// <summary>
+    /// Fails closed. Treating "unknown" as a county would let an officer reach
+    /// every facility the hierarchy cannot place — the facilities least able
+    /// to have their records double-checked.
+    /// </summary>
+    [Fact]
+    public async Task ADistrictOfficer_MayNotActForAFacilityWithNoCounty()
+    {
+        await using var db = NewDb();
+        var http = AuthTestContext.HttpContextFor(roles: NcbrsRoles.DistrictOfficer);
+        var service = AuthTestContext.RegistrarService(db, http);
+
+        var registrar = await service.GetAsync();
+
+        Assert.False(await service.CanActForFacilityAsync(registrar!, UnplacedFacility));
+    }
+
+    /// <summary>
+    /// And the other direction: an officer whose own facility has no county
+    /// has no county to act across. "Unknown" matching "Unknown" would be the
+    /// same hole from the other side.
+    /// </summary>
+    [Fact]
+    public async Task ADistrictOfficer_WithNoCounty_IsConfinedToTheirOwnFacility()
+    {
+        await using var db = NewDb();
+        var http = AuthTestContext.HttpContextFor(subject: UnplacedSubject, roles: NcbrsRoles.DistrictOfficer);
+        var service = AuthTestContext.RegistrarService(db, http);
+
+        var registrar = await service.GetAsync();
+
+        Assert.True(await service.CanActForFacilityAsync(registrar!, UnplacedFacility));
+        Assert.False(await service.CanActForFacilityAsync(registrar!, HomeFacility));
+        Assert.False(await service.CanActForFacilityAsync(registrar!, OtherFacility));
     }
 
     [Fact]
@@ -149,7 +261,8 @@ public class AuthorizationTests : IDisposable
 
         var registrar = await service.GetAsync();
 
-        Assert.False(service.CanActForFacility(registrar!, OtherFacility));
+        Assert.False(await service.CanActForFacilityAsync(registrar!, OtherFacility));
+        Assert.False(await service.CanActForFacilityAsync(registrar!, SameCountyFacility));
     }
 }
 

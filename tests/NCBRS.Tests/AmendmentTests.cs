@@ -23,6 +23,7 @@ public class AmendmentServiceTests : IDisposable
 {
     private static readonly Guid FacilityId = Guid.Parse("0199a1b2-0001-7000-8000-000000000001");
     private static readonly Guid OtherFacilityId = Guid.Parse("0199a1b2-0002-7000-8000-000000000002");
+    private static readonly Guid SameCountyFacilityId = Guid.Parse("0199a1b2-0003-7000-8000-000000000003");
     private static readonly Guid RegistrarId = Guid.Parse("0199a1b2-1001-7000-8000-000000000001");
     private static readonly Guid ReviewerId = Guid.Parse("0199a1b2-1002-7000-8000-000000000002");
     private static readonly Guid SurvivorId = Guid.Parse("0199a1b2-2001-7000-8000-000000000001");
@@ -31,6 +32,7 @@ public class AmendmentServiceTests : IDisposable
 
     private const string Brn = "100001";
     private const string OtherFacilityBrn = "200001";
+    private const string SameCountyBrn = "300001";
     private const string SupersededBrn = "100009";
     private const string Reason = "Name misspelled on the original form.";
 
@@ -55,7 +57,8 @@ public class AmendmentServiceTests : IDisposable
 
         db.Facilities.AddRange(
             new Facility { FacilityId = FacilityId, Name = "Terekeka Village Health Post", CountyCode = "SS-CE-TER" },
-            new Facility { FacilityId = OtherFacilityId, Name = "Juba Central", CountyCode = "SS-CE-JUB" });
+            new Facility { FacilityId = OtherFacilityId, Name = "Juba Central", CountyCode = "SS-CE-JUB" },
+            new Facility { FacilityId = SameCountyFacilityId, Name = "Tali Primary Health Care Unit", CountyCode = "SS-CE-TER" });
 
         db.Registrars.AddRange(
             new Registrar
@@ -81,6 +84,7 @@ public class AmendmentServiceTests : IDisposable
         db.BirthRecords.AddRange(
             Record(Brn, FacilityId),
             Record(OtherFacilityBrn, OtherFacilityId),
+            Record(SameCountyBrn, SameCountyFacilityId),
             superseded);
 
         db.SaveChanges();
@@ -616,15 +620,38 @@ public class AmendmentServiceTests : IDisposable
         Assert.Empty(await db.BirthRecordAmendments.ToListAsync());
     }
 
+    /// <summary>
+    /// An oversight role is not confined to one facility: a district officer
+    /// corrects records across their own county.
+    /// </summary>
     [Fact]
-    public async Task ADistrictOfficer_MayCorrectAnotherFacilitysRecord()
+    public async Task ADistrictOfficer_MayCorrectAnotherFacilitysRecordInTheirCounty()
+    {
+        var (outcome, _) = await AmendAsync(
+            Amendment(birthWeightGrams: 3250),
+            brn: SameCountyBrn,
+            roles: NcbrsRoles.DistrictOfficer);
+
+        Assert.True(outcome.Succeeded);
+    }
+
+    /// <summary>
+    /// ...but not beyond it. Their search is already confined to their own
+    /// county; a correction reaching further than they may even look was the
+    /// write-side gap, and a correction is a change to a legal record.
+    /// </summary>
+    [Fact]
+    public async Task ADistrictOfficer_MayNotCorrectARecordInAnotherCounty()
     {
         var (outcome, _) = await AmendAsync(
             Amendment(birthWeightGrams: 3250),
             brn: OtherFacilityBrn,
             roles: NcbrsRoles.DistrictOfficer);
 
-        Assert.True(outcome.Succeeded);
+        Assert.Equal(AmendmentResult.NotPermitted, outcome.Result);
+
+        await using var db = NewDb();
+        Assert.Empty(await db.BirthRecordAmendments.ToListAsync());
     }
 
     // --- the certificate interaction --------------------------------------

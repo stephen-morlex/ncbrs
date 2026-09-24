@@ -102,7 +102,7 @@ public class BirthRegistrationService(
         // Checked here rather than in each controller so the online and
         // offline paths cannot drift: a registrar confined to one facility
         // must not be able to file a birth against another by either route.
-        if (!currentRegistrar.CanActForFacility(registrar, facility.FacilityId))
+        if (!await currentRegistrar.CanActForFacilityAsync(registrar, facility.FacilityId, cancellationToken))
         {
             return new RegistrationResult(
                 RegistrationOutcome.FacilityNotPermitted,
