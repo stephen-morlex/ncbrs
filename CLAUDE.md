@@ -15,9 +15,10 @@ just what it does:
   v1.3 reconciles the draft with the platform as built; `NCBRS_Draft.docx`
   is the superseded v1.2, kept for reference. Cite v1.3 section numbers.
 - `NCBRS-Business-and-Delivery-Plan.md` — the business case plus the
-  sequenced build plan (workstreams WS-A…WS-H). **Its gap analysis (§12) and
-  sequencing (§15) are the plan of record for what to build next** — prefer
-  it over the "Not yet done" list below, which is only a summary.
+  sequenced build plan (workstreams WS-A…WS-H). **Its consolidated to-do
+  (§17), gap analysis (§12) and sequencing (§15) are the plan of record for
+  what to build next** — prefer them over the "Not yet done" list below, which
+  is only a summary.
 - `NCBRS-Web-Plan.md` — the central management web front end: its plan, the
   backend gaps it forces (search, facilities, registrars, audit, CORS,
   pagination) and the phased to-do list.
@@ -116,6 +117,16 @@ EF tooling needs both projects named, since the DbContext and the startup
 project are now separate:
 `dotnet ef migrations add X --project src/NCBRS.Core --startup-project src/NCBRS.Api`
 
+That is the SQLite set. The Postgres set is generated separately, with the
+provider selected so EF targets its migrations assembly:
+`Database__Provider=Postgres ConnectionStrings__Default="Host=localhost;Port=5433;..." dotnet ef migrations add X --project src/NCBRS.Migrations.Postgres --startup-project src/NCBRS.Api`
+(export the variables first; the value contains semicolons). **Never pass
+`--no-build` after a model change** — EF reads the stale assemblies, sees no
+difference, and writes an empty migration that looks like success. A running
+service also locks `bin/`, so stop it before generating. And an empty
+migration is a signal worth reading: when adding an index produced one here,
+the index already existed further down `OnModelCreating`.
+
 ## Deviations from the draft, already settled (don't re-open)
 Draft v1.3 was revised to match these; v1.2 still contradicts them.
 
@@ -152,11 +163,11 @@ Draft v1.3 was revised to match these; v1.2 still contradicts them.
 ## Administrative geography (South Sudan, built)
 The system registers births in **South Sudan**, whose geography is
 Country → State → County → Payam (rural) / Block (urban) → Boma (rural) /
-Quarter (urban) → Village. The original scaffold carried a flat
-`Facility.DistrictId` string and dev/test data from an unrelated country;
-both were wrong for this deployment and have been replaced — the fixtures and
-dev seed now use Central Equatoria places (Juba, Terekeka) and South Sudanese
-names throughout.
+Quarter (urban) → Village. The original scaffold carried a flat district
+string and dev/test data from an unrelated country; both were wrong for this
+deployment and have been replaced — the fixtures and dev seed use real South
+Sudanese places (a fleet across Central Equatoria, Eastern Equatoria and
+Jonglei) and South Sudanese names throughout.
 
 - **`AdministrativeArea` is one self-referencing tree, not a column per
   level.** `Level` (the `AdministrativeLevel` enum) says what a node is;
@@ -174,32 +185,44 @@ names throughout.
   verification side sits there.
 - **`Code` is the stable identity, not the surrogate id.** Audit rows, the
   reporting projection and DHIS2 org-unit maps snapshot/reference the code, so
-  a name correction never orphans a snapshot or a mapping. Codes are unique
-  across the tree (`SS`, `SS-CE`, `SS-CE-JUB`).
+  a name correction never orphans a snapshot or a mapping. Codes are the
+  **official p-codes** and unique across the tree: `SS` (country), `SSxx`
+  (state), `SSxxyy` (county), `SSxxyyzz` (payam) — Central Equatoria `SS01`,
+  Juba `SS0101`.
 - **Access scope is the County** (not "country", not the old flat string).
-  `DistrictScopeResolver` resolves the caller's county by walking up their
-  facility's area chain, and `DistrictLookup` resolves the county code the
-  same way (fallback to the transitional `DistrictId`, else `Unknown`) — audit,
-  events and the reporting stamp all carry that resolved county, not the flat
-  string. Ministry admins stay national; scoping still **refuses** rather than
-  silently narrows.
-- **`DistrictLookup` / `DistrictScopeResolver` kept their names on purpose**,
-  though they now resolve a county. Renaming them is part of the deferred
-  cleanup, not this work. **The "District tier" (`NCBRS.District`) is a
-  different thing entirely** — a store-and-forward node, not an administrative
-  field. Don't conflate the two.
-- **`Facility.AdministrativeAreaId` is nullable during the transition**, and
-  `Facility.DistrictId` is retained carrying the **county code** so nothing
-  that still reads it breaks. Dropping `DistrictId` and renaming the resolvers
-  is a later cosmetic pass, staged to run after this stack merges (it is not a
-  design change).
+  `CountyScopeResolver` resolves the caller's county by walking up their
+  facility's area chain, and `CountyLookup` resolves the county code the same
+  way (falling back to `Facility.CountyCode`, else `Unknown`) — audit, events
+  and the reporting stamp all carry that resolved county. Ministry admins stay
+  national; scoping still **refuses** rather than silently narrows.
+- **The district → county rename is complete** (PRs #60–#64). `Facility.DistrictId`
+  was **renamed to `Facility.CountyCode`, not dropped**: it is the flat, indexed
+  scope key that SQL filters need, because a variable-depth tree walk cannot be
+  a `WHERE` clause. It is a deliberate denormalisation of the county the tree
+  resolves to, and it coexists with the nullable `AdministrativeAreaId`, which
+  records the precise location. `AuditLog`, `DeviceAlert` and the read-model
+  facts carry `CountyCode` too.
+- **Event wire names are pinned.** `BirthRegisteredEvent` and the amendment
+  events name the field `County` in C#, but `[JsonPropertyName("DistrictId")]`
+  keeps the JSON name, so events already in the topic still replay. Don't
+  "tidy" the attribute away — that silently breaks replay of history.
+- **Deliberately not renamed:** the `district-officer` role
+  (`NcbrsRoles.DistrictOfficer`, tied to the Keycloak realm) and **the "District
+  tier" (`NCBRS.District`), which is a different thing entirely** — a
+  store-and-forward deployment node, not an administrative field. Don't conflate
+  the two.
 - **The seed never invents locations.** `SouthSudanAreas.json` (an embedded
-  resource) carries the country, 10 states, the 3 state-equivalent areas
-  (Abyei `SS-AB`, Greater Pibor `SS-GP`, Ruweng `SS-RW`) and counties, marked
-  `"verified": false` with a provenance note that the county list must be
-  confirmed against the official gazette before production. `AdministrativeAreaSeeder`
-  is idempotent (upsert by `Code`) and seeds Country/State/County only; it runs
-  after migrations on Development startup, before the dev data seeder.
+  resource) is generated from the official **COD-AB** (OCHA / NBS, 2020 vintage)
+  and marked `"verified": true` with its provenance: the country, 11 admin-1
+  areas (10 states plus the Abyei Region, `SS00`), 79 counties and 512 payams.
+  Vintage caveats: Pibor is a county (`SS0308`) under Jonglei, and Ruweng is
+  absent. **Bomas are not seeded** — they are not in the official dataset, so
+  they are created as needed and never invented. `AdministrativeAreaSeeder` is
+  idempotent (upsert by `Code`) and seeds Country/State/County/Payam; it runs
+  after migrations on Development startup, before the dev data seeder. Note the
+  dev seeder is keyed by subject and **never rebinds** an existing registrar,
+  so a database seeded before a seed change keeps the old bindings — reset it
+  rather than expecting a restart to correct it.
 - **`GET /api/administrative-areas`** feeds dependent location pickers one
   level at a time (`?parentId=` for children, `?level=` for a whole level,
   neither for the country root). Read-only and open to any signed-in caller:
@@ -505,7 +528,7 @@ age of majority, marriage eligibility and pension timing, and by definition
 nobody contemporaneous is left to contradict a claim made years later.
 
 ## Not yet done (natural next steps)
-Summary only — `NCBRS-Business-and-Delivery-Plan.md` §12 is the full list.
+Summary only — `NCBRS-Business-and-Delivery-Plan.md` §17 is the consolidated to-do, ordered by what unblocks each item; §12 is the gap analysis behind it.
 The Tier-1 facility/village client (WS-B) is the programme's critical path.
 Its **offline-first core now exists and is tested** in `client/` — BRN block
 allocation, the local outbox and sync-batch settlement, offline certificate
