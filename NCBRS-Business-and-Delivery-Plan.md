@@ -593,8 +593,8 @@ critical path is still WS-B's device build.
 
 | # | Task | Decision |
 |---|---|---|
-| 7 | End-to-end web tests (register, amend + approve, issue, annul) | Adopt Playwright (dependency change) |
-| 8 | Localisation scaffolding | Adopt i18next (dependency change) |
+| 7 | End-to-end web tests (register, amend + approve, issue, annul) | **Done** — Playwright adopted; all four paths green locally and in CI |
+| 8 | Localisation scaffolding | **Done** — i18next adopted; shell translated, screens converted incrementally |
 | 9 | Close the unverified `deviceId` on online `POST /register` — a stolen token bypasses enrolment there | Per-request signing (buildable here) or mTLS (infrastructure) |
 | 10 | WCAG 2.2 AA conformance (contrast, 2.5.8 target size, assistive-technology testing) and breakpoint verification | A signed-in browser session to test against |
 | 11 | Per-record vs per-batch `SaveChanges` in sync — keep per-record for failure isolation unless real-scale measurement shows round-trips dominate | Record as an ADR |

@@ -1,8 +1,8 @@
-/// <reference types="vitest/config" />
 import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+import { configDefaults } from 'vitest/config'
 
 /**
  * Packages that change on their own release schedule rather than ours.
@@ -16,6 +16,11 @@ const Stable = [
   'oidc-client-ts',
   'react-oidc-context',
   'scheduler',
+  // Localisation runtime: needed on every page and changes far less often
+  // than application code. In the entry chunk it cost ~30 kB gzipped on
+  // every deploy; here it is downloaded once and kept.
+  'i18next',
+  'react-i18next',
 ]
 
 // https://vite.dev/config/
@@ -58,6 +63,11 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
+
+    // e2e/ is Playwright's: a real browser against a running stack. Vitest's
+    // default pattern would also collect its *.spec.ts files and fail them
+    // for having no browser.
+    exclude: [...configDefaults.exclude, 'e2e/**'],
 
     // Generated output and vendored components are not ours to test: the
     // first is regenerated from the OpenAPI documents and checked by the

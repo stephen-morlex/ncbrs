@@ -1,0 +1,62 @@
+{
+  "app": {
+    "name": "NCBRS",
+    "pageTitle": "{{page}} · {{app}}",
+    "subtitle": "Civil Birth Registration"
+  },
+  "nav": {
+    "groups": {
+      "register": "Register",
+      "review": "Review",
+      "oversight": "Oversight"
+    },
+    "items": {
+      "findByNumber": "Find by number",
+      "searchRegister": "Search the register",
+      "registerBirth": "Register a birth",
+      "amendments": "Amendments",
+      "duplicates": "Duplicates",
+      "lateRegistrations": "Late registrations",
+      "annulments": "Annulments",
+      "facilities": "Facilities",
+      "administrativeAreas": "Administrative areas",
+      "registrars": "Registrars",
+      "devices": "Devices",
+      "deviceAlerts": "Device alerts",
+      "verifyCertificate": "Verify a certificate",
+      "revocationList": "Revocation list",
+      "auditTrail": "Audit trail",
+      "dashboard": "Dashboard",
+      "dhis2Export": "DHIS2 export"
+    },
+    "soon": "soon"
+  },
+  "a11y": {
+    "skipToContent": "Skip to main content"
+  },
+  "session": {
+    "expiringTitle": "Your session is about to expire",
+    "expiringBody": "If it expires you will be signed in again, which reloads this page and discards anything not yet submitted.",
+    "endedTitle": "Your session has ended",
+    "endedBody": "Signing in again will reload this page, and anything typed here and not yet submitted will be lost. Copy any unsaved details before continuing.",
+    "staySignedIn": "Stay signed in",
+    "signingIn": "Signing in…"
+  },
+  "auth": {
+    "signingIn": "Signing you in…",
+    "couldNotSignIn": "Could not sign you in",
+    "tryAgain": "Try again",
+    "forbiddenTitle": "This page is not available to your account",
+    "needsRoles": "It needs {{roles}}.",
+    "signedInAs": "You are signed in as {{roles}}.",
+    "noRoles": "Your account has no roles assigned.",
+    "noRole": "no role",
+    "askDistrictOfficer": "If this is wrong, a district officer can correct your roles."
+  },
+  "shell": {
+    "loading": "Loading…",
+    "notBuiltYetDescription": "Routed and gated, but not built yet. The navigation shows it so the shape of the system is legible before every part of it exists.",
+    "notFoundTitle": "No such page",
+    "notFoundDescription": "Check the address, or use the navigation."
+  }
+}

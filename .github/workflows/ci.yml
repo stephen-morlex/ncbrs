@@ -192,3 +192,67 @@ jobs:
         run: |
           git status --porcelain web/openapi web/src/api/generated
           git diff --exit-code -- web/openapi web/src/api/generated
+
+  # The critical paths end to end -- register, amend and approve, issue,
+  # annul -- through the real UI, the real API and the real identity
+  # provider. The unit suites prove each piece; this proves they meet.
+  #
+  # Its own job because it needs a running stack and takes minutes, and the
+  # fast signals above should not wait behind it.
+  e2e:
+    name: End-to-end (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      # Compose refuses to start without the variables .env supplies, even
+      # for a service that does not read them. The example's values are
+      # development-only.
+      - name: Start Keycloak
+        run: |
+          cp .env.example .env
+          docker compose up -d keycloak
+
+      - name: Install
+        working-directory: web
+        run: |
+          npm ci
+          cp .env.example .env.local
+          npx playwright install --with-deps chromium
+
+      # Keycloak imports the realm on start. The suite fails fast if the
+      # realm is missing, so wait for it rather than race it.
+      - name: Wait for Keycloak
+        run: |
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:8080/realms/ncbrs > /dev/null && exit 0
+            sleep 3
+          done
+          docker compose logs keycloak | tail -50
+          exit 1
+
+      # Playwright starts the API (Development: migrates and seeds SQLite)
+      # and the web dev server itself.
+      - name: Run the critical paths
+        working-directory: web
+        run: npx playwright test
+
+      - name: Keep the report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: web/playwright-report
+          retention-days: 7

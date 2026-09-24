@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router'
 import { AuthProvider } from 'react-oidc-context'
 import './index.css'
+// Before App: the first render must already have its words.
+import '@/i18n'
 import App from './App.tsx'
 import { oidcConfig, readKeycloakSettings } from '@/auth/oidc'
 

@@ -1,5 +1,6 @@
 import { Fragment, useRef } from 'react'
 import { Outlet, useLocation } from 'react-router'
+import { useTranslation } from 'react-i18next'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -99,13 +100,14 @@ export function AppLayout() {
  */
 function useBreadcrumbs(): { label: string; to: string }[] {
   const { pathname } = useLocation()
+  const { t } = useTranslation()
 
   // Longest match wins. `/records/search` is a prefix match for `/records`
   // too, and taking the first hit would label the search page "Find by
   // number" -- naming the wrong act on the page whose whole point is that it
   // is a different one.
   const candidates = navigation
-    .flatMap((group) => group.items.map((item) => ({ group: group.label, item })))
+    .flatMap((group) => group.items.map((item) => ({ group: group.id, item })))
     .filter(({ item }) => pathname === item.to || pathname.startsWith(`${item.to}/`))
     .sort((a, b) => b.item.to.length - a.item.to.length)
 
@@ -113,10 +115,10 @@ function useBreadcrumbs(): { label: string; to: string }[] {
 
   if (best) {
     return [
-      { label: best.group, to: best.item.to },
-      { label: best.item.label, to: best.item.to },
+      { label: t(`nav.groups.${best.group}`), to: best.item.to },
+      { label: t(`nav.items.${best.item.id}`), to: best.item.to },
     ]
   }
 
-  return [{ label: 'NCBRS', to: '/records' }]
+  return [{ label: t('app.name'), to: '/records' }]
 }

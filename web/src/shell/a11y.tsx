@@ -1,6 +1,7 @@
 import { type RefObject, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router'
-import { navigation } from '@/shell/navigation'
+import { useTranslation } from 'react-i18next'
+import { type NavItem, navigation } from '@/shell/navigation'
 
 /** Where the skip link lands, and what route changes move focus to. */
 export const MainContentId = 'main-content'
@@ -15,28 +16,31 @@ export const MainContentId = 'main-content'
  * invisible to everyone else.
  */
 export function SkipLink() {
+  const { t } = useTranslation()
+
   return (
     <a
       href={`#${MainContentId}`}
       className="bg-background ring-ring sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-md focus:ring-2 focus:outline-none"
     >
-      Skip to main content
+      {t('a11y.skipToContent')}
     </a>
   )
 }
 
 /**
- * The page's label for the current route, matched the way the breadcrumbs
- * match: longest first, so `/records/search` is "Find a record" rather than
- * being claimed by the `/records` prefix.
+ * The destination for the current route, matched the way the breadcrumbs
+ * match: longest first, so `/records/search` is the search page rather than
+ * being claimed by the `/records` prefix. Returns the item, not its words —
+ * the words depend on the language.
  */
-export function pageLabelFor(pathname: string): string | null {
+export function navItemFor(pathname: string): NavItem | null {
   const matches = navigation
     .flatMap((group) => group.items)
     .filter((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))
     .sort((a, b) => b.to.length - a.to.length)
 
-  return matches[0]?.label ?? null
+  return matches[0] ?? null
 }
 
 /**
@@ -47,13 +51,17 @@ export function pageLabelFor(pathname: string): string | null {
  * navigation, and the browser's history and tab list are how anyone finds their
  * way back — all three say the same thing for every page until this runs.
  */
-export function usePageTitle(suffix = 'NCBRS') {
+export function usePageTitle() {
   const { pathname } = useLocation()
-  const label = pageLabelFor(pathname)
+  const { t } = useTranslation()
+  const item = navItemFor(pathname)
+
+  const app = t('app.name')
+  const title = item ? t('app.pageTitle', { page: t(`nav.items.${item.id}`), app }) : app
 
   useEffect(() => {
-    document.title = label ? `${label} · ${suffix}` : suffix
-  }, [label, suffix])
+    document.title = title
+  }, [title])
 }
 
 /**

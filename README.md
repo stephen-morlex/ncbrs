@@ -117,6 +117,18 @@ To run the same suite against PostgreSQL rather than SQLite:
 NCBRS_TEST_PROVIDER=Postgres dotnet test
 ```
 
+End-to-end, over the critical paths (register, amend and approve, issue,
+annul) through the real UI, API and Keycloak:
+
+```bash
+docker compose up -d keycloak
+cd web && npm run test:e2e
+```
+
+Playwright starts the API and the web dev server itself if they are not
+running, and signs in as the development realm's test accounts. It must run
+on `localhost:5173` — the only origin the realm and the API's CORS allow.
+
 ## Development credentials
 
 Infrastructure credentials — PostgreSQL and the Keycloak admin — come from

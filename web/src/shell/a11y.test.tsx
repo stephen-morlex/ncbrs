@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import {
   MainContentId,
   SkipLink,
-  pageLabelFor,
+  navItemFor,
   useFocusOnRouteChange,
   usePageTitle,
 } from '@/shell/a11y'
@@ -32,9 +32,9 @@ describe('SkipLink', () => {
   })
 })
 
-describe('pageLabelFor', () => {
-  it('names the page for a route', () => {
-    expect(pageLabelFor('/devices')).toBe('Devices')
+describe('navItemFor', () => {
+  it('finds the destination for a route', () => {
+    expect(navItemFor('/devices')?.id).toBe('devices')
   })
 
   /**
@@ -43,12 +43,12 @@ describe('pageLabelFor', () => {
    * on the page whose whole point is that it is a different one.
    */
   it('prefers the longest match over a prefix', () => {
-    expect(pageLabelFor('/records/search')).toBe('Search the register')
-    expect(pageLabelFor('/records')).toBe('Find by number')
+    expect(navItemFor('/records/search')?.id).toBe('searchRegister')
+    expect(navItemFor('/records')?.id).toBe('findByNumber')
   })
 
-  it('has no name for a route that is not a destination', () => {
-    expect(pageLabelFor('/nowhere')).toBeNull()
+  it('has no destination for a route that is not one', () => {
+    expect(navItemFor('/nowhere')).toBeNull()
   })
 })
 

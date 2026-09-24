@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from 'react-oidc-context'
+import { useTranslation } from 'react-i18next'
 import { TriangleAlert } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -25,6 +26,7 @@ import { Button } from '@/components/ui/button'
  */
 export function SessionExpiry() {
   const auth = useAuth()
+  const { t } = useTranslation()
   const [state, setState] = useState<'none' | 'expiring' | 'failed'>('none')
   const [retrying, setRetrying] = useState(false)
 
@@ -78,15 +80,13 @@ export function SessionExpiry() {
   return (
     <Alert variant={failed ? 'destructive' : 'default'} role="status" aria-live="polite">
       <TriangleAlert />
-      <AlertTitle>{failed ? 'Your session has ended' : 'Your session is about to expire'}</AlertTitle>
+      <AlertTitle>{failed ? t('session.endedTitle') : t('session.expiringTitle')}</AlertTitle>
       <AlertDescription className="flex flex-wrap items-center gap-3">
         <span>
-          {failed
-            ? 'Signing in again will reload this page, and anything typed here and not yet submitted will be lost. Copy any unsaved details before continuing.'
-            : 'If it expires you will be signed in again, which reloads this page and discards anything not yet submitted.'}
+          {failed ? t('session.endedBody') : t('session.expiringBody')}
         </span>
         <Button size="sm" variant={failed ? 'secondary' : 'outline'} onClick={() => void renew()} disabled={retrying}>
-          {retrying ? 'Signing in…' : 'Stay signed in'}
+          {retrying ? t('session.signingIn') : t('session.staySignedIn')}
         </Button>
       </AlertDescription>
     </Alert>
