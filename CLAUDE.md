@@ -222,7 +222,9 @@ Jonglei) and South Sudanese names throughout.
   after migrations on Development startup, before the dev data seeder. Note the
   dev seeder is keyed by subject and **never rebinds** an existing registrar,
   so a database seeded before a seed change keeps the old bindings — reset it
-  rather than expecting a restart to correct it.
+  rather than expecting a restart to correct it — `scripts/dev-reset.ps1`
+  does that safely (backs up first; clears Kafka too, or the read model replays
+  the old events).
 - **`GET /api/administrative-areas`** feeds dependent location pickers one
   level at a time (`?parentId=` for children, `?level=` for a whole level,
   neither for the country root). Read-only and open to any signed-in caller:

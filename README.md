@@ -85,6 +85,26 @@ The API alone is enough for registration, certificates and amendments: the
 request path never touches Kafka, so events simply queue in the outbox until
 the relay runs.
 
+### Resetting to a clean seed
+
+```powershell
+./scripts/dev-reset.ps1        # shows what it would destroy, changes nothing
+./scripts/dev-reset.ps1 -Yes   # backs up, then resets
+```
+
+Development only. It stops the local services, deletes the SQLite files, drops
+and recreates the compose Postgres database, and recreates Kafka; the next API
+start in Development migrates and seeds from scratch. It backs up first
+(`backup/dev-reset/<timestamp>/`, git-ignored) unless given `-NoBackup`, and
+prints how to restore.
+
+You need it more than you'd think. The dev seeders are idempotent and **never
+rebind** an existing row, so a database seeded before a seed change keeps the old
+bindings — a restart will not fix it. Load runs also leave thousands of
+synthetic registrations behind. Kafka is cleared with the database on purpose:
+the dashboard's read model is rebuilt from the topics, so resetting the
+database alone replays every old event straight back in.
+
 ## Tests
 
 ```bash
