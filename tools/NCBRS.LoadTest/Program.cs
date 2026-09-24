@@ -38,6 +38,7 @@ Console.WriteLine($"""
       API            {cfg.ApiBase}
       facility       {cfg.FacilityId}
       devices        {(cfg.Devices <= 1 ? cfg.DeviceId : $"{cfg.Devices} enrolled per run (fleet)")}
+      signing        {(cfg.Sign ? "on — each batch signed with its device key" : "off")}
       concurrency    {cfg.Concurrency} in-flight batches
       batch size     {cfg.BatchSize} records
       measured       {cfg.Batches} batches  ({cfg.Batches * cfg.BatchSize} records)
@@ -72,20 +73,29 @@ var enrolUri = new Uri(new Uri(cfg.ApiBase), "api/devices");
 // serialise them all on that one Device row's last-seen update — measuring
 // row-lock contention, not the system. With Devices > 1 the driver enrols a
 // fleet of fresh devices up front and round-robins batches across them.
-string[] deviceIds;
+FleetDevice[] fleet;
 if (cfg.Devices <= 1)
 {
-    deviceIds = [cfg.DeviceId];
+    if (cfg.Sign)
+    {
+        // The seeded device's private key was discarded when it was enrolled,
+        // exactly as a real device keeps its own. Nothing here can sign as it.
+        throw new InvalidOperationException(
+            "Signing needs a device key this process holds. Use fleet mode (NCBRS_LOAD_DEVICES > 1), which "
+            + "enrols devices with fresh keys, or set NCBRS_LOAD_SIGN=false for the single seeded device.");
+    }
+
+    fleet = [new FleetDevice(cfg.DeviceId, null)];
 }
 else
 {
     Console.Write($"Enrolling {cfg.Devices} devices… ");
-    deviceIds = await EnrolFleetAsync(http, cfg, enrolUri, runToken, webJson);
-    Console.WriteLine($"ok ({deviceIds.Length} enrolled)");
+    fleet = await EnrolFleetAsync(http, cfg, enrolUri, runToken, webJson);
+    Console.WriteLine($"ok ({fleet.Length} enrolled)");
 }
 
 var deviceCursor = -1;
-string NextDevice() => deviceIds[(uint)Interlocked.Increment(ref deviceCursor) % deviceIds.Length];
+FleetDevice NextDevice() => fleet[(uint)Interlocked.Increment(ref deviceCursor) % fleet.Length];
 
 // Start each run at a fresh random point in the synthetic range, so re-running
 // the tool doesn't replay BRNs already on file (which the centre would, rightly,
@@ -145,10 +155,22 @@ ApiRequest<SyncBatchRequest> BuildBatch(string deviceId)
 
 async Task<(bool Ok, double Ms, int Registered, int Rejected, int Duplicates, string? Error)> SendOneAsync()
 {
-    var request = new HttpRequestMessage(HttpMethod.Post, batchUri)
+    var device = NextDevice();
+
+    // Serialised once, and these exact bytes are what is signed and what is
+    // sent. The centre verifies the raw request body byte for byte, so
+    // re-serialising after signing -- or letting the HTTP layer do it -- would
+    // produce a body the signature does not cover.
+    var payload = JsonSerializer.SerializeToUtf8Bytes(BuildBatch(device.DeviceId), webJson);
+    var content = new ByteArrayContent(payload);
+    content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+    var request = new HttpRequestMessage(HttpMethod.Post, batchUri) { Content = content };
+
+    if (cfg.Sign)
     {
-        Content = JsonContent.Create(BuildBatch(NextDevice()), options: webJson),
-    };
+        request.Headers.TryAddWithoutValidation(DeviceSignature.HeaderName, DeviceSignature.Sign(device.PrivateKeyPem!, payload));
+    }
     // A fresh transaction id per batch: this is new work, not a replay of an
     // earlier answer.
     request.Headers.TryAddWithoutValidation(TransactionIdHeader, Guid.NewGuid().ToString());
@@ -221,18 +243,18 @@ wall.Stop();
 Report(cfg, wall.Elapsed, lat, ctr);
 return ctr.FailedBatches == 0 ? 0 : 1;
 
-// Enrol a fleet of fresh devices at the target facility, public-key only (no
-// private key leaves this process; with RequireSignature off none is needed to
-// sync). Returns the enrolled device ids. Needs a CanEnrolDevices identity
-// (district officer or ministry admin) — the same token used to sync.
-static async Task<string[]> EnrolFleetAsync(
+// Enrol a fleet of fresh devices at the target facility. Only the public half
+// is sent; the private half stays in this process, which is what lets the
+// driver sign as a real device does. Needs a CanEnrolDevices identity (district
+// officer or ministry admin) -- the same token used to sync.
+static async Task<FleetDevice[]> EnrolFleetAsync(
     HttpClient http, Config cfg, Uri enrolUri, string runToken, JsonSerializerOptions json)
 {
-    var ids = new string[cfg.Devices];
+    var fleet = new FleetDevice[cfg.Devices];
     for (var i = 0; i < cfg.Devices; i++)
     {
         var deviceId = $"LOADTEST-{runToken}-{i:D3}";
-        var (_, publicKeyPem) = DeviceSignature.GenerateKeyPair();
+        var (privateKeyPem, publicKeyPem) = DeviceSignature.GenerateKeyPair();
 
         var body = new ApiRequest<EnrolDeviceRequest>
         {
@@ -260,10 +282,10 @@ static async Task<string[]> EnrolFleetAsync(
                 + $"CanEnrolDevices (district officer / ministry admin). Response: {detail}");
         }
 
-        ids[i] = deviceId;
+        fleet[i] = new FleetDevice(deviceId, privateKeyPem);
     }
 
-    return ids;
+    return fleet;
 }
 
 static async Task<string> GetTokenAsync(HttpClient http, Config cfg)
@@ -357,6 +379,7 @@ internal sealed record Config(
     Guid FacilityId,
     string DeviceId,
     int Devices,
+    bool Sign,
     int Concurrency,
     int BatchSize,
     int Batches,
@@ -385,6 +408,11 @@ internal sealed record Config(
             // A fleet spreads the burst across distinct devices, as a real region
             // does; 1 keeps the single seeded device (and hits its row-lock ceiling).
             Devices: I("DEVICES", 32),
+            // On by default wherever the driver holds device keys (fleet mode),
+            // so load tests run the production path. Note a server that does not
+            // enforce signatures accepts batches without verifying them -- a clean
+            // run proves the signing path only against RequireSignature: true.
+            Sign: bool.TryParse(S("SIGN", ""), out var sign) ? sign : I("DEVICES", 32) > 1,
             Concurrency: I("CONCURRENCY", 16),
             BatchSize: I("BATCH_SIZE", 25),
             Batches: I("BATCHES", 200),
@@ -394,3 +422,6 @@ internal sealed record Config(
             BrnBase: L("BRN_BASE", 9_000_000_000));
     }
 }
+
+/// <summary>A device the run uploads as. The key is null for the single seeded device.</summary>
+internal sealed record FleetDevice(string DeviceId, string? PrivateKeyPem);

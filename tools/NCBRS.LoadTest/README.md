@@ -54,6 +54,7 @@ variables:
 | `NCBRS_LOAD_USERNAME` / `_PASSWORD` | `nurse.lado` / `password` | The sync identity. Fleet mode needs `CanEnrolDevices` (e.g. `district.officer`) |
 | `NCBRS_LOAD_FACILITY_ID` | Juba Teaching Hospital | Facility the identity may act for |
 | `NCBRS_LOAD_DEVICES` | `32` | Devices enrolled per run and round-robined across; `1` uses the single seeded `DEVICE_ID` |
+| `NCBRS_LOAD_SIGN` | on in fleet mode | Sign each batch with its device key (see *Device signatures*) |
 | `NCBRS_LOAD_DEVICE_ID` | `TERMINAL-JUBA-01` | The single device used when `DEVICES=1` |
 | `NCBRS_LOAD_CONCURRENCY` | `16` | In-flight batches (set `= BATCHES` for a pure burst) |
 | `NCBRS_LOAD_BATCH_SIZE` | `25` | Records per batch |
@@ -98,11 +99,26 @@ with the fleet spread across **multiple facilities** and `BATCHES`/`BATCH_SIZE`/
 re-measured at that volume too — see `NCBRS-Business-and-Delivery-Plan.md`
 (§A6, §A7).
 
-`RequireSignature` was off for these runs (dev). With it on, the batch body must
-be signed byte-for-byte (see `client/NCBRS.Client.Core`'s `DeviceSigner`) — the
-driver holds each enrolled device's private key from `GenerateKeyPair`, so wiring
-that in is a small next step, not yet done.
+`RequireSignature` was off for these measured runs (dev).
 
-`RequireSignature` is off in dev, so the driver sends no device signature. To
-load-test with signatures on, the batch body must be signed byte-for-byte (see
-`client/NCBRS.Client.Core`'s `DeviceSigner`) — not yet wired here.
+## Device signatures
+
+In fleet mode the driver **signs every batch** with the enrolling device's key,
+so load tests run the production path (`DeviceEnrolment:RequireSignature: true`).
+Each device's key pair comes from `DeviceSignature.GenerateKeyPair`; only the
+public half is enrolled, and the private half never leaves the process. The
+batch is serialised **once** and those exact bytes are both signed and sent,
+because the centre verifies the raw body byte for byte — re-serialising after
+signing would produce a body the signature does not cover.
+
+| `NCBRS_LOAD_SIGN` | Behaviour |
+|---|---|
+| unset | On in fleet mode (`DEVICES > 1`), off for the single seeded device |
+| `true` | Sign every batch. With `DEVICES=1` it refuses to start: the seeded device's private key was discarded at enrolment, exactly as a real device keeps its own |
+| `false` | Send unsigned batches |
+
+**A server that does not enforce signatures accepts batches without verifying
+them**, so a clean run proves the signing path only against
+`RequireSignature: true`. Verified that way (2026-09-24): signed, 12/12 batches
+accepted; the same run unsigned against the same server, 12/12 refused with
+403 — which is what shows enforcement was actually on.
