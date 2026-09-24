@@ -759,7 +759,7 @@ public class DeviceEnrolmentTests : IDisposable
             new ProvisionalRecordReconciler(db, new CountyLookup(db)),
             new DeviceEnrolmentService(db, new DeviceEnrolmentOptions { RequireSignature = requireSignature }),
             new RegisterBirthRequestValidator(),
-            new CountyLookup(db))
+            new CountyLookup(db), new RefusalAudit(db, Microsoft.Extensions.Logging.Abstractions.NullLogger<RefusalAudit>.Instance))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };

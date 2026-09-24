@@ -595,7 +595,8 @@ critical path is still WS-B's device build.
 |---|---|---|
 | 7 | End-to-end web tests (register, amend + approve, issue, annul) | **Done** — Playwright adopted; all four paths green locally and in CI |
 | 8 | Localisation scaffolding | **Done** — i18next adopted; shell translated, screens converted incrementally |
-| 9 | Close the unverified `deviceId` on online `POST /register` — a stolen token bypasses enrolment there | Per-request signing (buildable here) or mTLS (infrastructure) |
+| 9 | Close the unverified `deviceId` on online `POST /register` — a stolen token bypasses enrolment there | **Done** — per-request signing; channel decided by the token's `azp`; also fixed refusal audits being rolled back for real devices |
+| 9a | The same trust on other endpoints that accept a `deviceId` as an attribution label (BRN block request, certificate issue) | Apply the same channel rule, or accept them as labels (they grant nothing a device key would protect) |
 | 10 | WCAG 2.2 AA conformance (contrast, 2.5.8 target size, assistive-technology testing) and breakpoint verification | A signed-in browser session to test against |
 | 11 | Per-record vs per-batch `SaveChanges` in sync — keep per-record for failure isolation unless real-scale measurement shows round-trips dominate | Record as an ADR |
 

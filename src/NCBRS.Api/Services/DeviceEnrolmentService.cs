@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using NCBRS.Data;
 using NCBRS.Devices;
@@ -20,7 +21,14 @@ public enum DeviceCheckOutcome
     WrongFacility,
 
     /// <summary>The body was not signed by this device's enrolled key.</summary>
-    SignatureFailed
+    SignatureFailed,
+
+    /// <summary>
+    /// The request claims a channel its token was not issued for: a browser
+    /// session presenting itself as a device, or a device presenting itself
+    /// as the management site to avoid proving which device it is.
+    /// </summary>
+    WrongChannel
 }
 
 public record DeviceCheck(DeviceCheckOutcome Outcome, string Detail, Device? Device = null)
@@ -57,6 +65,15 @@ public class DeviceEnrolmentOptions
     /// proof of possession.
     /// </summary>
     public bool RequireSignature { get; set; } = true;
+
+    /// <summary>
+    /// The OIDC client id of the management site, and the device id it
+    /// registers under. A token issued to this client comes from an
+    /// interactive browser sign-in (the realm allows it no password grant),
+    /// so it is the web channel; every other client is a device channel and
+    /// must prove which device it is. Must match the Keycloak realm.
+    /// </summary>
+    public string WebClientId { get; set; } = "ncbrs-web";
 }
 
 /// <summary>
@@ -131,6 +148,58 @@ public class DeviceEnrolmentService(NcbrsDbContext db, DeviceEnrolmentOptions op
     /// the next sweep: a district officer looking at the queue minutes after
     /// a post came back should not still be told to drive out there.
     /// </summary>
+    /// <summary>
+    /// Which channel an online registration came through, decided by the
+    /// token rather than by the body.
+    ///
+    /// The body's device id is a claim anyone holding a registrar's token can
+    /// type. The token's authorised party (`azp`) is not: it names the client
+    /// the identity provider issued the token to. So:
+    ///
+    /// - a **web-client** token is the management site, which registers as the
+    ///   web channel and holds no device key -- the user's interactive session
+    ///   is the authority. It may not claim to be a device.
+    /// - **any other** token is a device channel, held to the same rule as a
+    ///   sync batch: enrolled, active, at this facility, and (when enforced)
+    ///   signed over the exact bytes sent. It may not claim to be the
+    ///   management site, or a stolen device token could skip the signature by
+    ///   saying it came from a browser.
+    ///
+    /// Before this, the online path took the device id on trust, so a stolen
+    /// token could register as any device -- including a revoked one -- and the
+    /// audit trail would record whatever was typed.
+    /// </summary>
+    public async Task<DeviceCheck> CheckRegistrationChannelAsync(
+        ClaimsPrincipal user,
+        string deviceId,
+        Guid facilityId,
+        ReadOnlyMemory<byte> body,
+        string? signature,
+        CancellationToken cancellationToken = default)
+    {
+        var client = user.FindFirstValue("azp");
+        var fromWeb = string.Equals(client, options.WebClientId, StringComparison.Ordinal);
+        var claimsWeb = string.Equals(deviceId, options.WebClientId, StringComparison.Ordinal);
+
+        if (fromWeb)
+        {
+            return claimsWeb
+                ? new DeviceCheck(DeviceCheckOutcome.Accepted, "Registered through the management site.")
+                : new DeviceCheck(DeviceCheckOutcome.WrongChannel,
+                    $"A signed-in browser session cannot register as device '{deviceId}'; "
+                    + $"the management site registers as '{options.WebClientId}'.");
+        }
+
+        if (claimsWeb)
+        {
+            return new DeviceCheck(DeviceCheckOutcome.WrongChannel,
+                $"'{options.WebClientId}' is the management site's channel. A device registers as itself, "
+                + "with its own signature.");
+        }
+
+        return await CheckAsync(deviceId, facilityId, body, signature, cancellationToken);
+    }
+
     public async Task MarkSeenAsync(Device? device, CancellationToken cancellationToken = default)
     {
         if (device is null)

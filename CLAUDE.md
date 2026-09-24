@@ -770,16 +770,42 @@ from existing records, while signing needs every tablet to hold a key.
   migration aid, not an amnesty.
 - **Refused batches are audited** (`DeviceRefused:{outcome}`) even though
   nothing is registered. An attempted upload from a stolen token is the most
-  interesting thing the endpoint sees.
+  interesting thing the endpoint sees. **Record refusals through
+  `RefusalAudit`, never `db.AuditLogs.Add`.** Devices send a transaction id,
+  so their requests run inside the idempotency filter's transaction, which
+  rolls back on any non-2xx — and a refusal written with the work was rolled
+  back with it, so the promised audit silently never happened for real
+  devices (found and fixed with the register work below; the tests had called
+  the controller directly and never met the filter). `RefusalAudit` re-writes
+  only its own rows after the rollback, with the change tracker cleared first:
+  keeping *every* audit row from a failed request would be worse, since an
+  ordinary action's row would then assert work that never happened.
 - **`LastSeenAtUtc` is null until a device first syncs**, which is what makes
   a deployment that failed silently visible — previously a post that never
   reported looked like a quiet area. This is what device silence alerts
   (below) are built on.
 
-**Residual, not closed by this:** the enrolment check covers sync batches, as
-the plan scopes it. `POST /api/birthrecords/register` still takes an
-unverified `deviceId` label, so a stolen token can use the online path
-without touching enrolment. Closing that needs per-request signing or mTLS.
+**Online registration is held to the same proof** (per-request signing, chosen
+over mTLS). `POST /api/birthrecords/register` used to take its `deviceId` on
+trust, so a stolen token could register as any device — even a revoked one.
+The **channel comes from the token, not the body**: its `azp` names the OIDC
+client it was issued to (`DeviceEnrolment:WebClientId`, `ncbrs-web`).
+
+- A **web-client** token is the management site: it registers as `ncbrs-web`,
+  holds no device key, and the user's interactive session is the authority
+  (the realm gives that client no password grant). It may **not** claim a
+  device id.
+- **Any other** token is a device and goes through `DeviceEnrolmentService`
+  exactly like a sync batch — enrolled, active, at this facility, and signed
+  over the exact bytes when `RequireSignature` is on. It may **not** claim
+  `ncbrs-web`: that is the obvious bypass (skip the signature by claiming to
+  be a browser), and it is refused rather than left to enrolment settings.
+- A proved device is marked seen, as on sync. Refusals are audited through
+  `RefusalAudit` (above).
+
+Still taking a device id on trust: the other endpoints that accept one as an
+*attribution label* (BRN block requests, certificate issue). Recorded in plan
+§17 (9a).
 
 **District officers act within their own county, and no further.** Oversight
 roles used to be national for *writes* while county-scoped for *reads*, so a

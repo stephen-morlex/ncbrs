@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NCBRS.Controllers;
 using NCBRS.Data;
+using NCBRS.Middleware;
 using NCBRS.Models;
 using NCBRS.Services;
 using Xunit;
@@ -309,7 +310,7 @@ public class RecordDetailTests : IDisposable
                 db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db), current, districts),
             current,
             districts,
-            Options.Create(new StatutoryRegistrationOptions { WindowDays = windowDays }))
+            Options.Create(new StatutoryRegistrationOptions { WindowDays = windowDays }), new DeviceEnrolmentService(db, new DeviceEnrolmentOptions()), new RefusalAudit(db, Microsoft.Extensions.Logging.Abstractions.NullLogger<RefusalAudit>.Instance))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };

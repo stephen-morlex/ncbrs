@@ -24,30 +24,9 @@ public class SyncController(
     ProvisionalRecordReconciler reconciler,
     DeviceEnrolmentService devices,
     IValidator<RegisterBirthRequest> recordValidator,
-    CountyLookup districts) : ControllerBase
+    CountyLookup districts,
+    RefusalAudit refusals) : ControllerBase
 {
-    /// <summary>
-    /// The body exactly as it arrived, for signature verification.
-    ///
-    /// Read back from the buffered stream rather than re-serialised from the
-    /// bound model: a re-serialisation is a second opinion about what the
-    /// device sent, and the signature is over the first.
-    /// </summary>
-    private async Task<ReadOnlyMemory<byte>> RawBodyAsync()
-    {
-        if (!Request.Body.CanSeek)
-        {
-            return ReadOnlyMemory<byte>.Empty;
-        }
-
-        Request.Body.Position = 0;
-
-        using var buffer = new MemoryStream();
-        await Request.Body.CopyToAsync(buffer, HttpContext.RequestAborted);
-
-        return buffer.ToArray();
-    }
-
     /// <summary>
     /// Receives a device's offline outbox. Section 6.3 of the NCBRS draft.
     ///
@@ -106,13 +85,13 @@ public class SyncController(
         var deviceCheck = await devices.CheckAsync(
             batch.DeviceId,
             batch.FacilityId,
-            await RawBodyAsync(),
+            await Request.ReadRawAsync(HttpContext.RequestAborted),
             Request.Headers[DeviceSignature.HeaderName],
             HttpContext.RequestAborted);
 
         if (!deviceCheck.Accepted)
         {
-            db.AuditLogs.Add(new AuditLog
+            refusals.Record(new AuditLog
             {
                 EntityType = nameof(SyncBatch),
                 CountyCode = await districts.ForFacilityAsync(batch.FacilityId, HttpContext.RequestAborted),
