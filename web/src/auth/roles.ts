@@ -85,7 +85,14 @@ export function satisfies(roles: readonly string[], policy: NcbrsPolicy): boolea
   return NcbrsPolicies[policy].some((role) => roles.includes(role))
 }
 
-/** Roles permitted to act beyond a single facility. */
+/**
+ * Roles permitted to act beyond a single facility.
+ *
+ * Beyond one facility is not everywhere: a district officer reaches only the
+ * facilities of their own county, and only a ministry admin acts nationally.
+ * The server enforces that (CanActForFacilityAsync); this is a courtesy for
+ * hiding affordances, never a check.
+ */
 export function isCrossFacility(roles: readonly string[]): boolean {
   return Oversight.some((role) => roles.includes(role))
 }

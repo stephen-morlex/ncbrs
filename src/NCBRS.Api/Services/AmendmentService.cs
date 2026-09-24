@@ -123,7 +123,7 @@ public class AmendmentService(
                 Detail: $"No birth record exists with BRN '{brn}'.");
         }
 
-        if (!currentRegistrar.CanActForFacility(registrar, record.FacilityId))
+        if (!await currentRegistrar.CanActForFacilityAsync(registrar, record.FacilityId, cancellationToken))
         {
             return new AmendmentOutcome(AmendmentResult.NotPermitted,
                 Detail: "You are not permitted to amend records for this facility.");
@@ -327,7 +327,7 @@ public class AmendmentService(
                 Detail: "The birth record this amendment belongs to no longer exists.");
         }
 
-        if (!currentRegistrar.CanActForFacility(reviewer, record.FacilityId))
+        if (!await currentRegistrar.CanActForFacilityAsync(reviewer, record.FacilityId, cancellationToken))
         {
             return new AmendmentReviewOutcome(AmendmentReviewResult.NotPermitted,
                 Detail: "You are not permitted to review amendments for this facility.");
@@ -582,7 +582,7 @@ public class AmendmentService(
                 Detail: "This conflict has already been reviewed.");
         }
 
-        if (!currentRegistrar.CanActForFacility(reviewer, conflict.BirthRecord.FacilityId))
+        if (!await currentRegistrar.CanActForFacilityAsync(reviewer, conflict.BirthRecord.FacilityId, cancellationToken))
         {
             return new AmendmentReviewOutcome(AmendmentReviewResult.NotPermitted,
                 Detail: "You are not permitted to review conflicts for this facility.");

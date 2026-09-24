@@ -65,7 +65,4 @@ public static class NcbrsRoles
     /// precisely the misuse it exists to expose.
     /// </summary>
     public const string CanReadAuditTrail = nameof(CanReadAuditTrail);
-
-    /// <summary>Roles that may act beyond a single facility.</summary>
-    public static readonly string[] CrossFacility = [DistrictOfficer, MinistryAdmin];
 }

@@ -101,6 +101,17 @@ public class DevicesController(
                 "deviceAlertId", $"No device alert exists with id '{deviceAlertId}'."));
         }
 
+        // Acknowledging says "someone here is acting on this". From an officer
+        // in another county that is false, and it is the harmful kind of false:
+        // the alert's own district sees it handled and stops looking, which is
+        // exactly how a queue empties without a single device coming back.
+        if (!await currentRegistrar.CanActForFacilityAsync(registrar, alert.FacilityId, HttpContext.RequestAborted))
+        {
+            return ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status403Forbidden, "Not permitted for this facility.",
+                "deviceAlertId", "This alert belongs to a facility outside your county."));
+        }
+
         if (alert.ResolvedAtUtc is not null)
         {
             return ApiErrors.Result(ApiErrors.Single(
@@ -167,7 +178,7 @@ public class DevicesController(
                 "data.facilityId", $"No facility exists with id '{request.FacilityId}'."));
         }
 
-        if (!currentRegistrar.CanActForFacility(registrar, facility.FacilityId))
+        if (!await currentRegistrar.CanActForFacilityAsync(registrar, facility.FacilityId, HttpContext.RequestAborted))
         {
             return ApiErrors.Result(ApiErrors.Single(
                 StatusCodes.Status403Forbidden, "Not permitted for this facility.",
@@ -262,7 +273,7 @@ public class DevicesController(
 
         if (facilityId is { } scope)
         {
-            if (!currentRegistrar.CanActForFacility(registrar, scope))
+            if (!await currentRegistrar.CanActForFacilityAsync(registrar, scope, HttpContext.RequestAborted))
             {
                 return ApiErrors.Result(ApiErrors.Single(
                     StatusCodes.Status403Forbidden, "Not permitted for this facility.",
@@ -344,7 +355,7 @@ public class DevicesController(
             return NotFoundDevice(deviceId);
         }
 
-        if (!currentRegistrar.CanActForFacility(registrar, device.FacilityId))
+        if (!await currentRegistrar.CanActForFacilityAsync(registrar, device.FacilityId, HttpContext.RequestAborted))
         {
             return ApiErrors.Result(ApiErrors.Single(
                 StatusCodes.Status403Forbidden, "Not permitted for this facility.",

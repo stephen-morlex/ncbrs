@@ -411,6 +411,29 @@ public class DeviceSilenceTests : IDisposable
     }
 
     [Fact]
+    public async Task AnOfficerMayNotAcknowledgeAnotherCountysAlert()
+    {
+        // The hospital is in Juba; the acknowledging officer is in Terekeka.
+        await GivenDeviceAsync("TERMINAL-JUBA", facilityId: HospitalId, lastSeenDaysAgo: 30);
+        await SweepAsync();
+
+        var id = (await AlertsAsync()).Single().DeviceAlertId;
+
+        await using var db = NewDb();
+
+        var result = await Devices(db).AcknowledgeAlert(
+            id, new ApiRequest<AcknowledgeDeviceAlertRequest> { Data = new() { Note = "On it." } });
+
+        var error = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(StatusCodes.Status403Forbidden, error.StatusCode);
+
+        // Still open and unacknowledged: Juba's own officers must still see it.
+        var alert = (await AlertsAsync()).Single();
+        Assert.Equal(DeviceAlertStatus.Open, alert.Status);
+        Assert.Null(alert.AcknowledgedByRegistrarId);
+    }
+
+    [Fact]
     public async Task AcknowledgingAResolvedAlertIsRefused()
     {
         await GivenDeviceAsync(lastSeenDaysAgo: 30);

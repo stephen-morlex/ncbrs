@@ -778,8 +778,20 @@ from existing records, while signing needs every tablet to hold a key.
 the plan scopes it. `POST /api/birthrecords/register` still takes an
 unverified `deviceId` label, so a stolen token can use the online path
 without touching enrolment. Closing that needs per-request signing or mTLS.
-Also note `NcbrsRoles.CrossFacility` is not district-scoped anywhere in the
-system, so a district officer may enrol for any facility.
+
+**District officers act within their own county, and no further.** Oversight
+roles used to be national for *writes* while county-scoped for *reads*, so a
+district officer could approve an amendment, verify a late registration,
+issue a certificate or enrol a device for a record in a county they were not
+permitted even to search. `CurrentRegistrarService.CanActForFacilityAsync` now
+applies the read rule to every write: own facility always; ministry admin
+nationally; district officer only where both counties resolve and match.
+**It fails closed** — an unresolvable county on either side refuses, because
+"unknown" matching "unknown" would reach every facility the hierarchy cannot
+place. Acknowledging a device alert is held to the same rule: acknowledging
+from another county would tell the alert's own district it is being handled.
+The old flat `NcbrsRoles.CrossFacility` list is gone on purpose; don't
+reintroduce a role list as a shortcut past the county check.
 
 ## Device silence alerts (WS-F4, built)
 "A silent device is indistinguishable from a district with no births, and only

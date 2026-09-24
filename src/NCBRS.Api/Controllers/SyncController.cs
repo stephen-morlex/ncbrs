@@ -92,7 +92,7 @@ public class SyncController(
         // Rejected whole rather than per record: a device uploading someone
         // else's facility's outbox is a misconfiguration, not a data problem,
         // and processing half of it would scatter records across facilities.
-        if (!currentRegistrar.CanActForFacility(registrar, facility.FacilityId))
+        if (!await currentRegistrar.CanActForFacilityAsync(registrar, facility.FacilityId, HttpContext.RequestAborted))
         {
             return ApiErrors.Result(ApiErrors.Single(
                 StatusCodes.Status403Forbidden, "Not permitted for this facility.",

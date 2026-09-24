@@ -249,7 +249,7 @@ public class OutcomeService(
             return (null, OutcomeResult.BirthRecordNotFound, $"No birth record exists with BRN '{brn}'.");
         }
 
-        if (!currentRegistrar.CanActForFacility(registrar, record.FacilityId))
+        if (!await currentRegistrar.CanActForFacilityAsync(registrar, record.FacilityId, cancellationToken))
         {
             return (null, OutcomeResult.NotPermitted, "You are not permitted to record outcomes for this facility.");
         }

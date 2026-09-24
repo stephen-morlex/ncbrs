@@ -583,7 +583,8 @@ critical path is still WS-B's device build.
 |---|---|---|---|
 | 1 | Refresh CLAUDE.md's administrative-geography section — it still described the district→county rename as deferred | **Done** | Instructions match the code |
 | 2 | Credit H2 in this plan (signed transfer file was built but unmarked) | **Done** | §12 and §14 show it |
-| 3 | Scope district officers to their own county: `NcbrsRoles.CrossFacility` is not county-scoped, so a district officer can enrol devices for any facility | In progress | Refused outside their county; ministry admin stays national |
+| 3 | Scope district officers to their own county. Wider than recorded: writes were national for oversight roles while reads were county-scoped, across all sixteen write paths (amendments, late registration, certificates, outcomes, sync, devices, BRN blocks), and alert acknowledgement had no facility check at all | **Done** | Refused outside their county, fail-closed on an unresolvable county; ministry admin stays national |
+| 3a | Scope the two remaining **read** paths: the device list (no facility filter) and the alert queue still return every county to a district officer | Open | Both follow `CountyScopeResolver`: narrowed to own county by default, another county named is refused |
 | 4 | Signature mode in the A7 load driver, so load tests run the production `RequireSignature: true` path | Open | Driver signs batches and runs clean with enforcement on |
 | 5 | Dev environment hygiene: the compose Postgres holds a stale pre-SS seed binding (`nurse.lado` → the old "Kabwe" facility), ~11k synthetic load births and `LOADTEST-` devices | Open | A documented reset restores a clean seed |
 | 6 | Lint and build warnings: the `react` rule surface (set-state-in-effect, one exhaustive-deps), CS0108 in `DevicesController`, NU1510 in Consumer, Vite `__dirname` | Open | The `react` oxlint plugin can be enabled under `--deny-warnings` |

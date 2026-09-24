@@ -78,7 +78,7 @@ public class CertificateService(
             return NotFound(brn);
         }
 
-        if (!currentRegistrar.CanActForFacility(registrar, record.FacilityId))
+        if (!await currentRegistrar.CanActForFacilityAsync(registrar, record.FacilityId, cancellationToken))
         {
             return new CertificateOutcome(CertificateResult.NotPermitted,
                 Detail: "You are not permitted to issue certificates for this facility.");
@@ -199,7 +199,7 @@ public class CertificateService(
             return NotFound(brn);
         }
 
-        if (!currentRegistrar.CanActForFacility(registrar, record.FacilityId))
+        if (!await currentRegistrar.CanActForFacilityAsync(registrar, record.FacilityId, cancellationToken))
         {
             return new CertificateOutcome(CertificateResult.NotPermitted,
                 Detail: "You are not permitted to reprint certificates for this facility.");

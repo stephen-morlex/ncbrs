@@ -82,11 +82,12 @@ public class AnnulmentService(
                 Detail: $"BRN '{brn}' was already annulled on {record.AnnulledAtUtc:yyyy-MM-dd}.");
         }
 
-        // Facility scoping still applies, even to a ministry admin acting
-        // nationally -- CanActForFacility already lets cross-facility roles
-        // through, so this only stops someone confined to one facility from
-        // voiding another's record.
-        if (!currentRegistrar.CanActForFacility(registrar, record.FacilityId))
+        // Facility scoping still applies. Annulment is ministry-only by policy,
+        // and a ministry admin acts nationally, so in practice this passes; it
+        // is kept so that if the policy is ever widened, the new role inherits
+        // the same facility/county boundary as every other write rather than
+        // silently gaining national reach.
+        if (!await currentRegistrar.CanActForFacilityAsync(registrar, record.FacilityId, cancellationToken))
         {
             return new AnnulmentOutcome(AnnulmentResult.NotPermitted,
                 Detail: "You are not permitted to annul records for this facility.");

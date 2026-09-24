@@ -33,6 +33,9 @@ public class DeviceEnrolmentTests : IDisposable
 {
     private static readonly Guid FacilityId = Guid.Parse("0199a1b2-0001-7000-8000-000000000001");
     private static readonly Guid OtherFacilityId = Guid.Parse("0199a1b2-0002-7000-8000-000000000002");
+
+    /// <summary>A second facility in the officer's own county (Terekeka).</summary>
+    private static readonly Guid SameCountyFacilityId = Guid.Parse("0199a1b2-0003-7000-8000-000000000003");
     private static readonly Guid RegistrarId = Guid.Parse("0199a1b2-1001-7000-8000-000000000001");
 
     private readonly TestDatabase _database;
@@ -63,6 +66,15 @@ public class DeviceEnrolmentTests : IDisposable
                 BrnBlockStart = 200_000,
                 BrnBlockEnd = 299_999,
                 BrnBlockNextAvailable = 200_000
+            },
+            new Facility
+            {
+                FacilityId = SameCountyFacilityId,
+                Name = "Tali Primary Health Care Unit",
+                CountyCode = "SS-CE-TER",
+                BrnBlockStart = 300_000,
+                BrnBlockEnd = 399_999,
+                BrnBlockNextAvailable = 300_000
             });
 
         db.Registrars.Add(new Registrar
@@ -455,26 +467,41 @@ public class DeviceEnrolmentTests : IDisposable
     }
 
     /// <summary>
-    /// A district officer may enrol for any facility, because enrolment uses
-    /// the same cross-facility authority model as every other oversight act
-    /// (duplicates, amendments, annulment).
-    ///
-    /// Worth being explicit that this is broader than "their own district":
-    /// <c>NcbrsRoles.CrossFacility</c> is not district-scoped anywhere in the
-    /// system. Narrowing it is a change to the whole authority model rather
-    /// than to enrolment, so it is recorded here rather than special-cased.
+    /// A district officer may enrol for any facility in their own county —
+    /// enrolment uses the same authority model as every other oversight act,
+    /// which is county-scoped for district officers and national only for
+    /// ministry admins.
     /// </summary>
     [Fact]
-    public async Task ADistrictOfficerMayEnrolForAnyFacility()
+    public async Task ADistrictOfficerMayEnrolForAFacilityInTheirCounty()
+    {
+        await using var db = NewDb();
+
+        var result = await Devices(db).Enrol(Envelope(Enrolment(facilityId: SameCountyFacilityId)));
+
+        Assert.Equal(StatusCodes.Status201Created, StatusOf(result));
+
+        await using var verify = NewDb();
+        Assert.Equal(SameCountyFacilityId, (await verify.Devices.SingleAsync()).FacilityId);
+    }
+
+    /// <summary>
+    /// The residual this closes. It used to be allowed: an officer in Terekeka
+    /// could put a device into service at a Juba hospital, and every record
+    /// that device synced would be attributed to an enrolment nobody in Juba's
+    /// county made. Refused now, and nothing is enrolled.
+    /// </summary>
+    [Fact]
+    public async Task ADistrictOfficerMayNotEnrolInAnotherCounty()
     {
         await using var db = NewDb();
 
         var result = await Devices(db).Enrol(Envelope(Enrolment(facilityId: OtherFacilityId)));
 
-        Assert.Equal(StatusCodes.Status201Created, StatusOf(result));
+        Assert.Equal(StatusCodes.Status403Forbidden, StatusOf(result));
 
         await using var verify = NewDb();
-        Assert.Equal(OtherFacilityId, (await verify.Devices.SingleAsync()).FacilityId);
+        Assert.False(await verify.Devices.AnyAsync());
     }
 
     [Fact]

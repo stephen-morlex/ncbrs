@@ -124,7 +124,7 @@ public class LateRegistrationService(
                 Detail: $"This late registration was already {late.Status.ToString().ToLowerInvariant()}.");
         }
 
-        if (!currentRegistrar.CanActForFacility(reviewer, late.BirthRecord.FacilityId))
+        if (!await currentRegistrar.CanActForFacilityAsync(reviewer, late.BirthRecord.FacilityId, cancellationToken))
         {
             return new LateRegistrationReviewOutcome(LateRegistrationReviewResult.NotPermitted,
                 Detail: "You are not permitted to verify late registrations for this facility.");
