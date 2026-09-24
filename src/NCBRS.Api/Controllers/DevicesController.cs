@@ -23,7 +23,8 @@ namespace NCBRS.Controllers;
 public class DevicesController(
     NcbrsDbContext db,
     CurrentRegistrarService currentRegistrar,
-    CountyLookup districts) : ControllerBase
+    CountyLookup districts,
+    CountyScopeResolver scopes) : ControllerBase
 {
     /// <summary>
     /// The district's queue of devices that have gone quiet (plan F4).
@@ -47,6 +48,18 @@ public class DevicesController(
             return NotProvisioned<IReadOnlyList<DeviceAlertResponse>>();
         }
 
+        // The same boundary as search: a district officer sees their own
+        // county's queue (narrowed to it when none is named) and is refused,
+        // not silently narrowed, when they name another. Only the Ministry
+        // sees every county. Before this the queue was whatever the caller
+        // asked for, and asking for nothing returned the whole country.
+        var scope = await scopes.ResolveAsync(User, registrar, districtId, HttpContext.RequestAborted);
+        if (!scope.IsAllowed)
+        {
+            return ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status403Forbidden, scope.Title, scope.Field, scope.Message));
+        }
+
         var query = db.DeviceAlerts.AsQueryable();
 
         if (!includeResolved)
@@ -54,9 +67,9 @@ public class DevicesController(
             query = query.Where(alert => alert.ResolvedAtUtc == null);
         }
 
-        if (districtId is not null)
+        if (scope.Scope.CountyCode is { } county)
         {
-            query = query.Where(alert => alert.CountyCode == districtId);
+            query = query.Where(alert => alert.CountyCode == county);
         }
 
         var alerts = await query
@@ -281,6 +294,24 @@ public class DevicesController(
             }
 
             query = query.Where(device => device.FacilityId == scope);
+        }
+        else
+        {
+            // No facility named: the caller's whole reach, which for a district
+            // officer is their own county and for the Ministry is the country.
+            // Previously this listed every device in the country to anyone who
+            // could enrol one.
+            var reach = await scopes.ResolveAsync(User, registrar, null, HttpContext.RequestAborted);
+            if (!reach.IsAllowed)
+            {
+                return ApiErrors.Result(ApiErrors.Single(
+                    StatusCodes.Status403Forbidden, reach.Title, reach.Field, reach.Message));
+            }
+
+            if (reach.Scope.CountyCode is { } county)
+            {
+                query = query.Where(device => device.Facility!.CountyCode == county);
+            }
         }
 
         var devices = await query
