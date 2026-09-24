@@ -496,6 +496,53 @@ public class DeviceSilenceTests : IDisposable
         Assert.Equal("TABLET-A", queue[1].DeviceId);
     }
 
+    /// <summary>
+    /// Asking for no county used to return the whole country's queue. A
+    /// district officer now gets their own, as search does.
+    /// </summary>
+    [Fact]
+    public async Task AnOfficersQueueDefaultsToTheirOwnCounty()
+    {
+        await GivenDeviceAsync("TABLET-A", PostId, lastSeenDaysAgo: 30);
+        await GivenDeviceAsync("TERMINAL-C", HospitalId, lastSeenDaysAgo: 10);
+        await SweepAsync();
+
+        await using var db = NewDb();
+        var queue = (await Devices(db).Alerts()).Value!;
+
+        Assert.Equal("TABLET-A", Assert.Single(queue).DeviceId);
+    }
+
+    /// <summary>
+    /// Refused, not silently narrowed: quietly answering with their own county
+    /// would read as "nothing is wrong in Juba" rather than "you may not look".
+    /// </summary>
+    [Fact]
+    public async Task AnOfficerNamingAnotherCountysQueueIsRefused()
+    {
+        await GivenDeviceAsync("TERMINAL-C", HospitalId, lastSeenDaysAgo: 10);
+        await SweepAsync();
+
+        await using var db = NewDb();
+        var result = await Devices(db).Alerts("SS-CE-JUB");
+
+        var error = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(StatusCodes.Status403Forbidden, error.StatusCode);
+    }
+
+    [Fact]
+    public async Task TheMinistrySeesEveryCountysQueue()
+    {
+        await GivenDeviceAsync("TABLET-A", PostId, lastSeenDaysAgo: 30);
+        await GivenDeviceAsync("TERMINAL-C", HospitalId, lastSeenDaysAgo: 10);
+        await SweepAsync();
+
+        await using var db = NewDb();
+        var queue = (await Devices(db, NcbrsRoles.MinistryAdmin).Alerts()).Value!;
+
+        Assert.Equal(2, queue.Count);
+    }
+
     [Fact]
     public async Task ResolvedAlertsAreHiddenByDefaultAndAvailableOnRequest()
     {
@@ -517,11 +564,12 @@ public class DeviceSilenceTests : IDisposable
         Assert.Single((await controller.Alerts(includeResolved: true)).Value!);
     }
 
-    private static DevicesController Devices(NcbrsDbContext db)
+    private static DevicesController Devices(NcbrsDbContext db, string role = NcbrsRoles.DistrictOfficer)
     {
-        var http = AuthTestContext.HttpContextFor(roles: NcbrsRoles.DistrictOfficer);
+        var http = AuthTestContext.HttpContextFor(roles: role);
 
-        return new DevicesController(db, AuthTestContext.RegistrarService(db, http), new CountyLookup(db))
+        return new DevicesController(
+            db, AuthTestContext.RegistrarService(db, http), new CountyLookup(db), new CountyScopeResolver(new CountyLookup(db)))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };

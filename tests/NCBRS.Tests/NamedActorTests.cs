@@ -228,7 +228,7 @@ public class NamedActorTests : IDisposable
     }
 
     private static DevicesController DevicesController(NcbrsDbContext db, HttpContext http) =>
-        new(db, AuthTestContext.RegistrarService(db, http), new CountyLookup(db))
+        new(db, AuthTestContext.RegistrarService(db, http), new CountyLookup(db), new CountyScopeResolver(new CountyLookup(db)))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };
