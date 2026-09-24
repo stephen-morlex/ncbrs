@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect } from 'react'
 import { useLocation } from 'react-router'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from 'react-oidc-context'
 import { ShieldX, TriangleAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -33,6 +34,7 @@ export function RequireAuth({
 }) {
   const auth = useAuth()
   const location = useLocation()
+  const { t } = useTranslation()
 
   // Sign-in is a redirect, so it belongs in an effect rather than in render.
   // The guards matter: `isLoading` covers the code exchange and the silent
@@ -60,12 +62,12 @@ export function RequireAuth({
           <EmptyMedia variant="icon">
             <TriangleAlert />
           </EmptyMedia>
-          <EmptyTitle>Could not sign you in</EmptyTitle>
+          <EmptyTitle>{t('auth.couldNotSignIn')}</EmptyTitle>
           <EmptyDescription>{auth.error.message}</EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
           <Button variant="outline" onClick={() => void auth.signinRedirect()}>
-            Try again
+            {t('auth.tryAgain')}
           </Button>
         </EmptyContent>
       </AuthStatus>
@@ -82,7 +84,7 @@ export function RequireAuth({
           <EmptyMedia variant="icon">
             <Spinner />
           </EmptyMedia>
-          <EmptyTitle>Signing you in…</EmptyTitle>
+          <EmptyTitle>{t('auth.signingIn')}</EmptyTitle>
         </EmptyHeader>
       </AuthStatus>
     )
@@ -105,7 +107,9 @@ export function RequireAuth({
  */
 function Forbidden({ policy }: { policy: NcbrsPolicy }) {
   const auth = useAuth()
+  const { t, i18n } = useTranslation()
   const roles = realmRoles(auth.user)
+  const list = (values: readonly string[]) => formatRoles(values, i18n.language, t('auth.noRole'))
 
   return (
     <AuthStatus>
@@ -113,29 +117,26 @@ function Forbidden({ policy }: { policy: NcbrsPolicy }) {
         <EmptyMedia variant="icon">
           <ShieldX />
         </EmptyMedia>
-        <EmptyTitle>This page is not available to your account</EmptyTitle>
+        <EmptyTitle>{t('auth.forbiddenTitle')}</EmptyTitle>
         <EmptyDescription>
-          It needs {formatRoles(NcbrsPolicies[policy])}.{' '}
-          {roles.length > 0
-            ? `You are signed in as ${formatRoles(roles)}.`
-            : 'Your account has no roles assigned.'}
+          {t('auth.needsRoles', { roles: list(NcbrsPolicies[policy]) })}{' '}
+          {roles.length > 0 ? t('auth.signedInAs', { roles: list(roles) }) : t('auth.noRoles')}
         </EmptyDescription>
       </EmptyHeader>
-      <EmptyContent>
-        If this is wrong, a district officer can correct your roles.
-      </EmptyContent>
+      <EmptyContent>{t('auth.askDistrictOfficer')}</EmptyContent>
     </AuthStatus>
   )
 }
 
-function formatRoles(roles: readonly string[]): string {
+/**
+ * "a, b or c" in the reader's language. A list is not a join with ", " and
+ * " or ": the conjunction, its position and the comma rules all differ between
+ * languages, which is what Intl.ListFormat exists for.
+ */
+function formatRoles(roles: readonly string[], language: string, none: string): string {
   if (roles.length === 0) {
-    return 'no role'
+    return none
   }
 
-  if (roles.length === 1) {
-    return roles[0]
-  }
-
-  return `${roles.slice(0, -1).join(', ')} or ${roles[roles.length - 1]}`
+  return new Intl.ListFormat(language, { type: 'disjunction' }).format(roles)
 }

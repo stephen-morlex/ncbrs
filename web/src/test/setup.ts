@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom/vitest'
+import '@/i18n'
 
 /**
  * jsdom implements neither the Pointer Capture API nor scrollIntoView, and

@@ -19,6 +19,13 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import type { NcbrsPolicy } from '@/auth/roles'
+import type common from '@/i18n/locales/en/common.json'
+
+/** A navigation group, named by its key in the `nav.groups` resources. */
+export type NavGroupId = keyof typeof common.nav.groups
+
+/** A destination, named by its key in the `nav.items` resources. */
+export type NavItemId = keyof typeof common.nav.items
 
 /**
  * The destinations, and who each is for.
@@ -32,7 +39,8 @@ import type { NcbrsPolicy } from '@/auth/roles'
  * `policy: null` means signed in is enough.
  */
 export interface NavItem {
-  label: string
+  /** The display name is `t(`nav.items.${id}`)`; the id never changes with the language. */
+  id: NavItemId
   to: string
   icon: LucideIcon
   policy: NcbrsPolicy | null
@@ -42,15 +50,15 @@ export interface NavItem {
 }
 
 export interface NavGroup {
-  label: string
+  id: NavGroupId
   items: NavItem[]
 }
 
 export const navigation: NavGroup[] = [
   {
-    label: 'Register',
+    id: 'register',
     items: [
-      { label: 'Find by number', to: '/records', icon: Hash, policy: null },
+      { id: 'findByNumber', to: '/records', icon: Hash, policy: null },
 
       // A separate destination, not a mode of the lookup above. Looking up a
       // number a family is holding and searching the register by name are
@@ -58,9 +66,9 @@ export const navigation: NavGroup[] = [
       // the caller's district and recorded in the audit trail. One box that
       // quietly switched between them would hide that difference from the
       // person it applies to.
-      { label: 'Search the register', to: '/records/search', icon: Search, policy: null },
+      { id: 'searchRegister', to: '/records/search', icon: Search, policy: null },
       {
-        label: 'Register a birth',
+        id: 'registerBirth',
         to: '/records/new',
         icon: ScrollText,
         policy: 'CanRegisterBirths',
@@ -71,28 +79,28 @@ export const navigation: NavGroup[] = [
     // Four separate queues rather than one, because they are four different
     // decisions with four different thresholds -- and because a district
     // officer needs to know which kind of backlog they have.
-    label: 'Review',
+    id: 'review',
     items: [
       {
-        label: 'Amendments',
+        id: 'amendments',
         to: '/review/amendments',
         icon: GitCompareArrows,
         policy: 'CanApproveAmendments',
       },
       {
-        label: 'Duplicates',
+        id: 'duplicates',
         to: '/review/duplicates',
         icon: FileSearch,
         policy: 'CanReviewDuplicates',
       },
       {
-        label: 'Late registrations',
+        id: 'lateRegistrations',
         to: '/review/late-registrations',
         icon: Hourglass,
         policy: 'CanApproveLateRegistrations',
       },
       {
-        label: 'Annulments',
+        id: 'annulments',
         to: '/review/annulments',
         icon: BadgeCheck,
         policy: 'CanAnnulRegistrations',
@@ -100,26 +108,26 @@ export const navigation: NavGroup[] = [
     ],
   },
   {
-    label: 'Oversight',
+    id: 'oversight',
     items: [
       // Not gated: a facility registrar needs to know their own post is
       // running low on numbers, because they are the one who will be handing
       // out provisional slips when it runs out.
-      { label: 'Facilities', to: '/facilities', icon: Hospital, policy: null },
+      { id: 'facilities', to: '/facilities', icon: Hospital, policy: null },
       // Not gated: the geography is reference data naming no person, and a
       // registrar recording a facility's location needs the same lists an
       // oversight officer browsing the tree does.
-      { label: 'Administrative areas', to: '/admin/areas', icon: MapPinned, policy: null },
+      { id: 'administrativeAreas', to: '/admin/areas', icon: MapPinned, policy: null },
       // Listing who is provisioned is an oversight act — the same role that
       // enrols devices — so it names that policy, matching the list endpoint.
       {
-        label: 'Registrars',
+        id: 'registrars',
         to: '/registrars',
         icon: Users,
         policy: 'CanEnrolDevices',
       },
       {
-        label: 'Devices',
+        id: 'devices',
         to: '/devices',
         icon: Smartphone,
         policy: 'CanEnrolDevices',
@@ -127,7 +135,7 @@ export const navigation: NavGroup[] = [
       // The queue of devices gone quiet — a silent post is not a post with no
       // births, and only one of those needs someone to drive out.
       {
-        label: 'Device alerts',
+        id: 'deviceAlerts',
         to: '/devices/alerts',
         icon: BellRing,
         policy: 'CanEnrolDevices',
@@ -135,26 +143,26 @@ export const navigation: NavGroup[] = [
       // Not gated: checking a certificate a family presents is something any
       // signed-in officer does, and the verify endpoint is anonymous by
       // design — it is meant to be usable by anyone holding the document.
-      { label: 'Verify a certificate', to: '/certificates/verify', icon: ShieldCheck, policy: null },
+      { id: 'verifyCertificate', to: '/certificates/verify', icon: ShieldCheck, policy: null },
       // Not gated: the list names no person — every entry is an opaque digest —
       // and the endpoint is anonymous so verifiers can mirror it.
-      { label: 'Revocation list', to: '/certificates/revocations', icon: ListX, policy: null },
+      { id: 'revocationList', to: '/certificates/revocations', icon: ListX, policy: null },
       // Under Oversight rather than beside the register: reading the trail
       // is checking on the work, not doing it.
       {
-        label: 'Audit trail',
+        id: 'auditTrail',
         to: '/audit',
         icon: History,
         policy: 'CanReadAuditTrail',
       },
       {
-        label: 'Dashboard',
+        id: 'dashboard',
         to: '/dashboard',
         icon: BarChart3,
         policy: 'CanReadReporting',
       },
       {
-        label: 'DHIS2 export',
+        id: 'dhis2Export',
         to: '/exports/dhis2',
         icon: FileDown,
         policy: 'CanReadReporting',

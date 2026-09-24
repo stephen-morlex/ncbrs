@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react'
 import { Navigate, Route, Routes } from 'react-router'
+import { useTranslation } from 'react-i18next'
 import { Construction } from 'lucide-react'
 import {
   Empty,
@@ -11,7 +12,7 @@ import {
 import { Spinner } from '@/components/ui/spinner'
 import { AuthCallback } from '@/auth/AuthCallback'
 import { RequireAuth } from '@/auth/RequireAuth'
-import { navigation } from '@/shell/navigation'
+import { type NavItemId, navigation } from '@/shell/navigation'
 
 /**
  * Pages are fetched when they are opened, not when the app starts.
@@ -126,7 +127,7 @@ const Dhis2Export = lazy(() =>
  */
 export default function App() {
   const pending = navigation.flatMap((group) =>
-    group.items.filter((item) => item.pending).map((item) => ({ ...item, group: group.label })),
+    group.items.filter((item) => item.pending).map((item) => ({ ...item, group: group.id })),
   )
 
   return (
@@ -313,7 +314,7 @@ export default function App() {
             path={item.to}
             element={
               <RequireAuth policy={item.policy ?? undefined}>
-                <NotBuiltYet title={item.label} />
+                <NotBuiltYet item={item.id} />
               </RequireAuth>
             }
           />
@@ -334,6 +335,8 @@ export default function App() {
  * something going wrong.
  */
 function LoadingPage() {
+  const { t } = useTranslation()
+
   return (
     <main className="flex min-h-svh items-center justify-center p-6">
       <Empty className="max-w-md">
@@ -341,39 +344,40 @@ function LoadingPage() {
           <EmptyMedia variant="icon">
             <Spinner />
           </EmptyMedia>
-          <EmptyTitle>Loading…</EmptyTitle>
+          <EmptyTitle>{t('shell.loading')}</EmptyTitle>
         </EmptyHeader>
       </Empty>
     </main>
   )
 }
 
-function NotBuiltYet({ title }: { title: string }) {
+function NotBuiltYet({ item }: { item: NavItemId }) {
+  const { t } = useTranslation()
+
   return (
     <Empty className="border">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <Construction />
         </EmptyMedia>
-        <EmptyTitle>{title}</EmptyTitle>
-        <EmptyDescription>
-          Routed and gated, but not built yet. The navigation shows it so the shape of the system
-          is legible before every part of it exists.
-        </EmptyDescription>
+        <EmptyTitle>{t(`nav.items.${item}`)}</EmptyTitle>
+        <EmptyDescription>{t('shell.notBuiltYetDescription')}</EmptyDescription>
       </EmptyHeader>
     </Empty>
   )
 }
 
 function NotFound() {
+  const { t } = useTranslation()
+
   return (
     <Empty className="border">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <Construction />
         </EmptyMedia>
-        <EmptyTitle>No such page</EmptyTitle>
-        <EmptyDescription>Check the address, or use the navigation.</EmptyDescription>
+        <EmptyTitle>{t('shell.notFoundTitle')}</EmptyTitle>
+        <EmptyDescription>{t('shell.notFoundDescription')}</EmptyDescription>
       </EmptyHeader>
     </Empty>
   )

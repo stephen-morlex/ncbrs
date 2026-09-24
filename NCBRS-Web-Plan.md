@@ -1429,7 +1429,7 @@ each needs the reason for the decision captured.*
 - [x] Session expiry that warns before it drops a half-completed registration form — `auth/SessionExpiry.tsx`; fires on `accessTokenExpiring` (while still signed in), because once the token lapses `RequireAuth` redirects and the page is already gone
 - [x] Empty, loading and failure states for every queue — audited all twelve; the one real gap was `AreaPicker`, which reported a failed lookup as "no administrative areas are available yet"
 - [ ] End-to-end tests over the critical paths: register, amend and approve, issue, annul
-- [ ] Localisation scaffolding, even if only one language ships
+- [x] Localisation scaffolding, even if only one language ships — i18next with bundled, type-checked resources and RTL-ready `<html dir>`; the shell is translated, screens are converted incrementally (`web/src/i18n/README.md`). First-load cost +15.8 kB gzipped, in the long-cached vendor chunk
 
 ---
 

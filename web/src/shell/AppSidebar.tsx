@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from 'react-oidc-context'
 import { BookMarked } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -37,6 +38,7 @@ import { navigation } from '@/shell/navigation'
  */
 export function AppSidebar() {
   const auth = useAuth()
+  const { t } = useTranslation()
   const roles = realmRoles(auth.user)
 
   const groups = navigation
@@ -59,8 +61,8 @@ export function AppSidebar() {
                   <BookMarked className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">NCBRS</span>
-                  <span className="truncate text-xs">Civil Birth Registration</span>
+                  <span className="truncate font-semibold">{t('app.name')}</span>
+                  <span className="truncate text-xs">{t('app.subtitle')}</span>
                 </div>
               </NavLink>
             </SidebarMenuButton>
@@ -70,8 +72,8 @@ export function AppSidebar() {
 
       <SidebarContent>
         {groups.map((group) => (
-          <SidebarGroup key={group.label}>
-            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+          <SidebarGroup key={group.id}>
+            <SidebarGroupLabel>{t(`nav.groups.${group.id}`)}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => (
@@ -97,19 +99,22 @@ export function AppSidebar() {
 }
 
 function NavLinkMenuButton({ item }: { item: (typeof navigation)[number]['items'][number] }) {
+  const { t } = useTranslation()
+  const label = t(`nav.items.${item.id}`)
+
   return (
     <NavLink to={item.to} end={item.to === '/records'}>
       {({ isActive }) => (
-        <SidebarMenuButton asChild isActive={isActive} tooltip={item.label}>
+        <SidebarMenuButton asChild isActive={isActive} tooltip={label}>
           <span>
             <item.icon />
-            <span className="flex-1 truncate">{item.label}</span>
+            <span className="flex-1 truncate">{label}</span>
             {item.pending ? (
               <Badge
                 variant="outline"
                 className="ml-auto px-1 text-[10px] group-data-[collapsible=icon]:hidden"
               >
-                soon
+                {t('nav.soon')}
               </Badge>
             ) : null}
           </span>

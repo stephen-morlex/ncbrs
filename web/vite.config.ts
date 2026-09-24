@@ -16,6 +16,11 @@ const Stable = [
   'oidc-client-ts',
   'react-oidc-context',
   'scheduler',
+  // Localisation runtime: needed on every page and changes far less often
+  // than application code. In the entry chunk it cost ~30 kB gzipped on
+  // every deploy; here it is downloaded once and kept.
+  'i18next',
+  'react-i18next',
 ]
 
 // https://vite.dev/config/
