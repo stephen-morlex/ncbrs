@@ -1428,7 +1428,7 @@ each needs the reason for the decision captured.*
 - [ ] Responsive down to a district officer's laptop; tablet-friendly for supervision visits. *Phone-width defects fixed:* the amendment-conflict, duplicate and late-registration comparison grids stacked below `sm` (three columns of values at 375px wraps to a word a line, and those are the comparisons a registrar rules on), and the rigid `w-56/64/72` selects made fluid. Tables already scroll (`overflow-x-auto`). **Still outstanding:** verification in a real browser at each breakpoint.
 - [x] Session expiry that warns before it drops a half-completed registration form — `auth/SessionExpiry.tsx`; fires on `accessTokenExpiring` (while still signed in), because once the token lapses `RequireAuth` redirects and the page is already gone
 - [x] Empty, loading and failure states for every queue — audited all twelve; the one real gap was `AreaPicker`, which reported a failed lookup as "no administrative areas are available yet"
-- [ ] End-to-end tests over the critical paths: register, amend and approve, issue, annul
+- [x] End-to-end tests over the critical paths: register, amend and approve, issue, annul — Playwright (`web/e2e/`), against the real API and Keycloak, in CI as its own job. Each path asserts its legal rule, not just that a page loaded (a pending correction has not changed the record; an annulled record refuses a certificate), and a mutation check confirmed the suite fails when a rule is broken
 - [x] Localisation scaffolding, even if only one language ships — i18next with bundled, type-checked resources and RTL-ready `<html dir>`; the shell is translated, screens are converted incrementally (`web/src/i18n/README.md`). First-load cost +15.8 kB gzipped, in the long-cached vendor chunk
 
 ---
