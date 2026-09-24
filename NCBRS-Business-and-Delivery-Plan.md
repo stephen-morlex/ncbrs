@@ -325,7 +325,7 @@ Verified against the running codebase. 262 tests passing.
 | Ministry dashboards & reporting replica | 6.4 | **Read models, indicator queries and dashboard UI built** (`web/`); reporting replica (F1) still needed | WS-F |
 | Monitoring, alerting, runbooks | 10 | **Runbook built** (`RUNBOOK.md`); live monitoring/alerting needs infra | WS-G |
 | Remote device de-registration | 9 | **Built** — suspend/reinstate/revoke (API + web); a non-`Enrolled` device is refused at sync | WS-G |
-| District Wi-Fi / USB / SMS fallbacks | 6.3, 7.4 | Not started | WS-H |
+| District Wi-Fi / USB / SMS fallbacks | 6.3, 7.4 | **Signed USB transfer built** (H2, client-core); sync-point workflow (H1) and SMS (H3) not started | WS-H |
 | Annulment of a record registered in error | — | **Built** | WS-C |
 
 ## 13. Decisions confirmed in draft v1.3
@@ -528,7 +528,7 @@ primary path actually fails for.
 | # | Step | Exit condition |
 |---|---|---|
 | H1 | Sync-point workflow (district office / connected clinic) | Full outbox drains within a typical visit |
-| H2 | USB / offline file transfer, signed | A tampered transfer file is rejected |
+| H2 | USB / offline file transfer, signed — **done** (`OfflineTransferFile` in `client/NCBRS.Client.Core`: the device packs the batch with its signature; opening verifies it against the enrolled key before anything is forwarded. The sync-point app that reads the media and forwards the body is H1) | A tampered transfer file is rejected |
 | H3 | SMS minimal-subset confirmation | SMS-registered birth reconciles against its later full record |
 
 ## 15. Sequencing
@@ -567,3 +567,69 @@ Only three hard dependencies exist across the eight tracks:
    one invalidates the pilot.
 6. **Open informal talks with the National ID Authority.** The data-sharing agreement
    will take longer to negotiate than the integration takes to build.
+
+## 17. Remaining work — consolidated to-do
+
+*As of 2026-09-24, reviewed against the code rather than carried forward from
+earlier notes.* §12 and §14 remain the per-item record; this section orders what
+is left by **what unblocks it**, because almost nothing remaining is blocked on
+engineering effort — it is blocked on hardware, agreements, infrastructure,
+people or a decision. The central tier is essentially feature-complete; the
+critical path is still WS-B's device build.
+
+### A. In the repo, no external blocker
+
+| # | Task | Status | Done when |
+|---|---|---|---|
+| 1 | Refresh CLAUDE.md's administrative-geography section — it still described the district→county rename as deferred | **Done** | Instructions match the code |
+| 2 | Credit H2 in this plan (signed transfer file was built but unmarked) | **Done** | §12 and §14 show it |
+| 3 | Scope district officers to their own county: `NcbrsRoles.CrossFacility` is not county-scoped, so a district officer can enrol devices for any facility | In progress | Refused outside their county; ministry admin stays national |
+| 4 | Signature mode in the A7 load driver, so load tests run the production `RequireSignature: true` path | Open | Driver signs batches and runs clean with enforcement on |
+| 5 | Dev environment hygiene: the compose Postgres holds a stale pre-SS seed binding (`nurse.lado` → the old "Kabwe" facility), ~11k synthetic load births and `LOADTEST-` devices | Open | A documented reset restores a clean seed |
+| 6 | Lint and build warnings: the `react` rule surface (set-state-in-effect, one exhaustive-deps), CS0108 in `DevicesController`, NU1510 in Consumer, Vite `__dirname` | Open | The `react` oxlint plugin can be enabled under `--deny-warnings` |
+
+### B. Needs a decision
+
+| # | Task | Decision |
+|---|---|---|
+| 7 | End-to-end web tests (register, amend + approve, issue, annul) | Adopt Playwright (dependency change) |
+| 8 | Localisation scaffolding | Adopt i18next (dependency change) |
+| 9 | Close the unverified `deviceId` on online `POST /register` — a stolen token bypasses enrolment there | Per-request signing (buildable here) or mTLS (infrastructure) |
+| 10 | WCAG 2.2 AA conformance (contrast, 2.5.8 target size, assistive-technology testing) and breakpoint verification | A signed-in browser session to test against |
+| 11 | Per-record vs per-batch `SaveChanges` in sync — keep per-record for failure isolation unless real-scale measurement shows round-trips dominate | Record as an ADR |
+
+### C. Critical path — needs a device-tooling environment
+
+| # | Task | Notes |
+|---|---|---|
+| 12 | **B4 field research with midwives and CHWs — start now** | Longest lead time; cannot be parallelised (§15, "the scheduling trap") |
+| 13 | MAUI shell: B2 encrypted store, B3 unlock screen, B7 QR printing, B8 scheduled bundle refetch, platform boilerplate | Every piece of offline logic it wraps is built and tested in `client/NCBRS.Client.Core` |
+
+### D. Needs infrastructure
+
+| # | Task | Done when |
+|---|---|---|
+| 14 | A3 — signing key in an HSM or secret store | Production refuses to start without a real key |
+| 15 | A6 — rehearse point-in-time recovery; ship the WAL archive off the host | Restore to a point in time; audit data leaves the box it is written on |
+| 16 | A2 deployment step — `REVOKE UPDATE, DELETE ON "AuditLogs"` from the application role | The app role provably lacks the verbs |
+| 17 | A7 — national-volume run on production-grade Postgres, fleet across several facilities; re-measure the §A6 RTO at that volume | Sustained burst at projected volume |
+| 18 | F1 — reporting replica | Dashboard load leaves registration latency unchanged |
+| 19 | G1 — live monitoring: `pg_stat_archiver.failed_count`, outbox backlog, consumer lag | Alerts fire on the failures the runbook describes |
+
+### E. Needs external agreements or providers
+
+| # | Task | Notes |
+|---|---|---|
+| 20 | E1/E2 — National ID push and amendment propagation | The delivery ledger must be durable and **outside** the consumer's disposable read model, or the documented delete-and-replay recovery re-sends births to an external authority |
+| 21 | E3 civil-registry two-way API · E5 statistics-office extract | Data-sharing agreements (§5 item 5) |
+| 22 | DHIS2 — differencing across periods and cross-tabulation risk | Review before any scheduled export to an external recipient |
+| 23 | H3 SMS confirmation · an email/SMS delivery channel for device alerts | A provider |
+
+### F. Needs people or the organisation
+
+| # | Task |
+|---|---|
+| 24 | A8 — independent security audit and penetration test |
+| 25 | Legal critical path (§5) and the §16 governance actions — none is tracked as complete |
+| 26 | G3 tiered support model · G4 training curriculum (after B4) |
+| 27 | H1 sync-point workflow — the mechanics exist (district tier, client sync, H2); what remains is operational validation in the pilot |
