@@ -28,7 +28,8 @@ namespace NCBRS.Middleware;
 public class IdempotencyFilter(
     NcbrsDbContext db,
     IOptions<JsonOptions> jsonOptions,
-    ILogger<IdempotencyFilter> logger) : IAsyncActionFilter
+    ILogger<IdempotencyFilter> logger,
+    RefusalAudit refusals) : IAsyncActionFilter
 {
     /// <summary>
     /// MVC's own serializer settings, not the defaults. Storing with default
@@ -196,6 +197,10 @@ public class IdempotencyFilter(
         if (!succeeded)
         {
             await dbTransaction.RollbackAsync();
+
+            // The work is undone; a refusal of it is not work, it is the record
+            // that the attempt was made. See RefusalAudit.
+            await refusals.RestoreAfterRollbackAsync();
             return;
         }
 

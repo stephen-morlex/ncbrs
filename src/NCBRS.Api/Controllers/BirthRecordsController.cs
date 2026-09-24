@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using NCBRS.Data;
+using NCBRS.Devices;
 using NCBRS.Events;
 using NCBRS.Kafka;
 using NCBRS.Middleware;
@@ -22,7 +23,9 @@ public class BirthRecordsController(
     AmendmentService amendments,
     CurrentRegistrarService currentRegistrar,
     CountyLookup districts,
-    IOptions<StatutoryRegistrationOptions> statutory) : ControllerBase
+    IOptions<StatutoryRegistrationOptions> statutory,
+    DeviceEnrolmentService devices,
+    RefusalAudit refusals) : ControllerBase
 {
     /// <summary>
     /// An account that authenticated but has no registrar record was never
@@ -81,6 +84,47 @@ public class BirthRecordsController(
         {
             return NotProvisioned();
         }
+
+        // Which device -- or the management site -- this came from is decided
+        // by the token, and for a device proved by its signature over these
+        // exact bytes: the same rule a sync batch is held to (WS-B9). Before
+        // this the online path took the device id on trust, so a stolen token
+        // could register as any device, even a revoked one.
+        var channel = await devices.CheckRegistrationChannelAsync(
+            User,
+            envelope.Data.DeviceId,
+            envelope.Data.FacilityId,
+            await Request.ReadRawAsync(HttpContext.RequestAborted),
+            Request.Headers[DeviceSignature.HeaderName],
+            HttpContext.RequestAborted);
+
+        if (!channel.Accepted)
+        {
+            // Audited though nothing is registered: registering as a device from
+            // the wrong channel, or without its key, is what a stolen token
+            // looks like. Recorded as a refusal so it survives the rollback of
+            // the request it refused.
+            refusals.Record(new AuditLog
+            {
+                EntityType = nameof(BirthRecord),
+                EntityId = envelope.Data.Brn,
+                CountyCode = await districts.ForFacilityAsync(envelope.Data.FacilityId, HttpContext.RequestAborted),
+                Action = $"DeviceRefused:{channel.Outcome}",
+                UserId = registrar.RegistrarId,
+                DeviceId = envelope.Data.DeviceId,
+                TransactionId = TransactionContext.Get(HttpContext)?.TransactionId
+            });
+
+            await db.SaveChangesAsync(HttpContext.RequestAborted);
+
+            return ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status403Forbidden, "Device not permitted to register.",
+                "data.deviceId", channel.Detail));
+        }
+
+        // A device that has just proved itself has been seen, exactly as on
+        // sync -- which also resolves a silence alert raised against it.
+        await devices.MarkSeenAsync(channel.Device, HttpContext.RequestAborted);
 
         var result = await registrations.RegisterAsync(
             envelope.Data,

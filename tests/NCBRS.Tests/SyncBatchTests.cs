@@ -6,6 +6,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NCBRS.Controllers;
 using NCBRS.Data;
+using NCBRS.Middleware;
 using NCBRS.Models;
 using NCBRS.Services;
 using NCBRS.Validation;
@@ -105,7 +106,7 @@ public class SyncBatchTests : IDisposable
             // signature itself is covered in DeviceEnrolmentTests.
             new DeviceEnrolmentService(db, new DeviceEnrolmentOptions { RequireSignature = false }),
             new RegisterBirthRequestValidator(),
-            new CountyLookup(db))
+            new CountyLookup(db), new RefusalAudit(db, Microsoft.Extensions.Logging.Abstractions.NullLogger<RefusalAudit>.Instance))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };

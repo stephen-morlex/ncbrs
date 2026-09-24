@@ -45,7 +45,7 @@ public class IdempotencyFilterTests : IDisposable
     /// matches what the original response actually put on the wire.
     /// </summary>
     private static IdempotencyFilter CreateFilter(NcbrsDbContext db)
-        => new(db, Options.Create(new JsonOptions()), NullLogger<IdempotencyFilter>.Instance);
+        => new(db, Options.Create(new JsonOptions()), NullLogger<IdempotencyFilter>.Instance, new RefusalAudit(db, NullLogger<RefusalAudit>.Instance));
 
     private static ApiRequest<BrnBlockRequest> Envelope(int blockSize = 200)
         => new() { Data = new BrnBlockRequest { BlockSize = blockSize } };

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NCBRS.Controllers;
 using NCBRS.Data;
+using NCBRS.Middleware;
 using NCBRS.Models;
 using NCBRS.Services;
 using Xunit;
@@ -221,7 +222,7 @@ public class NamedActorTests : IDisposable
                 db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db), current, districts),
             current,
             districts,
-            Microsoft.Extensions.Options.Options.Create(new StatutoryRegistrationOptions()))
+            Microsoft.Extensions.Options.Options.Create(new StatutoryRegistrationOptions()), new DeviceEnrolmentService(db, new DeviceEnrolmentOptions()), new RefusalAudit(db, Microsoft.Extensions.Logging.Abstractions.NullLogger<RefusalAudit>.Instance))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };

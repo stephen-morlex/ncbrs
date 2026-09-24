@@ -22,11 +22,24 @@ public static class AuthTestContext
     public static DefaultHttpContext HttpContextFor(
         string subject = DefaultSubject,
         params string[] roles)
+        => HttpContextFor(subject, client: null, roles);
+
+    /// <summary>
+    /// As above, with the token's authorised party (`azp`): the OIDC client
+    /// the identity provider issued it to, which decides the registration
+    /// channel.
+    /// </summary>
+    public static DefaultHttpContext HttpContextFor(string subject, string? client, params string[] roles)
     {
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, subject)
         };
+
+        if (client is not null)
+        {
+            claims.Add(new Claim("azp", client));
+        }
 
         claims.AddRange((roles.Length > 0 ? roles : [NcbrsRoles.FacilityRegistrar])
             .Select(role => new Claim(ClaimTypes.Role, role)));

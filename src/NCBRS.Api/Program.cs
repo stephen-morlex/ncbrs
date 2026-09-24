@@ -69,6 +69,7 @@ builder.Services.Configure<ApiBehaviorOptions>(apiOptions =>
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterBirthRequestValidator>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CurrentRegistrarService>();
+builder.Services.AddScoped<RefusalAudit>();
 builder.Services.AddScoped<BirthRegistrationService>();
 builder.Services.AddScoped<OutcomeService>();
 builder.Services.AddScoped<CertificateService>();

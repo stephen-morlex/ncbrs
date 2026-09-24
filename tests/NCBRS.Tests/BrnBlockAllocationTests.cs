@@ -8,6 +8,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NCBRS.Controllers;
 using NCBRS.Data;
+using NCBRS.Middleware;
 using NCBRS.Models;
 using NCBRS.Services;
 using Xunit;
@@ -99,7 +100,7 @@ public class BrnBlockAllocationTests
             new AmendmentService(db, publisher, new CertificateRevocationRecorder(db), currentRegistrar, new CountyLookup(db)),
             currentRegistrar,
             new CountyLookup(db),
-            Options.Create(new StatutoryRegistrationOptions()))
+            Options.Create(new StatutoryRegistrationOptions()), new DeviceEnrolmentService(db, new DeviceEnrolmentOptions()), new RefusalAudit(db, Microsoft.Extensions.Logging.Abstractions.NullLogger<RefusalAudit>.Instance))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };
