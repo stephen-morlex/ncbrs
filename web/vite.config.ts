@@ -26,7 +26,7 @@ export default defineConfig({
     // must agree: TypeScript resolves the alias for the type check, Vite
     // resolves it for the bundle, and neither reads the other's config.
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(import.meta.dirname, './src'),
     },
   },
   build: {

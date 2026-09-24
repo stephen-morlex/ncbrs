@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { type FieldErrors, useForm } from 'react-hook-form'
+import { type FieldErrors, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { CircleAlert, Save, TriangleAlert } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -69,6 +69,13 @@ export function RegisterBirth() {
   // fresh one each attempt. The rule, and why it matters, lives in brnDraw.ts.
   const drawnRef = useRef<BrnDraw | null>(null)
 
+  // The draw above outlives any one render, but each number it asks for must
+  // go through the session as it is *now*. The API client is rebuilt when the
+  // token renews; a draw that captured the first render's drawBrn would keep
+  // presenting the old token, and a registrar who corrected a refused form
+  // after a renewal would have the next draw refused as unauthorised.
+  const drawBrnRef = useRef<((facilityId: string) => Promise<string | null>) | null>(null)
+
   /**
    * What is still stopping the form from being submitted.
    *
@@ -109,7 +116,12 @@ export function RegisterBirth() {
     resolver: zodResolver(registrationSchema),
   })
 
-  const dateOfBirth = form.watch('dateOfBirth')
+  // useWatch rather than form.watch: the hook subscribes to just these fields
+  // and is safe under the React Compiler, which cannot memoise watch().
+  const dateOfBirth = useWatch({ control: form.control, name: 'dateOfBirth' })
+  const facilityId = useWatch({ control: form.control, name: 'facilityId' })
+  const sex = useWatch({ control: form.control, name: 'sex' })
+  const plurality = useWatch({ control: form.control, name: 'plurality' })
 
   // Whether to ask for evidence at all. The server decides bindingly against
   // the device's capture time; this is the form trying to ask the right
@@ -174,7 +186,11 @@ export function RegisterBirth() {
       setError(null)
 
       try {
-        drawnRef.current ??= createBrnDraw(drawBrn)
+        drawnRef.current ??= createBrnDraw((facilityId) => {
+          // Set by the effect after the first render, which is before any submit.
+          const draw = drawBrnRef.current
+          return draw ? draw(facilityId) : Promise.resolve(null)
+        })
 
         const brn = await drawnRef.current.forAttempt(values.facilityId)
 
@@ -262,7 +278,12 @@ export function RegisterBirth() {
     return start === undefined || start === null ? null : String(start)
   }
 
-  const chosen = facilities?.find((facility) => facility.facilityId === form.watch('facilityId'))
+  // After drawBrn is declared: the draw kept in drawnRef calls through this.
+  useEffect(() => {
+    drawBrnRef.current = drawBrn
+  })
+
+  const chosen = facilities?.find((facility) => facility.facilityId === facilityId)
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
@@ -292,12 +313,15 @@ export function RegisterBirth() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={form.handleSubmit(submit, refused)} noValidate>
+          {/* handleSubmit is called inside the handler rather than during render:
+              the handlers it wraps read refs, and building it in render reads as
+              touching them while rendering. Behaviour is identical. */}
+          <form onSubmit={(event) => void form.handleSubmit(submit, refused)(event)} noValidate>
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="facilityId">Facility</FieldLabel>
                 <Select
-                  value={form.watch('facilityId')}
+                  value={facilityId}
                   onValueChange={(value) =>
                     form.setValue('facilityId', value, { shouldValidate: true })
                   }
@@ -348,7 +372,7 @@ export function RegisterBirth() {
               <Field>
                 <FieldLabel htmlFor="sex">Sex</FieldLabel>
                 <Select
-                  value={form.watch('sex') ?? ''}
+                  value={sex ?? ''}
                   onValueChange={(value) =>
                     form.setValue('sex', value as RegistrationInput['sex'], {
                       shouldValidate: true,
@@ -370,7 +394,7 @@ export function RegisterBirth() {
               <Field>
                 <FieldLabel htmlFor="plurality">Plurality</FieldLabel>
                 <Select
-                  value={form.watch('plurality') ?? ''}
+                  value={plurality ?? ''}
                   onValueChange={(value) =>
                     form.setValue('plurality', value as RegistrationInput['plurality'], {
                       shouldValidate: true,
@@ -496,6 +520,8 @@ function LateRegistrationFields({
   form: ReturnType<typeof useForm<RegistrationInput>>
   error: NcbrsError | null
 }) {
+  const evidenceType = useWatch({ control: form.control, name: 'lateRegistration.evidenceType' })
+
   return (
     <FieldSet>
       <FieldLegend>Late registration</FieldLegend>
@@ -511,7 +537,7 @@ function LateRegistrationFields({
         <Field>
           <FieldLabel htmlFor="evidenceType">Supporting evidence</FieldLabel>
           <Select
-            value={form.watch('lateRegistration.evidenceType') ?? ''}
+            value={evidenceType ?? ''}
             onValueChange={(value) =>
               form.setValue(
                 'lateRegistration.evidenceType',

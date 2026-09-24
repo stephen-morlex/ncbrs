@@ -14,8 +14,13 @@ const post = vi.fn()
 // that ignores that reloads the form continuously and resets what was typed.
 const client = { GET: get, POST: post }
 
+// Stands in for a token renewal. The real client is memoised on the auth
+// object, so a renewed session is a *new* client -- and anything that kept the
+// old one keeps presenting the old token after it expires.
+let renewed: typeof client | null = null
+
 vi.mock('@/api/useApi', () => ({
-  useApiClient: () => client,
+  useApiClient: () => renewed ?? client,
 }))
 
 function ok<T>(data: T) {
@@ -29,6 +34,7 @@ function daysAgo(days: number): string {
 beforeEach(() => {
   get.mockReset()
   post.mockReset()
+  renewed = null
 
   get.mockImplementation((path: string) =>
     path === '/api/facilities'
@@ -47,7 +53,7 @@ beforeEach(() => {
 })
 
 function show() {
-  render(
+  return render(
     <MemoryRouter>
       <RegisterBirth />
     </MemoryRouter>,
@@ -360,6 +366,67 @@ describe('when the registry says the number is already registered', () => {
     // Two draws, two different numbers -- not the same one refused twice.
     const registers = post.mock.calls.filter((call: unknown[]) => !String(call[0]).includes("request-brn-block"))
     expect(registers[0][1].body.data.brn).not.toBe(registers[1][1].body.data.brn)
+  })
+
+  /**
+   * The draw is kept in a ref across attempts, because it holds the number
+   * this registration has reserved. It must still ask for a *new* number
+   * through the session as it is now: if it kept the client from the first
+   * attempt, a registrar who fixed a refused form after their token renewed
+   * would have the next draw sent with the expired token and refused as
+   * unauthorised.
+   */
+  it('draws the next number through the current session, not the one the form opened with', async () => {
+    let drawn = 200000
+    const refuseAsTaken = () =>
+      Promise.resolve({
+        data: undefined,
+        error: {
+          status: 409,
+          title: 'BRN already registered.',
+          errors: [{ field: 'data.brn', message: "BRN '200000' has already been registered." }],
+        },
+        response: { ok: false, status: 409 },
+      })
+
+    post.mockImplementation((path: string) =>
+      path.includes('request-brn-block')
+        ? Promise.resolve(ok({ blockStart: drawn++, blockEnd: drawn }))
+        : refuseAsTaken(),
+    )
+
+    const typist = userEvent.setup({ delay: null })
+
+    const view = show()
+    await waitFor(() => expect(get).toHaveBeenCalled())
+    await fillIn(typist)
+
+    const save = screen.getByRole('button', { name: /register the birth/i })
+
+    await typist.click(save)
+    expect(await screen.findByText(/already been registered/i)).toBeInTheDocument()
+
+    // The session renews while the registrar corrects the form. A real
+    // renewal re-renders every auth consumer; typing would not, because the
+    // form's inputs are uncontrolled -- so re-render explicitly.
+    const renewedPost = vi.fn((path: string) =>
+      path.includes('request-brn-block')
+        ? Promise.resolve(ok({ blockStart: drawn++, blockEnd: drawn }))
+        : refuseAsTaken(),
+    )
+    renewed = { GET: get, POST: renewedPost }
+    view.rerender(
+      <MemoryRouter>
+        <RegisterBirth />
+      </MemoryRouter>,
+    )
+
+    await typist.click(save)
+
+    await waitFor(() =>
+      expect(renewedPost.mock.calls.some((call: unknown[]) => String(call[0]).includes('request-brn-block'))).toBe(true),
+    )
+    expect(post.mock.calls.filter((call: unknown[]) => String(call[0]).includes('request-brn-block'))).toHaveLength(1)
   })
 
   it('still holds the number when the refusal was about the form', async () => {

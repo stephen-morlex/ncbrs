@@ -235,7 +235,7 @@ public class DevicesController(
 
         await db.SaveChangesAsync(HttpContext.RequestAborted);
 
-        return CreatedAtAction(nameof(Get), new { deviceId = device.DeviceId }, Response(device));
+        return CreatedAtAction(nameof(Get), new { deviceId = device.DeviceId }, ToResponse(device));
     }
 
     [HttpGet("{deviceId}", Name = "GetDevice")]
@@ -246,7 +246,7 @@ public class DevicesController(
         var device = await db.Devices
             .FirstOrDefaultAsync(entry => entry.DeviceId == deviceId, HttpContext.RequestAborted);
 
-        return device is null ? NotFoundDevice(deviceId) : Response(device);
+        return device is null ? NotFoundDevice(deviceId) : ToResponse(device);
     }
 
     /// <summary>
@@ -288,7 +288,7 @@ public class DevicesController(
             .ThenBy(device => device.DeviceId)
             .ToListAsync(HttpContext.RequestAborted);
 
-        return devices.Select(Response).ToList();
+        return devices.Select(ToResponse).ToList();
     }
 
     /// <summary>
@@ -395,7 +395,7 @@ public class DevicesController(
 
         await db.SaveChangesAsync(HttpContext.RequestAborted);
 
-        return Response(device);
+        return ToResponse(device);
     }
 
     private ActionResult<T> NotProvisioned<T>()
@@ -459,7 +459,7 @@ public class DevicesController(
             StatusCodes.Status404NotFound, "Device not found.",
             "deviceId", $"No device is enrolled with id '{deviceId}'."));
 
-    private static DeviceResponse Response(Device device)
+    private static DeviceResponse ToResponse(Device device)
         => new(
             device.DeviceId,
             device.FacilityId,
