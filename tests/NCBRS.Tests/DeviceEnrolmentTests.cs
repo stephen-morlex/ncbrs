@@ -97,11 +97,56 @@ public class DeviceEnrolmentTests : IDisposable
 
     private NcbrsDbContext NewDb() => new(_options);
 
-    private static DevicesController Devices(NcbrsDbContext db)
-    {
-        var http = AuthTestContext.HttpContextFor(roles: NcbrsRoles.DistrictOfficer);
+    // --- listing: the same county boundary on the read side ---------------------------------
 
-        return new DevicesController(db, AuthTestContext.RegistrarService(db, http), new CountyLookup(db))
+    /// <summary>
+    /// With no facility named, a district officer's list is their own county.
+    /// It used to be every device in the country, to anyone who could enrol.
+    /// </summary>
+    [Fact]
+    public async Task ADistrictOfficersDeviceListIsTheirOwnCounty()
+    {
+        await GivenEnrolledAsync("TABLET-TER-1", FacilityId);
+        await GivenEnrolledAsync("TABLET-TER-2", SameCountyFacilityId);
+        await GivenEnrolledAsync("TERMINAL-JUB-1", OtherFacilityId);
+
+        await using var db = NewDb();
+        var devices = (await Devices(db).List()).Value!;
+
+        Assert.Equal(["TABLET-TER-1", "TABLET-TER-2"], devices.Select(d => d.DeviceId).Order().ToArray());
+    }
+
+    [Fact]
+    public async Task TheMinistrysDeviceListIsTheWholeCountry()
+    {
+        await GivenEnrolledAsync("TABLET-TER-1", FacilityId);
+        await GivenEnrolledAsync("TERMINAL-JUB-1", OtherFacilityId);
+
+        await using var db = NewDb();
+        var devices = (await Devices(db, NcbrsRoles.MinistryAdmin).List()).Value!;
+
+        Assert.Equal(2, devices.Count);
+    }
+
+    [Fact]
+    public async Task NamingAFacilityInAnotherCountyIsRefused()
+    {
+        await GivenEnrolledAsync("TERMINAL-JUB-1", OtherFacilityId);
+
+        await using var db = NewDb();
+        var result = await Devices(db).List(OtherFacilityId);
+
+        var error = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(StatusCodes.Status403Forbidden, error.StatusCode);
+    }
+
+
+    private static DevicesController Devices(NcbrsDbContext db, string role = NcbrsRoles.DistrictOfficer)
+    {
+        var http = AuthTestContext.HttpContextFor(roles: role);
+
+        return new DevicesController(
+            db, AuthTestContext.RegistrarService(db, http), new CountyLookup(db), new CountyScopeResolver(new CountyLookup(db)))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };
