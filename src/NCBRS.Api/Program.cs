@@ -116,6 +116,7 @@ var deviceEnrolment = builder.Configuration.GetSection(DeviceEnrolmentOptions.Se
 
 builder.Services.AddSingleton(deviceEnrolment);
 builder.Services.AddScoped<DeviceEnrolmentService>();
+builder.Services.AddScoped<DeviceChannelGate>();
 
 // F4. Thresholds follow the facility's connectivity profile -- see
 // DeviceSilenceOptions for why one number across the fleet is wrong.

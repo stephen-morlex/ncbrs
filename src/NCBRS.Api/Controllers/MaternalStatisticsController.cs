@@ -21,7 +21,8 @@ namespace NCBRS.Controllers;
 [Produces("application/json")]
 public class MaternalStatisticsController(
     MaternalStatisticsService statistics,
-    CurrentRegistrarService currentRegistrar) : ControllerBase
+    CurrentRegistrarService currentRegistrar,
+    DeviceChannelGate channelGate) : ControllerBase
 {
     /// <summary>
     /// Records or revises the questionnaire.
@@ -50,6 +51,13 @@ public class MaternalStatisticsController(
             return ApiErrors.Result(ApiErrors.Single(
                 StatusCodes.Status403Forbidden, "Account not provisioned.",
                 "registrar", "This account is not linked to a registrar in the registry."));
+        }
+
+        var refused = await channelGate.RefuseUnlessPermittedForRecordAsync(
+            HttpContext, registrar, envelope.Data.DeviceId, brn);
+        if (refused is not null)
+        {
+            return refused;
         }
 
         var result = await statistics.CaptureAsync(

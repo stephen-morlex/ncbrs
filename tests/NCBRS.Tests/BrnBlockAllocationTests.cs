@@ -86,7 +86,8 @@ public class BrnBlockAllocationTests
     /// </summary>
     private static BirthRecordsController CreateController(NcbrsDbContext db, params string[] roles)
     {
-        var http = AuthTestContext.HttpContextFor(roles: roles);
+        // The management site: these tests are about the grant, not the channel.
+        var http = AuthTestContext.HttpContextFor(AuthTestContext.DefaultSubject, AuthTestContext.WebClient, roles);
         var currentRegistrar = AuthTestContext.RegistrarService(db, http);
 
         var publisher = new NoOpEventPublisher();
@@ -100,7 +101,8 @@ public class BrnBlockAllocationTests
             new AmendmentService(db, publisher, new CertificateRevocationRecorder(db), currentRegistrar, new CountyLookup(db)),
             currentRegistrar,
             new CountyLookup(db),
-            Options.Create(new StatutoryRegistrationOptions()), new DeviceEnrolmentService(db, new DeviceEnrolmentOptions()), new RefusalAudit(db, Microsoft.Extensions.Logging.Abstractions.NullLogger<RefusalAudit>.Instance))
+            Options.Create(new StatutoryRegistrationOptions()),
+            AuthTestContext.ChannelGate(db))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };

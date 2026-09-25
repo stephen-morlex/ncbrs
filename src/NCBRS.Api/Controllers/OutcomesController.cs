@@ -21,7 +21,8 @@ namespace NCBRS.Controllers;
 [Produces("application/json")]
 public class OutcomesController(
     OutcomeService outcomes,
-    CurrentRegistrarService currentRegistrar) : ControllerBase
+    CurrentRegistrarService currentRegistrar,
+    DeviceChannelGate channelGate) : ControllerBase
 {
     /// <summary>
     /// Records a death within 28 days of a live birth, classified per WHO
@@ -42,6 +43,13 @@ public class OutcomesController(
         if (registrar is null)
         {
             return NotProvisioned();
+        }
+
+        var refused = await channelGate.RefuseUnlessPermittedForRecordAsync(
+            HttpContext, registrar, envelope.Data.DeviceId, brn);
+        if (refused is not null)
+        {
+            return refused;
         }
 
         var result = await outcomes.RecordNeonatalAsync(
@@ -75,6 +83,13 @@ public class OutcomesController(
         if (registrar is null)
         {
             return NotProvisioned();
+        }
+
+        var refused = await channelGate.RefuseUnlessPermittedForRecordAsync(
+            HttpContext, registrar, envelope.Data.DeviceId, brn);
+        if (refused is not null)
+        {
+            return refused;
         }
 
         var result = await outcomes.RecordMaternalAsync(

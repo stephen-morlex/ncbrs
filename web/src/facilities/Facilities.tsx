@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from 'react-oidc-context'
 import { CircleAlert, Hospital, TriangleAlert } from 'lucide-react'
+import { WebChannelDeviceId } from '@/auth/channel'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -39,9 +40,6 @@ import { realmRoles } from '@/auth/claims'
 import { satisfies } from '@/auth/roles'
 import { useApiClient } from '@/api/useApi'
 import { PageHeader } from '@/shell/PageHeader'
-
-// The console requests blocks as itself; the grant is attributed to it.
-const WebClientDeviceId = 'ncbrs-web'
 
 type Facility = components['schemas']['FacilityResponse']
 type BlockStatus = components['schemas']['BrnBlockStatus']
@@ -254,7 +252,7 @@ function GrantBlockDialog({
         '/api/BirthRecords/{facilityId}/request-brn-block',
         {
           params: { path: { facilityId: facility.facilityId } },
-          body: { data: { blockSize, deviceId: WebClientDeviceId } },
+          body: { data: { blockSize, deviceId: WebChannelDeviceId } },
         },
       )
 

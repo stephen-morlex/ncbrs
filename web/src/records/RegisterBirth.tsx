@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router'
 import { type FieldErrors, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { CircleAlert, Save, TriangleAlert } from 'lucide-react'
+import { WebChannelDeviceId } from '@/auth/channel'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -37,9 +38,6 @@ import {
 } from './registrationSchema'
 
 type Facility = components['schemas']['FacilityResponse']
-
-/** Identifies the central web app in the audit trail, matching X-Client-Id. */
-const WebClientDeviceId = 'ncbrs-web'
 
 /**
  * Registering a birth from the central web app.
@@ -217,7 +215,7 @@ export function RegisterBirth() {
               birthOrder: optional(values.birthOrder),
               motherFullName: blankToUndefined(values.motherFullName),
               fatherFullName: blankToUndefined(values.fatherFullName),
-              deviceId: WebClientDeviceId,
+              deviceId: WebChannelDeviceId,
               // Sent only when the birth is outside the window. Supplying it
               // for an on-time birth is refused rather than ignored, because
               // it means the form and the registry disagree about the date.
@@ -264,7 +262,7 @@ export function RegisterBirth() {
         params: { path: { facilityId } },
         // One number, not a block. The web app registers one birth at a time
         // and has no offline period to cover.
-        body: { data: { blockSize: 1, deviceId: WebClientDeviceId } },
+        body: { data: { blockSize: 1, deviceId: WebChannelDeviceId } },
       },
     )
 

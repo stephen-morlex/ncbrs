@@ -141,37 +141,31 @@ public class DeviceEnrolmentService(NcbrsDbContext db, DeviceEnrolmentOptions op
     }
 
     /// <summary>
-    /// Records that a device reached the centre. This, and its absence, is
-    /// what makes a post that has never reported visible at all.
-    ///
-    /// Any outstanding silence alert is resolved here rather than waiting for
-    /// the next sweep: a district officer looking at the queue minutes after
-    /// a post came back should not still be told to drive out there.
-    /// </summary>
-    /// <summary>
-    /// Which channel an online registration came through, decided by the
-    /// token rather than by the body.
+    /// Which channel a write came through, decided by the token rather than
+    /// by the body. Applied by <see cref="DeviceChannelGate"/> to every write
+    /// that names a device.
     ///
     /// The body's device id is a claim anyone holding a registrar's token can
     /// type. The token's authorised party (`azp`) is not: it names the client
     /// the identity provider issued the token to. So:
     ///
-    /// - a **web-client** token is the management site, which registers as the
-    ///   web channel and holds no device key -- the user's interactive session
-    ///   is the authority. It may not claim to be a device.
+    /// - a **web-client** token is the management site, which acts as the web
+    ///   channel and holds no device key -- the user's interactive session is
+    ///   the authority. It may not claim to be a device. Where the field is
+    ///   optional (a BRN block request) it may name no device at all.
     /// - **any other** token is a device channel, held to the same rule as a
     ///   sync batch: enrolled, active, at this facility, and (when enforced)
-    ///   signed over the exact bytes sent. It may not claim to be the
-    ///   management site, or a stolen device token could skip the signature by
-    ///   saying it came from a browser.
+    ///   signed over the exact bytes sent. It must name itself, and may not
+    ///   claim to be the management site -- or a stolen device token could skip
+    ///   the signature by saying it came from a browser.
     ///
-    /// Before this, the online path took the device id on trust, so a stolen
-    /// token could register as any device -- including a revoked one -- and the
-    /// audit trail would record whatever was typed.
+    /// Before this, every write but sync took the device id on trust, so a
+    /// stolen token could act as any device -- including a revoked one -- and
+    /// the audit trail would record whatever was typed.
     /// </summary>
-    public async Task<DeviceCheck> CheckRegistrationChannelAsync(
+    public async Task<DeviceCheck> CheckChannelAsync(
         ClaimsPrincipal user,
-        string deviceId,
+        string? deviceId,
         Guid facilityId,
         ReadOnlyMemory<byte> body,
         string? signature,
@@ -179,27 +173,42 @@ public class DeviceEnrolmentService(NcbrsDbContext db, DeviceEnrolmentOptions op
     {
         var client = user.FindFirstValue("azp");
         var fromWeb = string.Equals(client, options.WebClientId, StringComparison.Ordinal);
+        var named = !string.IsNullOrWhiteSpace(deviceId);
         var claimsWeb = string.Equals(deviceId, options.WebClientId, StringComparison.Ordinal);
 
         if (fromWeb)
         {
-            return claimsWeb
-                ? new DeviceCheck(DeviceCheckOutcome.Accepted, "Registered through the management site.")
+            return claimsWeb || !named
+                ? new DeviceCheck(DeviceCheckOutcome.Accepted, "Acting through the management site.")
                 : new DeviceCheck(DeviceCheckOutcome.WrongChannel,
-                    $"A signed-in browser session cannot register as device '{deviceId}'; "
-                    + $"the management site registers as '{options.WebClientId}'.");
+                    $"A signed-in browser session cannot act as device '{deviceId}'; "
+                    + $"the management site acts as '{options.WebClientId}'.");
         }
 
         if (claimsWeb)
         {
             return new DeviceCheck(DeviceCheckOutcome.WrongChannel,
-                $"'{options.WebClientId}' is the management site's channel. A device registers as itself, "
+                $"'{options.WebClientId}' is the management site's channel. A device acts as itself, "
                 + "with its own signature.");
         }
 
-        return await CheckAsync(deviceId, facilityId, body, signature, cancellationToken);
+        if (!named)
+        {
+            return new DeviceCheck(DeviceCheckOutcome.NotEnrolled,
+                "A device must name itself, so the register can say which device acted.");
+        }
+
+        return await CheckAsync(deviceId!, facilityId, body, signature, cancellationToken);
     }
 
+    /// <summary>
+    /// Records that a device reached the centre. This, and its absence, is
+    /// what makes a post that has never reported visible at all.
+    ///
+    /// Any outstanding silence alert is resolved here rather than waiting for
+    /// the next sweep: a district officer looking at the queue minutes after
+    /// a post came back should not still be told to drive out there.
+    /// </summary>
     public async Task MarkSeenAsync(Device? device, CancellationToken cancellationToken = default)
     {
         if (device is null)

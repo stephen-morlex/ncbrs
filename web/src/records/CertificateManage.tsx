@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { BadgeCheck, CircleAlert, Printer, ShieldOff, TriangleAlert } from 'lucide-react'
+import { WebChannelDeviceId } from '@/auth/channel'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -22,10 +23,6 @@ import { formatDate } from './RecordDetail'
 
 type BirthRecord = components['schemas']['BirthRecordResponse']
 type Certificate = components['schemas']['CertificateResponse']
-
-// The web console is itself a registration device; the certificate endpoints
-// attribute the act to it, as registration and correction already do.
-const WebClientDeviceId = 'ncbrs-web'
 
 /**
  * Issue or reprint the birth certificate for one record.
@@ -106,7 +103,7 @@ export function CertificateManage() {
       setActing(true)
       setActionError(null)
 
-      const body = { params: { path: { brn } }, body: { data: { deviceId: WebClientDeviceId } } }
+      const body = { params: { path: { brn } }, body: { data: { deviceId: WebChannelDeviceId } } }
 
       try {
         // Two literal paths rather than a union variable: the generated client

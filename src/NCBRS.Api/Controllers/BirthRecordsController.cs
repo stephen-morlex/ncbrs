@@ -24,8 +24,7 @@ public class BirthRecordsController(
     CurrentRegistrarService currentRegistrar,
     CountyLookup districts,
     IOptions<StatutoryRegistrationOptions> statutory,
-    DeviceEnrolmentService devices,
-    RefusalAudit refusals) : ControllerBase
+    DeviceChannelGate channelGate) : ControllerBase
 {
     /// <summary>
     /// An account that authenticated but has no registrar record was never
@@ -87,44 +86,14 @@ public class BirthRecordsController(
 
         // Which device -- or the management site -- this came from is decided
         // by the token, and for a device proved by its signature over these
-        // exact bytes: the same rule a sync batch is held to (WS-B9). Before
-        // this the online path took the device id on trust, so a stolen token
-        // could register as any device, even a revoked one.
-        var channel = await devices.CheckRegistrationChannelAsync(
-            User,
-            envelope.Data.DeviceId,
-            envelope.Data.FacilityId,
-            await Request.ReadRawAsync(HttpContext.RequestAborted),
-            Request.Headers[DeviceSignature.HeaderName],
-            HttpContext.RequestAborted);
-
-        if (!channel.Accepted)
+        // exact bytes: the same rule a sync batch is held to (WS-B9).
+        var refused = await channelGate.RefuseUnlessPermittedAsync(
+            HttpContext, registrar, envelope.Data.DeviceId, envelope.Data.FacilityId,
+            nameof(BirthRecord), envelope.Data.Brn);
+        if (refused is not null)
         {
-            // Audited though nothing is registered: registering as a device from
-            // the wrong channel, or without its key, is what a stolen token
-            // looks like. Recorded as a refusal so it survives the rollback of
-            // the request it refused.
-            refusals.Record(new AuditLog
-            {
-                EntityType = nameof(BirthRecord),
-                EntityId = envelope.Data.Brn,
-                CountyCode = await districts.ForFacilityAsync(envelope.Data.FacilityId, HttpContext.RequestAborted),
-                Action = $"DeviceRefused:{channel.Outcome}",
-                UserId = registrar.RegistrarId,
-                DeviceId = envelope.Data.DeviceId,
-                TransactionId = TransactionContext.Get(HttpContext)?.TransactionId
-            });
-
-            await db.SaveChangesAsync(HttpContext.RequestAborted);
-
-            return ApiErrors.Result(ApiErrors.Single(
-                StatusCodes.Status403Forbidden, "Device not permitted to register.",
-                "data.deviceId", channel.Detail));
+            return refused;
         }
-
-        // A device that has just proved itself has been seen, exactly as on
-        // sync -- which also resolves a silence alert raised against it.
-        await devices.MarkSeenAsync(channel.Device, HttpContext.RequestAborted);
 
         var result = await registrations.RegisterAsync(
             envelope.Data,
@@ -322,6 +291,15 @@ public class BirthRecordsController(
         if (registrar is null)
         {
             return NotProvisioned();
+        }
+
+        // A correction to a legal record is attributed to a device like any
+        // other write, so the device is held to the same proof.
+        var refused = await channelGate.RefuseUnlessPermittedForRecordAsync(
+            HttpContext, registrar, envelope.Data.DeviceId, brn);
+        if (refused is not null)
+        {
+            return refused;
         }
 
         var result = await amendments.AmendAsync(
@@ -522,6 +500,17 @@ public class BirthRecordsController(
                 "facilityId", $"You are not permitted to request BRN blocks for facility '{facilityId}'."));
         }
 
+        // Drawing numbers is the act a stolen device token is most worth
+        // using for: a block taken offline under a revoked tablet's name is a
+        // fortnight of registrations nobody can attribute. The device proves
+        // itself here, as on every other write.
+        var refused = await channelGate.RefuseUnlessPermittedAsync(
+            HttpContext, registrar, envelope.Data.DeviceId, facilityId, nameof(Facility), facilityId.ToString());
+        if (refused is not null)
+        {
+            return refused;
+        }
+
         // blockSize range is enforced by BrnBlockRequestValidator.
         var blockSize = envelope.Data.BlockSize;
         var deviceId = envelope.Data.DeviceId;
@@ -582,9 +571,9 @@ public class BirthRecordsController(
                 Action = skipped == 0
                     ? "BrnBlockGranted"
                     : $"BrnBlockGranted:skipped={skipped}",
-                // The endpoint doesn't currently require the caller to
-                // identify its device; record what's available rather than
-                // inventing a value.
+                // Only the management site may leave this empty (the channel
+                // gate makes a device name itself); record what was sent
+                // rather than inventing a value.
                 DeviceId = deviceId ?? "unspecified",
                 TransactionId = TransactionContext.Get(HttpContext)?.TransactionId
             });

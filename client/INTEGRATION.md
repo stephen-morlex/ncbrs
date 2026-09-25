@@ -38,7 +38,8 @@ vital-event models all come from `NCBRS.Contracts`, shared with the server.
    outbox after each call. Surface `RegistrationDraft.BlockLow` so the slip is
    shown, and `IsProvisional` so a provisional slip is marked as such.
 4b. **Top up the block (online).** When `NeedsMoreNumbers` is true, POST
-   `request-brn-block` and pass the granted range to `GrantNextBlock(start, end)`;
+   `request-brn-block` — naming this device, and signed like any other write
+   (below) — and pass the granted range to `GrantNextBlock(start, end)`;
    persist the staged block. The allocator rolls over to it when the current
    block runs dry, so a device that tops up in time never issues a `PROV-`
    identifier. The fallback still fires if no window came in time.
@@ -52,6 +53,18 @@ vital-event models all come from `NCBRS.Contracts`, shared with the server.
 7. **Verify a certificate (offline).** `CachedVerificationBundle.Verify(qr, now)`.
    Check `RefreshDue(now)` each connectivity window and refetch the bundle
    before it goes stale, or it will correctly but uselessly answer Unknown.
+
+## Every online write is signed
+
+Not only sync. Registration, correction, BRN block requests, certificate issue
+and reprint, the maternal questionnaire and both outcomes all name a device,
+and the centre holds each to the same proof: the `deviceId` in the body must be
+this enrolled, active device at the record's facility, and the request must
+carry `DeviceSignature.HeaderName` with `DeviceSigner.Sign(bytes)` over **the
+exact bytes sent**. Serialise once, sign those bytes, send those bytes —
+re-serialising after signing changes whitespace or property order and the
+signature fails. A device may never send `ncbrs-web`; that is the management
+site's channel, and the centre refuses it from any other client.
 
 ## What the shell must persist (B2, encrypted)
 
