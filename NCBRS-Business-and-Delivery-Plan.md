@@ -397,7 +397,9 @@ Two things this settled. First, the write path is **not globally serialised** �
 concurrency scales throughput ~5× (1→16) once the load is spread across distinct
 devices, as a real burst is. The single-device collapse was a *test* artifact
 (one row, many writers), which is why the driver now enrols a device fleet.
-Second, the **~120 ms per-record floor** was chased to its actual cause, which
+Second, the **~120 ms per-record floor** (since shown to be inflated by the
+driver's own test data, which the duplicate matcher floods with candidates:
+§17 11d; a clean idle batch runs ~20 ms/record) was chased to its actual cause, which
 was **not** the duplicate-detection scan as first assumed: `EXPLAIN ANALYZE`
 shows that query uses `IX_BirthRecords_DateOfBirth` and runs in ~5 ms even over a
 dense window. The floor is the **per-record write path**: a `SaveChanges` and a
@@ -602,7 +604,29 @@ critical path is still WS-B's device build.
 | 9a | The same trust on other endpoints that accept a `deviceId` as an attribution label (BRN block request, certificate issue) | **Done** — same channel rule on all seven (correction, BRN block, certificate issue and reprint, maternal statistics, both outcomes) through one `DeviceChannelGate`; the label is the audit trail, so it was not "just a label" |
 | 10 | WCAG 2.2 AA conformance (contrast, 2.5.8 target size, assistive-technology testing) and breakpoint verification | A signed-in browser session to test against |
 | 11 | Per-record vs per-batch `SaveChanges` in sync — keep per-record for failure isolation unless real-scale measurement shows round-trips dominate | **Done** — [ADR 0001](docs/adr/0001-sync-commit-granularity.md): keep each record flushed in its own savepoint, inside one transaction per batch. It was never a commit per record: a device's transaction id already makes the batch one transaction. Flushing once per batch would lose in-batch duplicate detection, not just isolation |
-| 11a | District tier forwards with a 20 s timeout, but a 500-record batch runs ~60 s at the measured rate. Inferred from code, not reproduced: either the batch is rolled back and retried into the same timeout indefinitely, or it lands and the retry's `409` marks it `Rejected` | Reproduce, then pick one or more: a District timeout sized to the batch cap, a smaller cap for forwarded batches, or treating `409 in progress` as "not yet" rather than a refusal |
+| 11a | **Reproduced (2026-09-25).** A forward that outlasts the District's 20 s timeout is cancelled at the centre, which rolls back the **whole** batch. The District then retries it into the same timeout forever (backoff capped at 15 min, no attempt limit), reporting "Queued" with an error that reads like a link fault, while no birth reaches the centre. Under concurrent sync load a 500-record batch timed out at 20 s, and the same batch sent directly took 46.7 s. On an idle register it took 6–10 s | Size the District timeout from the batch cap, or bound forwarded batch size. Give a batch that keeps timing out its own status, so it stops looking like an outage. See the findings below |
+| 11b | **Found and reproduced while testing 11a: the District forwards a new batch twice at once.** The controller saves it as `Queued` with no next-attempt time and forwards it inline, and the poller sees the same row as due and forwards it concurrently. The centre registers the batch once (the idempotency key holds), the second forward gets `409`, and whichever District save lands last wins. Observed: the device was told `200 Forwarded`, all 60 records were registered, and the District then reported the batch **`Rejected`** and overwrote the stored central response | Claim the row before the inline forward (e.g. a next-attempt time or an in-flight status the poller skips). Treat a `409` "in progress" for our own transaction id as "not yet", never as a refusal |
+| 11c | **Found and reproduced: device signatures do not survive the District tier.** The node stores and forwards the raw body but never the `X-NCBRS-Device-Signature` header. With `RequireSignature: true`, the production default, every forwarded batch is refused `403`, audited `DeviceRefused:SignatureFailed`, and marked `Rejected`. A correctly signed batch sent directly was accepted. **The District tier cannot deliver anything under the default configuration** | Store the signature header with the payload and forward it unchanged. It covers the exact bytes the node already keeps, so no re-signing is needed and the node still never has to understand a batch |
+| 11d | **A7 test-data artifact.** The load driver's "dissimilar" names share a first name from a pool of 10. The matcher scores them as close matches (60–69%), so 12,321 synthetic records raised 113,896 duplicate candidates, up to 127 per record, and the bulk `DuplicateCandidates` inserts reached 11 s. The ~120 ms/record A7 floor was measured under this and is inflated: a clean idle batch runs ~20 ms/record | Generate names the matcher genuinely separates, re-run A7, and reset the dev database afterwards (`scripts/dev-reset.ps1`) |
+
+**District tier findings (11a–11c), reproduced 2026-09-25** against the compose
+Postgres, with the API and a District node run from scratch builds and batches
+posted through the node:
+
+| Run | What happened |
+|---|---|
+| 500 records direct to the centre, idle | 200 in 9.9 s |
+| 500 records through the District, idle | forwarded in 6.3 s |
+| 500 records through the District, 3 s timeout (forced) | Queued. The centre logged the cancellation mid-batch and rolled back: **0 records and no idempotency key**. Retried, timed out again, still Queued |
+| 500 records through the District during an A7 burst (16 × 25-record batches) | timed out at 20 s, Queued. Every retry also timed out, one of them because it waited on the device row held by a direct batch from the same device |
+| 60 records through the District, 2 s poll | two centre requests 0.8 s apart for one transaction: `200` then `409`. The centre holds all 60 records once. The District says **`Rejected`** |
+| Signed 3-record batch direct / through the District, `RequireSignature: true` | direct `200`; through the District `403 SignatureFailed`, **`Rejected`** |
+
+11b and 11c do not depend on load or batch size, and 11c blocks every
+deployment that runs the District tier with signing on. Fix those first. 11a's
+threshold depends on per-record cost, which 11d shows the existing
+measurements overstate, but its failure mode (a batch that can never land and
+looks like an outage) is the same whatever the threshold.
 
 ### C. Critical path — needs a device-tooling environment
 

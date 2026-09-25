@@ -43,6 +43,12 @@ their audit triggers and outbox rows, the savepoint create and release, and
 the reconciler. None of it has been broken down further, so **nobody knows yet
 what share of the floor per-batch flushing would remove.**
 
+*Update, 2026-09-25:* the ~120 ms figure is inflated. The load driver's
+synthetic names are close enough for the matcher to flag each record against
+dozens of others (plan §17 11d), and the resulting bulk `DuplicateCandidates`
+inserts dominated the time. A clean 500-record batch on an idle register ran
+at ~20 ms per record. The decision below does not depend on the figure.
+
 ## Options
 
 ### A. Flush per record in a savepoint, one transaction per batch (current)
@@ -113,10 +119,10 @@ the plan's A7 paragraph, is corrected alongside this ADR.
 
 ## Consequences
 
-- **A batch holds one transaction for as long as it takes to process.** At the
-  measured ~120 ms per record, a 25-record batch takes about 3 s and a full
-  500-record batch about 60 s. During that time the transaction holds locks on
-  rows every record touches:
+- **A batch holds one transaction for as long as it takes to process.** A
+  clean 500-record batch took 6–10 s on an idle register and 46.7 s during a
+  concurrent sync burst. During that time the transaction holds locks on rows
+  every record touches:
   - The **device row**, updated by the last-seen mark at the start of the
     batch. Concurrent batches from one device therefore serialise; A7
     observed this before the driver moved to a device fleet.
@@ -124,18 +130,16 @@ the plan's A7 paragraph, is corrected alongside this ADR.
     that updates `BrnBlockNextAvailable`. Until the batch commits, this also
     blocks a `request-brn-block` for that facility and any other batch
     reconciling there.
-- **Found while writing this ADR, not yet reproduced:** the District tier
-  forwards with a **20 s** HTTP timeout (`CentralApiClient.Timeout`), which at
-  the measured rate is about 165 records. For a larger batch the forward times
-  out. If the centre sees the disconnect, the request is cancelled, the filter
-  rolls back the whole batch, and the District retries the same batch into the
-  same timeout, so the births never land. If the centre does not see it, the
-  first attempt commits, and the District's retry collides with the committed
-  key and gets `409`. The District treats `409` as a permanent refusal and marks
-  a batch that actually landed as `Rejected`. Either way the outcome is wrong.
-  The fix belongs to the timeout and batch-sizing side, not to this decision:
-  none of B–D would take a 500-record batch under 20 s at this rate. It is
-  tracked as §17 item 11a.
+- **Found while writing this ADR, since reproduced:** the District tier
+  forwards with a **20 s** HTTP timeout (`CentralApiClient.Timeout`). A forward
+  that outlasts it is cancelled at the centre, which rolls back the whole batch,
+  and the District retries it into the same timeout indefinitely, so the births
+  never land. This happened to a 500-record batch during a sync burst. The
+  second failure mode, a landed batch marked `Rejected` after a `409`, turned out
+  to need no proxy: the District forwards every new batch twice at once, and
+  that produces it on its own. The fix belongs to the timeout, batch sizing and
+  the District's own forwarding, not to this decision. See plan §17 items
+  11a–11c and the findings under them.
 - In-batch duplicate detection, per-record isolation and exact replay stay
   intact. The tests that pin them (sync batch, idempotency, provisional
   reconciliation) should keep passing unchanged.
