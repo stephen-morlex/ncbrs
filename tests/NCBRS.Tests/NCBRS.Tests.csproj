@@ -19,6 +19,7 @@
     <ProjectReference Include="../../src/NCBRS.Relay/NCBRS.Relay.csproj" />
     <ProjectReference Include="../../src/NCBRS.Consumer/NCBRS.Consumer.csproj" />
     <ProjectReference Include="../../src/NCBRS.District/NCBRS.District.csproj" />
+    <ProjectReference Include="../../tools/NCBRS.LoadTest/NCBRS.LoadTest.csproj" />
   </ItemGroup>
 
   <ItemGroup>

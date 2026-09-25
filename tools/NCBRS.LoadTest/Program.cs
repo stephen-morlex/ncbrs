@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using NCBRS.Devices;
+using NCBRS.LoadTest;
 using NCBRS.Models;
 
 // The idempotency key header the API reads (NCBRS.Api's TransactionContext).
@@ -105,7 +106,6 @@ var brnCounter = cfg.BrnBase + Random.Shared.NextInt64(0, 80_000_000) * 1_000;
 // A recent, in-window birth date base (well inside the 90-day statutory
 // window, so records don't route through late-registration).
 var dobBase = DateTime.UtcNow.Date.AddDays(-88);
-string[] firstNames = ["Ayen", "Deng", "Aluel", "Nyandeng", "Garang", "Chol", "Nyakim", "Majok", "Wani", "Lado"];
 
 ApiRequest<SyncBatchRequest> BuildBatch(string deviceId)
 {
@@ -113,17 +113,11 @@ ApiRequest<SyncBatchRequest> BuildBatch(string deviceId)
     for (var i = 0; i < cfg.BatchSize; i++)
     {
         var n = Interlocked.Increment(ref brnCounter);
-        // A unique, mutually-dissimilar name per record so the duplicate
-        // matcher never clusters synthetic load into review candidates — each
-        // record must take the full registration path, not the cheaper
-        // duplicate path, or the measurement is meaningless.
-        var token = string.Create(6, n, static (span, _) =>
-        {
-            for (var k = 0; k < span.Length; k++)
-            {
-                span[k] = (char)('A' + Random.Shared.Next(26));
-            }
-        });
+        // Names and sexes the duplicate matcher cannot confuse -- see
+        // SyntheticBirths for why, and for what the first version of this got
+        // wrong. Dates stay spread evenly over 80 days, so the matcher's
+        // date-window scan sees realistic density: each record is compared
+        // against its neighbours and simply flags none of them.
         records[i] = new SyncBirthRecord
         {
             Birth = new RegisterBirthRequest
@@ -131,9 +125,9 @@ ApiRequest<SyncBatchRequest> BuildBatch(string deviceId)
                 Brn = n.ToString(),
                 FacilityId = cfg.FacilityId,
                 DeviceId = deviceId,
-                ChildFullName = $"{firstNames[n % firstNames.Length]} {token}",
+                ChildFullName = SyntheticBirths.ChildName(Random.Shared),
                 DateOfBirth = dobBase.AddDays(n % 80),
-                Sex = (n & 1) == 0 ? Sex.Female : Sex.Male,
+                Sex = SyntheticBirths.ChildSex(Random.Shared),
                 BirthWeightGrams = 3200,
                 GestationalAgeWeeks = 39.5m,
                 Plurality = BirthPlurality.Singleton,
