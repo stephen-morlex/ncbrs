@@ -803,9 +803,26 @@ client it was issued to (`DeviceEnrolment:WebClientId`, `ncbrs-web`).
 - A proved device is marked seen, as on sync. Refusals are audited through
   `RefusalAudit` (above).
 
-Still taking a device id on trust: the other endpoints that accept one as an
-*attribution label* (BRN block requests, certificate issue). Recorded in plan
-§17 (9a).
+**Every other write that names a device is held to the same rule** (plan §17,
+9a): correction, BRN block request, certificate issue and reprint, the
+maternal questionnaire, and both outcomes. They were "attribution labels",
+but the label *is* the audit trail on a legal record, and a stolen token could
+correct a child's name or draw a facility's BRN range as any device it named.
+One `DeviceChannelGate` applies the rule everywhere, so the refusal — its audit
+row, its survival past the rollback, its 403 — cannot drift between endpoints.
+
+- **On an existing record, the record's facility decides**, not anything in the
+  body: a device enrolled elsewhere is `WrongFacility`. A number that resolves
+  to no record passes the gate so the endpoint answers its own 404 — a refusal
+  would assert a record the register does not hold.
+- **A BRN block request's `deviceId` is optional only for the management
+  site.** A device must name itself: a block nobody can attribute is a
+  fortnight of registrations nobody can attribute either.
+- **"Seen" is saved by the gate**, not left for the act to commit — a device
+  that proved itself reached the centre whether or not what it asked for
+  succeeded.
+- `ncbrs-web` lives once in the web client (`web/src/auth/channel.ts`); five
+  per-screen copies were five places to break the rule with one edit.
 
 **District officers act within their own county, and no further.** Oversight
 roles used to be national for *writes* while county-scoped for *reads*, so a

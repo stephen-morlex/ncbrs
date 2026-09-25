@@ -222,7 +222,8 @@ public class NamedActorTests : IDisposable
                 db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db), current, districts),
             current,
             districts,
-            Microsoft.Extensions.Options.Options.Create(new StatutoryRegistrationOptions()), new DeviceEnrolmentService(db, new DeviceEnrolmentOptions()), new RefusalAudit(db, Microsoft.Extensions.Logging.Abstractions.NullLogger<RefusalAudit>.Instance))
+            Microsoft.Extensions.Options.Options.Create(new StatutoryRegistrationOptions()),
+            AuthTestContext.ChannelGate(db))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };

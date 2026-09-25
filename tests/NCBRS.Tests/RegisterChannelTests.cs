@@ -141,8 +141,7 @@ public class RegisterChannelTests : IDisposable
             current,
             districts,
             Options.Create(new StatutoryRegistrationOptions()),
-            new DeviceEnrolmentService(db, new DeviceEnrolmentOptions { RequireSignature = requireSignature }),
-            new RefusalAudit(db, NullLogger<RefusalAudit>.Instance))
+            AuthTestContext.ChannelGate(db, new DeviceEnrolmentOptions { RequireSignature = requireSignature }))
         {
             ControllerContext = new ControllerContext { HttpContext = http },
         };

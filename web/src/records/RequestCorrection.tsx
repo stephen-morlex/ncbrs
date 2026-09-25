@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { CircleAlert, CircleCheck, Clock, PenLine, ShieldOff } from 'lucide-react'
+import { WebChannelDeviceId } from '@/auth/channel'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -32,8 +33,6 @@ import { changedFields, withdrawsCertificate } from './correction'
 
 type BirthRecord = components['schemas']['BirthRecordResponse']
 type AmendResponse = components['schemas']['AmendBirthRecordResponse']
-
-const WebClientDeviceId = 'ncbrs-web'
 
 interface Draft extends Record<string, unknown> {
   childFullName: string
@@ -145,7 +144,7 @@ export function RequestCorrection() {
               // onto the approval track for nothing.
               ...toRequest(changes as Partial<Draft>),
               reason,
-              deviceId: WebClientDeviceId,
+              deviceId: WebChannelDeviceId,
             },
           },
         })

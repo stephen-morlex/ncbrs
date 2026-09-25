@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { Activity, CircleAlert, CircleCheck, ShieldOff } from 'lucide-react'
+import { WebChannelDeviceId } from '@/auth/channel'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -23,8 +24,6 @@ type BirthRecord = components['schemas']['BirthRecordResponse']
 type NeonatalResponse = components['schemas']['NeonatalOutcomeResponse']
 type MaternalResponse = components['schemas']['MaternalOutcomeResponse']
 type IcdPmTiming = NeonatalResponse['icdPmTiming']
-
-const WebClientDeviceId = 'ncbrs-web'
 
 type Kind = 'neonatal' | 'maternal'
 
@@ -111,7 +110,7 @@ export function RecordOutcome() {
                   icdPmTiming: timing,
                   icdPmCauseCode: causeCode,
                   contributingMaternalConditionCode: maternalCondition || undefined,
-                  deviceId: WebClientDeviceId,
+                  deviceId: WebChannelDeviceId,
                 },
               },
             },
@@ -128,7 +127,7 @@ export function RecordOutcome() {
             {
               params: { path: { brn } },
               body: {
-                data: { deathDateUtc, icdMmCauseCode: causeCode, deviceId: WebClientDeviceId },
+                data: { deathDateUtc, icdMmCauseCode: causeCode, deviceId: WebChannelDeviceId },
               },
             },
           )

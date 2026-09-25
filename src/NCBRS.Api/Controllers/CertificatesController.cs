@@ -12,7 +12,8 @@ namespace NCBRS.Controllers;
 [Produces("application/json")]
 public class CertificatesController(
     CertificateService certificates,
-    CurrentRegistrarService currentRegistrar) : ControllerBase
+    CurrentRegistrarService currentRegistrar,
+    DeviceChannelGate channelGate) : ControllerBase
 {
     /// <summary>
     /// Issues the birth certificate for a registered live birth, signing it
@@ -33,6 +34,13 @@ public class CertificatesController(
         if (registrar is null)
         {
             return NotProvisioned();
+        }
+
+        var refused = await channelGate.RefuseUnlessPermittedForRecordAsync(
+            HttpContext, registrar, envelope.Data.DeviceId, brn);
+        if (refused is not null)
+        {
+            return refused;
         }
 
         var result = await certificates.IssueAsync(
@@ -80,6 +88,13 @@ public class CertificatesController(
         if (registrar is null)
         {
             return NotProvisioned();
+        }
+
+        var refused = await channelGate.RefuseUnlessPermittedForRecordAsync(
+            HttpContext, registrar, envelope.Data.DeviceId, brn);
+        if (refused is not null)
+        {
+            return refused;
         }
 
         var result = await certificates.ReprintAsync(

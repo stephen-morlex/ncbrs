@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using NCBRS.Data;
+using NCBRS.Middleware;
 using NCBRS.Services;
 
 namespace NCBRS.Tests;
@@ -52,4 +53,19 @@ public static class AuthTestContext
 
     public static CurrentRegistrarService RegistrarService(NcbrsDbContext db, HttpContext http)
         => new(db, new HttpContextAccessor { HttpContext = http }, new CountyLookup(db));
+
+    /// <summary>The management site's OIDC client id: the web channel.</summary>
+    public const string WebClient = "ncbrs-web";
+
+    /// <summary>
+    /// The device-channel gate as the API wires it. Defaults are the
+    /// production ones -- enrolment and signatures enforced -- so a test that
+    /// wants the web channel says so with <see cref="WebClient"/>.
+    /// </summary>
+    public static DeviceChannelGate ChannelGate(NcbrsDbContext db, DeviceEnrolmentOptions? options = null)
+        => new(
+            db,
+            new DeviceEnrolmentService(db, options ?? new DeviceEnrolmentOptions()),
+            new RefusalAudit(db, Microsoft.Extensions.Logging.Abstractions.NullLogger<RefusalAudit>.Instance),
+            new CountyLookup(db));
 }

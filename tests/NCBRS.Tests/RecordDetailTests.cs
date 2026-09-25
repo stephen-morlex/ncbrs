@@ -310,7 +310,8 @@ public class RecordDetailTests : IDisposable
                 db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db), current, districts),
             current,
             districts,
-            Options.Create(new StatutoryRegistrationOptions { WindowDays = windowDays }), new DeviceEnrolmentService(db, new DeviceEnrolmentOptions()), new RefusalAudit(db, Microsoft.Extensions.Logging.Abstractions.NullLogger<RefusalAudit>.Instance))
+            Options.Create(new StatutoryRegistrationOptions { WindowDays = windowDays }),
+            AuthTestContext.ChannelGate(db))
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };
