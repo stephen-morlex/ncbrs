@@ -47,7 +47,8 @@ what share of the floor per-batch flushing would remove.**
 synthetic names are close enough for the matcher to flag each record against
 dozens of others (plan §17 11d), and the resulting bulk `DuplicateCandidates`
 inserts dominated the time. A clean 500-record batch on an idle register ran
-at ~20 ms per record. The decision below does not depend on the figure.
+at ~26 ms per record when re-measured on a fresh database with the driver
+fixed. The decision below does not depend on the figure.
 
 ## Options
 

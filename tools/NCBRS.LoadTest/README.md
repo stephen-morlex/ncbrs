@@ -64,7 +64,32 @@ variables:
 
 Exit code is non-zero if any batch failed.
 
-## Measured — dev-hardware Postgres (2026-09-21)
+## Measured — dev-hardware Postgres, driver fixed (2026-09-25)
+
+The earlier figures below were inflated by this driver's own names. They
+flagged almost every same-day pair as a duplicate (`SyntheticBirths` explains
+how), so each run measured a flood of review-queue writes that real
+registrations don't produce. Re-measured on the same hardware and the same
+day. Each run used its own fresh database, with signing enforced, a 32-device
+fleet and batches of 25. The only difference is the driver:
+
+| Run | Old driver | Fixed driver |
+|---|---|---|
+| Duplicate candidates raised (13,071 records) | 166,961 | **0** from load |
+| Concurrency 16, 10,000 records | 131.6 rec/s; p50 3.1 s / p99 4.6 s | **295.2 rec/s**; p50 1.3 s / p99 1.9 s |
+| Concurrency 1, 2,500 records | 11.9 rec/s → 84 ms/record | **38.8 rec/s → 26 ms/record** |
+
+`SyntheticBirthsTests` holds the fix: 400 generated names, every pair on the
+same date, sex and facility, all under the matcher's review threshold. If you
+change how this driver builds a record, keep that test passing, or the numbers
+stop meaning anything.
+
+To measure without touching the dev database, create a scratch one in the
+compose Postgres (`docker exec ncbrs-postgres-1 createdb -U ncbrs ncbrs_a7`),
+point an API at it (Development migrates and seeds it on start), run the
+driver, then `dropdb` it.
+
+## Measured — dev-hardware Postgres (2026-09-21), superseded
 
 Against the compose Postgres (`Database__Provider=Postgres`, `district.officer`
 syncing for Juba Teaching Hospital), on a developer laptop with **WAL archiving
@@ -81,9 +106,10 @@ Reading: concurrency scales throughput ~5× (1→16), so the write path is not
 globally serialised. The **~120 ms per-record floor** is the thing to watch. It is
 **not** the duplicate-detection scan — `EXPLAIN ANALYZE` on that query shows it
 uses `IX_BirthRecords_DateOfBirth` and runs in ~5 ms even over a dense ±3-day
-window. The floor is the **write + commit path**: per-record `SaveChanges` (the
-sync path commits per record so one bad row costs only itself), the append-only
-audit triggers, the outbox insert, and the WAL fsync (dev has WAL archiving on).
+window. The floor is the **per-record write path**: a `SaveChanges` and savepoint
+per record (so one bad row costs only itself), the append-only audit triggers
+and the outbox insert. It is not a commit per record: the batch is one
+transaction (ADR 0001).
 The one duplicate-scan cost that *was* real — the scan change-tracked its ~900
 read-only candidates per record, bloating the change tracker across a batch and
 inflating the tail — is fixed with `AsNoTracking` (p90/p99 roughly halved,
@@ -99,7 +125,8 @@ with the fleet spread across **multiple facilities** and `BATCHES`/`BATCH_SIZE`/
 re-measured at that volume too — see `NCBRS-Business-and-Delivery-Plan.md`
 (§A6, §A7).
 
-`RequireSignature` was off for these measured runs (dev).
+`RequireSignature` was off for the 2026-09-21 runs (dev) and on for the
+2026-09-25 re-measurement.
 
 ## Device signatures
 

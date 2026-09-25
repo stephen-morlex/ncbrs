@@ -393,13 +393,31 @@ archiving on, all devices at one facility — a conservative floor, not producti
 | Concurrency 16, 32-device fleet, 5000 records | **~32 records/s, 0 failures**; p50 12.2s / p99 16.4s per 25-record batch |
 | Concurrency 16, **single** device | throughput collapses, ~55/200 batches time out — every batch contends on one `Device` row's last-seen update |
 
+**Superseded: the per-record figures above are inflated** by the driver's own
+test data (§17 11d). Its synthetic names flagged almost every same-day pair as
+a duplicate, so each run measured a flood of `DuplicateCandidates` writes that
+real registrations don't produce. Re-measured 2026-09-25 with the driver fixed.
+Same hardware and same day, each run on its **own fresh database**, signing
+enforced, a 32-device fleet, batches of 25. The only difference between the
+columns is the driver:
+
+| Run | Old driver | Fixed driver |
+|---|---|---|
+| Duplicate candidates raised (13,071 records) | **166,961** | **0** from load (5 planted in the dev seed) |
+| Concurrency 16, 10,000 records | 131.6 records/s; p50 3.1 s / p99 4.6 s per batch | **295.2 records/s**; p50 1.3 s / p99 1.9 s |
+| Concurrency 1, 2,500 records | 11.9 records/s → 84 ms per record | **38.8 records/s → 26 ms per record** |
+
+So the clean per-record floor on this hardware is about 26 ms, not 120 ms, and a
+burst of 16 concurrent uploads sustains about 295 records/s, with zero failures
+in both runs.
+
 Two things this settled. First, the write path is **not globally serialised** —
 concurrency scales throughput ~5× (1→16) once the load is spread across distinct
 devices, as a real burst is. The single-device collapse was a *test* artifact
 (one row, many writers), which is why the driver now enrols a device fleet.
 Second, the **~120 ms per-record floor** (since shown to be inflated by the
-driver's own test data, which the duplicate matcher floods with candidates:
-§17 11d; a clean idle batch runs ~20 ms/record) was chased to its actual cause, which
+driver's own test data; the clean figure is ~26 ms, see the re-measurement
+above) was chased to its actual cause, which
 was **not** the duplicate-detection scan as first assumed: `EXPLAIN ANALYZE`
 shows that query uses `IX_BirthRecords_DateOfBirth` and runs in ~5 ms even over a
 dense window. The floor is the **per-record write path**: a `SaveChanges` and a
@@ -607,7 +625,8 @@ critical path is still WS-B's device build.
 | 11a | **Reproduced (2026-09-25).** A forward that outlasts the District's 20 s timeout is cancelled at the centre, which rolls back the **whole** batch. The District then retries it into the same timeout forever (backoff capped at 15 min, no attempt limit), reporting "Queued" with an error that reads like a link fault, while no birth reaches the centre. Under concurrent sync load a 500-record batch timed out at 20 s, and the same batch sent directly took 46.7 s. On an idle register it took 6–10 s | **Done** — each attempt gets `Timeout + TimeoutPerRecord × records` (2 min for 500), doubled per consecutive timeout, capped at 10 min. A timeout is reported as slowness (`slowToFinish`), not an outage, and holds the queue in order. The inline forward no longer dies with the device's connection. The store is upgraded in place |
 | 11b | **Found and reproduced while testing 11a: the District forwards a new batch twice at once.** The controller saves it as `Queued` with no next-attempt time and forwards it inline, and the poller sees the same row as due and forwards it concurrently. The centre registers the batch once (the idempotency key holds), the second forward gets `409`, and whichever District save lands last wins. Observed: the device was told `200 Forwarded`, all 60 records were registered, and the District then reported the batch **`Rejected`** and overwrote the stored central response | **Done** — every forward claims its row before sending (the controller in the same write that stores it). The centre's in-progress `409` carries `Retry-After`, and a 4xx with `Retry-After` is "not yet" |
 | 11c | **Found and reproduced: device signatures do not survive the District tier.** The node stores and forwards the raw body but never the `X-NCBRS-Device-Signature` header. With `RequireSignature: true`, the production default, every forwarded batch is refused `403`, audited `DeviceRefused:SignatureFailed`, and marked `Rejected`. A correctly signed batch sent directly was accepted. **The District tier cannot deliver anything under the default configuration** | **Done** — the body is read as raw bytes and the signature header is stored with it and forwarded unchanged |
-| 11d | **A7 test-data artifact.** The load driver's "dissimilar" names share a first name from a pool of 10. The matcher scores them as close matches (60–69%), so 12,321 synthetic records raised 113,896 duplicate candidates, up to 127 per record, and the bulk `DuplicateCandidates` inserts reached 11 s. The ~120 ms/record A7 floor was measured under this and is inflated: a clean idle batch runs ~20 ms/record | Generate names the matcher genuinely separates, re-run A7, and reset the dev database afterwards (`scripts/dev-reset.ps1`) |
+| 11d | **A7 test-data artifact.** The load driver's "dissimilar" names share a first name from a pool of 10. The matcher scores them as close matches (60–69%), so 12,321 synthetic records raised 113,896 duplicate candidates, up to 127 per record, and the bulk `DuplicateCandidates` inserts reached 11 s. The ~120 ms/record A7 floor was measured under this and is inflated: a clean idle batch runs ~20 ms/record | **Done** — the cause was structural, not just similar names: date of birth `n % 80`, first name `n % 10` and sex `n & 1` put every same-day record on one first name and one sex, and behind "Nyandeng" any two 6-letter surnames score ≥ 60%. The driver now builds names from two independent random 8-letter tokens with sex chosen at random (`SyntheticBirths`), held by `SyntheticBirthsTests` against the real matcher. Re-measured on fresh databases: 0 candidates from load (was 166,961), 295 vs 132 records/s at concurrency 16, 26 vs 84 ms per record at concurrency 1. The dev database still holds the earlier runs' data until reset (`scripts/dev-reset.ps1`) |
+| 11e | **Side finding, not a test artifact: a common given name can carry two different children over the duplicate threshold.** Real names "Nyandeng Deng" and "Nyandeng Garang", same day, same sex, same facility, score 35 + 10 + 18 = 63 ≥ 60. The whole-string Levenshtein lets a long shared given name dominate. At a busy hospital, with a given name that common, that is a steady stream of false duplicates in the review queue | Needs real national name-frequency data, as the matcher's own notes say. Options: weight tokens by how rare they are, or compare family names separately. Not a guess made on synthetic data |
 
 **District tier findings (11a–11c), reproduced 2026-09-25** against the compose
 Postgres, with the API and a District node run from scratch builds and batches
