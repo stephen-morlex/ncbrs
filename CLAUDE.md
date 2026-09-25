@@ -306,7 +306,14 @@ reachable at that moment.
 - **No authentication of its own.** The centre authenticates every batch
   properly, and a second identity system on a district box would add a place
   credentials live without adding a check. Device enrolment (WS-B9) is what
-  should gate this hop, and does not exist yet.
+  gates this hop, via the device's signature over the batch, once the node
+  forwards that header (plan §17 11c).
+- **Known defects, reproduced 2026-09-25 (plan §17 11a–11c):** a forward that
+  outlasts the node's 20 s timeout is rolled back at the centre and retried
+  into the same timeout forever; a new batch is forwarded twice at once
+  (inline and by the poller), which can mark a batch that landed as
+  `Rejected`; and the signature header above is dropped. Read those items
+  before changing the forwarding path.
 
 ## Concurrent amendment conflicts (draft 6.3, built)
 A device offline for weeks corrects a field the centre has since corrected
@@ -750,11 +757,14 @@ from existing records, while signing needs every tablet to hold a key.
 - **The signature covers the raw request body, byte for byte** — not a
   canonical projection of its fields. A canonical form is a second
   description of the payload, and the day it disagrees with the parser a
-  genuine batch fails or a tampered one passes. This also survives the
-  district tier, which stores and forwards a batch's raw text unchanged; both
-  designs come from the same rule, that an intermediary must not need to
-  understand a batch to carry it. **This is the gate the District section
-  says was missing.**
+  genuine batch fails or a tampered one passes. It is *designed* to survive
+  the district tier, which stores and forwards a batch's raw text unchanged;
+  both designs come from the same rule, that an intermediary must not need to
+  understand a batch to carry it. **But the node does not carry the
+  signature header yet** (plan §17 11c, reproduced): with `RequireSignature`
+  on, every forwarded batch is refused `SignatureFailed`. Until that is fixed
+  this is the gate the District section says was missing, closed for direct
+  uploads only.
 - **Buffering is enabled only for requests carrying the signature header**, so
   the largest payload the system takes — a post offline three weeks — is not
   buffered for every other call.
