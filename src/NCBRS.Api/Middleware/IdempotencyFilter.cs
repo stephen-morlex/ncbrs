@@ -65,7 +65,7 @@ public class IdempotencyFilter(
         var existing = await db.IdempotencyRecords
             .FirstOrDefaultAsync(record => record.TransactionId == transaction.TransactionId);
 
-        if (existing is not null && Evaluate(existing, transaction, fingerprint) is { } rejection)
+        if (existing is not null && Evaluate(existing, transaction, fingerprint, context.HttpContext.Response) is { } rejection)
         {
             context.Result = rejection;
             return;
@@ -82,7 +82,7 @@ public class IdempotencyFilter(
         {
             await dbTransaction.RollbackAsync();
 
-            context.Result = InProgressElsewhere(transaction);
+            context.Result = InProgressElsewhere(transaction, context.HttpContext.Response);
             return;
         }
 
@@ -101,7 +101,8 @@ public class IdempotencyFilter(
     private IActionResult? Evaluate(
         IdempotencyRecord existing,
         TransactionContext transaction,
-        string fingerprint)
+        string fingerprint,
+        HttpResponse response)
     {
         // Same key, different payload: the caller has a bug, and in a
         // registry that could mean one birth's id carrying another's data.
@@ -122,7 +123,7 @@ public class IdempotencyFilter(
 
         if (existing.LeaseExpiresAtUtc > DateTime.UtcNow)
         {
-            return InProgressElsewhere(transaction);
+            return InProgressElsewhere(transaction, response);
         }
 
         // The lease lapsed: whoever held this key died mid-request. Take it
@@ -171,12 +172,30 @@ public class IdempotencyFilter(
         }
     }
 
-    private static ObjectResult InProgressElsewhere(TransactionContext transaction)
-        => ApiErrors.Result(ApiErrors.Single(
+    /// <summary>
+    /// How long to suggest a caller waits before retrying a transaction that is
+    /// still being processed.
+    /// </summary>
+    private static readonly TimeSpan InProgressRetryAfter = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// "Not yet", not "no" -- and says so with <c>Retry-After</c>, the one part
+    /// of the answer a caller can act on without parsing an error body. The
+    /// district node relies on it: a 409 without it is a refusal it stops
+    /// retrying, and treating this one as that marked batches this service had
+    /// registered as rejected.
+    /// </summary>
+    private static ObjectResult InProgressElsewhere(TransactionContext transaction, HttpResponse response)
+    {
+        response.Headers.RetryAfter =
+            ((int)InProgressRetryAfter.TotalSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+        return ApiErrors.Result(ApiErrors.Single(
             StatusCodes.Status409Conflict,
             "Transaction already in progress.",
             "meta.transactionId",
             $"transactionId '{transaction.TransactionId}' is currently being processed. Retry shortly."));
+    }
 
     /// <summary>
     /// Commits the key and the work it guarded as one unit, or discards both.

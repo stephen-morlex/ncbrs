@@ -306,14 +306,36 @@ reachable at that moment.
 - **No authentication of its own.** The centre authenticates every batch
   properly, and a second identity system on a district box would add a place
   credentials live without adding a check. Device enrolment (WS-B9) is what
-  gates this hop, via the device's signature over the batch, once the node
-  forwards that header (plan §17 11c).
-- **Known defects, reproduced 2026-09-25 (plan §17 11a–11c):** a forward that
-  outlasts the node's 20 s timeout is rolled back at the centre and retried
-  into the same timeout forever; a new batch is forwarded twice at once
-  (inline and by the poller), which can mark a batch that landed as
-  `Rejected`; and the signature header above is dropped. Read those items
-  before changing the forwarding path.
+  gates this hop: the device signs the batch and the centre verifies the
+  signature the node forwards.
+- **It carries the device's signature with the bytes it covers** (plan §17
+  11c). The body is read as raw bytes — never bound as JSON and re-rendered —
+  and `X-NCBRS-Device-Signature` is stored beside it (`ForwardedBatch.DeviceSignature`)
+  and forwarded unchanged. Before this the node dropped the header, so with
+  signing on (the default) the District tier delivered nothing.
+- **One forward at a time per batch** (11b). Every forward goes through
+  `BatchForwarder.ForwardAsync`, which **claims** the row (`NextAttemptAtUtc`
+  past the attempt's timeout) and saves before the request goes out; the
+  controller claims a new batch in the same write that stores it. Without the
+  claim the poller found a batch the controller was forwarding "due" and sent
+  it again, and the centre's `409` to the second copy marked a registered
+  batch `Rejected`. The centre's in-progress `409` carries `Retry-After`, and
+  a 4xx with `Retry-After` is "not yet", never a refusal.
+- **A timeout is sized to the batch and grows** (11a). A flat 20 s cancelled any
+  batch that could not fit, and cancelling it cancels the centre's transaction,
+  which rolls back the **whole** batch — so the retry failed identically,
+  forever, while reporting an outage. Now each attempt gets
+  `Timeout + TimeoutPerRecord × records`, doubled per consecutive timeout
+  (`ConsecutiveTimeouts`), capped at `MaxTimeout`; the HttpClient's own timeout
+  is infinite. A timeout is reported as the centre being slow, counted as
+  `slowToFinish`, and holds the queue in order like an outage does.
+- **The inline forward is bound to the node's lifetime, not the device's
+  connection.** A village link dropping mid-request must not cancel it — that
+  would cancel the centre's transaction and throw away the batch's work.
+- **The store is upgraded in place, never rebuilt** (`DistrictSchema`). It
+  holds births in transit that exist nowhere else, so unlike the consumer's
+  read model it cannot be deleted and replayed. Additive, nullable-or-defaulted
+  columns only; anything else needs a real migration.
 
 ## Concurrent amendment conflicts (draft 6.3, built)
 A device offline for weeks corrects a field the centre has since corrected
@@ -757,14 +779,12 @@ from existing records, while signing needs every tablet to hold a key.
 - **The signature covers the raw request body, byte for byte** — not a
   canonical projection of its fields. A canonical form is a second
   description of the payload, and the day it disagrees with the parser a
-  genuine batch fails or a tampered one passes. It is *designed* to survive
-  the district tier, which stores and forwards a batch's raw text unchanged;
-  both designs come from the same rule, that an intermediary must not need to
-  understand a batch to carry it. **But the node does not carry the
-  signature header yet** (plan §17 11c, reproduced): with `RequireSignature`
-  on, every forwarded batch is refused `SignatureFailed`. Until that is fixed
-  this is the gate the District section says was missing, closed for direct
-  uploads only.
+  genuine batch fails or a tampered one passes. This also survives the
+  district tier, which stores and forwards a batch's raw bytes and its
+  signature header unchanged; both designs come from the same rule, that an
+  intermediary must not need to understand a batch to carry it. **This is the
+  gate the District section says was missing.** (It was open until §17 11c: the
+  node carried the bytes but dropped the header.)
 - **Buffering is enabled only for requests carrying the signature header**, so
   the largest payload the system takes — a post offline three weeks — is not
   buffered for every other call.

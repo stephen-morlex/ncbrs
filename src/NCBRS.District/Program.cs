@@ -32,13 +32,11 @@ builder.Services.Configure<CentralApiOptions>(
 builder.Services.Configure<ForwarderOptions>(
     builder.Configuration.GetSection(ForwarderOptions.SectionName));
 
-builder.Services.AddHttpClient<CentralApiClient>((provider, http) =>
-{
-    var options = provider.GetRequiredService<
-        Microsoft.Extensions.Options.IOptions<CentralApiOptions>>().Value;
-
-    http.Timeout = options.Timeout;
-});
+// No client-wide timeout: each forward carries its own, sized to its batch
+// (CentralApiOptions.AttemptTimeout). A flat one here would cut every request
+// at the same point however large the batch, which is how a full batch came to
+// be cancelled -- and rolled back at the centre -- on every attempt.
+builder.Services.AddHttpClient<CentralApiClient>(http => http.Timeout = Timeout.InfiniteTimeSpan);
 
 builder.Services.AddHostedService<BatchForwarder>();
 
@@ -48,15 +46,15 @@ var app = builder.Build();
 // writer -- so unlike the central tier there is nothing to race with.
 using (var scope = app.Services.CreateScope())
 {
-    scope.ServiceProvider.GetRequiredService<DistrictDbContext>().Database.EnsureCreated();
+    DistrictSchema.EnsureCurrent(scope.ServiceProvider.GetRequiredService<DistrictDbContext>());
 }
 
 // No authentication of its own: a district node sits on a district office
 // network and forwards to a centre that authenticates every batch properly.
 // Putting a second identity system on a box in a district office would add a
 // place credentials live without adding a check the centre does not already
-// make. Device enrolment (WS-B9) is what should gate this hop, and it does
-// not exist yet -- see CLAUDE.md.
+// make. What gates this hop is device enrolment (WS-B9): the device signs the
+// batch, the node forwards the signature untouched, and the centre verifies it.
 app.MapControllers();
 
 app.Run();

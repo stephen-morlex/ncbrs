@@ -1,6 +1,9 @@
+using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using NCBRS.Devices;
 using NCBRS.District.Data;
 using NCBRS.District.Models;
 using NCBRS.District.Services;
@@ -26,18 +29,52 @@ namespace NCBRS.District.Controllers;
 public class DistrictSyncController(
     DistrictDbContext db,
     CentralApiClient central,
+    IOptions<CentralApiOptions> centralOptions,
+    IHostApplicationLifetime lifetime,
     ILogger<DistrictSyncController> logger) : ControllerBase
 {
+    private static readonly byte[] Utf8Bom = [0xEF, 0xBB, 0xBF];
+
+    /// <summary>
+    /// Takes a batch from a device and tries the centre at once.
+    ///
+    /// The body is read as the bytes that arrived, not bound as JSON and
+    /// re-rendered: those bytes are what the device's signature covers, and
+    /// the centre verifies them exactly. The signature header is kept beside
+    /// them and forwarded unchanged.
+    /// </summary>
     [HttpPost("batches")]
     [ProducesResponseType(typeof(DistrictBatchResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(DistrictBatchResponse), StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<DistrictBatchResponse>> SubmitBatch(
-        [FromBody] JsonElement envelope)
+    public async Task<ActionResult<DistrictBatchResponse>> SubmitBatch()
     {
-        var payload = envelope.GetRawText();
+        using var buffer = new MemoryStream();
+        await Request.Body.CopyToAsync(buffer, HttpContext.RequestAborted);
+        var bytes = buffer.ToArray();
 
-        if (!TryRead(envelope, out var transactionId, out var deviceId, out var facilityId, out var records))
+        JsonDocument document;
+        try
+        {
+            var json = bytes.AsMemory();
+            document = JsonDocument.Parse(json.Span.StartsWith(Utf8Bom) ? json[Utf8Bom.Length..] : json);
+        }
+        catch (JsonException)
+        {
+            return BadRequest(new { error = "The body is not valid JSON." });
+        }
+
+        using var _ = document;
+        var envelope = document.RootElement;
+
+        // Lossless for valid UTF-8, so re-encoding on the way out reproduces
+        // the bytes that arrived. A body that is not valid UTF-8 would not
+        // survive -- and its signature then fails at the centre, which is the
+        // right outcome for a body nobody can read the same way twice.
+        var payload = Encoding.UTF8.GetString(bytes);
+
+        if (envelope.ValueKind != JsonValueKind.Object
+            || !TryRead(envelope, out var transactionId, out var deviceId, out var facilityId, out var records))
         {
             return BadRequest(new
             {
@@ -57,14 +94,21 @@ public class DistrictSyncController(
             return Answer(existing);
         }
 
+        var signature = Request.Headers[DeviceSignature.HeaderName].ToString();
+
         var stored = new ForwardedBatch
         {
             TransactionId = transactionId,
             DeviceId = deviceId,
             FacilityId = facilityId,
             RecordCount = records,
-            Payload = payload
+            Payload = payload,
+            DeviceSignature = string.IsNullOrEmpty(signature) ? null : signature
         };
+
+        // Claimed in the same write that stores it, so there is no moment at
+        // which the poller can see it as due while the forward below runs.
+        BatchForwarder.Claim(stored, centralOptions.Value.AttemptTimeout(records, 0));
 
         db.ForwardedBatches.Add(stored);
         await db.SaveChangesAsync(HttpContext.RequestAborted);
@@ -72,15 +116,20 @@ public class DistrictSyncController(
         // Tried immediately so a district that does have a link gives the
         // device the centre's real answer -- which BRNs were confirmed, which
         // records were duplicates -- rather than making it come back for it.
-        var result = await central.ForwardAsync(payload, HttpContext.RequestAborted);
-
-        BatchForwarder.Record(stored, result);
-        await db.SaveChangesAsync(HttpContext.RequestAborted);
+        //
+        // Bound to the node's lifetime, not the device's connection. The batch
+        // is already held, and a village link dropping mid-request must not
+        // cancel the forward: cancelling it cancels the centre's transaction,
+        // which throws away the whole batch's work.
+        var result = await BatchForwarder.ForwardAsync(
+            db, central, centralOptions.Value, stored, lifetime.ApplicationStopping);
 
         if (!result.Reached)
         {
             logger.LogInformation(
-                "Held batch {TransactionId} from device {DeviceId}: central tier unreachable",
+                result.TimedOut
+                    ? "Held batch {TransactionId} from device {DeviceId}: central tier did not finish it in time"
+                    : "Held batch {TransactionId} from device {DeviceId}: central tier unreachable",
                 transactionId, deviceId);
         }
 
@@ -140,7 +189,10 @@ public class DistrictSyncController(
             await db.ForwardedBatches.CountAsync(
                 batch => batch.Status == ForwardedBatchStatus.Rejected, HttpContext.RequestAborted),
             oldest,
-            lastForwarded);
+            lastForwarded,
+            await db.ForwardedBatches.CountAsync(
+                batch => batch.Status == ForwardedBatchStatus.Queued && batch.ConsecutiveTimeouts > 0,
+                HttpContext.RequestAborted));
     }
 
     private ActionResult<DistrictBatchResponse> Answer(ForwardedBatch batch)
@@ -229,10 +281,16 @@ public record DistrictBatchResponse(
     string? LastError
 );
 
+/// <param name="SlowToFinish">
+/// Queued batches whose last attempt reached the centre but ran out of time
+/// before it finished. Not an outage -- the link is up -- and counted apart so
+/// nobody is sent to check one: each retry allows longer.
+/// </param>
 public record DistrictNodeStatus(
     int Queued,
     int Forwarded,
     int Rejected,
     DateTime? OldestQueuedAtUtc,
-    DateTime? LastForwardedAtUtc
+    DateTime? LastForwardedAtUtc,
+    int SlowToFinish
 );

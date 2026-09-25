@@ -138,8 +138,9 @@ the plan's A7 paragraph, is corrected alongside this ADR.
   second failure mode, a landed batch marked `Rejected` after a `409`, turned out
   to need no proxy: the District forwards every new batch twice at once, and
   that produces it on its own. The fix belongs to the timeout, batch sizing and
-  the District's own forwarding, not to this decision. See plan §17 items
-  11a–11c and the findings under them.
+  the District's own forwarding, not to this decision, and all three were
+  fixed there (plan §17 items 11a–11c): a per-batch timeout that grows after a
+  timeout, one forward at a time per batch, and the signature carried through.
 - In-batch duplicate detection, per-record isolation and exact replay stay
   intact. The tests that pin them (sync batch, idempotency, provisional
   reconciliation) should keep passing unchanged.
