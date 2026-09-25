@@ -193,6 +193,10 @@ public class IdempotencyFilterTests : IDisposable
         Assert.False(actionRan);
         var result = Assert.IsType<ObjectResult>(context.Result);
         Assert.Equal(StatusCodes.Status409Conflict, result.StatusCode);
+
+        // "Not yet", not "no": a caller that stops retrying on a bare 409 -- the
+        // district node does -- must be told to come back.
+        Assert.Equal("30", context.HttpContext.Response.Headers.RetryAfter.ToString());
     }
 
     /// <summary>

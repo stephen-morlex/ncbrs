@@ -52,6 +52,19 @@ public class ForwardedBatch
     /// </summary>
     public required string Payload { get; set; }
 
+    /// <summary>
+    /// The device's signature over <see cref="Payload"/>, exactly as the device
+    /// sent it in the signature header, and forwarded with it unchanged.
+    ///
+    /// Without it the centre, which requires a signature by default, refuses
+    /// every forwarded batch -- the node carried the bytes the signature
+    /// covers but not the signature, so nothing it forwarded could prove
+    /// which device it came from. The node never checks or produces one: it
+    /// holds no device keys, and it does not need to understand a batch to
+    /// carry it. Null when the device sent none.
+    /// </summary>
+    public string? DeviceSignature { get; set; }
+
     public ForwardedBatchStatus Status { get; set; } = ForwardedBatchStatus.Queued;
 
     public DateTime ReceivedAtUtc { get; set; } = DateTime.UtcNow;
@@ -65,8 +78,26 @@ public class ForwardedBatch
     /// <summary>
     /// When this row may next be tried. Backoff so a node that spent the
     /// night unable to reach the centre is not hammering it at dawn.
+    ///
+    /// Also the claim on a batch while a forward is in flight: set past the
+    /// attempt's timeout before the request goes out, so the poller does not
+    /// see a batch the controller is already forwarding as due and send it a
+    /// second time. If the node dies mid-forward the claim simply lapses.
     /// </summary>
     public DateTime? NextAttemptAtUtc { get; set; }
+
+    /// <summary>
+    /// How many attempts in a row the centre was reachable but did not finish
+    /// before the node gave up. Each one lengthens the next attempt's timeout.
+    ///
+    /// Counted apart from ordinary failures because the remedy is the opposite
+    /// one. An unreachable centre needs the node to wait; a centre that is
+    /// working but slow needs the node to wait *longer on the request*. A
+    /// timeout cancels the centre's transaction, which rolls back the whole
+    /// batch, so retrying with the same timeout repeats the same lost work
+    /// forever while reporting it like an outage.
+    /// </summary>
+    public int ConsecutiveTimeouts { get; set; }
 
     /// <summary>
     /// The centre's response body, stored so a device that was told "queued"

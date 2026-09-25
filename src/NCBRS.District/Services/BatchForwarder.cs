@@ -37,6 +37,12 @@ public class BatchForwarder(
     IOptions<ForwarderOptions> options,
     ILogger<BatchForwarder> logger) : BackgroundService
 {
+    /// <summary>
+    /// How far past an attempt's own timeout its claim on a batch extends: the
+    /// time to record the outcome once the answer is in.
+    /// </summary>
+    private static readonly TimeSpan ClaimMargin = TimeSpan.FromMinutes(1);
+
     private readonly ForwarderOptions _options = options.Value;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -48,7 +54,15 @@ public class BatchForwarder(
         {
             try
             {
-                await DrainAsync(stoppingToken);
+                using var scope = scopes.CreateScope();
+
+                await DrainAsync(
+                    scope.ServiceProvider.GetRequiredService<DistrictDbContext>(),
+                    scope.ServiceProvider.GetRequiredService<CentralApiClient>(),
+                    scope.ServiceProvider.GetRequiredService<IOptions<CentralApiOptions>>().Value,
+                    _options.BatchSize,
+                    logger,
+                    stoppingToken);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -69,35 +83,39 @@ public class BatchForwarder(
         }
     }
 
-    private async Task DrainAsync(CancellationToken cancellationToken)
+    /// <summary>One pass over the batches that are due.</summary>
+    public static async Task DrainAsync(
+        DistrictDbContext db,
+        CentralApiClient central,
+        CentralApiOptions centralOptions,
+        int take,
+        ILogger logger,
+        CancellationToken cancellationToken)
     {
-        using var scope = scopes.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<DistrictDbContext>();
-        var central = scope.ServiceProvider.GetRequiredService<CentralApiClient>();
-
         var now = DateTime.UtcNow;
 
         var due = await db.ForwardedBatches
             .Where(batch => batch.Status == ForwardedBatchStatus.Queued
                             && (batch.NextAttemptAtUtc == null || batch.NextAttemptAtUtc <= now))
             .OrderBy(batch => batch.ReceivedAtUtc)
-            .Take(_options.BatchSize)
+            .Take(take)
             .ToListAsync(cancellationToken);
 
         foreach (var batch in due)
         {
-            var result = await central.ForwardAsync(batch.Payload, cancellationToken);
-
-            Record(batch, result);
-            await db.SaveChangesAsync(cancellationToken);
+            var result = await ForwardAsync(db, central, centralOptions, batch, cancellationToken);
 
             if (!result.Reached)
             {
-                // The link is down. Stop here rather than working through the
-                // rest of the queue to fail identically -- and keep the
-                // ordering promise for when it returns.
+                // Stop here rather than working through the rest of the queue
+                // -- and keep the ordering promise. For a link that is down
+                // the rest would fail identically. For a timeout the centre is
+                // up but this batch is the one in front, and it goes first
+                // next time, with a longer timeout.
                 logger.LogInformation(
-                    "Central tier unreachable; {Remaining} batch(es) still queued",
+                    result.TimedOut
+                        ? "Central tier slow to finish a batch; {Remaining} batch(es) still queued behind it"
+                        : "Central tier unreachable; {Remaining} batch(es) still queued",
                     await db.ForwardedBatches.CountAsync(
                         entry => entry.Status == ForwardedBatchStatus.Queued, cancellationToken));
 
@@ -105,6 +123,45 @@ public class BatchForwarder(
             }
         }
     }
+
+    /// <summary>
+    /// Claims a batch, forwards it, and records what happened. The one path
+    /// every forward takes, whether the controller pushes a batch the moment
+    /// it arrives or the poller retries it later.
+    ///
+    /// The claim is saved before the request goes out. Without it the two
+    /// paths raced: the controller saved a new batch as due and forwarded it,
+    /// the poller found the same row due and forwarded it again, and the
+    /// centre's answer to the second copy -- "already in progress" -- was
+    /// recorded as a refusal of a batch it had registered.
+    /// </summary>
+    public static async Task<CentralForwardResult> ForwardAsync(
+        DistrictDbContext db,
+        CentralApiClient central,
+        CentralApiOptions centralOptions,
+        ForwardedBatch batch,
+        CancellationToken cancellationToken)
+    {
+        var timeout = centralOptions.AttemptTimeout(batch.RecordCount, batch.ConsecutiveTimeouts);
+
+        Claim(batch, timeout);
+        await db.SaveChangesAsync(cancellationToken);
+
+        var result = await central.ForwardAsync(batch.Payload, batch.DeviceSignature, timeout, cancellationToken);
+
+        Record(batch, result);
+        await db.SaveChangesAsync(cancellationToken);
+
+        return result;
+    }
+
+    /// <summary>
+    /// Takes a batch out of the due set for as long as an attempt with this
+    /// timeout can take. If the node dies mid-forward the claim lapses and the
+    /// batch is simply due again.
+    /// </summary>
+    public static void Claim(ForwardedBatch batch, TimeSpan timeout)
+        => batch.NextAttemptAtUtc = DateTime.UtcNow.Add(timeout).Add(ClaimMargin);
 
     /// <summary>
     /// Applies one attempt's outcome. Shared with the synchronous path the
@@ -124,6 +181,7 @@ public class BatchForwarder(
             batch.CentralResponse = result.Body;
             batch.NextAttemptAtUtc = null;
             batch.LastError = null;
+            batch.ConsecutiveTimeouts = 0;
 
             return;
         }
@@ -138,12 +196,29 @@ public class BatchForwarder(
             batch.CentralResponse = result.Body;
             batch.NextAttemptAtUtc = null;
             batch.LastError = $"Central tier refused the batch with {result.StatusCode}.";
+            batch.ConsecutiveTimeouts = 0;
 
             return;
         }
 
+        if (result.TimedOut)
+        {
+            // Lengthens the next attempt (CentralApiOptions.AttemptTimeout).
+            // Reported in its own words, because "the centre did not answer"
+            // sends someone to check a link that is working.
+            batch.ConsecutiveTimeouts++;
+        }
+        else if (result.Reached)
+        {
+            batch.ConsecutiveTimeouts = 0;
+        }
+
         batch.LastError = result.Error ?? $"Central tier returned {result.StatusCode}.";
-        batch.NextAttemptAtUtc = DateTime.UtcNow.Add(Backoff(batch.Attempts));
+
+        // The centre's own estimate of when to come back, where it gave one --
+        // "already in progress" resolves when the other attempt finishes, not
+        // on this node's backoff schedule.
+        batch.NextAttemptAtUtc = DateTime.UtcNow.Add(result.RetryAfter ?? Backoff(batch.Attempts));
     }
 
     /// <summary>Doubling, capped. Kept static so the controller shares it.</summary>

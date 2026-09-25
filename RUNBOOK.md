@@ -100,8 +100,19 @@ device reporting again clears it. There is no delivery channel — the queue is 
   answered by the centre* is `200`. A family must not be told a registration is
   confirmed on a `202`.
 - **"The centre said no" ≠ "the centre did not answer":** only a 4xx (except
-  408/429) stops the node retrying; everything else stays queued. A dropped link
-  never discards a birth.
+  408/429, and a 409 carrying `Retry-After`, which means "already in progress")
+  stops the node retrying; everything else stays queued. A dropped link never
+  discards a birth.
+- **`slowToFinish` in the node's `/api/Sync/status` is not an outage.** Those
+  batches reached the centre and ran out of time before it finished. The link
+  is up, so don't send anyone to check it. Each retry allows twice as long
+  (`Central:Timeout` + `Central:TimeoutPerRecord` × records, capped at
+  `Central:MaxTimeout`). If the count stays up, the centre is slow: look at the
+  central tier's load.
+- **Every forwarded batch `Rejected` with 403?** Check the centre's audit for
+  `DeviceRefused:SignatureFailed`. The node forwards the device's signature
+  header untouched, so a failure there means the device signed different bytes
+  than it sent, or signed with a key that is not the one enrolled.
 - **Partial rejection:** the device keeps exactly the rejected records queued
   and re-sends only those; a re-uploaded batch is idempotent by transaction id
   (one batch, no duplicates).
