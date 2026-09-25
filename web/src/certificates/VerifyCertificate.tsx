@@ -188,7 +188,8 @@ function CertificateFacts({ result }: { result: VerifyResult }) {
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <Item variant="outline">
+    // ItemGroup is a list, so each fact is one of its items.
+    <Item variant="outline" role="listitem">
       <ItemContent>
         <ItemTitle className="text-muted-foreground text-xs font-normal uppercase tracking-wide">
           {label}

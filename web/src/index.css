@@ -60,10 +60,19 @@
     --secondary: oklch(0.97 0 0);
     --secondary-foreground: oklch(0.205 0 0);
     --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
+    /* Darker than shadcn's default (0.556, #737373). That default is 4.34:1 on
+       --muted, under the 4.5:1 WCAG 1.4.3 requires for body text, and muted
+       text sits on muted surfaces all over the shell: avatars, table headers,
+       the detail labels on a record. At 0.53 it is 4.84:1 there and 5.28:1 on
+       white. Found by the axe scan in e2e/accessibility.spec.ts. */
+    --muted-foreground: oklch(0.53 0 0);
     --accent: oklch(0.97 0 0);
     --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
+    /* Darker than the default (0.577, #e7000b) for the same reason: destructive
+       text on its own 10% tint -- the destructive badge -- was 3.99:1. At 0.53
+       it is 4.87:1 there, and white text on a destructive button improves
+       from 4.76:1 to 5.85:1. */
+    --destructive: oklch(0.53 0.22 27.325);
     --border: oklch(0.922 0 0);
     --input: oklch(0.922 0 0);
     --ring: oklch(0.708 0 0);

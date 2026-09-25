@@ -32,7 +32,8 @@
     "soon": "soon"
   },
   "a11y": {
-    "skipToContent": "Skip to main content"
+    "skipToContent": "Skip to main content",
+    "scrollableTable": "Table, scrolls sideways"
   },
   "session": {
     "expiringTitle": "Your session is about to expire",
