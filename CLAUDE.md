@@ -25,6 +25,10 @@ just what it does:
 - `CONTRIBUTING.md` — the delivery workflow: branch, test, review, commit,
   PR, merge, and the approval gates. CLAUDE.md carries the design rules;
   CONTRIBUTING carries the process ones.
+- `docs/adr/` — decision records, for choices argued over at length: the
+  options that lost and when to reopen them. 0001: sync flushes each record in
+  its own savepoint inside **one transaction per batch** — not a commit per
+  record, and not one flush per batch.
 
 ## Key design decisions already made (don't relitigate these without reason)
 

@@ -400,13 +400,16 @@ devices, as a real burst is. The single-device collapse was a *test* artifact
 Second, the **~120 ms per-record floor** was chased to its actual cause, which
 was **not** the duplicate-detection scan as first assumed: `EXPLAIN ANALYZE`
 shows that query uses `IX_BirthRecords_DateOfBirth` and runs in ~5 ms even over a
-dense window. The floor is the **write + commit path** — per-record `SaveChanges`
-(the sync path commits per record so one bad row costs only itself), the
-append-only audit triggers, the outbox insert and the WAL fsync. The one real
+dense window. The floor is the **per-record write path**: a `SaveChanges` and a
+savepoint per record (so one bad row costs only itself), the append-only audit
+triggers and the outbox insert. It is *not* a commit per record. A device's
+transaction id puts the whole batch in one transaction, which commits, and
+fsyncs, once (see `docs/adr/0001-sync-commit-granularity.md`). The one real
 duplicate-scan cost — it change-tracked its ~900 read-only candidates per record,
 bloating the change tracker across a batch — is fixed with `AsNoTracking`
 (p90/p99 roughly halved, throughput +24% at concurrency 1). The residual floor is
-the commit path, a deliberate per-record-isolation choice rather than a defect.
+the per-record write path, a deliberate per-record-isolation choice rather than a
+defect.
 
 What the tool still does *not* provide is the A7 exit condition itself: this same
 run on **production-grade Postgres**, with the fleet spread across **multiple
@@ -598,7 +601,8 @@ critical path is still WS-B's device build.
 | 9 | Close the unverified `deviceId` on online `POST /register` — a stolen token bypasses enrolment there | **Done** — per-request signing; channel decided by the token's `azp`; also fixed refusal audits being rolled back for real devices |
 | 9a | The same trust on other endpoints that accept a `deviceId` as an attribution label (BRN block request, certificate issue) | **Done** — same channel rule on all seven (correction, BRN block, certificate issue and reprint, maternal statistics, both outcomes) through one `DeviceChannelGate`; the label is the audit trail, so it was not "just a label" |
 | 10 | WCAG 2.2 AA conformance (contrast, 2.5.8 target size, assistive-technology testing) and breakpoint verification | A signed-in browser session to test against |
-| 11 | Per-record vs per-batch `SaveChanges` in sync — keep per-record for failure isolation unless real-scale measurement shows round-trips dominate | Record as an ADR |
+| 11 | Per-record vs per-batch `SaveChanges` in sync — keep per-record for failure isolation unless real-scale measurement shows round-trips dominate | **Done** — [ADR 0001](docs/adr/0001-sync-commit-granularity.md): keep each record flushed in its own savepoint, inside one transaction per batch. It was never a commit per record: a device's transaction id already makes the batch one transaction. Flushing once per batch would lose in-batch duplicate detection, not just isolation |
+| 11a | District tier forwards with a 20 s timeout, but a 500-record batch runs ~60 s at the measured rate. Inferred from code, not reproduced: either the batch is rolled back and retried into the same timeout indefinitely, or it lands and the retry's `409` marks it `Rejected` | Reproduce, then pick one or more: a District timeout sized to the batch cap, a smaller cap for forwarded batches, or treating `409 in progress` as "not yet" rather than a refusal |
 
 ### C. Critical path — needs a device-tooling environment
 
