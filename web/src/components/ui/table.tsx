@@ -1,11 +1,57 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { cn } from "cn"
 
+/**
+ * Whether the element's content is wider than the element, kept current as
+ * either resizes.
+ */
+function useOverflowsX(element: React.RefObject<HTMLElement | null>) {
+  const [overflows, setOverflows] = React.useState(false)
+
+  React.useEffect(() => {
+    const node = element.current
+    if (!node) return
+
+    const measure = () => setOverflows(node.scrollWidth > node.clientWidth)
+    measure()
+
+    // Where ResizeObserver is missing (an old embedded browser, or jsdom in
+    // the unit tests) fall back to the window: it misses a table that grows
+    // after load, never a phone turned sideways.
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", measure)
+      return () => window.removeEventListener("resize", measure)
+    }
+
+    const observer = new ResizeObserver(measure)
+    observer.observe(node)
+    if (node.firstElementChild) observer.observe(node.firstElementChild)
+    return () => observer.disconnect()
+  }, [element])
+
+  return overflows
+}
+
+/**
+ * The container scrolls sideways when the table is wider than the screen --
+ * on a phone, most of them are. A region that scrolls must be reachable from
+ * the keyboard (WCAG 2.1.1), and a table of plain text has nothing focusable
+ * inside it to scroll with. So while it overflows, and only then, the
+ * container itself takes focus, as a named region: a tab stop on every table
+ * whether or not it scrolls would be noise on the desktop, where most fit.
+ */
 function Table({ className, ...props }: React.ComponentProps<"table">) {
+  const { t } = useTranslation()
+  const container = React.useRef<HTMLDivElement>(null)
+  const scrolls = useOverflowsX(container)
+
   return (
     <div
+      ref={container}
       data-slot="table-container"
-      className="relative w-full overflow-x-auto"
+      className="focus-visible:ring-ring/50 relative w-full overflow-x-auto rounded-md outline-none focus-visible:ring-[3px]"
+      {...(scrolls ? { tabIndex: 0, role: "region", "aria-label": t("a11y.scrollableTable") } : {})}
     >
       <table
         data-slot="table"

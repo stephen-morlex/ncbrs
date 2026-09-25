@@ -282,7 +282,9 @@ function CertificateState({ record }: { record: BirthRecord }) {
 
 function Detail({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <Item variant="outline">
+    // A listitem, because ItemGroup is a list: a screen reader announces
+    // "list, 7 items" and lets the user step through them.
+    <Item variant="outline" role="listitem">
       <ItemContent>
         <ItemTitle className="text-muted-foreground text-xs font-normal uppercase tracking-wide">
           {label}
