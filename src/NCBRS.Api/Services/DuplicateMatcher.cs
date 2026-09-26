@@ -138,7 +138,24 @@ public class DuplicateMatcher
             return 0;
         }
 
-        var similarity = Similarity(Normalise(left), Normalise(right));
+        var normalisedLeft = Normalise(left);
+        var normalisedRight = Normalise(right);
+
+        // Two names that disagree on a whole word are two people, however
+        // alike the rest of the string is. Checked before the whole-string
+        // similarity, which cannot tell a misspelt word from a different one.
+        var words = CompareWords(normalisedLeft, normalisedRight);
+        if (words.DisagreeOnAWord)
+        {
+            return 0;
+        }
+
+        // The better of the whole string and the word-by-word alignment. The
+        // whole string alone cannot see that "Deng Ayen" is "Ayen Deng" with
+        // the words the other way round -- registrars do not agree on which
+        // comes first -- and taking the better of the two loses no match the
+        // whole string found before.
+        var similarity = Math.Max(Similarity(normalisedLeft, normalisedRight), words.AlignedSimilarity);
 
         if (similarity < 0.6)
         {
@@ -167,6 +184,122 @@ public class DuplicateMatcher
             .Split(' ', StringSplitOptions.RemoveEmptyEntries)
             .Aggregate(string.Empty, (accumulated, part) =>
                 accumulated.Length == 0 ? part : $"{accumulated} {part}");
+
+    /// <summary>
+    /// A word must be at least this alike to its counterpart to count as the
+    /// same word spelt differently. A misspelling keeps most of a word --
+    /// Deng/Deeng 80%, Lado/Ladu 75%, Nyandeng/Nyandheng 89% -- while two
+    /// different names in the same families of names fall well short:
+    /// Achol/Aluel 40%, Malith/Gatwech 29%, Deng/Garang 33%.
+    /// </summary>
+    private const double WordSimilarityFloor = 0.5;
+
+    /// <summary>
+    /// Words this short are initials or particles ("A", "de"): too little to
+    /// say two names differ on.
+    /// </summary>
+    private const int ShortestComparableWord = 3;
+
+    /// <summary>At most 720 alignments; a name longer than this is not a name.</summary>
+    private const int MostWordsAligned = 6;
+
+    /// <summary>
+    /// Whether the two names disagree on a whole word (plan §17 11e), and how
+    /// alike they are word by word.
+    ///
+    /// Whole-string edit distance rewards any shared word, and in this
+    /// registry sharing one is routine: a name is a given name and the father's
+    /// name, so siblings, cousins and a county's worth of Dengs share one, and
+    /// the common given names -- Nyandeng, Ayen, Deng -- recur constantly. So
+    /// "Nyandeng Deng" and "Nyandeng Garang", same day, same sex, same
+    /// hospital, scored 63 and went to review; mothers "Achol Deng" and "Aluel
+    /// Deng" scored a 70% "close match". Every duplicate in the demo seed was
+    /// that and nothing else: different people sharing one word.
+    ///
+    /// The words of the shorter name are aligned one to one with the longer
+    /// name's, in whatever order matches best -- word order varies between
+    /// registrars, and a name recorded without one of its words is common --
+    /// and if any aligned pair of real words falls under
+    /// <see cref="WordSimilarityFloor"/>, the names differ. A missing word or
+    /// a swapped order is not a difference; a different word is.
+    ///
+    /// This needs no data about how common a name is, which is why it could be
+    /// done now. Weighting a shared *rare* word above a shared common one is
+    /// the next refinement, and does need real name-frequency data.
+    /// </summary>
+    private static (bool DisagreeOnAWord, double AlignedSimilarity) CompareWords(string left, string right)
+    {
+        var leftWords = left.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var rightWords = right.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        var (shorter, longer) = leftWords.Length <= rightWords.Length
+            ? (leftWords, rightWords)
+            : (rightWords, leftWords);
+
+        // Nothing to align, or more words than any real name has -- where
+        // trying every alignment would cost more than it could tell us. Either
+        // way, fall back to the whole-string comparison alone.
+        if (shorter.Length == 0 || longer.Length > MostWordsAligned)
+        {
+            return (false, 0);
+        }
+
+        // Names are a handful of words, so trying every alignment is cheap
+        // and, unlike a greedy match, cannot pair the wrong words.
+        var best = BestAlignment(shorter, longer, 0, new bool[longer.Length]);
+
+        var disagree = best.Any(pair =>
+            Math.Min(pair.Left.Length, pair.Right.Length) >= ShortestComparableWord
+            && Similarity(pair.Left, pair.Right) < WordSimilarityFloor);
+
+        // Weighted by length, over every word of the longer name: a long word
+        // matched counts for more than an initial, and a word missing from the
+        // shorter name counts for nothing -- incomplete, not identical.
+        var matched = best.Sum(pair => Similarity(pair.Left, pair.Right) * Math.Max(pair.Left.Length, pair.Right.Length));
+        var total = longer.Sum(word => word.Length) + best.Sum(pair => Math.Max(0, pair.Left.Length - pair.Right.Length));
+
+        return (disagree, total == 0 ? 0 : matched / total);
+    }
+
+    /// <summary>
+    /// The one-to-one pairing of <paramref name="shorter"/>'s words with
+    /// <paramref name="longer"/>'s that maximises total similarity.
+    /// </summary>
+    private static List<(string Left, string Right)> BestAlignment(
+        string[] shorter, string[] longer, int index, bool[] used)
+    {
+        if (index == shorter.Length)
+        {
+            return [];
+        }
+
+        List<(string Left, string Right)>? best = null;
+        var bestScore = double.MinValue;
+
+        for (var j = 0; j < longer.Length; j++)
+        {
+            if (used[j])
+            {
+                continue;
+            }
+
+            used[j] = true;
+            var rest = BestAlignment(shorter, longer, index + 1, used);
+            used[j] = false;
+
+            var candidate = new List<(string Left, string Right)> { (shorter[index], longer[j]) };
+            candidate.AddRange(rest);
+
+            var score = candidate.Sum(pair => Similarity(pair.Left, pair.Right));
+            if (score > bestScore)
+            {
+                bestScore = score;
+                best = candidate;
+            }
+        }
+
+        return best!;
+    }
 
     /// <summary>1.0 identical, 0.0 nothing in common.</summary>
     private static double Similarity(string left, string right)

@@ -439,6 +439,33 @@ into a national figure nobody can tell is wrong.
 `BirthIntervalMonths` and `MeetsWhoAntenatalMinimum` (8 contacts, WHO 2016)
 are derived on read, not stored — both are WHO indicators in their own right.
 
+## Duplicate matching: names are compared word by word (plan §17 11e)
+`DuplicateMatcher` scores two records as possibly one child. Its name
+comparison used to be whole-string edit distance, which rewards **any** shared
+word. In this registry that's routine: a name is a given name plus the
+father's name, so siblings, cousins and a county's worth of Dengs share one
+word, and the common given names recur constantly. Every "duplicate" the demo
+seed produced was two different people sharing one word, one of them scored 94.
+
+- **A whole word that disagrees makes two different names.** The words are
+  aligned one to one, in whatever order matches best. If any aligned pair of
+  real words (3+ letters) is under 50% alike, the name scores nothing. A
+  misspelling keeps a word recognisable (Deng/Deeng 80%); a different name
+  doesn't (Achol/Aluel 40%).
+- **A missing word or a swapped order is not a difference.** The similarity
+  is the better of the whole string and the word-by-word alignment, so "Deng
+  Ayen" matches "Ayen Deng", which the whole string alone never did.
+- **The child's second name is the father's.** A father recorded differently
+  still leaves the same birth flagged when the mother's name agrees, which is
+  why the mother carries more weight than the child.
+- **`DemoSeedTests` pins the seed to exactly one candidate**: the duplicate
+  `DemoBirthSeeder` plants on purpose (a village-post birth re-registered at a
+  hospital, with the second name respelt and the date one day off). If a
+  matcher change makes the seed flag more, it has reintroduced false positives.
+  If it flags none, it has lost the case the feature exists for.
+- **Not done, and it needs data:** weighting a shared *rare* word above a
+  shared common one. Don't tune that on synthetic names.
+
 ## Annulment (built)
 Voiding a registration that should never have existed. Three acts must stay
 distinct and must not be collapsed into each other:
