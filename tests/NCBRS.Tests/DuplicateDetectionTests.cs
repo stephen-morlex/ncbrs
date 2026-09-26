@@ -153,6 +153,97 @@ public class DuplicateMatcherTests
         Assert.DoesNotContain(assessment.Reasons, reason => reason.StartsWith("Child name"));
     }
 
+    // --- names that share a word (plan §17 11e) -------------------------------------------
+
+    /// <summary>
+    /// A common given name is not a shared identity. Two different children
+    /// named Nyandeng, born the same day at the same hospital to fathers with
+    /// different names, scored 63 and went to review.
+    /// </summary>
+    [Fact]
+    public void ASharedCommonGivenName_IsNotADuplicate()
+    {
+        var assessment = Matcher.Assess(
+            Record("Nyandeng Deng", mother: null),
+            Record("Nyandeng Garang", mother: null));
+
+        Assert.True(assessment.Score < DuplicateMatcher.ReviewThreshold, $"Scored {assessment.Score}");
+        Assert.DoesNotContain(assessment.Reasons, reason => reason.StartsWith("Child name"));
+    }
+
+    /// <summary>
+    /// Every duplicate the demo seed produced, verbatim: in each, the children
+    /// and the mothers share one word of their names and differ on the other.
+    /// All five were different people -- the seed drew names from small pools
+    /// -- and all five were flagged, one at 94.
+    /// </summary>
+    [Theory]
+    [InlineData("Deng Kenyi", "Aluel Kenyi", "Bol Kenyi", "Achol Kenyi", 2)]
+    [InlineData("Garang Malith", "Nyibol Malith", "Bol Gatwech", "Nyibol Gatwech", 1)]
+    [InlineData("Awut Akol", "Ayen Akol", "Ayen Lado", "Ayen Lado", 0)]
+    [InlineData("Nyandeng Gatwech", "Nyakuoth Gatwech", "Nyakuoth Lueth", "Nyakuoth Lueth", 0)]
+    [InlineData("Ayen Deng", "Achol Deng", "Nyandeng Deng", "Aluel Deng", 0)]
+    public void PeopleWhoShareOnlyOneWordOfTheirNames_AreNotFlagged(
+        string child, string mother, string otherChild, string otherMother, int daysApart)
+    {
+        var assessment = Matcher.Assess(
+            Record(child, mother),
+            Record(otherChild, otherMother, dateOfBirth: Born.AddDays(daysApart), facilityId: Hospital));
+
+        Assert.True(assessment.Score < DuplicateMatcher.ReviewThreshold, $"Scored {assessment.Score}");
+    }
+
+    /// <summary>Registrars do not agree on which name comes first.</summary>
+    [Fact]
+    public void WordOrder_DoesNotHideADuplicate()
+    {
+        var assessment = Matcher.Assess(
+            Record("Ayen Deng", mother: "Nyandeng Deng"),
+            Record("Deng Ayen", mother: "Deng Nyandeng", facilityId: Hospital));
+
+        Assert.True(assessment.Score >= DuplicateMatcher.ReviewThreshold, $"Scored {assessment.Score}");
+    }
+
+    /// <summary>
+    /// A name recorded without one of its words is incomplete, not
+    /// different: a word missing is not a word that disagrees.
+    /// </summary>
+    [Fact]
+    public void AMissingWord_DoesNotHideADuplicate()
+    {
+        var assessment = Matcher.Assess(
+            Record("Ayen Deng Majok", mother: "Nyandeng Deng"),
+            Record("Ayen Deng", mother: "Nyandeng", facilityId: Hospital));
+
+        Assert.True(assessment.Score >= DuplicateMatcher.ReviewThreshold, $"Scored {assessment.Score}");
+    }
+
+    /// <summary>
+    /// The child's second name is the father's; a father recorded differently
+    /// at two facilities -- or disputed -- must not hide the same birth when
+    /// everything else, the mother above all, agrees.
+    /// </summary>
+    [Fact]
+    public void ADifferentlyRecordedFather_DoesNotHideADuplicateWhenTheMotherAgrees()
+    {
+        var assessment = Matcher.Assess(
+            Record("Ayen Deng", mother: "Nyandeng Wani"),
+            Record("Ayen Garang", mother: "Nyandeng Wani", facilityId: Hospital));
+
+        Assert.True(assessment.Score >= DuplicateMatcher.ReviewThreshold, $"Scored {assessment.Score}");
+    }
+
+    /// <summary>Initials and particles are too short to say two names differ.</summary>
+    [Fact]
+    public void AnInitial_IsNotAWordThatDisagrees()
+    {
+        var assessment = Matcher.Assess(
+            Record("Ayen A Deng", mother: "Nyandeng Deng"),
+            Record("Ayen B Deng", mother: "Nyandeng Deng", facilityId: Hospital));
+
+        Assert.True(assessment.Score >= DuplicateMatcher.ReviewThreshold, $"Scored {assessment.Score}");
+    }
+
     [Fact]
     public void ARecordIsNeverItsOwnDuplicate()
     {

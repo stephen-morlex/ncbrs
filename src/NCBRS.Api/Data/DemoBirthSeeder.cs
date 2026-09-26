@@ -51,6 +51,10 @@ public static class DemoBirthSeeder
         var random = new Random(20260920);
         var registrarIndex = 0;
 
+        // The first on-time village-post birth, re-registered at a hospital
+        // below: the one duplicate this seed plants on purpose.
+        RegisterBirthRequest? firstVillageBirth = null;
+
         foreach (var facility in facilities)
         {
             var given = RegistrarGiven[registrarIndex % RegistrarGiven.Length];
@@ -76,17 +80,98 @@ public static class DemoBirthSeeder
             for (var i = 0; i < count; i++)
             {
                 var request = BuildBirth(facility.FacilityId, firstBrn + i, random);
-                var result = await registration.RegisterAsync(request, registrar, Guid.NewGuid(), cancellationToken);
+                await RegisterAsync(registration, request, registrar, facility, cancellationToken);
 
-                if (result.Outcome != RegistrationOutcome.Registered)
+                if (facility.Tier == FacilityTier.VillageHealthPost && request.LateRegistration is null)
                 {
-                    // A demo birth that the real path rejects is a bug in this
-                    // seeder, not something to paper over — surface it loudly.
-                    throw new InvalidOperationException(
-                        $"Demo birth for {facility.Name} was not registered: {result.Outcome} — {result.Detail}");
+                    firstVillageBirth ??= request;
                 }
             }
         }
+
+        await PlantDuplicateAsync(db, registration, facilities, firstVillageBirth, cancellationToken);
+    }
+
+    private static async Task RegisterAsync(
+        BirthRegistrationService registration,
+        RegisterBirthRequest request,
+        Registrar registrar,
+        Facility facility,
+        CancellationToken cancellationToken)
+    {
+        var result = await registration.RegisterAsync(request, registrar, Guid.NewGuid(), cancellationToken);
+
+        if (result.Outcome != RegistrationOutcome.Registered)
+        {
+            // A demo birth that the real path rejects is a bug in this
+            // seeder, not something to paper over — surface it loudly.
+            throw new InvalidOperationException(
+                $"Demo birth for {facility.Name} was not registered: {result.Outcome} — {result.Detail}");
+        }
+    }
+
+    /// <summary>
+    /// The case duplicate detection exists for, planted so the review queue on
+    /// a fresh dev database shows it: a birth registered at a village post, and
+    /// the same child registered again at a hospital days later -- the family
+    /// travelled, nobody knew of the first registration. As it arrives in
+    /// practice: the child's second name spelt differently by a different
+    /// registrar, and the date of birth recalled a day off.
+    ///
+    /// Before plan §17 11e the queue was full without this, and every entry in
+    /// it was wrong: the seed draws names from small pools, and the matcher
+    /// flagged different people who shared one word of their names. With that
+    /// fixed, this is what a true positive looks like.
+    /// </summary>
+    private static async Task PlantDuplicateAsync(
+        NcbrsDbContext db,
+        BirthRegistrationService registration,
+        List<Facility> facilities,
+        RegisterBirthRequest? original,
+        CancellationToken cancellationToken)
+    {
+        var hospital = facilities.FirstOrDefault(facility => facility.Tier == FacilityTier.Hospital);
+        if (original is null || hospital is null)
+        {
+            return;
+        }
+
+        var brn = hospital.BrnBlockNextAvailable;
+        hospital.BrnBlockNextAvailable = brn + 1;
+        await db.SaveChangesAsync(cancellationToken);
+
+        var registrar = await EnsureRegistrarAsync(db, hospital, displayName: "Hospital registrar", cancellationToken);
+        var recalledBirthDate = original.DateOfBirth.AddDays(1);
+
+        // Days after the first registration, not today: an on-time birth
+        // re-registered months later would need late-registration evidence,
+        // which is a different scenario from the one planted here.
+        var fiveDaysLater = (original.RegisteredAtUtc ?? recalledBirthDate).AddDays(5);
+        var registeredAt = fiveDaysLater < DateTime.UtcNow ? fiveDaysLater : DateTime.UtcNow;
+
+        var again = original with
+        {
+            Brn = brn.ToString(),
+            FacilityId = hospital.FacilityId,
+            ChildFullName = Respell(original.ChildFullName),
+            DateOfBirth = recalledBirthDate,
+            RegisteredAtUtc = registeredAt > recalledBirthDate ? registeredAt : recalledBirthDate,
+        };
+
+        await RegisterAsync(registration, again, registrar, hospital, cancellationToken);
+    }
+
+    /// <summary>
+    /// The last word spelt the way another registrar might hear it: its first
+    /// vowel doubled (Deng -> Deeng, Lado -> Laado).
+    /// </summary>
+    private static string Respell(string name)
+    {
+        var words = name.Split(' ');
+        var last = words[^1];
+        var vowel = last.IndexOfAny(['a', 'e', 'i', 'o', 'u']);
+        words[^1] = vowel < 0 ? last + "h" : last.Insert(vowel, last[vowel].ToString());
+        return string.Join(' ', words);
     }
 
     private static RegisterBirthRequest BuildBirth(Guid facilityId, long brn, Random random)

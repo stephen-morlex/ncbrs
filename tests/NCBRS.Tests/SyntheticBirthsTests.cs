@@ -64,16 +64,20 @@ public class SyntheticBirthsTests
     }
 
     /// <summary>
-    /// The control: the first driver's names, under the same conditions. A
-    /// first name as long as "Nyandeng" in front of a six-letter surname puts
-    /// every pair at or over the threshold, whatever the surnames -- at most 6
-    /// edits in 15 characters is 60% similar. If this stopped failing the
-    /// threshold, the test above would no longer be testing anything.
+    /// The control: two names one letter apart, under the same conditions,
+    /// must be flagged -- otherwise the test above would pass because the
+    /// harness could not detect clustering at all, not because the names are
+    /// distinct.
+    ///
+    /// (The first driver's own names -- "Nyandeng QXJWPZ" against "Nyandeng
+    /// BRTKLM" -- were the original control. They are no longer flagged, and
+    /// rightly: since §17 11e the matcher treats names that disagree on a whole
+    /// word as different people. The driver still must not rely on that.)
     /// </summary>
     [Fact]
-    public void TheFirstDriversNamesWereFlaggedWhateverTheSurname()
+    public void NamesOneLetterApartAreFlagged()
     {
-        Assert.True(WorstScore(["Nyandeng QXJWPZ", "Nyandeng BRTKLM"]) >= DuplicateMatcher.ReviewThreshold);
+        Assert.True(WorstScore(["Nyandeng Qxjwpz", "Nyandeng Qxjwpa"]) >= DuplicateMatcher.ReviewThreshold);
     }
 
     [Fact]
