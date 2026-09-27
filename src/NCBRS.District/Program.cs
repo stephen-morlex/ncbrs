@@ -29,6 +29,14 @@ builder.Services.AddDbContext<DistrictDbContext>(options =>
 
 builder.Services.Configure<CentralApiOptions>(
     builder.Configuration.GetSection(CentralApiOptions.SectionName));
+
+// Refused, not warned: see CentralApiOptions.RefusalOutsideDevelopment.
+var central = builder.Configuration.GetSection(CentralApiOptions.SectionName).Get<CentralApiOptions>()
+              ?? new CentralApiOptions();
+if (central.RefusalOutsideDevelopment(builder.Environment.IsDevelopment()) is { } centralRefusal)
+{
+    throw new InvalidOperationException(centralRefusal);
+}
 builder.Services.Configure<ForwarderOptions>(
     builder.Configuration.GetSection(ForwarderOptions.SectionName));
 

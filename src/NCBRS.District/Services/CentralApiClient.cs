@@ -54,6 +54,33 @@ public class CentralApiOptions
     public TimeSpan MaxTimeout { get; set; } = TimeSpan.FromMinutes(10);
 
     /// <summary>
+    /// Why this configuration must not run, or null. Outside Development the
+    /// centre and the token endpoint must be HTTPS: this node sends its own
+    /// service-account password to one and whole batches of birth records to
+    /// the other, and plain HTTP puts both in the clear on a district link.
+    /// Refused at startup rather than warned about, the way certificate
+    /// signing refuses to start without a real key.
+    /// </summary>
+    public string? RefusalOutsideDevelopment(bool isDevelopment)
+    {
+        if (isDevelopment)
+        {
+            return null;
+        }
+
+        var insecure = new[] { ("Central:BaseUrl", BaseUrl), ("Central:TokenEndpoint", TokenEndpoint) }
+            .Where(setting => !Uri.TryCreate(setting.Item2, UriKind.Absolute, out var uri)
+                              || uri.Scheme != Uri.UriSchemeHttps)
+            .Select(setting => setting.Item1)
+            .ToList();
+
+        return insecure.Count == 0
+            ? null
+            : $"{string.Join(" and ", insecure)} must be HTTPS outside Development: this node sends its "
+              + "service-account password and birth records over them.";
+    }
+
+    /// <summary>
     /// How long to allow one attempt at a batch of <paramref name="records"/>
     /// that has already timed out <paramref name="consecutiveTimeouts"/> times
     /// in a row. Doubles with each timeout, so an estimate that proves too low

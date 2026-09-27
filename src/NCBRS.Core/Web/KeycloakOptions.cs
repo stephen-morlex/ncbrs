@@ -19,8 +19,28 @@ public class KeycloakOptions
     public string Audience { get; set; } = "ncbrs-api";
 
     /// <summary>
-    /// False only for the local compose stack, which serves Keycloak over
-    /// plain HTTP.
+    /// Whether the realm's metadata and token-signing keys must be fetched over
+    /// HTTPS. **On unless Development turns it off** (the local compose stack
+    /// serves Keycloak over plain HTTP).
+    ///
+    /// Fetched over plain HTTP, the signing keys can be replaced by anyone on
+    /// the network path, who can then mint tokens this service accepts -- any
+    /// role, any county. This used to default to false and was set false in the
+    /// base settings, so every environment, production included, would have
+    /// accepted an http:// authority without a word.
     /// </summary>
-    public bool RequireHttpsMetadata { get; set; }
+    public bool RequireHttpsMetadata { get; set; } = true;
+
+    /// <summary>
+    /// Why this configuration must not run, or null. Called at startup;
+    /// outside Development, relaxing HTTPS is refused rather than warned
+    /// about. A warning in a log is how a control that ships disabled stays
+    /// disabled.
+    /// </summary>
+    public string? RefusalOutsideDevelopment(bool isDevelopment)
+        => !isDevelopment && !RequireHttpsMetadata
+            ? "Keycloak:RequireHttpsMetadata is false outside Development. Token-signing keys fetched over "
+              + "plain HTTP can be replaced by anyone on the path, who could then mint accepted tokens. "
+              + "Serve Keycloak over HTTPS and remove the setting."
+            : null;
 }
