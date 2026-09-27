@@ -662,7 +662,7 @@ row.
 |---|---|---|
 | 14 | A3 — signing key in an HSM or secret store | Production refuses to start without a real key |
 | 15 | A6 — rehearse point-in-time recovery; ship the WAL archive off the host | Restore to a point in time; audit data leaves the box it is written on |
-| 16 | A2 deployment step — `REVOKE UPDATE, DELETE ON "AuditLogs"` from the application role | The app role provably lacks the verbs |
+| 16 | A2 deployment step — `REVOKE UPDATE, DELETE ON "AuditLogs"` from the application role | **In-repo part done:** `deploy/postgres/app-role-grants.sql` (run as owner after every migration; RUNBOOK "Deployment: database privileges"), proven by `AuditLogLeastPrivilegeTests` on CI's Postgres: the role gets `42501` on UPDATE/DELETE/TRUNCATE and on disabling the trigger. **Remaining:** apply it to the production database and run the services as the app role |
 | 17 | A7 — national-volume run on production-grade Postgres, fleet across several facilities; re-measure the §A6 RTO at that volume | Sustained burst at projected volume |
 | 18 | F1 — reporting replica | Dashboard load leaves registration latency unchanged |
 | 19 | G1 — live monitoring: `pg_stat_archiver.failed_count`, outbox backlog, consumer lag | Alerts fire on the failures the runbook describes |
