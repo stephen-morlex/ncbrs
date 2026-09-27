@@ -104,7 +104,6 @@ Outside Development:
 - The **District node** refuses an `http://` `Central:BaseUrl` or
   `Central:TokenEndpoint`. Both must be `https://`: the node sends its
   service-account password to one and batches of birth records to the other.
-
 - The **Relay** and **Consumer** refuse a Kafka link that is not both
   encrypted and authenticated. Set `Kafka__SecurityProtocol=SaslSsl` (the
   default) with `Kafka__SaslUsername` and `Kafka__SaslPassword` from the secret
