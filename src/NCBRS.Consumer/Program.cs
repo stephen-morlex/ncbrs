@@ -32,17 +32,21 @@ const string ExportPolicy = "ncbrs-export";
 
 var builder = WebApplication.CreateBuilder(args);
 
+// The build-time OpenAPI generator runs this Program as Production and starts
+// the host to read the document from it. It needs the endpoints and nothing
+// that reaches a broker or enforces a deployment rule; the entry-assembly check
+// is the one Microsoft documents for build-time document generation.
+var generatingOpenApiDocument =
+    System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name == "GetDocument.Insider";
+
 // Refused at startup outside Development unless the broker link is encrypted
 // and authenticated: see KafkaOptions.SecurityProtocol.
 builder.Services.AddOptions<KafkaOptions>()
     .Bind(builder.Configuration.GetSection(KafkaOptions.SectionName))
     .ValidateOnStart();
 
-// Except for the build-time OpenAPI generator, which runs this Program as
-// Production and starts the host, but never connects to a broker. Holding it
-// to the deployment rule would fail every build. The entry-assembly check is
-// the one Microsoft documents for build-time document generation.
-if (System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name != "GetDocument.Insider")
+// Except for the build-time OpenAPI generator: see generatingOpenApiDocument.
+if (!generatingOpenApiDocument)
 {
     builder.Services.AddSingleton<IValidateOptions<KafkaOptions>>(
         new KafkaOptionsValidator(builder.Environment.IsDevelopment()));
@@ -147,7 +151,14 @@ builder.Services.AddAuthorization(authorization =>
         policy.RequireRole(NcbrsRoles.MinistryAdmin));
 });
 
-builder.Services.AddHostedService<BirthRecordDashboardConsumer>();
+// Not under the document generator. It starts the host, so this would open a
+// Kafka consumer, fail for want of broker credentials, and stop the host while
+// the generator was still reading from it -- a race every build ran, and lost
+// on CI once.
+if (!generatingOpenApiDocument)
+{
+    builder.Services.AddHostedService<BirthRecordDashboardConsumer>();
+}
 
 // Enums as names, matching the central API. A dashboard branching on a
 // numeric 0 it has to look up is a contract bug waiting to happen.
