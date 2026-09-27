@@ -48,8 +48,9 @@ export default defineConfig({
       // Development: migrates and seeds on start (SQLite by default), and the
       // seed's registrars are bound to the realm's test accounts.
       command: 'dotnet run --project ../src/NCBRS.Api --no-launch-profile',
-      // Ready means answering at all: /health is behind auth, and Playwright
-      // counts a 401 as "up".
+      // Ready means answering at all. /health is anonymous and always 200
+      // when the service answers; its body's `status` is for monitors, not
+      // for this.
       url: `${ApiOrigin}/health`,
       env: { ASPNETCORE_ENVIRONMENT: 'Development', ASPNETCORE_URLS: ApiOrigin },
       reuseExistingServer: !ci,

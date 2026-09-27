@@ -107,6 +107,11 @@ builder.Services.Configure<StatutoryRegistrationOptions>(
 builder.Services.Configure<CertificateRevocationOptions>(
     builder.Configuration.GetSection(CertificateRevocationOptions.SectionName));
 
+// Plan §17 item 19: the signals a monitor alerts on, at an anonymous /health.
+builder.Services.Configure<OperationalHealthOptions>(
+    builder.Configuration.GetSection(OperationalHealthOptions.SectionName));
+builder.Services.AddScoped<OperationalHealthService>();
+
 // WS-B9. Bound eagerly rather than through IOptions so a malformed section
 // fails at startup: a deployment that silently ran with enforcement off
 // would look identical to one that never had it.
@@ -276,6 +281,7 @@ builder.Services.AddOpenApi(openApi =>
 {
     openApi.AddOperationTransformer<TransactionHeaderTransformer>();
     openApi.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+    openApi.AddOperationTransformer<AnonymousOperationTransformer>();
     openApi.AddSchemaTransformer<EnumSchemaTransformer>();
     openApi.AddSchemaTransformer<NumberSchemaTransformer>();
 });

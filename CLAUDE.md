@@ -1043,7 +1043,14 @@ Three things worth keeping in mind before changing any of it:
   happened here — a named volume mounts root-owned and postgres runs as uid
   999, giving 18 failed archive attempts and zero segments. The compose
   service now chowns the archive directory, and **monitoring must alert on
-  `pg_stat_archiver.failed_count`**; it is the only signal.
+  `pg_stat_archiver`**; it is the only signal. The Api's anonymous `/health`
+  exposes it (`walArchive.failingNow`, and `enabled: false` when archiving is
+  off), alongside the outbox backlog, and reports `status: degraded` with the
+  reasons (plan §17 19). **It always answers 200.** A 503 would let a load
+  balancer pull the API out of rotation over an archive fault while
+  registrations work, so alert on `status`, not the code. `failingNow` compares
+  the last failure with the last success, because `failed_count` is cumulative
+  and would keep paging long after a recovery.
 - **The archive is on its own volume**, not beside the data. An archive on the
   same disk as the data it protects is a second copy of the thing that fails.
 - **The append-only audit triggers do not obstruct recovery.** `pg_restore

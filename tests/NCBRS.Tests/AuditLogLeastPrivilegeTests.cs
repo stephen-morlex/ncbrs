@@ -7,22 +7,6 @@ using Xunit;
 namespace NCBRS.Tests;
 
 /// <summary>
-/// A fact that only means something against Postgres: roles and grants do not
-/// exist in SQLite. Skipped with a reason there rather than passing silently,
-/// because a green test on SQLite would claim a proof it never made.
-/// </summary>
-public sealed class PostgresFactAttribute : FactAttribute
-{
-    public PostgresFactAttribute()
-    {
-        if (TestDatabase.Provider != DatabaseProvider.Postgres)
-        {
-            Skip = "Postgres only (roles and grants). Run with NCBRS_TEST_PROVIDER=Postgres, as CI's Postgres job does.";
-        }
-    }
-}
-
-/// <summary>
 /// Plan §17 item 16: "the app role provably lacks the verbs". The deployment
 /// step is <c>deploy/postgres/app-role-grants.sql</c>. This runs that exact
 /// script against a migrated database and then acts as the role it grants.

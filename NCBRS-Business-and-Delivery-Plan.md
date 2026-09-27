@@ -665,7 +665,7 @@ row.
 | 16 | A2 deployment step — `REVOKE UPDATE, DELETE ON "AuditLogs"` from the application role | **In-repo part done:** `deploy/postgres/app-role-grants.sql` (run as owner after every migration; RUNBOOK "Deployment: database privileges"), proven by `AuditLogLeastPrivilegeTests` on CI's Postgres: the role gets `42501` on UPDATE/DELETE/TRUNCATE and on disabling the trigger. **Remaining:** apply it to the production database and run the services as the app role |
 | 17 | A7 — national-volume run on production-grade Postgres, fleet across several facilities; re-measure the §A6 RTO at that volume | Sustained burst at projected volume |
 | 18 | F1 — reporting replica | Dashboard load leaves registration latency unchanged |
-| 19 | G1 — live monitoring: `pg_stat_archiver.failed_count`, outbox backlog, consumer lag | Alerts fire on the failures the runbook describes |
+| 19 | G1 — live monitoring: `pg_stat_archiver.failed_count`, outbox backlog, consumer lag | **Signals exposed:** the Api's anonymous `/health` reports the outbox backlog and WAL archiving (off, or failing now) with `status: degraded` and the reasons. Consumer lag was already on the Consumer's `/health`. **Remaining:** a monitoring system that polls them and pages, which needs infrastructure |
 
 ### E. Needs external agreements or providers
 
