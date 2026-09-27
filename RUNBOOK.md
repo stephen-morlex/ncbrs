@@ -97,6 +97,9 @@ never rely on it outside dev.
 
 Outside Development:
 
+- The **Api** and **Consumer** refuse a `Keycloak:Authority` that is not
+  `https://`. Set `Keycloak__Authority` to the realm URL exactly as it appears
+  in the tokens' `iss` claim.
 - The **Api** and **Consumer** refuse `Keycloak:RequireHttpsMetadata=false`.
   Serve Keycloak over HTTPS and remove the setting. Do not set
   `ASPNETCORE_ENVIRONMENT=Development` to get past it — that also turns on

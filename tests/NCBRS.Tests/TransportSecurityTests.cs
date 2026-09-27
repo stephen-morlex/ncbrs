@@ -26,12 +26,35 @@ public class TransportSecurityTests
     [Fact]
     public void RelaxingHttpsIsRefusedOutsideDevelopment()
     {
-        var relaxed = new KeycloakOptions { RequireHttpsMetadata = false };
+        var relaxed = new KeycloakOptions { Authority = HttpsRealm, RequireHttpsMetadata = false };
 
         Assert.NotNull(relaxed.RefusalOutsideDevelopment(isDevelopment: false));
         Assert.Null(relaxed.RefusalOutsideDevelopment(isDevelopment: true));
-        Assert.Null(new KeycloakOptions().RefusalOutsideDevelopment(isDevelopment: false));
+        Assert.Null(new KeycloakOptions { Authority = HttpsRealm }.RefusalOutsideDevelopment(isDevelopment: false));
     }
+
+    private const string HttpsRealm = "https://id.ncbrs.ss/realms/ncbrs";
+
+    /// <summary>
+    /// With the flag on, an http:// authority used to pass this check, and the
+    /// service then failed every request — anonymous /health included — with a
+    /// 500. Found running the Api in Production against TLS infrastructure; the
+    /// shipped default authority was exactly that.
+    /// </summary>
+    [Theory]
+    [InlineData("http://id.ncbrs.ss/realms/ncbrs")]
+    [InlineData("id.ncbrs.ss/realms/ncbrs")]
+    public void AnAuthorityThatIsNotHttpsIsRefusedOutsideDevelopment(string authority)
+    {
+        var options = new KeycloakOptions { Authority = authority };
+
+        Assert.Contains("Keycloak:Authority", options.RefusalOutsideDevelopment(isDevelopment: false));
+        Assert.Null(options.RefusalOutsideDevelopment(isDevelopment: true));
+    }
+
+    [Fact]
+    public void TheDefaultAuthorityIsRefusedOutsideDevelopment()
+        => Assert.NotNull(new KeycloakOptions().RefusalOutsideDevelopment(isDevelopment: false));
 
     [Theory]
     [InlineData("http://central.ncbrs.ss", "https://id.ncbrs.ss/realms/ncbrs/protocol/openid-connect/token", "Central:BaseUrl")]
@@ -65,6 +88,18 @@ public class TransportSecurityTests
     public void NoBaseSettingsFileRelaxesHttps(string project)
         => Assert.False(ShippedSettings.SetsFalse(
             ShippedSettings.Read(project, "appsettings.json"), "Keycloak", "RequireHttpsMetadata"));
+
+    /// <summary>
+    /// Where Keycloak and the centre live is per deployment, and the shipped
+    /// values were a developer's localhost over plain HTTP.
+    /// </summary>
+    [Theory]
+    [InlineData("NCBRS.Api", "Keycloak", "Authority")]
+    [InlineData("NCBRS.Consumer", "Keycloak", "Authority")]
+    [InlineData("NCBRS.District", "Central", "BaseUrl")]
+    [InlineData("NCBRS.District", "Central", "TokenEndpoint")]
+    public void TheBaseSettingsNameNoDevelopmentAddress(string project, string section, string key)
+        => Assert.False(ShippedSettings.Sets(ShippedSettings.Read(project, "appsettings.json"), section, key, out _));
 
     [Fact]
     public void TheBaseSettingsDoNotSwitchOffDeviceSignatures()
