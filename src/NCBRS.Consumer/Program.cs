@@ -129,6 +129,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
         jwt.Events = new JwtBearerEvents
         {
+            // A token that cannot be checked because Keycloak cannot be reached is a
+            // fault here, not in the caller: see KeycloakReachability.
+            OnAuthenticationFailed = failed =>
+            {
+                if (KeycloakReachability.IsProviderUnreachable(failed.Exception))
+                {
+                    KeycloakReachability.Report(
+                        failed.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("NCBRS.Keycloak"),
+                        failed.Exception, keycloak.Authority);
+                }
+
+                return Task.CompletedTask;
+            },
+
             // Keycloak nests realm roles in a JSON claim that ASP.NET's role
             // machinery cannot read. Without this, RequireRole matches
             // nothing and every authorised caller is refused — and a policy

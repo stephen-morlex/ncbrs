@@ -1231,8 +1231,20 @@ a document that misdescribes the service costs that decision its value.
   confirmed in `pg_stat_ssl`) and Kafka on SASL_SSL with SCRAM-SHA-512 (a wrong
   password logged as `fail:` and dispatched nothing). 72 births went Postgres →
   Relay → Kafka → Consumer end to end. That run found the authority bug above.
-  **Not rehearsed:** Keycloak over HTTPS, which needs the rehearsal CA in the
-  operating system's trust store.
+  **Keycloak over HTTPS was rehearsed too**, without touching the host's
+  trust store: the Api published self-contained for linux-x64 and run in
+  Production in a container that trusts the rehearsal CA via `SSL_CERT_FILE`.
+  Tokens from the HTTPS realm were accepted; a token from another realm, a
+  forged signature, and every token when the CA was *not* trusted were refused.
+- **An unreachable identity provider is logged as an error**
+  (`KeycloakReachability`, from `OnAuthenticationFailed` in the Api and
+  Consumer). That last rehearsal case refused every signed-in request with 401
+  and logged **nothing** at the shipped levels, so a Keycloak outage, a wrong
+  authority or an untrusted certificate looked like every user's token being
+  bad. On .NET 10 the failed metadata fetch does not surface as itself: the
+  handler goes on without configuration and fails with `IDX10204` (no issuer)
+  or `IDX10500` (no keys) — the classifier keys on those plus `IDX20803`, and
+  a wrong-realm token (`IDX10205`) stays quiet. Once a minute, not per request.
 - **Browser origins (`WebClientCors:AllowedOrigins`) are checked at startup by
   the Api and Consumer** (`WebClientCorsOptions.Refusal`). A wildcard is refused
   in every environment: the class said "no wildcard" but nothing checked it,
