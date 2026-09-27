@@ -146,6 +146,37 @@ public class DistrictNodeTests : IDisposable
     }
 
     /// <summary>
+    /// The backoff settings are the node's to configure -- a district on a
+    /// satellite link that is up an hour a day wants a different schedule
+    /// from one on fibre. They were declared and never read, so a configured
+    /// schedule silently ran on the defaults.
+    /// </summary>
+    [Fact]
+    public void TheConfiguredBackoffIsTheOneUsed()
+    {
+        var forwarder = new ForwarderOptions
+        {
+            InitialBackoff = TimeSpan.FromMinutes(5),
+            MaxBackoff = TimeSpan.FromMinutes(12),
+        };
+        var batch = Batch();
+        var waits = new List<TimeSpan>();
+
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            var before = DateTime.UtcNow;
+            BatchForwarder.Record(batch, new CentralForwardResult(false, Error: "down"), forwarder);
+            waits.Add(batch.NextAttemptAtUtc!.Value - before);
+        }
+
+        // 5 minutes, then 10, then capped at 12 -- not the 30 s / 60 s / 120 s
+        // defaults the node used whatever it was told.
+        Assert.InRange(waits[0], TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5).Add(TimeSpan.FromSeconds(5)));
+        Assert.InRange(waits[1], TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(10).Add(TimeSpan.FromSeconds(5)));
+        Assert.InRange(waits[2], TimeSpan.FromMinutes(12), TimeSpan.FromMinutes(12).Add(TimeSpan.FromSeconds(5)));
+    }
+
+    /// <summary>
     /// A batch that eventually gets through must not carry the wreckage of
     /// the attempts that failed.
     /// </summary>

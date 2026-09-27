@@ -169,6 +169,7 @@ public class DistrictForwardingTests : IDisposable
             db,
             Client(centre, options),
             Microsoft.Extensions.Options.Options.Create(options),
+            Microsoft.Extensions.Options.Options.Create(new ForwarderOptions()),
             new RunningHost(),
             NullLogger<DistrictSyncController>.Instance)
         {

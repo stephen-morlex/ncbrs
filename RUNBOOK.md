@@ -109,6 +109,13 @@ device reporting again clears it. There is no delivery channel — the queue is 
   (`Central:Timeout` + `Central:TimeoutPerRecord` × records, capped at
   `Central:MaxTimeout`). If the count stays up, the centre is slow: look at the
   central tier's load.
+- **How often a node retries** is its own configuration:
+  `Forwarder:InitialBackoff` (default 30 s), doubling on each failed attempt up
+  to `Forwarder:MaxBackoff` (default 15 min). A district whose link is up for
+  an hour a day may want a longer start and a shorter ceiling. Before
+  2026-09-27 these settings were read by nothing and the defaults always
+  applied, so a node configured earlier may have been retrying on a schedule
+  nobody chose.
 - **Every forwarded batch `Rejected` with 403?** Check the centre's audit for
   `DeviceRefused:SignatureFailed`. The node forwards the device's signature
   header untouched, so a failure there means the device signed different bytes
