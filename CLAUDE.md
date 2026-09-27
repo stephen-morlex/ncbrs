@@ -827,7 +827,10 @@ from existing records, while signing needs every tablet to hold a key.
 - **Both default to on.** A security control that ships disabled stays
   disabled; the deployment that most needs it is the one that never gets
   round to the config change. Dev sets `RequireSignature: false` because no
-  device app exists yet to hold a key.
+  device app exists yet to hold a key — **in `appsettings.Development.json`
+  only.** It used to sit in the base `appsettings.json`, which every
+  environment loads, so the control this bullet calls "on by default" shipped
+  switched off. `TransportSecurityTests` pins the base file clean.
 - **The signature covers the raw request body, byte for byte** — not a
   canonical projection of its fields. A canonical form is a second
   description of the payload, and the day it disagrees with the parser a
@@ -1157,3 +1160,13 @@ a document that misdescribes the service costs that decision its value.
 - Certificate signing refuses to start outside Development without
   `CertificateSigning:PfxPath`. The dev fallback mints a throwaway key whose
   certificates stop verifying on restart.
+- **Security relaxations live in `appsettings.Development.json`, never the
+  base file**, and outside Development the services refuse to start with them.
+  The compose Keycloak is plain HTTP, so Development sets
+  `Keycloak:RequireHttpsMetadata: false` (API and Consumer); anywhere else that
+  setting is refused, because signing keys fetched over HTTP can be swapped by
+  anyone on the path, who could then mint accepted tokens. The District node
+  likewise refuses an `http://` `Central:BaseUrl` or `Central:TokenEndpoint`
+  outside Development — it sends its service-account password and whole
+  batches of births over them. A relaxation in the base file is a relaxation
+  in production; that is how both of these shipped before.

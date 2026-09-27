@@ -93,6 +93,22 @@ Outside Development, signing refuses to start without
 fallback mints a throwaway key whose certificates stop verifying on restart, so
 never rely on it outside dev.
 
+## Incident: a service refuses to start (HTTPS)
+
+Outside Development:
+
+- The **Api** and **Consumer** refuse `Keycloak:RequireHttpsMetadata=false`.
+  Serve Keycloak over HTTPS and remove the setting. Do not set
+  `ASPNETCORE_ENVIRONMENT=Development` to get past it — that also turns on
+  dev-only migration on startup, seeding and the throwaway signing key.
+- The **District node** refuses an `http://` `Central:BaseUrl` or
+  `Central:TokenEndpoint`. Both must be `https://`: the node sends its
+  service-account password to one and batches of birth records to the other.
+
+These relaxations belong only in `appsettings.Development.json`. Device batch
+signatures (`DeviceEnrolment:RequireSignature`) are on everywhere except where
+Development turns them off.
+
 ## Incident: a facility has gone quiet
 
 A silent device is indistinguishable from a district with no births — only one
