@@ -132,6 +132,38 @@ Replaying a partition, or rebuilding from offset 0, leaves totals unchanged;
 out-of-order arrivals are held and applied in occurrence order. Replay is a
 supported operation, not a fault.
 
+## Deployment: database privileges (after every migration)
+
+Two roles, never one:
+
+- **The owner** owns the tables and runs migrations (`dotnet ef database
+  update`). Its credentials belong to the deployment, not to any running
+  service.
+- **The application role** (e.g. `ncbrs_app`) is what the Api, Relay and
+  Consumer connect as, via `ConnectionStrings__Default`.
+
+After **every** migration, as the owner:
+
+```
+psql -v app_role=ncbrs_app -f deploy/postgres/app-role-grants.sql
+```
+
+This grants the application role the whole register and revokes `UPDATE`,
+`DELETE` and `TRUNCATE` on `AuditLogs`. It is idempotent. If you skip it after
+a migration, the new table has no grant and the first request that touches it
+fails with `permission denied`. That is deliberate: loud during the deployment
+is better than silently over-granted.
+
+**Never run a service as the owner.** The owner can drop the append-only
+trigger; the application role cannot, and the script's `REVOKE` means it
+cannot rewrite the trail even with the trigger gone. To confirm the grants on a
+live database:
+
+```
+SELECT has_table_privilege('ncbrs_app', '"AuditLogs"', 'UPDATE'),
+       has_table_privilege('ncbrs_app', '"AuditLogs"', 'DELETE');   -- both false
+```
+
 ## Escalation
 
 - Registration path down (API 5xx on register) → highest priority; the offline

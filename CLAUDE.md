@@ -964,14 +964,25 @@ rewritten once someone disputes a registration.
   message naming the rule at the line that broke it, and it reports the
   row's **original** values — the half being overwritten is the half that
   matters.
-- **Triggers rather than grants**, because a grant names a role only the
-  deployment knows. A production Postgres tier should do **both**: these
-  triggers plus `REVOKE UPDATE, DELETE ON "AuditLogs"` from the application
-  role. They stop different people — a trigger stops anything on the
-  connection, a REVOKE stops anyone holding the app's credentials from having
-  the verb at all. The migration emits Postgres triggers too, including a
-  statement-level one for `TRUNCATE`, which bypasses row-level triggers
-  entirely.
+- **Triggers rather than grants in the migration**, because a grant names a
+  role only the deployment knows. A production Postgres tier does **both**:
+  the triggers, plus `deploy/postgres/app-role-grants.sql`, run as the
+  database owner after every migration. The script grants the application
+  role the register and revokes `UPDATE`, `DELETE` and `TRUNCATE` on
+  `AuditLogs`. They stop different people: a trigger stops anything on the
+  connection, and the REVOKE stops anyone holding the app's credentials from
+  having the verb at all, or from disabling the trigger, since only the table
+  owner can. **So the application must never run as the table owner.** The
+  migration emits Postgres triggers too, including a statement-level one for
+  `TRUNCATE`, which bypasses row-level triggers entirely.
+- **`AuditLogLeastPrivilegeTests` runs the script itself** on CI's Postgres
+  job, then acts as the role, asserting `42501 insufficient_privilege`. It
+  must check that code specifically: the trigger also refuses an UPDATE, with
+  `P0001`, so "the UPDATE failed" would pass with no grants at all. Proven:
+  deleting the REVOKE turns the test from 42501 to P0001. The script
+  deliberately sets no default privileges. A table added by a later migration
+  stays ungranted until the script re-runs, and fails loudly; default
+  privileges would grant a recreated `AuditLogs` `UPDATE` silently.
 - **Neither stops a database owner**, who can drop a trigger. That is not
   closable here: it is why audit data must also leave the box it is written
   on. WS-A6 puts the WAL archive on its own volume; shipping it off the host
