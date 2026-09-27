@@ -11,6 +11,12 @@ using NCBRS.Kafka;
 // matter how many API replicas are running.
 var builder = Host.CreateApplicationBuilder(args);
 
+// Refused, not warned: see NcbrsDatabase.RefusalOutsideDevelopment.
+if (NcbrsDatabase.RefusalOutsideDevelopment(builder.Configuration, builder.Environment.IsDevelopment()) is { } databaseRefusal)
+{
+    throw new InvalidOperationException(databaseRefusal);
+}
+
 builder.Services.AddDbContext<NcbrsDbContext>(options =>
     NcbrsDatabase.Configure(options, builder.Configuration));
 

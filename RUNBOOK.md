@@ -93,7 +93,7 @@ Outside Development, signing refuses to start without
 fallback mints a throwaway key whose certificates stop verifying on restart, so
 never rely on it outside dev.
 
-## Incident: a service refuses to start (HTTPS, Kafka TLS)
+## Incident: a service refuses to start (HTTPS, database or Kafka TLS)
 
 Outside Development:
 
@@ -104,6 +104,11 @@ Outside Development:
 - The **District node** refuses an `http://` `Central:BaseUrl` or
   `Central:TokenEndpoint`. Both must be `https://`: the node sends its
   service-account password to one and batches of birth records to the other.
+- The **Api** and **Relay** refuse a registry that is not Postgres
+  (`Database__Provider=Postgres`), and a Postgres connection that does not
+  verify the server: add `SSL Mode=VerifyFull` to `ConnectionStrings__Default`,
+  with `Root Certificate=<path>` when the CA is not in the system store. A Unix
+  socket or loopback host needs neither.
 - The **Relay** and **Consumer** refuse a Kafka link that is not both
   encrypted and authenticated. Set `Kafka__SecurityProtocol=SaslSsl` (the
   default) with `Kafka__SaslUsername` and `Kafka__SaslPassword` from the secret
