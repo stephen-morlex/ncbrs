@@ -514,7 +514,7 @@ public class LateRegistrationTests : IDisposable
             var http = AuthTestContext.HttpContextFor(ReviewerSubject, NcbrsRoles.DistrictOfficer);
 
             var page = await new LateRegistrationService(db, AuthTestContext.RegistrarService(db, http), new CountyLookup(db))
-                .PendingAsync(null, new PageRequest { Limit = 2, After = cursor });
+                .PendingAsync(null, countyCode: null, new PageRequest { Limit = 2, After = cursor });
 
             seen.AddRange(page.Items.Select(entry => entry.Brn));
             cursor = page.NextCursor;
@@ -544,7 +544,7 @@ public class LateRegistrationTests : IDisposable
         var http = AuthTestContext.HttpContextFor(ReviewerSubject, NcbrsRoles.DistrictOfficer);
         var service = new LateRegistrationService(db, AuthTestContext.RegistrarService(db, http), new CountyLookup(db));
 
-        var first = await service.PendingAsync(null, new PageRequest { Limit = 2 });
+        var first = await service.PendingAsync(null, countyCode: null, new PageRequest { Limit = 2 });
 
         Assert.Equal(2, first.Items.Count);
 
@@ -553,7 +553,7 @@ public class LateRegistrationTests : IDisposable
         Assert.Equal(5, first.Total);
         Assert.NotNull(first.NextCursor);
 
-        var second = await service.PendingAsync(null, new PageRequest { Limit = 2, After = first.NextCursor });
+        var second = await service.PendingAsync(null, countyCode: null, new PageRequest { Limit = 2, After = first.NextCursor });
 
         Assert.Equal(2, second.Items.Count);
         Assert.Empty(second.Items.Select(entry => entry.Brn).Intersect(first.Items.Select(entry => entry.Brn)));
@@ -568,7 +568,7 @@ public class LateRegistrationTests : IDisposable
         await using var db = NewDb();
         var http = AuthTestContext.HttpContextFor(ReviewerSubject, NcbrsRoles.DistrictOfficer);
         var queue = await new LateRegistrationService(db, AuthTestContext.RegistrarService(db, http), new CountyLookup(db))
-            .PendingAsync(null, new PageRequest());
+            .PendingAsync(null, countyCode: null, new PageRequest());
 
         Assert.Equal(2, queue.Total);
         Assert.Equal(2, queue.Items.Count);
@@ -596,7 +596,7 @@ public class LateRegistrationTests : IDisposable
         var http = AuthTestContext.HttpContextFor(ReviewerSubject, NcbrsRoles.DistrictOfficer);
         var queue = await new LateRegistrationService(verify, AuthTestContext.RegistrarService(verify, http),
             new CountyLookup(verify))
-            .PendingAsync(null, new PageRequest());
+            .PendingAsync(null, countyCode: null, new PageRequest());
 
         Assert.Empty(queue.Items);
     }

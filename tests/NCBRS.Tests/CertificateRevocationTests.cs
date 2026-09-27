@@ -23,6 +23,9 @@ namespace NCBRS.Tests;
 /// </summary>
 public class CertificateRevocationTests : IDisposable
 {
+    /// <summary>Scope has its own tests; these are about what a confirmed duplicate does to a certificate.</summary>
+    private static readonly Func<Guid, ValueTask<bool>> AnyFacility = _ => ValueTask.FromResult(true);
+
     private static readonly Guid FacilityId = Guid.Parse("0199a1b2-0001-7000-8000-000000000001");
     private static readonly Guid RegistrarId = Guid.Parse("0199a1b2-1001-7000-8000-000000000001");
     private static readonly Guid ReviewerId = Guid.Parse("0199a1b2-1002-7000-8000-000000000002");
@@ -300,7 +303,7 @@ public class CertificateRevocationTests : IDisposable
                     review, new DuplicateMatcher(), new CertificateRevocationRecorder(review),
                     NullLogger<DuplicateDetectionService>.Instance,
                     new CountyLookup(review))
-                .ReviewAsync(candidate.DuplicateCandidateId, isDuplicate: true, reviewer, "confirmed", null);
+                .ReviewAsync(candidate.DuplicateCandidateId, isDuplicate: true, reviewer, "confirmed", null, AnyFacility);
 
             Assert.True(outcome.Succeeded);
         }

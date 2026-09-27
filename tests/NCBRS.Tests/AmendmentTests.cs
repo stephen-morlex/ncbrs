@@ -748,7 +748,7 @@ public class AmendmentServiceTests : IDisposable
         await using var db = NewDb();
         var http = AuthTestContext.HttpContextFor(ReviewerSubject, NcbrsRoles.DistrictOfficer);
         var queue = await Service(db, AuthTestContext.RegistrarService(db, http), new NoOpEventPublisher())
-            .PendingAsync(null, new PageRequest());
+            .PendingAsync(null, countyCode: null, new PageRequest());
 
         var item = Assert.Single(queue.Items);
 
@@ -769,7 +769,7 @@ public class AmendmentServiceTests : IDisposable
         await using var db = NewDb();
         var http = AuthTestContext.HttpContextFor(ReviewerSubject, NcbrsRoles.DistrictOfficer);
         var queue = await Service(db, AuthTestContext.RegistrarService(db, http), new NoOpEventPublisher())
-            .PendingAsync(null, new PageRequest());
+            .PendingAsync(null, countyCode: null, new PageRequest());
 
         Assert.Empty(queue.Items);
     }
