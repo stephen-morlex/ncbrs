@@ -110,7 +110,8 @@ var keycloak = builder.Configuration.GetSection(KeycloakOptions.SectionName).Get
                ?? new KeycloakOptions();
 
 // Refused, not warned: see KeycloakOptions.RequireHttpsMetadata.
-if (keycloak.RefusalOutsideDevelopment(builder.Environment.IsDevelopment()) is { } keycloakRefusal)
+if (!generatingOpenApiDocument
+    && keycloak.RefusalOutsideDevelopment(builder.Environment.IsDevelopment()) is { } keycloakRefusal)
 {
     throw new InvalidOperationException(keycloakRefusal);
 }

@@ -19,6 +19,13 @@ using NCBRS.Validation;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// The build-time OpenAPI generator runs this Program as Production and starts
+// the host to read the document from it. It needs the endpoints and nothing
+// that enforces a deployment rule; the entry-assembly check is the one
+// Microsoft documents for build-time document generation.
+var generatingOpenApiDocument =
+    System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name == "GetDocument.Insider";
+
 // Enums travel as readable strings ("Female", not 1), matching how the
 // database stores them (see NcbrsDbContext.OnModelCreating). Registering a
 // birth with the wrong sex because a caller mixed up an integer code is
@@ -156,16 +163,16 @@ var keycloak = builder.Configuration.GetSection(KeycloakOptions.SectionName).Get
                ?? new KeycloakOptions();
 
 // Refused, not warned: see KeycloakOptions.RequireHttpsMetadata.
-if (keycloak.RefusalOutsideDevelopment(builder.Environment.IsDevelopment()) is { } keycloakRefusal)
+if (!generatingOpenApiDocument
+    && keycloak.RefusalOutsideDevelopment(builder.Environment.IsDevelopment()) is { } keycloakRefusal)
 {
     throw new InvalidOperationException(keycloakRefusal);
 }
 
 // The registry is Postgres over verified TLS outside Development: see
 // NcbrsDatabase.RefusalOutsideDevelopment. Skipped for the build-time OpenAPI
-// generator, which runs this Program as Production on the SQLite dev database
-// and never opens it (the check Microsoft documents for build-time generation).
-if (System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name != "GetDocument.Insider"
+// generator (see generatingOpenApiDocument), which never opens the database.
+if (!generatingOpenApiDocument
     && NcbrsDatabase.RefusalOutsideDevelopment(builder.Configuration, builder.Environment.IsDevelopment()) is { } databaseRefusal)
 {
     throw new InvalidOperationException(databaseRefusal);

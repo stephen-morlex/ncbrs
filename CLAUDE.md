@@ -1217,6 +1217,22 @@ a document that misdescribes the service costs that decision its value.
   in production; that is how both of these shipped before. The same goes for
   `CertificateSigning:AllowEphemeralDevelopmentKey`, even though the signer
   also refuses it outside Development.
+- **`Keycloak:Authority` must be `https://` outside Development too**, not just
+  `RequireHttpsMetadata`. With the flag on and an `http://` authority — the
+  shipped default — the Api started cleanly and then failed *every* request,
+  anonymous `/health` included, with a 500, because authentication runs on
+  every request. The dev authority and the District's dev centre addresses
+  now live in the Development files. Every startup check in the Api and
+  Consumer is skipped under the build-time OpenAPI generator through one
+  `generatingOpenApiDocument` flag, since it runs them as Production.
+- **Rehearsed against real TLS (2026-09-27)**, with throwaway containers and
+  the services in Production: Postgres TLS-only with `SSL Mode=VerifyFull`
+  (plaintext, a wrong CA and an uncovered hostname each refused; TLS 1.3
+  confirmed in `pg_stat_ssl`) and Kafka on SASL_SSL with SCRAM-SHA-512 (a wrong
+  password logged as `fail:` and dispatched nothing). 72 births went Postgres →
+  Relay → Kafka → Consumer end to end. That run found the authority bug above.
+  **Not rehearsed:** Keycloak over HTTPS, which needs the rehearsal CA in the
+  operating system's trust store.
 - **Browser origins (`WebClientCors:AllowedOrigins`) are checked at startup by
   the Api and Consumer** (`WebClientCorsOptions.Refusal`). A wildcard is refused
   in every environment: the class said "no wildcard" but nothing checked it,

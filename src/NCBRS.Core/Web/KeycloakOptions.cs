@@ -36,11 +36,31 @@ public class KeycloakOptions
     /// outside Development, relaxing HTTPS is refused rather than warned
     /// about. A warning in a log is how a control that ships disabled stays
     /// disabled.
+    ///
+    /// The authority itself is checked too. With the flag on and an
+    /// <c>http://</c> authority the service used to start cleanly and then fail
+    /// <em>every</em> request, anonymous <c>/health</c> included, with a 500:
+    /// authentication runs on every request and ASP.NET refuses the authority
+    /// there. Found by running the services in Production against TLS
+    /// infrastructure — the shipped default was exactly that authority.
     /// </summary>
     public string? RefusalOutsideDevelopment(bool isDevelopment)
-        => !isDevelopment && !RequireHttpsMetadata
-            ? "Keycloak:RequireHttpsMetadata is false outside Development. Token-signing keys fetched over "
-              + "plain HTTP can be replaced by anyone on the path, who could then mint accepted tokens. "
-              + "Serve Keycloak over HTTPS and remove the setting."
-            : null;
+    {
+        if (isDevelopment)
+        {
+            return null;
+        }
+
+        if (!RequireHttpsMetadata)
+        {
+            return "Keycloak:RequireHttpsMetadata is false outside Development. Token-signing keys fetched over "
+                   + "plain HTTP can be replaced by anyone on the path, who could then mint accepted tokens. "
+                   + "Serve Keycloak over HTTPS and remove the setting.";
+        }
+
+        return Uri.TryCreate(Authority, UriKind.Absolute, out var authority) && authority.Scheme == Uri.UriSchemeHttps
+            ? null
+            : $"Keycloak:Authority is '{Authority}' outside Development. It must be the realm's https:// URL, "
+              + "exactly as Keycloak stamps it in the tokens' iss claim; over HTTP every request would fail.";
+    }
 }
