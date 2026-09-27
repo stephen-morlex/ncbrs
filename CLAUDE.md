@@ -792,6 +792,13 @@ closing a different way of reading a person out of a table:
   instance-specific, and an export hardcoded to one DHIS2's UIDs silently
   reports nothing to any other — which in DHIS2 looks exactly like a period
   with no births. An unconfigured element is skipped, never invented.
+  **So the base `appsettings.json` names no DHIS2 instance at all**; the
+  `DEV_` placeholders and the org-unit map live in the Development file.
+  The map is keyed by **county p-code** (`SS0101`), which is what the export
+  groups by. After the county rename it was still keyed by the old district
+  codes, and the dev export published nothing for any period, unnoticed —
+  `Dhis2ExportSettingsTests` now holds the dev map to every county
+  `DevelopmentDataSeeder.SeededCountyCodes` places a facility in.
 - **An unmapped district is reported, not dropped.** Its births would
   otherwise never reach the national figures and nothing would say so.
 - **Suppressions are returned with the export**, not logged quietly. A
@@ -1169,4 +1176,6 @@ a document that misdescribes the service costs that decision its value.
   likewise refuses an `http://` `Central:BaseUrl` or `Central:TokenEndpoint`
   outside Development — it sends its service-account password and whole
   batches of births over them. A relaxation in the base file is a relaxation
-  in production; that is how both of these shipped before.
+  in production; that is how both of these shipped before. The same goes for
+  `CertificateSigning:AllowEphemeralDevelopmentKey`, even though the signer
+  also refuses it outside Development.

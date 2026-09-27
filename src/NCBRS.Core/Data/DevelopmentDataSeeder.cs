@@ -44,6 +44,16 @@ public static class DevelopmentDataSeeder
         new(Fac(8), "Makuach Primary Health Care Unit",   FacilityTier.VillageHealthPost, ConnectivityProfile.OfflineFirst, "SS030306", "SS0303", 800_000),
     ];
 
+    /// <summary>
+    /// The counties the fleet sits in. Development configuration keyed by
+    /// county — the DHIS2 org-unit map — is checked against this, so it cannot
+    /// drift from the seed again: after the county rename it was still keyed by
+    /// the old district codes, and the dev export reported every county
+    /// unmapped and published nothing.
+    /// </summary>
+    public static IReadOnlyList<string> SeededCountyCodes =>
+        [.. Fleet.Select(member => member.CountyCode).Distinct().Order(StringComparer.Ordinal)];
+
     // Registrar ids are fixed; the subjects match the imported dev realm so
     // existing dev logins keep resolving. Display names match the realm users.
     private static readonly Guid NurseId = new("0199c000-0000-7000-8000-0000000000a1");
