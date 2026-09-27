@@ -135,6 +135,17 @@ These relaxations belong only in `appsettings.Development.json`. Device batch
 signatures (`DeviceEnrolment:RequireSignature`) are on everywhere except where
 Development turns them off.
 
+## Incident: every signed-in request answers 401
+
+If the Api or Consumer logs `Cannot obtain the identity provider's metadata and
+signing keys from <authority>`, the service cannot reach Keycloak or cannot
+verify it, and **nobody** can sign in to it until that is fixed. It is not a
+problem with users' tokens. Check, in order: Keycloak is up; `Keycloak__Authority`
+is exactly the realm URL in the tokens' `iss` claim; the host trusts the CA that
+signed Keycloak's certificate (on Linux, the system bundle or `SSL_CERT_FILE`).
+It is logged once a minute while it lasts. Without that line, a 401 is a
+caller's token being wrong, expired or from another realm.
+
 ## Incident: certificate checks or health probes answer 429
 
 Requests **without a valid token** are limited per client address

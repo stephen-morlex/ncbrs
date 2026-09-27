@@ -200,6 +200,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
         jwt.Events = new JwtBearerEvents
         {
+            // A token that cannot be checked because Keycloak cannot be reached is a
+            // fault here, not in the caller: see KeycloakReachability.
+            OnAuthenticationFailed = failed =>
+            {
+                if (KeycloakReachability.IsProviderUnreachable(failed.Exception))
+                {
+                    KeycloakReachability.Report(
+                        failed.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("NCBRS.Keycloak"),
+                        failed.Exception, keycloak.Authority);
+                }
+
+                return Task.CompletedTask;
+            },
+
             // The default challenge writes an empty body. Replaced so a 401
             // carries the same enveloped error shape as everything else.
             OnChallenge = async challenge =>
