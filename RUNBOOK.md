@@ -93,7 +93,7 @@ Outside Development, signing refuses to start without
 fallback mints a throwaway key whose certificates stop verifying on restart, so
 never rely on it outside dev.
 
-## Incident: a service refuses to start (HTTPS, database or Kafka TLS)
+## Incident: a service refuses to start (HTTPS, CORS, database or Kafka TLS)
 
 Outside Development:
 
@@ -109,6 +109,13 @@ Outside Development:
   verify the server: add `SSL Mode=VerifyFull` to `ConnectionStrings__Default`,
   with `Root Certificate=<path>` when the CA is not in the system store. A Unix
   socket or loopback host needs neither.
+- The **Api** and **Consumer** refuse a `WebClientCors:AllowedOrigins` entry
+  that is a wildcard, is not a bare origin (no path, no trailing slash), or is
+  not `https://`. Set the management site's exact origin on both services,
+  e.g. `WebClientCors__AllowedOrigins__0=https://registry.example`. With no
+  entry, no browser on another origin can call the service: every call from the
+  site then fails as a CORS error, which means the origin is missing, not that
+  the API is down.
 - The **Relay** and **Consumer** refuse a Kafka link that is not both
   encrypted and authenticated. Set `Kafka__SecurityProtocol=SaslSsl` (the
   default) with `Kafka__SaslUsername` and `Kafka__SaslPassword` from the secret

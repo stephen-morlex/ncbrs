@@ -78,6 +78,12 @@ builder.Services.AddScoped<Dhis2ExportService>();
 // the API: the token travels in the Authorization header, not a cookie.
 var webCors = WebClientCorsOptions.From(builder.Configuration);
 
+// Refused, not warned: see WebClientCorsOptions.Refusal.
+if (webCors.Refusal(builder.Environment.IsDevelopment()) is { } corsRefusal)
+{
+    throw new InvalidOperationException(corsRefusal);
+}
+
 builder.Services.AddCors(cors => cors.AddPolicy(WebClientCorsOptions.PolicyName, policy =>
 {
     if (webCors.AllowedOrigins.Length == 0)

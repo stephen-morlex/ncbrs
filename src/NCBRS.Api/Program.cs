@@ -229,6 +229,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // well not be sent.
 var webCors = WebClientCorsOptions.From(builder.Configuration);
 
+// Refused, not warned: see WebClientCorsOptions.Refusal.
+if (webCors.Refusal(builder.Environment.IsDevelopment()) is { } corsRefusal)
+{
+    throw new InvalidOperationException(corsRefusal);
+}
+
 builder.Services.AddCors(cors => cors.AddPolicy(WebClientCorsOptions.PolicyName, policy =>
 {
     if (webCors.AllowedOrigins.Length == 0)
