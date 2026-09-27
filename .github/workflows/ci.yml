@@ -193,6 +193,32 @@ jobs:
           git status --porcelain web/openapi web/src/api/generated
           git diff --exit-code -- web/openapi web/src/api/generated
 
+  # The production transport configuration against real TLS: Postgres with
+  # SSL Mode=VerifyFull, Kafka on SASL_SSL with SCRAM, Keycloak over HTTPS,
+  # and the Api, Relay and Consumer in Production. Unit tests pin each startup
+  # rule; this proves a service configured to satisfy them works. Run by hand
+  # first, it found two faults nothing else could (#119, #121) -- see the
+  # script's header.
+  tls-rehearsal:
+    name: TLS rehearsal (production config)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # For the token calls; the rehearsal's CA is passed to node alone.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Rehearse
+        run: bash scripts/tls-rehearsal.sh
+
   # The critical paths end to end -- register, amend and approve, issue,
   # annul -- through the real UI, the real API and the real identity
   # provider. The unit suites prove each piece; this proves they meet.
