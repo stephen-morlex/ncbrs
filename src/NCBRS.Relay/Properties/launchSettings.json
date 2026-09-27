@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "NCBRS.Relay": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "environmentVariables": { "DOTNET_ENVIRONMENT": "Development" }
+    }
+  }
+}

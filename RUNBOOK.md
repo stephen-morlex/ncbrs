@@ -93,7 +93,7 @@ Outside Development, signing refuses to start without
 fallback mints a throwaway key whose certificates stop verifying on restart, so
 never rely on it outside dev.
 
-## Incident: a service refuses to start (HTTPS)
+## Incident: a service refuses to start (HTTPS, Kafka TLS)
 
 Outside Development:
 
@@ -104,6 +104,18 @@ Outside Development:
 - The **District node** refuses an `http://` `Central:BaseUrl` or
   `Central:TokenEndpoint`. Both must be `https://`: the node sends its
   service-account password to one and batches of birth records to the other.
+
+- The **Relay** and **Consumer** refuse a Kafka link that is not both
+  encrypted and authenticated. Set `Kafka__SecurityProtocol=SaslSsl` (the
+  default) with `Kafka__SaslUsername` and `Kafka__SaslPassword` from the secret
+  store (`Kafka__SaslMechanism` defaults to `ScramSha512`), or `Ssl` with
+  `Kafka__SslCertificateLocation` and `Kafka__SslKeyLocation` for mutual TLS.
+  `Kafka__SslCaLocation` names the broker's CA when it is not in the system
+  store.
+- A Relay that **starts but delivers nothing** with `SSL handshake failed` or
+  an authentication error in its log has the wrong protocol, CA or credentials
+  for the broker. This is logged as an error and will not fix itself on retry;
+  the outbox backlog on the Api's `/health` grows meanwhile.
 
 These relaxations belong only in `appsettings.Development.json`. Device batch
 signatures (`DeviceEnrolment:RequireSignature`) are on everywhere except where
