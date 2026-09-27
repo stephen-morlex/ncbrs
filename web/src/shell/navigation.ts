@@ -165,7 +165,7 @@ export const navigation: NavGroup[] = [
         id: 'dhis2Export',
         to: '/exports/dhis2',
         icon: FileDown,
-        policy: 'CanReadReporting',
+        policy: 'CanExportReporting',
       },
     ],
   },

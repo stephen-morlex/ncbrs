@@ -141,6 +141,34 @@ Replaying a partition, or rebuilding from offset 0, leaves totals unchanged;
 out-of-order arrivals are held and applied in occurrence order. Replay is a
 supported operation, not a fault.
 
+## Deployment: county groups in Keycloak (reporting scope)
+
+Reporting scopes a district officer to their county by a **Keycloak group**,
+because the Consumer cannot read the registry. Every realm needs:
+
+1. A group per county the realm's officers work in, **named by p-code**
+   under `/counties`: `/counties/SS0101` for Juba. Use the code the registry
+   uses; `Facility.CountyCode` is the one to match.
+2. A **group-membership mapper** on the web and device clients: claim
+   `groups`, **full group path on**, added to the access token. The dev realm
+   (`keycloak/ncbrs-realm.json`, mapper `ncbrs-county-groups`) is the
+   reference.
+3. **Each district officer in exactly one county group**, the county of the
+   facility they are registered at.
+
+What goes wrong, and what it looks like:
+
+- **An officer in no group:** the dashboard answers 403, "Your account has no
+  county in the identity provider". Add them to their county's group.
+- **An officer whose group and facility disagree:** *every* Api call answers
+  403, "Your county is recorded inconsistently". Correct the group, or the
+  registrar's facility, whichever is wrong. This check exists so a moved
+  officer cannot act on one county while reading another's figures.
+- **After changing the realm file in dev:** Keycloak imports the realm only
+  when it doesn't exist yet, so recreate the container to pick up changes:
+  `docker compose up -d --force-recreate keycloak`. This discards anything
+  changed by hand in the dev realm.
+
 ## Deployment: database privileges (after every migration)
 
 Two roles, never one:

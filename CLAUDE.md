@@ -663,6 +663,31 @@ owns: `GET /api/dashboard/summary`, `/districts`, `/devices/silent`, and
 store, and because putting reporting load on the registration API is exactly
 what plan F1 exists to prevent.
 
+**Who reads what (settled 2026-09-27).** A district officer reads **their own
+county** only. The Ministry reads the whole country, or any one county by
+naming it. The DHIS2 export is **Ministry-only** (`ncbrs-export`). This matches
+the web plan's role table. Before it, any district officer could read the
+national dashboard, every county's unsuppressed counts, other counties' silent
+devices and the national export.
+- **The county comes from the token**, as a Keycloak group
+  `/counties/<p-code>` mapped into the `groups` claim (`KeycloakCounties`). It
+  can't come from the registry, which this service deliberately cannot reach.
+  `ReportingScope` applies the API's rule: no county group, or several, is
+  refused, and naming another county is refused, not narrowed.
+- **Two places hold an officer's county, so the API checks they agree.**
+  `CountyClaimConsistencyFilter` refuses a district officer whose token names
+  a county different from their facility's county in the registry. So a moved
+  officer with a stale group finds out the first morning, instead of acting on
+  one county while reading another's figures. A token with no county group
+  passes the API, which scopes from the registry, and is refused here with a
+  message that says why.
+- **The scoped endpoints live in `ReportingEndpoints`**, not as lambdas in
+  `Program.cs`, so tests call them and an endpoint that stops applying the
+  scope fails a test.
+- **Every Keycloak realm needs the groups and the group-membership mapper**
+  (RUNBOOK, "Deployment: county groups"). A realm without them locks every
+  district officer out of reporting, loudly, which is the intended failure.
+
 **The design rule that outranks the arithmetic: an indicator whose inputs are
 unknown reports null and says why. It never reports zero.** A Ministry
 reading 0 neonatal deaths concludes the month went well; a Ministry reading
