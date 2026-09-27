@@ -1225,6 +1225,18 @@ a document that misdescribes the service costs that decision its value.
   now live in the Development files. Every startup check in the Api and
   Consumer is skipped under the build-time OpenAPI generator through one
   `generatingOpenApiDocument` flag, since it runs them as Production.
+- **`scripts/tls-rehearsal.sh` rehearses all of this on every pull request**
+  (CI job "TLS rehearsal (production config)", ~3 min). Its own CA and a
+  private Docker network (`pg.tls`, `kafka.tls`, `keycloak.tls`), the services
+  published self-contained for linux-x64 and run in Production: 72 births
+  through every link, HTTPS-realm tokens accepted, forged and untrusted ones
+  refused and the untrusted case logged, and the #113/#114/#119 refusals.
+  Mutation-checked: disabling #121's logging fails exactly that check. It is
+  the only test that runs a service in Production; a change to settings,
+  startup checks or connection wiring should expect to meet it. Runs in Git
+  Bash too — native Windows `openssl`, `dotnet` and `curl` get Windows paths
+  via `hostpath`, because `MSYS_NO_PATHCONV` (needed for Docker) stops Git Bash
+  translating them.
 - **Rehearsed against real TLS (2026-09-27)**, with throwaway containers and
   the services in Production: Postgres TLS-only with `SSL Mode=VerifyFull`
   (plaintext, a wrong CA and an uncovered hostname each refused; TLS 1.3

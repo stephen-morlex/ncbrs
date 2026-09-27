@@ -95,20 +95,19 @@ Summarise every file changed and why.
 
 ```bash
 dotnet build
-dotnet test                                    # 566 tests, SQLite
+dotnet test                                    # SQLite
 NCBRS_TEST_PROVIDER=Postgres dotnet test       # same suite, PostgreSQL
+bash scripts/tls-rehearsal.sh                  # production config against real TLS (docker; ~3 min)
 ```
 
-**Do not add a warning.** The build is not warning-free today — three are
-known and listed below — but that is a debt to pay down, not a budget to
-spend. A build with warnings nobody reads is a build where the next real one
-goes unnoticed.
+**Do not add a warning.** The build is warning-free (#90), and a build with
+warnings nobody reads is a build where the next real one goes unnoticed.
 
-| Warning | Where | Status |
-|---|---|---|
-| `CS0108` | `DevicesController.Response` hides `ControllerBase.Response` | To fix — shadowing the response object is a genuine hazard |
-| `CS8602` | `TransactionHeaderOperationFilter` | Pre-existing null dereference |
-| `NU1510` | Redundant `Microsoft.Extensions.Hosting` reference in `NCBRS.Consumer` | Removing it is a dependency change, so it needs approval |
+A change to how a service starts, connects or authenticates — settings,
+startup checks, the Kafka, database or Keycloak wiring — runs the TLS
+rehearsal. It runs every service in Production against TLS-only Postgres,
+SASL_SSL Kafka and HTTPS Keycloak, and it is the only test that does: the
+unit suites run nothing in Production.
 
 Once `web/` exists: `npm run lint`, `npm run typecheck`, `npm run build`,
 `npm test`.
@@ -208,12 +207,11 @@ outstanding.
 Say what is blocking, what you tried, and what you need. A half-finished
 change reported as done is worse than one reported as blocked.
 
-## Current tooling gaps
+## CI
 
-| | |
-|---|---|
-| GitHub CLI (`gh`) | **Not installed.** Steps 9–14 cannot be executed locally: `winget install --id GitHub.cli` then `gh auth login`. |
-| CI | **None.** No `.github/workflows`. Step 12's "CI green" cannot be checked until one exists. |
-
-Both are worth closing early: the workflow above assumes them, and a process
-that quietly skips its own verification steps is not the process.
+`.github/workflows/ci.yml` runs on every pull request into `main` and on
+`main` itself: build and test on SQLite, the same suite on PostgreSQL, the web
+build, the OpenAPI contract drift check, the Playwright end-to-end paths, and
+the TLS rehearsal. GuardRails scans each pull request separately; an `error`
+from it is its own outage, a `failure` is a finding. Step 12's "CI green"
+means all of them.
