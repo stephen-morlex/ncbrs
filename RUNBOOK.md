@@ -185,6 +185,26 @@ What goes wrong, and what it looks like:
   `docker compose up -d --force-recreate keycloak`. This discards anything
   changed by hand in the dev realm.
 
+## Deployment: DHIS2 export configuration
+
+The shipped base settings configure no DHIS2 instance, on purpose: its data
+element UIDs and org units belong to the Ministry's DHIS2 and differ between
+instances. Before the export goes anywhere, set in the Consumer's environment
+or secret store:
+
+- `Dhis2Export__LiveBirths`, `__LiveBirthsMale`, `__LiveBirthsFemale`,
+  `__FetalDeaths`, `__NeonatalDeaths`, `__MaternalDeaths`,
+  `__RegisteredWithinWindow`: the instance's data element UIDs. One left unset
+  is skipped, not guessed.
+- `Dhis2Export__OrgUnits__<county p-code>`: the org unit for each county, keyed
+  by the **p-code** (`Dhis2Export__OrgUnits__SS0101` for Juba), which is what
+  the export groups by.
+
+**A county missing from the map** appears in the export's `unmapped` list and
+its births are not sent. Check that list after every configuration change: an
+empty export with a long `unmapped` list is a map keyed wrongly, not a quiet
+month.
+
 ## Deployment: database privileges (after every migration)
 
 Two roles, never one:

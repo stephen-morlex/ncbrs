@@ -1,4 +1,3 @@
-using System.Text.Json;
 using NCBRS.District.Services;
 using NCBRS.Middleware;
 using Xunit;
@@ -55,30 +54,6 @@ public class TransportSecurityTests
 
     // --- and the shipped base settings do not relax anything -----------------------------------
 
-    private static JsonElement Settings(string project, string file)
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "NCBRS.slnx")))
-        {
-            directory = directory.Parent;
-        }
-
-        Assert.NotNull(directory);
-        return JsonDocument.Parse(File.ReadAllText(Path.Combine(directory!.FullName, "src", project, file))).RootElement;
-    }
-
-    private static bool Sets(JsonElement settings, string section, string key, out bool value)
-    {
-        value = default;
-        if (settings.TryGetProperty(section, out var node) && node.TryGetProperty(key, out var setting))
-        {
-            value = setting.GetBoolean();
-            return true;
-        }
-
-        return false;
-    }
-
     /// <summary>
     /// The base file is loaded in every environment, so a relaxation there is
     /// a relaxation in production. Development's own file is the only place
@@ -88,9 +63,22 @@ public class TransportSecurityTests
     [InlineData("NCBRS.Api")]
     [InlineData("NCBRS.Consumer")]
     public void NoBaseSettingsFileRelaxesHttps(string project)
-        => Assert.False(Sets(Settings(project, "appsettings.json"), "Keycloak", "RequireHttpsMetadata", out var value) && !value);
+        => Assert.False(ShippedSettings.SetsFalse(
+            ShippedSettings.Read(project, "appsettings.json"), "Keycloak", "RequireHttpsMetadata"));
 
     [Fact]
     public void TheBaseSettingsDoNotSwitchOffDeviceSignatures()
-        => Assert.False(Sets(Settings("NCBRS.Api", "appsettings.json"), "DeviceEnrolment", "RequireSignature", out var value) && !value);
+        => Assert.False(ShippedSettings.SetsFalse(
+            ShippedSettings.Read("NCBRS.Api", "appsettings.json"), "DeviceEnrolment", "RequireSignature"));
+
+    /// <summary>
+    /// Already refused outside Development by <c>CertificateSigner</c>, so this
+    /// is the rule rather than a live hole: a relaxation in the base file is
+    /// one guard away from production, and the day that guard changes nobody
+    /// looks here.
+    /// </summary>
+    [Fact]
+    public void TheBaseSettingsDoNotAllowAThrowawaySigningKey()
+        => Assert.False(ShippedSettings.SetsTrue(
+            ShippedSettings.Read("NCBRS.Api", "appsettings.json"), "CertificateSigning", "AllowEphemeralDevelopmentKey"));
 }
