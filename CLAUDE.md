@@ -898,8 +898,10 @@ place. Acknowledging a device alert is held to the same rule: acknowledging
 from another county would tell the alert's own district it is being handled.
 The old flat `NcbrsRoles.CrossFacility` list is gone on purpose; don't
 reintroduce a role list as a shortcut past the county check.
-The two device *reads* follow `CountyScopeResolver` too: the alert queue and
+The device *reads* follow `CountyScopeResolver` too: the alert queue and
 the device list (with no facility named) narrow to the officer's own county,
+and fetching one device by id refuses another county's (it used to bypass
+the rule),
 and naming another county is refused rather than silently narrowed — a quiet
 narrowing would read as "nothing is wrong over there".
 
