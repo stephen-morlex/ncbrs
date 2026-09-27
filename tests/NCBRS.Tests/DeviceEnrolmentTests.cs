@@ -141,6 +141,44 @@ public class DeviceEnrolmentTests : IDisposable
     }
 
 
+    /// <summary>
+    /// Fetching one device by id is held to the list's county rule. It used
+    /// to bypass it: device ids are guessable, and the status reason is free
+    /// text another district wrote.
+    /// </summary>
+    [Fact]
+    public async Task AnotherCountysDeviceCannotBeReadById()
+    {
+        await GivenEnrolledAsync("TERMINAL-JUB-1", OtherFacilityId);
+
+        await using var db = NewDb();
+        var result = await Devices(db).Get("TERMINAL-JUB-1");
+
+        Assert.Equal(StatusCodes.Status403Forbidden, Assert.IsType<ObjectResult>(result.Result).StatusCode);
+    }
+
+    [Fact]
+    public async Task AnOfficerReadsTheirOwnCountysDeviceById()
+    {
+        await GivenEnrolledAsync("TABLET-07", FacilityId);
+
+        await using var db = NewDb();
+        var result = await Devices(db).Get("TABLET-07");
+
+        Assert.Equal("TABLET-07", result.Value!.DeviceId);
+    }
+
+    [Fact]
+    public async Task TheMinistryReadsAnyDeviceById()
+    {
+        await GivenEnrolledAsync("TERMINAL-JUB-1", OtherFacilityId);
+
+        await using var db = NewDb();
+        var result = await Devices(db, NcbrsRoles.MinistryAdmin).Get("TERMINAL-JUB-1");
+
+        Assert.Equal("TERMINAL-JUB-1", result.Value!.DeviceId);
+    }
+
     private static DevicesController Devices(NcbrsDbContext db, string role = NcbrsRoles.DistrictOfficer)
     {
         var http = AuthTestContext.HttpContextFor(roles: role);

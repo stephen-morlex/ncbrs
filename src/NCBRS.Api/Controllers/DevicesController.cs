@@ -251,15 +251,41 @@ public class DevicesController(
         return CreatedAtAction(nameof(Get), new { deviceId = device.DeviceId }, ToResponse(device));
     }
 
+    /// <summary>
+    /// One device. Held to the same county rule as the list: fetching by id
+    /// used to bypass it, so an officer could read any device in the country,
+    /// including the free-text reason another district gave for barring it.
+    /// </summary>
     [HttpGet("{deviceId}", Name = "GetDevice")]
     [ProducesResponseType(typeof(DeviceResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<DeviceResponse>> Get(string deviceId)
     {
+        var registrar = await currentRegistrar.GetAsync(HttpContext.RequestAborted);
+        if (registrar is null)
+        {
+            return ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status403Forbidden, "Account not provisioned.",
+                "registrar", "This account is not linked to a registrar in the registry."));
+        }
+
         var device = await db.Devices
             .FirstOrDefaultAsync(entry => entry.DeviceId == deviceId, HttpContext.RequestAborted);
 
-        return device is null ? NotFoundDevice(deviceId) : ToResponse(device);
+        if (device is null)
+        {
+            return NotFoundDevice(deviceId);
+        }
+
+        if (!await currentRegistrar.CanActForFacilityAsync(registrar, device.FacilityId, HttpContext.RequestAborted))
+        {
+            return ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status403Forbidden, "Another county is not yours to see.",
+                "deviceId", "That device belongs to a facility outside your county."));
+        }
+
+        return ToResponse(device);
     }
 
     /// <summary>

@@ -5570,6 +5570,49 @@
               }
             }
           },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "meta": {
+                      "required": [
+                        "transactionId",
+                        "clientId",
+                        "transactionIdGenerated",
+                        "timestampUtc"
+                      ],
+                      "type": "object",
+                      "properties": {
+                        "transactionId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "clientId": {
+                          "type": [
+                            "null",
+                            "string"
+                          ]
+                        },
+                        "transactionIdGenerated": {
+                          "type": "boolean"
+                        },
+                        "timestampUtc": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApiErrorResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "404": {
             "description": "Not Found",
             "content": {

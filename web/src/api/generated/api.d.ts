@@ -3963,6 +3963,25 @@ export interface operations {
                     };
                 };
             };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
             /** @description Not Found */
             404: {
                 headers: {
