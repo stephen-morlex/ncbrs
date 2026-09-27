@@ -161,6 +161,16 @@ if (keycloak.RefusalOutsideDevelopment(builder.Environment.IsDevelopment()) is {
     throw new InvalidOperationException(keycloakRefusal);
 }
 
+// The registry is Postgres over verified TLS outside Development: see
+// NcbrsDatabase.RefusalOutsideDevelopment. Skipped for the build-time OpenAPI
+// generator, which runs this Program as Production on the SQLite dev database
+// and never opens it (the check Microsoft documents for build-time generation).
+if (System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name != "GetDocument.Insider"
+    && NcbrsDatabase.RefusalOutsideDevelopment(builder.Configuration, builder.Environment.IsDevelopment()) is { } databaseRefusal)
+{
+    throw new InvalidOperationException(databaseRefusal);
+}
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(jwt =>
     {

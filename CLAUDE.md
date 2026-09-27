@@ -1067,6 +1067,18 @@ is the central tier (draft 6.4, 7.1); SQLite stays the dev and test provider.
 - **An unrecognised `Database:Provider` is refused at startup**, not
   defaulted. "Postgresql" silently falling back to SQLite would give a central
   tier a single-file database with no sign anything was wrong.
+- **Outside Development the registry is Postgres over verified TLS**
+  (`NcbrsDatabase.RefusalOutsideDevelopment`, checked by the Api and Relay at
+  startup). SQLite is refused: the base settings used to name it, so a
+  deployment that forgot the override would have done exactly what the
+  previous bullet guards against, just without a typo. Postgres must use
+  `SSL Mode=VerifyFull` or `VerifyCA`: Npgsql's default `Prefer`, and
+  `Require`, encrypt without checking the server, so anyone on the path can
+  impersonate it. A Unix socket or an all-loopback host list is exempt; one
+  remote host in a failover list is not. The SQLite provider and dev
+  connection string now live in `appsettings.Development.json`, and the Api
+  skips the check under the build-time OpenAPI generator (`GetDocument.Insider`),
+  which runs it as Production and never opens the database.
 - **Credentials never go in `appsettings.json`.** The connection string comes
   from the environment or a secret store; `Database:Provider` is the only part
   that is configuration.
