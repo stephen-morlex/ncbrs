@@ -62,7 +62,8 @@ public class BatchForwarder(
                     scope.ServiceProvider.GetRequiredService<IOptions<CentralApiOptions>>().Value,
                     _options.BatchSize,
                     logger,
-                    stoppingToken);
+                    stoppingToken,
+                    _options);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -90,7 +91,8 @@ public class BatchForwarder(
         CentralApiOptions centralOptions,
         int take,
         ILogger logger,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        ForwarderOptions? forwarder = null)
     {
         var now = DateTime.UtcNow;
 
@@ -103,7 +105,7 @@ public class BatchForwarder(
 
         foreach (var batch in due)
         {
-            var result = await ForwardAsync(db, central, centralOptions, batch, cancellationToken);
+            var result = await ForwardAsync(db, central, centralOptions, batch, cancellationToken, forwarder);
 
             if (!result.Reached)
             {
@@ -140,7 +142,8 @@ public class BatchForwarder(
         CentralApiClient central,
         CentralApiOptions centralOptions,
         ForwardedBatch batch,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        ForwarderOptions? forwarder = null)
     {
         var timeout = centralOptions.AttemptTimeout(batch.RecordCount, batch.ConsecutiveTimeouts);
 
@@ -149,7 +152,7 @@ public class BatchForwarder(
 
         var result = await central.ForwardAsync(batch.Payload, batch.DeviceSignature, timeout, cancellationToken);
 
-        Record(batch, result);
+        Record(batch, result, forwarder);
         await db.SaveChangesAsync(cancellationToken);
 
         return result;
@@ -168,7 +171,7 @@ public class BatchForwarder(
     /// controller takes when it tries to forward immediately, so a batch is
     /// recorded the same way whichever route pushed it.
     /// </summary>
-    public static void Record(ForwardedBatch batch, CentralForwardResult result)
+    public static void Record(ForwardedBatch batch, CentralForwardResult result, ForwarderOptions? forwarder = null)
     {
         batch.Attempts++;
         batch.LastAttemptAtUtc = DateTime.UtcNow;
@@ -218,15 +221,22 @@ public class BatchForwarder(
         // The centre's own estimate of when to come back, where it gave one --
         // "already in progress" resolves when the other attempt finishes, not
         // on this node's backoff schedule.
-        batch.NextAttemptAtUtc = DateTime.UtcNow.Add(result.RetryAfter ?? Backoff(batch.Attempts));
+        batch.NextAttemptAtUtc = DateTime.UtcNow.Add(
+            result.RetryAfter ?? Backoff(batch.Attempts, forwarder ?? new ForwarderOptions()));
     }
 
-    /// <summary>Doubling, capped. Kept static so the controller shares it.</summary>
-    private static TimeSpan Backoff(int attempts)
+    /// <summary>
+    /// Doubling from <see cref="ForwarderOptions.InitialBackoff"/>, capped at
+    /// <see cref="ForwarderOptions.MaxBackoff"/>. Both used to be declared and
+    /// never read -- the schedule was hard-coded to their defaults, so a node
+    /// configured for a slower link retried on the default schedule and nothing
+    /// said so.
+    /// </summary>
+    private static TimeSpan Backoff(int attempts, ForwarderOptions forwarder)
     {
         var seconds = Math.Min(
-            30d * Math.Pow(2, Math.Max(0, attempts - 1)),
-            TimeSpan.FromMinutes(15).TotalSeconds);
+            forwarder.InitialBackoff.TotalSeconds * Math.Pow(2, Math.Clamp(attempts - 1, 0, 30)),
+            forwarder.MaxBackoff.TotalSeconds);
 
         return TimeSpan.FromSeconds(seconds);
     }

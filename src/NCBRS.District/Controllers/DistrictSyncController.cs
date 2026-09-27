@@ -30,6 +30,7 @@ public class DistrictSyncController(
     DistrictDbContext db,
     CentralApiClient central,
     IOptions<CentralApiOptions> centralOptions,
+    IOptions<ForwarderOptions> forwarderOptions,
     IHostApplicationLifetime lifetime,
     ILogger<DistrictSyncController> logger) : ControllerBase
 {
@@ -122,7 +123,7 @@ public class DistrictSyncController(
         // cancel the forward: cancelling it cancels the centre's transaction,
         // which throws away the whole batch's work.
         var result = await BatchForwarder.ForwardAsync(
-            db, central, centralOptions.Value, stored, lifetime.ApplicationStopping);
+            db, central, centralOptions.Value, stored, lifetime.ApplicationStopping, forwarderOptions.Value);
 
         if (!result.Reached)
         {
