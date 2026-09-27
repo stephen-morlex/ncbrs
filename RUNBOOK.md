@@ -132,6 +132,21 @@ These relaxations belong only in `appsettings.Development.json`. Device batch
 signatures (`DeviceEnrolment:RequireSignature`) are on everywhere except where
 Development turns them off.
 
+## Incident: certificate checks or health probes answer 429
+
+Requests **without a valid token** are limited per client address
+(`UnauthenticatedRateLimit__PermitsPerMinute`, default 120). Signed-in callers
+are never limited, so registrations are unaffected.
+
+- The Api logs `Unauthenticated requests from client:<address> exceeded …` once
+  a minute per address. **If that address is your reverse proxy or load
+  balancer**, every public caller is sharing one allowance: list the proxy in
+  `UnauthenticatedRateLimit__TrustedProxies__0=<ip>` (IP addresses only) so the
+  real client address from `X-Forwarded-For` is used. The header is ignored for
+  any proxy not listed.
+- If it is a single outside address, the limit is doing its job.
+- A monitor polling `/health` well under twice a second never reaches it.
+
 ## Incident: a facility has gone quiet
 
 A silent device is indistinguishable from a district with no births — only one
