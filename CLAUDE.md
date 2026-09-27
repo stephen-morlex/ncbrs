@@ -1006,6 +1006,32 @@ nobody has them.
 The alert is raised and visible in the queue; **there is no delivery channel**
 — no email or SMS, which would need a provider. A district reads its queue.
 
+## Unauthenticated rate limiting (pre-audit sweep, built)
+Certificate verification, the revocation list, the offline bundle and
+`/health` are anonymous by design, and anyone can send a bogus token. Each
+such request wrote a `RequestLog` row, so an outsider could grow the system of
+record's database without bound, and every browser preflight wrote one too.
+`UnauthenticatedRateLimiting` limits them per client address
+(`UnauthenticatedRateLimit:PermitsPerMinute`, default 120).
+
+- **Only unauthenticated requests are limited.** Authentication now runs
+  before the limiter (it refuses nothing, only identifies), and a signed-in
+  caller is never throttled: registrars, devices and district nodes share
+  addresses behind NAT, and refusing a registration is worse than the flood.
+- **The limiter sits before the request audit**, so a refused request writes
+  nothing. **CORS moved ahead of the audit too**: it answers preflights itself,
+  so they no longer write rows (verified: 8 preflights wrote 8 rows before, 0
+  after).
+- **`X-Forwarded-For` is ignored unless `TrustedProxies` lists the proxy.**
+  Anyone can send the header; trusted by default it would let a caller name a
+  new address per request and never be limited. The configured list replaces
+  ASP.NET's loopback default. Behind an unlisted proxy every caller shares the
+  proxy's allowance — the rejection warning names the address counted, which
+  is how that surfaces.
+- A 429 carries `Retry-After` and the usual error envelope; the District node
+  already treats 429 as "not yet". Tested through a real Kestrel host wired in
+  the Api's order, plus live against the Api.
+
 ## Audit-log immutability (WS-A2, built)
 `AuditLogs` is append-only, enforced by database triggers (the
 `AuditLogImmutability` migration) with a matching guard in

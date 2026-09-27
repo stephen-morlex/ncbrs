@@ -251,6 +251,17 @@ builder.Services.AddCors(cors => cors.AddPolicy(WebClientCorsOptions.PolicyName,
             TransactionContext.ClientIdHeader);
 }));
 
+// Unauthenticated requests are limited per client address: see
+// UnauthenticatedRateLimiting. Signed-in callers are never throttled.
+var rateLimit = builder.Configuration.GetSection(UnauthenticatedRateLimitOptions.SectionName)
+                    .Get<UnauthenticatedRateLimitOptions>() ?? new UnauthenticatedRateLimitOptions();
+if (UnauthenticatedRateLimiting.Refusal(rateLimit) is { } rateLimitRefusal)
+{
+    throw new InvalidOperationException(rateLimitRefusal);
+}
+
+builder.Services.AddUnauthenticatedRateLimiting(rateLimit);
+
 builder.Services.AddSingleton<IClaimsTransformation, KeycloakRoleClaimsTransformation>();
 builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, ApiAuthorizationResultHandler>();
 
@@ -346,6 +357,30 @@ app.Use(async (context, next) =>
     await next();
 });
 
+// The client address comes from a trusted proxy's X-Forwarded-For only when
+// proxies are configured; otherwise the header is ignored, since anyone can
+// send it. First, so everything after sees the real caller.
+if (rateLimit.TrustedProxies.Length > 0)
+{
+    app.UseForwardedHeaders();
+}
+
+// Ahead of the audit, deliberately. A CORS preflight is an unauthenticated
+// OPTIONS request that CORS answers itself; placed after the audit, every
+// preflight wrote a RequestLog row. And it must come before authorization,
+// or the preflight would be refused without the headers the browser needs
+// and every call from the site would fail as a CORS error rather than as the
+// 401 it actually is.
+app.UseCors(WebClientCorsOptions.PolicyName);
+
+// Authentication only identifies the caller; it refuses nothing, so running it
+// early is safe. The rate limiter needs to know who is signed in.
+app.UseAuthentication();
+
+// Before the audit, so a refused request writes no row: an unauthenticated
+// flood must not be able to grow the registry's database.
+app.UseRateLimiter();
+
 // Early in the pipeline so it times and tags the full request/response,
 // including anything a later middleware or the endpoint itself does.
 // Scoped to /api -- see RequestAuditMiddleware.
@@ -400,13 +435,6 @@ if (app.Environment.IsDevelopment())
     await NCBRS.Data.DemoBirthSeeder.SeedAsync(db, registration);
 }
 
-// Before authentication, deliberately. A CORS preflight is an unauthenticated
-// OPTIONS request: placed after the auth middleware it would be rejected
-// without the headers the browser needs, and every call from the site would
-// fail as a CORS error rather than as the 401 it actually is.
-app.UseCors(WebClientCorsOptions.PolicyName);
-
-app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
