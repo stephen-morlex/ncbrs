@@ -422,8 +422,13 @@ public class AmendmentService(
     /// which is the cost of the row-per-field shape. It is still bounded work,
     /// where the previous version loaded every pending row in the country.
     /// </summary>
+    /// <param name="countyCode">
+    /// The reviewer's county, from <see cref="ReviewQueueScope"/>; null only for
+    /// the Ministry. Required, so no caller gets the whole country by forgetting it.
+    /// </param>
     public async Task<Page<PendingAmendmentResponse>> PendingAsync(
         Guid? facilityId,
+        string? countyCode,
         PageRequest paging,
         CancellationToken cancellationToken = default)
     {
@@ -433,6 +438,11 @@ public class AmendmentService(
         if (facilityId is not null)
         {
             pending = pending.Where(amendment => amendment.BirthRecord!.FacilityId == facilityId);
+        }
+
+        if (countyCode is not null)
+        {
+            pending = pending.Where(amendment => amendment.BirthRecord!.Facility!.CountyCode == countyCode);
         }
 
         // A request's position in the queue is when it was submitted, which is
@@ -504,8 +514,10 @@ public class AmendmentService(
     /// an approval, the record has usually already moved, so age here is a
     /// measure of how long a possibly-wrong value has been standing.
     /// </summary>
+    /// <param name="countyCode">As for <see cref="PendingAsync"/>: required, null only for the Ministry.</param>
     public async Task<Page<AmendmentConflictResponse>> ConflictsAsync(
         Guid? facilityId,
+        string? countyCode,
         PageRequest paging,
         CancellationToken cancellationToken = default)
     {
@@ -517,6 +529,11 @@ public class AmendmentService(
         if (facilityId is not null)
         {
             query = query.Where(conflict => conflict.BirthRecord!.FacilityId == facilityId);
+        }
+
+        if (countyCode is not null)
+        {
+            query = query.Where(conflict => conflict.BirthRecord!.Facility!.CountyCode == countyCode);
         }
 
         var total = await query.CountAsync(cancellationToken);

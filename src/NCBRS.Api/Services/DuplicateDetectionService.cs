@@ -128,8 +128,13 @@ public class DuplicateDetectionService(
         }
     }
 
+    /// <param name="countyCode">
+    /// The reviewer's county, from <see cref="ReviewQueueScope"/>; null only for
+    /// the Ministry. Required, so no caller gets the whole country by forgetting it.
+    /// </param>
     public async Task<Page<DuplicateCandidate>> PendingAsync(
         Guid? facilityId,
+        string? countyCode,
         PageRequest paging,
         CancellationToken cancellationToken = default)
     {
@@ -143,6 +148,16 @@ public class DuplicateDetectionService(
             query = query.Where(link =>
                 link.BirthRecord!.FacilityId == facilityId
                 || link.MatchedBirthRecord!.FacilityId == facilityId);
+        }
+
+        // Both records, matching who may review a pair (ReviewAsync): showing a
+        // district officer a pair they cannot decide would still show them the
+        // other county's child. A cross-county pair is the Ministry's.
+        if (countyCode is not null)
+        {
+            query = query.Where(link =>
+                link.BirthRecord!.Facility!.CountyCode == countyCode
+                && link.MatchedBirthRecord!.Facility!.CountyCode == countyCode);
         }
 
         var total = await query.CountAsync(cancellationToken);
@@ -180,12 +195,19 @@ public class DuplicateDetectionService(
     /// has to remain explicable rather than referring to a record that
     /// vanished.
     /// </summary>
+    /// <param name="mayActForFacility">
+    /// Whether the reviewer may act for a facility -- in production,
+    /// <see cref="CurrentRegistrarService.CanActForFacilityAsync"/>. Required,
+    /// with no default: a default of "yes" would be the unscoped review this
+    /// parameter exists to close.
+    /// </param>
     public async Task<DuplicateReviewOutcome> ReviewAsync(
         Guid duplicateCandidateId,
         bool isDuplicate,
         Registrar reviewer,
         string? note,
         Guid? transactionId,
+        Func<Guid, ValueTask<bool>> mayActForFacility,
         CancellationToken cancellationToken = default)
     {
         var link = await db.DuplicateCandidates
@@ -197,6 +219,21 @@ public class DuplicateDetectionService(
         {
             return new DuplicateReviewOutcome(DuplicateReviewResult.NotFound,
                 $"No duplicate candidate exists with id '{duplicateCandidateId}'.");
+        }
+
+        // Both records, because the decision acts on both: confirming
+        // supersedes one legal identity in favour of the other and withdraws
+        // its certificate. Before this there was no check at all, so a district
+        // officer in any county could do that to a registration anywhere in the
+        // country -- the one oversight write the county rule had missed. A pair
+        // that spans two counties is therefore the Ministry's call, which fails
+        // closed like every other scope check here.
+        if (!await mayActForFacility(link.BirthRecord!.FacilityId)
+            || !await mayActForFacility(link.MatchedBirthRecord!.FacilityId))
+        {
+            return new DuplicateReviewOutcome(DuplicateReviewResult.NotPermitted,
+                "You may review only duplicates whose records are both within your county. "
+                + "A pair spanning two counties is decided by the Ministry.");
         }
 
         if (link.Status != DuplicateReviewStatus.Pending)

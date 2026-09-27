@@ -23,7 +23,8 @@ namespace NCBRS.Controllers;
 [Produces("application/json")]
 public class LateRegistrationsController(
     LateRegistrationService lateRegistrations,
-    CurrentRegistrarService currentRegistrar) : ControllerBase
+    CurrentRegistrarService currentRegistrar,
+    ReviewQueueScope queueScope) : ControllerBase
 {
     /// <summary>
     /// Late registrations awaiting verification, oldest first. Each one is a
@@ -37,8 +38,25 @@ public class LateRegistrationsController(
         [FromQuery] Guid? facilityId = null,
         [FromQuery] int limit = PageRequest.DefaultLimit,
         [FromQuery] string? after = null)
-        => Ok(await lateRegistrations.PendingAsync(
-            facilityId, new PageRequest { Limit = limit, After = after }, HttpContext.RequestAborted));
+    {
+        var registrar = await currentRegistrar.GetAsync(HttpContext.RequestAborted);
+        if (registrar is null)
+        {
+            return ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status403Forbidden, "Account not provisioned.",
+                "registrar", "This account is not linked to a registrar in the registry."));
+        }
+
+        // The reviewer's county only -- see ReviewQueueScope.
+        var (refusal, county) = await queueScope.ResolveAsync(User, registrar, facilityId, HttpContext.RequestAborted);
+        if (refusal is not null)
+        {
+            return refusal;
+        }
+
+        return Ok(await lateRegistrations.PendingAsync(
+            facilityId, county, new PageRequest { Limit = limit, After = after }, HttpContext.RequestAborted));
+    }
 
     /// <summary>
     /// Records the verification decision. Approval is what releases the

@@ -132,7 +132,7 @@ public class AmendmentConflictTests : IDisposable
                 db, new NoOpEventPublisher(), new CertificateRevocationRecorder(db),
                 AuthTestContext.RegistrarService(db, http),
                 new CountyLookup(db))
-            .ConflictsAsync(null, new PageRequest());
+            .ConflictsAsync(null, countyCode: null, new PageRequest());
 
         return page.Items;
     }

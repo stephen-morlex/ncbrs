@@ -903,6 +903,27 @@ the device list (with no facility named) narrow to the officer's own county,
 and naming another county is refused rather than silently narrowed — a quiet
 narrowing would read as "nothing is wrong over there".
 
+**The review queues and duplicate review follow it too** (found by the
+pre-audit authorization sweep, plan §17 24).
+- **Duplicate review had no county check at all.** That is the review that
+  supersedes a whole registration and withdraws its certificate, so any
+  district officer could do that anywhere. `ReviewAsync` now takes the
+  permission check as a **required** delegate, with no default, since a
+  default of "allow" is the bug. It checks **both** records, so a pair
+  spanning two counties is the Ministry's call.
+- **All four queues were national for reading:** pending corrections,
+  amendment conflicts, late registrations and duplicates. An officer could
+  not act on another county's items, but could read the proposed name
+  changes, evidence and children's names. `ReviewQueueScope` applies the
+  resolver to all four, and each query takes the county as a **required**
+  parameter (null only for the Ministry), so no future caller gets the whole
+  country by forgetting it. The duplicate queue shows only pairs wholly
+  inside the county, matching who may decide them.
+- **Deliberately not scoped:** `GET /api/BirthRecords/{brn}`, the lookup by
+  exact number. A BRN is carried by the family between facilities, and the
+  surveillance risk is name search, which *is* scoped. Recorded for the
+  auditor as a choice to confirm, not an oversight.
+
 ## Device silence alerts (WS-F4, built)
 "A silent device is indistinguishable from a district with no births, and only
 one of those needs intervention" — the plan's own note, and the whole

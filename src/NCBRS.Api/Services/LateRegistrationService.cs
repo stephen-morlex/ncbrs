@@ -41,8 +41,13 @@ public class LateRegistrationService(
     /// from the queue, and an offset counted from the start would step past
     /// the entries that shuffled down into the gap.
     /// </summary>
+    /// <param name="countyCode">
+    /// The reviewer's county, from <see cref="ReviewQueueScope"/>; null only for
+    /// the Ministry. Required, so no caller gets the whole country by forgetting it.
+    /// </param>
     public async Task<Page<PendingLateRegistrationResponse>> PendingAsync(
         Guid? facilityId,
+        string? countyCode,
         PageRequest paging,
         CancellationToken cancellationToken = default)
     {
@@ -56,6 +61,11 @@ public class LateRegistrationService(
         if (facilityId is not null)
         {
             query = query.Where(late => late.BirthRecord!.FacilityId == facilityId);
+        }
+
+        if (countyCode is not null)
+        {
+            query = query.Where(late => late.BirthRecord!.Facility!.CountyCode == countyCode);
         }
 
         var total = await query.CountAsync(cancellationToken);

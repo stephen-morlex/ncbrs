@@ -21,7 +21,8 @@ namespace NCBRS.Controllers;
 [Produces("application/json")]
 public class AmendmentsController(
     AmendmentService amendments,
-    CurrentRegistrarService currentRegistrar) : ControllerBase
+    CurrentRegistrarService currentRegistrar,
+    ReviewQueueScope queueScope) : ControllerBase
 {
     /// <summary>
     /// Corrections waiting on a reviewer, oldest first. A correction left
@@ -36,8 +37,30 @@ public class AmendmentsController(
         [FromQuery] Guid? facilityId = null,
         [FromQuery] int limit = PageRequest.DefaultLimit,
         [FromQuery] string? after = null)
-        => Ok(await amendments.PendingAsync(
-            facilityId, new PageRequest { Limit = limit, After = after }, HttpContext.RequestAborted));
+    {
+        var (refusal, county) = await ScopeAsync(facilityId);
+        if (refusal is not null)
+        {
+            return refusal;
+        }
+
+        return Ok(await amendments.PendingAsync(
+            facilityId, county, new PageRequest { Limit = limit, After = after }, HttpContext.RequestAborted));
+    }
+
+    /// <summary>The reviewer's county, or the refusal -- see <see cref="ReviewQueueScope"/>.</summary>
+    private async Task<(ObjectResult? Refusal, string? County)> ScopeAsync(Guid? facilityId)
+    {
+        var registrar = await currentRegistrar.GetAsync(HttpContext.RequestAborted);
+        if (registrar is null)
+        {
+            return (ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status403Forbidden, "Account not provisioned.",
+                "registrar", "This account is not linked to a registrar in the registry.")), null);
+        }
+
+        return await queueScope.ResolveAsync(User, registrar, facilityId, HttpContext.RequestAborted);
+    }
 
     /// <summary>
     /// Corrections that arrived having been composed against a value the
@@ -57,8 +80,16 @@ public class AmendmentsController(
         [FromQuery] Guid? facilityId = null,
         [FromQuery] int limit = PageRequest.DefaultLimit,
         [FromQuery] string? after = null)
-        => Ok(await amendments.ConflictsAsync(
-            facilityId, new PageRequest { Limit = limit, After = after }, HttpContext.RequestAborted));
+    {
+        var (refusal, county) = await ScopeAsync(facilityId);
+        if (refusal is not null)
+        {
+            return refusal;
+        }
+
+        return Ok(await amendments.ConflictsAsync(
+            facilityId, county, new PageRequest { Limit = limit, After = after }, HttpContext.RequestAborted));
+    }
 
     /// <summary>
     /// Records a registrar's judgement on a flagged conflict: the resolution

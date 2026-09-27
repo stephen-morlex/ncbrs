@@ -21,7 +21,8 @@ namespace NCBRS.Controllers;
 [Produces("application/json")]
 public class DuplicatesController(
     DuplicateDetectionService duplicates,
-    CurrentRegistrarService currentRegistrar) : ControllerBase
+    CurrentRegistrarService currentRegistrar,
+    ReviewQueueScope queueScope) : ControllerBase
 {
     /// <summary>Potential duplicates awaiting a decision, most likely first.</summary>
     [HttpGet("pending", Name = "GetPendingDuplicates")]
@@ -33,8 +34,24 @@ public class DuplicatesController(
         [FromQuery] int limit = PageRequest.DefaultLimit,
         [FromQuery] string? after = null)
     {
+        var registrar = await currentRegistrar.GetAsync(HttpContext.RequestAborted);
+        if (registrar is null)
+        {
+            return ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status403Forbidden, "Account not provisioned.",
+                "registrar", "This account is not linked to a registrar in the registry."));
+        }
+
+        // The reviewer's county only, and only pairs wholly inside it -- see
+        // ReviewQueueScope and DuplicateDetectionService.PendingAsync.
+        var (refusal, county) = await queueScope.ResolveAsync(User, registrar, facilityId, HttpContext.RequestAborted);
+        if (refusal is not null)
+        {
+            return refusal;
+        }
+
         var pending = await duplicates.PendingAsync(
-            facilityId, new PageRequest { Limit = limit, After = after }, HttpContext.RequestAborted);
+            facilityId, county, new PageRequest { Limit = limit, After = after }, HttpContext.RequestAborted);
 
         var items = pending.Items.Select(link => new DuplicateCandidateResponse(
                 link.DuplicateCandidateId,
@@ -82,6 +99,7 @@ public class DuplicatesController(
             reviewer,
             envelope.Data.Note,
             TransactionContext.Get(HttpContext)?.TransactionId,
+            facility => currentRegistrar.CanActForFacilityAsync(reviewer, facility, HttpContext.RequestAborted),
             HttpContext.RequestAborted);
 
         return result.Result switch

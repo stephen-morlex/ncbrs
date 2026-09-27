@@ -268,6 +268,9 @@ public class DuplicateMatcherTests
 /// </summary>
 public class DuplicateDetectionServiceTests : IDisposable
 {
+    /// <summary>These tests are about the decision, not who may take it; scope has its own tests.</summary>
+    private static readonly Func<Guid, ValueTask<bool>> AnyFacility = _ => ValueTask.FromResult(true);
+
     private static readonly Guid VillagePost = Guid.Parse("0199a1b2-0001-7000-8000-000000000001");
     private static readonly Guid Hospital = Guid.Parse("0199a1b2-0002-7000-8000-000000000002");
     private static readonly Guid RegistrarId = Guid.Parse("0199a1b2-1001-7000-8000-000000000001");
@@ -437,7 +440,8 @@ public class DuplicateDetectionServiceTests : IDisposable
         {
             var reviewer = db.Registrars.Single();
             var result = await Service(db).ReviewAsync(
-                candidateId, isDuplicate: true, reviewer, "Same child, verified with the mother.", Guid.CreateVersion7());
+                candidateId, isDuplicate: true, reviewer, "Same child, verified with the mother.", Guid.CreateVersion7(),
+                AnyFacility);
 
             Assert.True(result.Succeeded);
         }
@@ -474,7 +478,7 @@ public class DuplicateDetectionServiceTests : IDisposable
         await using (var db = NewDb())
         {
             var reviewer = db.Registrars.Single();
-            await Service(db).ReviewAsync(candidateId, isDuplicate: false, reviewer, "Different children.", null);
+            await Service(db).ReviewAsync(candidateId, isDuplicate: false, reviewer, "Different children.", null, AnyFacility);
         }
 
         await using var verify = NewDb();
@@ -504,12 +508,12 @@ public class DuplicateDetectionServiceTests : IDisposable
 
         await using (var db = NewDb())
         {
-            await Service(db).ReviewAsync(candidateId, true, db.Registrars.Single(), null, null);
+            await Service(db).ReviewAsync(candidateId, true, db.Registrars.Single(), null, null, AnyFacility);
         }
 
         await using (var db = NewDb())
         {
-            var second_ = await Service(db).ReviewAsync(candidateId, false, db.Registrars.Single(), null, null);
+            var second_ = await Service(db).ReviewAsync(candidateId, false, db.Registrars.Single(), null, null, AnyFacility);
             Assert.Equal(DuplicateReviewResult.AlreadyReviewed, second_.Result);
         }
     }
@@ -528,7 +532,7 @@ public class DuplicateDetectionServiceTests : IDisposable
         await using (var db = NewDb())
         {
             var candidateId = (await db.DuplicateCandidates.SingleAsync()).DuplicateCandidateId;
-            await Service(db).ReviewAsync(candidateId, true, db.Registrars.Single(), "verified", null);
+            await Service(db).ReviewAsync(candidateId, true, db.Registrars.Single(), "verified", null, AnyFacility);
         }
 
         await using var verify = NewDb();
@@ -553,7 +557,7 @@ public class DuplicateDetectionServiceTests : IDisposable
         {
             await Service(db).ScanAsync(later);
             var candidateId = (await db.DuplicateCandidates.SingleAsync()).DuplicateCandidateId;
-            await Service(db).ReviewAsync(candidateId, true, db.Registrars.Single(), null, null);
+            await Service(db).ReviewAsync(candidateId, true, db.Registrars.Single(), null, null, AnyFacility);
         }
 
         // A third registration of the same child should now match only the
@@ -580,7 +584,7 @@ public class DuplicateDetectionServiceTests : IDisposable
         }
 
         await using var verify = NewDb();
-        var pending = await Service(verify).PendingAsync(facilityId: null, new PageRequest());
+        var pending = await Service(verify).PendingAsync(facilityId: null, countyCode: null, new PageRequest());
 
         Assert.True(pending.Items.Count >= 2);
         Assert.True(pending.Items[0].Score >= pending.Items[^1].Score);

@@ -91,6 +91,7 @@ builder.Services.AddScoped<RecordSearchService>();
 // One place deciding which district a caller may see. Two would drift, and
 // the way they drift is that one endpoint stops enforcing the boundary.
 builder.Services.AddScoped<CountyScopeResolver>();
+builder.Services.AddScoped<ReviewQueueScope>();
 
 // Resolves the district an audited act belongs to. Scoped and memoised: one
 // registration writes three audit rows against the same facility.
