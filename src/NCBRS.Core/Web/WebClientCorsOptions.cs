@@ -35,6 +35,50 @@ public class WebClientCorsOptions
     public string[] AllowedOrigins { get; set; } = [];
 
     /// <summary>
+    /// Why these origins must not be used, or null. Called by both services at
+    /// startup.
+    ///
+    /// - **A wildcard is refused everywhere.** The "no wildcard" above was a
+    ///   comment, not a check. Configured as the only origin, ASP.NET answers
+    ///   <c>Access-Control-Allow-Origin: *</c> to every site on the internet
+    ///   (verified against this API); mixed with others it is inert today, but
+    ///   one edit away from the first case.
+    /// - **Each entry must be a bare origin.** A trailing slash or a path never
+    ///   equals a browser's <c>Origin</c> header, so the site would fail every
+    ///   call as a CORS error with nothing pointing at the setting.
+    /// - **Outside Development, HTTPS only.** An <c>http://</c> origin is the
+    ///   management site served in cleartext, handing its tokens — which can
+    ///   withdraw a legal identity — to anyone on the path.
+    /// </summary>
+    public string? Refusal(bool isDevelopment)
+    {
+        foreach (var origin in AllowedOrigins)
+        {
+            if (origin.Contains('*'))
+            {
+                return $"{SectionName}:AllowedOrigins contains '{origin}'. Wildcards are refused: as the only "
+                       + "origin, ASP.NET allows every site on the internet. List the site's exact origin.";
+            }
+
+            if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri)
+                || uri.Scheme is not ("http" or "https")
+                || !string.Equals(uri.GetLeftPart(UriPartial.Authority), origin, StringComparison.OrdinalIgnoreCase))
+            {
+                return $"{SectionName}:AllowedOrigins contains '{origin}', which is not a bare origin "
+                       + "(scheme://host[:port], no path or trailing slash) and would never match a browser's Origin header.";
+            }
+
+            if (!isDevelopment && uri.Scheme != Uri.UriSchemeHttps)
+            {
+                return $"{SectionName}:AllowedOrigins contains '{origin}' outside Development. The management site "
+                       + "must be served over HTTPS: over HTTP its tokens are readable by anyone on the path.";
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Bound without the configuration binder, which Core does not reference.
     /// </summary>
     public static WebClientCorsOptions From(IConfiguration configuration)

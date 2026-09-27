@@ -1191,6 +1191,15 @@ a document that misdescribes the service costs that decision its value.
   in production; that is how both of these shipped before. The same goes for
   `CertificateSigning:AllowEphemeralDevelopmentKey`, even though the signer
   also refuses it outside Development.
+- **Browser origins (`WebClientCors:AllowedOrigins`) are checked at startup by
+  the Api and Consumer** (`WebClientCorsOptions.Refusal`). A wildcard is refused
+  in every environment: the class said "no wildcard" but nothing checked it,
+  and a lone `*` made ASP.NET answer `Access-Control-Allow-Origin: *` to any
+  site (verified live). Each entry must be a bare origin, since a trailing
+  slash never matches a browser's `Origin` header and fails silently as CORS
+  errors. Outside Development only `https://` is accepted. The localhost dev
+  origins moved to the Development files; the base files allow no origin,
+  which is right for a site served from the same origin as the API.
 - **The Kafka link is SASL over TLS by default** (`KafkaOptions.SecurityProtocol`),
   and outside Development the Relay and Consumer refuse to start unless it is
   encrypted **and** authenticated — `SaslSsl` with a username, or `Ssl` with a
