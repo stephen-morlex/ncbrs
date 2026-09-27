@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using NCBRS.Consumer.Data;
 using NCBRS.Consumer.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -31,7 +32,21 @@ const string ExportPolicy = "ncbrs-export";
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.Configure<KafkaOptions>(builder.Configuration.GetSection(KafkaOptions.SectionName));
+// Refused at startup outside Development unless the broker link is encrypted
+// and authenticated: see KafkaOptions.SecurityProtocol.
+builder.Services.AddOptions<KafkaOptions>()
+    .Bind(builder.Configuration.GetSection(KafkaOptions.SectionName))
+    .ValidateOnStart();
+
+// Except for the build-time OpenAPI generator, which runs this Program as
+// Production and starts the host, but never connects to a broker. Holding it
+// to the deployment rule would fail every build. The entry-assembly check is
+// the one Microsoft documents for build-time document generation.
+if (System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name != "GetDocument.Insider")
+{
+    builder.Services.AddSingleton<IValidateOptions<KafkaOptions>>(
+        new KafkaOptionsValidator(builder.Environment.IsDevelopment()));
+}
 
 // The projection's own store, separate from the registry. Draft 6.4.1 keeps
 // the API the single writer to the system of record; a consumer writing back

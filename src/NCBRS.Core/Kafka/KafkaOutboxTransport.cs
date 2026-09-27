@@ -25,8 +25,6 @@ public class KafkaOutboxTransport : IAsyncDisposable
 
         var config = new ProducerConfig
         {
-            BootstrapServers = options.Value.BootstrapServers,
-
             // A civil registry: durability over latency. Nothing here is on a
             // user's critical path any more, so there is no reason to accept
             // weaker acknowledgement.
@@ -39,6 +37,7 @@ public class KafkaOutboxTransport : IAsyncDisposable
             // rather than blocking a batch.
             MessageTimeoutMs = 30_000
         };
+        options.Value.ApplyTo(config);
 
         _producer = new ProducerBuilder<string, string>(config)
             .SetErrorHandler((_, error) => KafkaLogging.HandleError(_logger, error, "outbox-producer"))

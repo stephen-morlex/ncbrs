@@ -1179,3 +1179,18 @@ a document that misdescribes the service costs that decision its value.
   in production; that is how both of these shipped before. The same goes for
   `CertificateSigning:AllowEphemeralDevelopmentKey`, even though the signer
   also refuses it outside Development.
+- **The Kafka link is SASL over TLS by default** (`KafkaOptions.SecurityProtocol`),
+  and outside Development the Relay and Consumer refuse to start unless it is
+  encrypted **and** authenticated — `SaslSsl` with a username, or `Ssl` with a
+  client certificate. Until this there was no way to configure either, and the
+  events carry BRNs, coded causes of death and corrected names; an
+  unauthenticated broker also lets anyone who reaches it publish into topics
+  the projection trusts. Development sets `Plaintext` for the compose broker.
+  Both clients are configured by one `KafkaOptions.ApplyTo`. The check is
+  options validation on start, skipped for the build-time OpenAPI generator
+  (`GetDocument.Insider`), which runs the Consumer as Production. A refused TLS
+  handshake or refused credentials logs as an **error**
+  (`KafkaLogging.IsConfigurationFault`): librdkafka reports a TLS failure with
+  the same code as a broker that is down, which is logged at Debug here, so a
+  misconfigured Relay used to look like a quiet outage. The Relay now has a
+  launch profile: without one `dotnet run` started it as Production.

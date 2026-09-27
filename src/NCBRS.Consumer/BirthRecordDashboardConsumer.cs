@@ -23,7 +23,6 @@ public class BirthRecordDashboardConsumer(
     {
         var config = new ConsumerConfig
         {
-            BootstrapServers = _options.BootstrapServers,
             GroupId = _options.ConsumerGroupId,
 
             // Replay from the start on first run -- see the retention note in
@@ -39,6 +38,7 @@ public class BirthRecordDashboardConsumer(
             // this is what produces it.
             EnableAutoCommit = false
         };
+        _options.ApplyTo(config);
 
         using var consumer = new ConsumerBuilder<Ignore, string>(config)
             .SetErrorHandler((_, error) => KafkaLogging.HandleError(logger, error, "consumer"))

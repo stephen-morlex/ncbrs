@@ -38,8 +38,21 @@ public static class KafkaLogging
             clientRole, message.Facility, message.Message);
     }
 
+    /// <summary>
+    /// A broker that answered and refused our TLS or credentials is not an
+    /// outage: it is configuration that will never succeed on retry. librdkafka
+    /// reports a failed TLS handshake as a plain transport error, so without
+    /// this a misconfigured Relay would log at Debug, forever, looking exactly
+    /// like a link that is down.
+    /// </summary>
+    public static bool IsConfigurationFault(Error error)
+        => error.Code is ErrorCode.Local_Authentication
+               or ErrorCode.SaslAuthenticationFailed
+               or ErrorCode.Local_Ssl
+           || error.Reason.Contains("SSL handshake failed", StringComparison.OrdinalIgnoreCase);
+
     private static bool IsExpectedWhileOffline(Error error)
-        => error.Code is ErrorCode.Local_AllBrokersDown
+        => !IsConfigurationFault(error) && error.Code is ErrorCode.Local_AllBrokersDown
             or ErrorCode.Local_Transport
             or ErrorCode.Local_Resolve
             or ErrorCode.Local_TimedOut

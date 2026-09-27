@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using NCBRS.Data;
 using NCBRS.Kafka;
 
@@ -13,7 +14,14 @@ var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddDbContext<NcbrsDbContext>(options =>
     NcbrsDatabase.Configure(options, builder.Configuration));
 
-builder.Services.Configure<KafkaOptions>(builder.Configuration.GetSection(KafkaOptions.SectionName));
+// Refused at startup outside Development unless the broker link is encrypted
+// and authenticated: see KafkaOptions.SecurityProtocol.
+builder.Services.AddOptions<KafkaOptions>()
+    .Bind(builder.Configuration.GetSection(KafkaOptions.SectionName))
+    .ValidateOnStart();
+builder.Services.AddSingleton<IValidateOptions<KafkaOptions>>(
+    new KafkaOptionsValidator(builder.Environment.IsDevelopment()));
+
 builder.Services.AddSingleton<KafkaOutboxTransport>();
 builder.Services.AddHostedService<OutboxRelay>();
 
