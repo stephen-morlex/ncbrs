@@ -680,7 +680,7 @@ row.
 
 | # | Task |
 |---|---|
-| 24 | A8 — independent security audit and penetration test. **Pre-audit sweep done (2026-09-27):** every Api endpoint inventoried by policy and county scope. Found and fixed: duplicate review had no county check (a district officer could supersede a registration anywhere), and all four review queues were readable nationally. Left for the auditor to confirm: lookup by exact BRN is national on purpose (CLAUDE.md, county-scope section) |
+| 24 | A8 — independent security audit and penetration test. **Pre-audit sweep done (2026-09-27):** every Api endpoint inventoried by policy and county scope. Found and fixed: duplicate review had no county check (a district officer could supersede a registration anywhere), and all four review queues were readable nationally. Also found and fixed (#109, decided with the product owner): reporting was national for every district officer. It is now own-county for officers and national for the Ministry, and the DHIS2 export is Ministry-only; the county comes from a Keycloak group, and the API refuses an officer whose group contradicts the registry. Separately, the dashboard's county drill-down had never worked: it sent `countyCode`, which the service ignores, so every choice showed national figures. Left for the auditor to confirm: lookup by exact BRN is national on purpose (CLAUDE.md, county-scope section) |
 | 25 | Legal critical path (§5) and the §16 governance actions — none is tracked as complete |
 | 26 | G3 tiered support model · G4 training curriculum (after B4) |
 | 27 | H1 sync-point workflow — the mechanics exist (district tier, client sync, H2); what remains is operational validation in the pilot |

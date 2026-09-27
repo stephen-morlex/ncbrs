@@ -41,9 +41,17 @@ describe('satisfies', () => {
     expect(satisfies([NcbrsRoles.MinistryAdmin], 'CanAnnulRegistrations')).toBe(true)
   })
 
-  it('keeps national statistics away from a facility registrar', () => {
+  it('keeps statistics away from a facility registrar', () => {
     expect(satisfies([NcbrsRoles.FacilityRegistrar], 'CanReadReporting')).toBe(false)
     expect(satisfies([NcbrsRoles.DistrictOfficer], 'CanReadReporting')).toBe(true)
+  })
+
+  /** The web plan's role table: national figures and exports are the Ministry's. */
+  it('keeps the national view and the export with the Ministry', () => {
+    for (const policy of ['CanReadNationalReporting', 'CanExportReporting'] as const) {
+      expect(satisfies([NcbrsRoles.DistrictOfficer], policy)).toBe(false)
+      expect(satisfies([NcbrsRoles.MinistryAdmin], policy)).toBe(true)
+    }
   })
 
   it('grants nothing to an account with no roles', () => {
@@ -52,6 +60,8 @@ describe('satisfies', () => {
       'CanReviewDuplicates',
       'CanAnnulRegistrations',
       'CanReadReporting',
+      'CanReadNationalReporting',
+      'CanExportReporting',
     ] as const) {
       expect(satisfies([], policy)).toBe(false)
     }

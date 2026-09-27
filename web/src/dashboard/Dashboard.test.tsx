@@ -15,6 +15,18 @@ vi.mock('@/api/useApi', () => ({
 // Recharts measures its container, which jsdom cannot; give it a fixed size so
 // the charts mount without warnings. The tests assert on the surrounding
 // numbers and states, not on SVG internals.
+vi.mock('react-oidc-context', () => ({
+  useAuth: () => ({ user: { access_token: 'token' } }),
+}))
+
+// The signed-in user's roles, swapped per test: the Ministry picks an area,
+// a district officer is shown their own county.
+const roles = vi.hoisted(() => ({ value: ['ministry-admin'] as string[] }))
+
+vi.mock('@/auth/claims', () => ({
+  realmRoles: () => roles.value,
+}))
+
 vi.mock('recharts', async (importActual) => {
   const actual = await importActual<typeof import('recharts')>()
   return {
@@ -100,6 +112,7 @@ function renderScreen() {
 beforeEach(() => {
   vi.useRealTimers()
   get.mockReset()
+  roles.value = ['ministry-admin']
   respond()
 })
 
@@ -135,7 +148,12 @@ describe('Dashboard', () => {
     expect(await screen.findByText('Perinatal mortality rate')).toBeInTheDocument()
   })
 
-  it('drills into a district, sending its id', async () => {
+  /**
+   * As the contract names it. This test used to assert `countyCode`, the
+   * parameter the page sent -- which the service has never accepted, so the
+   * drill-down silently returned national figures while this passed.
+   */
+  it('drills into a county, sending it as the contract names it', async () => {
     const typist = user()
     renderScreen()
     await screen.findByText('1,200')
@@ -143,7 +161,22 @@ describe('Dashboard', () => {
     await typist.click(screen.getByRole('combobox'))
     await typist.click(await screen.findByRole('option', { name: 'SS0101' }))
 
-    await waitFor(() => expect(lastSummaryQuery?.countyCode).toBe('SS0101'))
+    await waitFor(() => expect(lastSummaryQuery?.districtId).toBe('SS0101'))
+    expect(lastSummaryQuery).not.toHaveProperty('countyCode')
+  })
+
+  /**
+   * A district officer's dashboard is their county: stated, not offered as a
+   * choice, and no county is requested -- the service answers with theirs.
+   */
+  it("shows a district officer their own county, with nothing to pick", async () => {
+    roles.value = ['district-officer']
+    respond({ summary: okc(summary({ countyCode: 'SS0101' })) })
+    renderScreen()
+
+    expect(await screen.findByText('Your county · SS0101')).toBeInTheDocument()
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(lastSummaryQuery?.districtId).toBeUndefined()
   })
 
   it('can be paused, and refreshes on demand', async () => {

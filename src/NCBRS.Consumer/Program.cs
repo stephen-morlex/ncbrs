@@ -22,10 +22,12 @@ using NCBRS.Web;
 // that registers births -- the exact thing plan F1 exists to prevent -- and
 // a second process writing this schema would undo the single-writer property
 // the projection relies on.
-// The consumer has one policy: everything it serves beyond the liveness
-// probe is reporting data, and reporting data is a district officer's and
-// the Ministry's to read.
+// Everything this service serves beyond the liveness probe is reporting data.
+// Reporting is a district officer's and the Ministry's to read, each within
+// their own scope (ReportingScope); the DHIS2 export, a national dataset for an
+// external system, is the Ministry's alone.
 const string ReportingPolicy = "ncbrs-reporting";
+const string ExportPolicy = "ncbrs-export";
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -115,8 +117,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // registrar's work is a record at a time, and national figures are not theirs
 // to read — the web plan's role table says as much.
 builder.Services.AddAuthorization(authorization =>
+{
+    // Which county, within that, is ReportingScope's decision per request.
     authorization.AddPolicy(ReportingPolicy, policy =>
-        policy.RequireRole(NcbrsRoles.DistrictOfficer, NcbrsRoles.MinistryAdmin)));
+        policy.RequireRole(NcbrsRoles.DistrictOfficer, NcbrsRoles.MinistryAdmin));
+
+    authorization.AddPolicy(ExportPolicy, policy =>
+        policy.RequireRole(NcbrsRoles.MinistryAdmin));
+});
 
 builder.Services.AddHostedService<BirthRecordDashboardConsumer>();
 
@@ -225,60 +233,32 @@ app.MapGet("/health", async (ReadModelDbContext db, CancellationToken cancellati
 .WithName("GetProjectionHealth")
 .Produces<ProjectionHealth>();
 
-app.MapGet("/api/dashboard/summary", async (
-    DateTime? from,
-    DateTime? to,
-    string? districtId,
-    DashboardQueryService dashboard,
-    CancellationToken cancellationToken) =>
-{
-    var (fromUtc, toUtc) = Range(from, to);
-
-    return toUtc <= fromUtc
-        ? Results.BadRequest(new ApiError("'to' must be after 'from'."))
-        : Results.Ok(await dashboard.SummaryAsync(fromUtc, toUtc, districtId, cancellationToken));
-})
+// Every reporting endpoint resolves the caller's county first (ReportingScope):
+// a district officer reads their own county only, the Ministry any or all.
+app.MapGet("/api/dashboard/summary", ReportingEndpoints.SummaryAsync)
 .WithName("GetDashboardSummary")
 .Produces<DashboardSummary>()
 .Produces<ApiError>(StatusCodes.Status400BadRequest)
+.Produces<ApiError>(StatusCodes.Status403Forbidden)
 .RequireAuthorization(ReportingPolicy);
 
-app.MapGet("/api/dashboard/counties", async (
-    DateTime? from,
-    DateTime? to,
-    DashboardQueryService dashboard,
-    CancellationToken cancellationToken) =>
-{
-    var (fromUtc, toUtc) = Range(from, to);
-
-    return toUtc <= fromUtc
-        ? Results.BadRequest(new ApiError("'to' must be after 'from'."))
-        : Results.Ok(await dashboard.CountiesAsync(fromUtc, toUtc, cancellationToken));
-})
+// The comparison across counties. A district officer gets their own row: the
+// others are other counties' figures, however the request is phrased.
+app.MapGet("/api/dashboard/counties", ReportingEndpoints.CountiesAsync)
 .WithName("GetDashboardCounties")
 .Produces<IReadOnlyList<CountySummary>>()
 .Produces<ApiError>(StatusCodes.Status400BadRequest)
+.Produces<ApiError>(StatusCodes.Status403Forbidden)
 .RequireAuthorization(ReportingPolicy);
 
 // The headline figures bucketed by month, for charting a trend across the
 // year. Same authorization and same date range as the summary; each bucket
 // carries StillFilling so the client can mark the month that is not yet settled.
-app.MapGet("/api/dashboard/trends", async (
-    DateTime? from,
-    DateTime? to,
-    string? districtId,
-    DashboardQueryService dashboard,
-    CancellationToken cancellationToken) =>
-{
-    var (fromUtc, toUtc) = Range(from, to);
-
-    return toUtc <= fromUtc
-        ? Results.BadRequest(new ApiError("'to' must be after 'from'."))
-        : Results.Ok(await dashboard.TrendsAsync(fromUtc, toUtc, districtId, cancellationToken));
-})
+app.MapGet("/api/dashboard/trends", ReportingEndpoints.TrendsAsync)
 .WithName("GetDashboardTrends")
 .Produces<IReadOnlyList<TrendPoint>>()
 .Produces<ApiError>(StatusCodes.Status400BadRequest)
+.Produces<ApiError>(StatusCodes.Status403Forbidden)
 .RequireAuthorization(ReportingPolicy);
 
 // E4. Anonymised aggregate only: the unit of this payload is a
@@ -301,43 +281,15 @@ app.MapGet("/api/exports/dhis2", async (
 .WithName("GetDhis2Export")
 .Produces<Dhis2Export>()
 .Produces<ApiError>(StatusCodes.Status400BadRequest)
-.RequireAuthorization(ReportingPolicy);
+// The Ministry's: a national export to an external system, which the web
+// plan's role table has always placed with the Ministry.
+.RequireAuthorization(ExportPolicy);
 
-app.MapGet("/api/dashboard/devices/silent", async (
-    int? silentForDays,
-    string? districtId,
-    DashboardQueryService dashboard,
-    CancellationToken cancellationToken) =>
-{
-    var days = silentForDays ?? 7;
-
-    return days < 1
-        ? Results.BadRequest(new ApiError("'silentForDays' must be at least 1."))
-        : Results.Ok(await dashboard.SilentDevicesAsync(days, districtId, cancellationToken));
-})
+app.MapGet("/api/dashboard/devices/silent", ReportingEndpoints.SilentDevicesAsync)
 .WithName("GetSilentDevices")
 .Produces<IReadOnlyList<SilentDevice>>()
 .Produces<ApiError>(StatusCodes.Status400BadRequest)
+.Produces<ApiError>(StatusCodes.Status403Forbidden)
 .RequireAuthorization(ReportingPolicy);
 
 app.Run();
-
-// Defaults to the last full year of births. An unbounded default would scan
-// the whole projection to answer a casual page load.
-static (DateTime FromUtc, DateTime ToUtc) Range(DateTime? from, DateTime? to)
-{
-    var toUtc = AsUtc(to ?? DateTime.UtcNow.Date.AddDays(1));
-
-    return (AsUtc(from ?? toUtc.AddYears(-1)), toUtc);
-}
-
-// "?from=2026-09-01" parses with no kind, and ToUniversalTime would read
-// that as local time and shift it by the server's offset -- so a birth just
-// after midnight would fall outside a query for its own month, differently
-// depending on where the server happens to run. A date on the wire is UTC.
-static DateTime AsUtc(DateTime value) => value.Kind switch
-{
-    DateTimeKind.Utc => value,
-    DateTimeKind.Local => value.ToUniversalTime(),
-    _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
-};

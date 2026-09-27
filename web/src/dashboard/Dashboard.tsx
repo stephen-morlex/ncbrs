@@ -39,7 +39,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import type { components } from '@/api/generated/consumer'
+import { useAuth } from 'react-oidc-context'
+import type { components, operations } from '@/api/generated/consumer'
+import { realmRoles } from '@/auth/claims'
+import { satisfies } from '@/auth/roles'
 import { type NcbrsError, toNcbrsError, unreachableError } from '@/api/errors'
 import { useConsumerClient } from '@/api/useApi'
 import { PageHeader } from '@/shell/PageHeader'
@@ -54,6 +57,7 @@ const National = 'national'
 const PollMs = 30_000
 
 type Query = { countyCode: string; from: string; to: string }
+type SummaryQuery = NonNullable<operations['GetDashboardSummary']['parameters']['query']>
 
 /**
  * The Ministry's dashboard, over the reporting projection — a live, charted
@@ -73,6 +77,11 @@ type Query = { countyCode: string; from: string; to: string }
  */
 export function Dashboard() {
   const consumer = useConsumerClient()
+  const auth = useAuth()
+
+  // Only the Ministry picks an area. A district officer's dashboard is their
+  // county: the service answers with it by default and refuses any other.
+  const canPickArea = satisfies(realmRoles(auth.user), 'CanReadNationalReporting')
 
   const [summary, setSummary] = useState<Summary | null>(null)
   const [trends, setTrends] = useState<TrendPoint[]>([])
@@ -92,10 +101,15 @@ export function Dashboard() {
       }
       setError(null)
 
-      const scoped = {
-        ...(query.countyCode !== National ? { countyCode: query.countyCode } : {}),
-        ...(query.from ? { from: query.from } : {}),
-        ...(query.to ? { to: query.to } : {}),
+      // A typed literal, so a parameter the contract does not have fails to
+      // compile. The conditional spread this replaced sent `countyCode`, which
+      // the service has never accepted: choosing a county silently returned
+      // national figures, and a spread is exempt from the excess-property
+      // check that would have caught it.
+      const scoped: SummaryQuery = {
+        districtId: query.countyCode !== National ? query.countyCode : undefined,
+        from: query.from || undefined,
+        to: query.to || undefined,
       }
       const dates = {
         ...(query.from ? { from: query.from } : {}),
@@ -162,6 +176,8 @@ export function Dashboard() {
       />
 
       <Controls
+        canPickArea={canPickArea}
+        ownCounty={summary?.countyCode ?? null}
         countyCode={applied.countyCode}
         districts={districts}
         onDistrict={selectDistrict}
@@ -184,6 +200,8 @@ export function Dashboard() {
 }
 
 function Controls({
+  canPickArea,
+  ownCounty,
   countyCode,
   districts,
   onDistrict,
@@ -195,6 +213,8 @@ function Controls({
   onRefresh,
   lastUpdated,
 }: {
+  canPickArea: boolean
+  ownCounty: string | null
   countyCode: string
   districts: District[]
   onDistrict: (id: string) => void
@@ -210,22 +230,33 @@ function Controls({
     <Card>
       <CardContent className="flex flex-wrap items-end justify-between gap-4 pt-6">
         <div className="flex flex-wrap items-end gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="dash-district">Area</Label>
-            <Select value={countyCode} onValueChange={onDistrict}>
-              <SelectTrigger id="dash-district" className="w-full sm:w-56">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={National}>National</SelectItem>
-                {districts.map((district) => (
-                  <SelectItem key={district.countyCode} value={district.countyCode}>
-                    {district.countyCode}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {canPickArea ? (
+            <div className="grid gap-2">
+              <Label htmlFor="dash-district">Area</Label>
+              <Select value={countyCode} onValueChange={onDistrict}>
+                <SelectTrigger id="dash-district" className="w-full sm:w-56">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={National}>National</SelectItem>
+                  {districts.map((district) => (
+                    <SelectItem key={district.countyCode} value={district.countyCode}>
+                      {district.countyCode}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            // Stated, not offered: a picker listing one choice reads as if
+            // other areas exist to choose from.
+            <div className="grid gap-2">
+              <span className="text-sm font-medium">Area</span>
+              <p className="flex h-9 items-center text-sm">
+                {ownCounty ? `Your county · ${ownCounty}` : 'Your county'}
+              </p>
+            </div>
+          )}
 
           <form onSubmit={onApplyDates} className="flex flex-wrap items-end gap-3">
             <div className="grid gap-2">

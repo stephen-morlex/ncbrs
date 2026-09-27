@@ -32,6 +32,10 @@ builder.Services.AddControllers(mvcOptions =>
         // failure is precisely the response a client needs to correlate.
         mvcOptions.Filters.Add<RequestMetaActionFilter>(order: -3000);
 
+        // An officer whose identity-provider county contradicts the registry
+        // is refused before any work is done on their behalf.
+        mvcOptions.Filters.Add<CountyClaimConsistencyFilter>(order: -2950);
+
         // Validation first: a payload that cannot succeed is rejected without
         // opening a transaction or consuming a transaction id.
         mvcOptions.Filters.Add<FluentValidationFilter>(order: -2900);

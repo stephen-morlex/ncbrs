@@ -69,10 +69,24 @@ export const NcbrsPolicies = {
   CanReadAuditTrail: Oversight,
 
   /**
-   * National vital statistics. Not a facility registrar's to read -- their
-   * work is a record at a time. Matches the consumer's `ncbrs-reporting`.
+   * Vital statistics. Not a facility registrar's to read -- their work is a
+   * record at a time. Matches the consumer's `ncbrs-reporting`. Within it, a
+   * district officer reads their own county only; the consumer enforces that.
    */
   CanReadReporting: Oversight,
+
+  /**
+   * The whole country, or any county by choice. The Ministry's, as the web
+   * plan's role table says; a district officer's dashboard is their county.
+   * Decides whether the dashboard offers an area picker at all.
+   */
+  CanReadNationalReporting: [NcbrsRoles.MinistryAdmin],
+
+  /**
+   * The DHIS2 export: a national dataset for an external system. The
+   * Ministry's alone. Matches the consumer's `ncbrs-export`.
+   */
+  CanExportReporting: [NcbrsRoles.MinistryAdmin],
 } as const satisfies Record<string, readonly NcbrsRole[]>
 
 export type NcbrsPolicy = keyof typeof NcbrsPolicies

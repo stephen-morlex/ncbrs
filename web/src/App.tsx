@@ -240,7 +240,7 @@ export default function App() {
         <Route
           path="/exports/dhis2"
           element={
-            <RequireAuth policy="CanReadReporting">
+            <RequireAuth policy="CanExportReporting">
               <Dhis2Export />
             </RequireAuth>
           }

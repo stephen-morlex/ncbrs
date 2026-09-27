@@ -69,6 +69,18 @@
             "access.token.claim": "true",
             "id.token.claim": "false"
           }
+        },
+        {
+          "name": "ncbrs-county-groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "config": {
+            "claim.name": "groups",
+            "full.path": "true",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false"
+          }
         }
       ]
     },
@@ -99,6 +111,18 @@
             "included.custom.audience": "ncbrs-api",
             "access.token.claim": "true",
             "id.token.claim": "false"
+          }
+        },
+        {
+          "name": "ncbrs-county-groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "config": {
+            "claim.name": "groups",
+            "full.path": "true",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false"
           }
         }
       ]
@@ -160,6 +184,9 @@
       ],
       "realmRoles": [
         "district-officer"
+      ],
+      "groups": [
+        "/counties/SS0101"
       ]
     },
     {
@@ -179,6 +206,19 @@
       ],
       "realmRoles": [
         "ministry-admin"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "name": "counties",
+      "path": "/counties",
+      "subGroups": [
+        {
+          "name": "SS0101",
+          "path": "/counties/SS0101",
+          "subGroups": []
+        }
       ]
     }
   ]

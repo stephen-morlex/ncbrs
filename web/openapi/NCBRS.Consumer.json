@@ -28,7 +28,7 @@
     "/api/dashboard/summary": {
       "get": {
         "tags": [
-          "NCBRS.Consumer"
+          "ReportingEndpoints"
         ],
         "operationId": "GetDashboardSummary",
         "parameters": [
@@ -76,6 +76,16 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -88,7 +98,7 @@
     "/api/dashboard/counties": {
       "get": {
         "tags": [
-          "NCBRS.Consumer"
+          "ReportingEndpoints"
         ],
         "operationId": "GetDashboardCounties",
         "parameters": [
@@ -132,6 +142,16 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -144,7 +164,7 @@
     "/api/dashboard/trends": {
       "get": {
         "tags": [
-          "NCBRS.Consumer"
+          "ReportingEndpoints"
         ],
         "operationId": "GetDashboardTrends",
         "parameters": [
@@ -188,6 +208,16 @@
           },
           "400": {
             "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
             "content": {
               "application/json": {
                 "schema": {
@@ -252,7 +282,7 @@
     "/api/dashboard/devices/silent": {
       "get": {
         "tags": [
-          "NCBRS.Consumer"
+          "ReportingEndpoints"
         ],
         "operationId": "GetSilentDevices",
         "parameters": [
@@ -288,6 +318,16 @@
           },
           "400": {
             "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
             "content": {
               "application/json": {
                 "schema": {
@@ -918,6 +958,9 @@
   "tags": [
     {
       "name": "NCBRS.Consumer"
+    },
+    {
+      "name": "ReportingEndpoints"
     }
   ]
 }
