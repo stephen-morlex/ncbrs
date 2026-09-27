@@ -13,7 +13,7 @@ For how the pieces fit, see `ARCHITECTURE.md`; for why each behaves as it does,
 
 | Service | Dev port | Health | Notes |
 |---|---|---|---|
-| `NCBRS.Api` | 5259 | `/health` (401 = up, auth required) | HTTP only; stages events in the outbox |
+| `NCBRS.Api` | 5259 | `/health` (anonymous, 200 when up; alert on `status` = `degraded`: outbox not draining, or WAL archiving off/failing) | HTTP only; stages events in the outbox |
 | `NCBRS.Consumer` | 5281 | `/health` (200) | Read model + dashboards + DHIS2 export |
 | `NCBRS.Relay` | — (worker) | process running | Drains the outbox to Kafka |
 | Keycloak | 8080 | `/realms/ncbrs` | Auth; realm imported at container start |
@@ -25,7 +25,10 @@ For how the pieces fit, see `ARCHITECTURE.md`; for why each behaves as it does,
 **Most common report.** The register API is fine (births are landing in
 Postgres); the reporting pipeline behind it has stalled.
 
-1. **Is the outbox draining?** `SELECT count(*) FROM "OutboxMessages" WHERE
+1. **Is the outbox draining?** The Api's `/health` answers directly: `outbox`
+   has the pending count and the oldest pending event, and `status` becomes
+   `degraded` once that is older than `OperationalHealth:OutboxStaleAfter`
+   (default 2 minutes; the Relay polls every 5 s). By hand: `SELECT count(*) FROM "OutboxMessages" WHERE
    "DispatchedAtUtc" IS NULL;` growing and not falling → the Relay is not
    publishing. Check the Relay process is running; restart it. It leases rows,
    so a restart is safe and it resumes where it left off. Nothing is lost while
@@ -56,9 +59,15 @@ system of record for nothing.
 Archiving fails **silently** — the database keeps accepting registrations and
 the absence of any recovery point is discovered on the day it is needed.
 
-- **The only signal is `pg_stat_archiver.failed_count`** — monitoring must
-  alert on it. `SELECT failed_count, last_failed_time, last_failed_wal FROM
-  pg_stat_archiver;`.
+- **The only signal is `pg_stat_archiver`**, and monitoring must alert on
+  it. The Api's anonymous `/health` reports it as `walArchive`, with
+  `failingNow: true` when the latest attempt failed. It also reports
+  `enabled: false` when archiving is off, which is the same danger with
+  nothing even failing. In both cases `status` is `degraded` and `problems`
+  says why. By hand: `SELECT failed_count, last_failed_time, last_failed_wal FROM
+  pg_stat_archiver;`. `failed_count` is cumulative, so on its own it keeps
+  "alerting" long after archiving has recovered. `failingNow` compares the
+  last failure with the last success instead.
 - Known cause seen here: a named archive volume mounts root-owned while postgres
   runs as uid 999 → every archive attempt fails. The compose service chowns the
   archive directory; verify permissions if `failed_count` climbs.
