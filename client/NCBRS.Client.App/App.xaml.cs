@@ -1,15 +1,18 @@
+using NCBRS.Client.App.Pages;
+using NCBRS.Client.App.Services;
+
 namespace NCBRS.Client.App;
 
 public partial class App : Application
 {
-    private readonly MainPage _mainPage;
+    private readonly DeviceHost _host;
 
-    public App(MainPage mainPage)
+    public App(DeviceHost host)
     {
         InitializeComponent();
-        _mainPage = mainPage;
+        _host = host;
     }
 
     protected override Window CreateWindow(IActivationState? activationState)
-        => new(new NavigationPage(_mainPage) { Title = "NCBRS" });
+        => new(new NavigationPage(new StartPage(_host)) { Title = "NCBRS" });
 }

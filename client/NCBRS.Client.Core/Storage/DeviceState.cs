@@ -61,8 +61,24 @@ public sealed class DeviceState
     public PinAttempts Attempts { get; set; } = new(0, null);
 }
 
-/// <summary>Fixed at handover: the enrolled device, its facility, and where it reaches the system.</summary>
-public sealed record DeviceIdentity(string DeviceId, Guid FacilityId, Uri Centre, Uri? SyncVia = null);
+/// <summary>
+/// Fixed at handover: the enrolled device, its facility, where it reaches the
+/// system, and the identity realm its registrars sign in to.
+/// </summary>
+public sealed record DeviceIdentity(
+    string DeviceId, Guid FacilityId, Uri Centre, Uri? SyncVia = null, Uri? Realm = null, string? FacilityName = null)
+{
+    /// <summary>
+    /// A device id derived from the device's own public key. Derived rather
+    /// than random so a handover interrupted between enrolling and saving
+    /// retries under the same id: the centre's 409 then means "this tablet is
+    /// already enrolled", not an identity lost with a new one to enrol.
+    /// 48 bits of the key's hash; a national fleet is thousands of tablets.
+    /// </summary>
+    public static string IdFor(string publicKeyPem)
+        => "TAB-" + Convert.ToHexString(
+            System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.ASCII.GetBytes(publicKeyPem.Trim())))[..12];
+}
 
 /// <summary>
 /// The allocator's whole state. <see cref="BlockStart"/> and <see cref="BlockEnd"/>

@@ -1,6 +1,6 @@
 using NCBRS.Client.Storage;
 
-namespace NCBRS.Client.App;
+namespace NCBRS.Client.App.Services;
 
 /// <summary>
 /// Opens the tablet's encrypted store (B2): the file in the app's private data

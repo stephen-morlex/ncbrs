@@ -340,8 +340,19 @@ can be out of contact for weeks, far longer than an ordinary session lasts.
   `offline_access` as an optional client scope. **Direct access grants off**
   (the dev realm keeps them on for the test harness, the load driver and the
   District node).
-- **Redirect URIs: the app's own callback only** — never `*`, as in the dev
-  realm. A wildcard lets any page receive a registrar's code.
+- **Redirect URIs: the app's own callback only.** That is
+  `ss.gov.ncbrs.client://auth/callback`, as in the dev realm, which has since
+  dropped its `*`. A wildcard lets any page receive a registrar's code.
+  - Register it **exactly**, path included. Keycloak matches the whole string,
+    and a bare `scheme://auth` never matches what the app sends, because .NET
+    adds a trailing slash.
+  - The dev realm also lists `http://127.0.0.1:53682/auth` for the Windows dev
+    loop. **Leave that out of production.**
+  - No web origins: a native app makes no browser requests.
+- **Tablet handover needs an officer.** A district officer signs in on the tablet
+  once, with an ordinary session that the app ends at Keycloak afterwards, and
+  enrols it. So `district-officer` accounts need the standard flow on
+  `ncbrs-device`, without `offline_access`.
 - List `defaultClientScopes` explicitly (`web-origins`, `acr`, `profile`,
   `roles`, `basic`, `email`) whenever `optionalClientScopes` is listed.
   Keycloak's import gives a client that lists only its optional scopes **no**

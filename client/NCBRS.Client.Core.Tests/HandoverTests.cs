@@ -206,6 +206,29 @@ public class HandoverTests
         Assert.Contains("deviceId=TABLET-TEREKEKA-01", request.RequestUri.Query);
     }
 
+    /// <summary>A tablet handed to the wrong facility is revoked by the officer before it is handed over again.</summary>
+    [Fact]
+    public async Task RevokingNamesTheDeviceAndTheReason()
+    {
+        var network = new FakeNetwork
+        {
+            Respond = _ => FakeNetwork.Envelope($$"""
+                {"deviceId":"TAB-0A1B2C3D4E5F","facilityId":"{{Facility}}","status":"Revoked","label":null,
+                 "enrolledAtUtc":"2026-09-28T09:00:00Z","lastSeenAtUtc":null,"statusChangedAtUtc":"2026-09-28T10:00:00Z",
+                 "statusReason":"Handed over to the wrong facility."}
+                """),
+        };
+
+        var result = await CentreClient(network, "officer-token").RevokeDeviceAsync("TAB-0A1B2C3D4E5F", "Handed over to the wrong facility.");
+
+        Assert.Equal(DeviceStatus.Revoked, result.Value!.Status);
+        var (request, body) = Assert.Single(network.Requests);
+        Assert.Equal(HttpMethod.Post, request.Method);
+        Assert.Equal("/api/devices/TAB-0A1B2C3D4E5F/revoke", request.RequestUri!.AbsolutePath);
+        using var sent = JsonDocument.Parse(body);
+        Assert.Equal("Handed over to the wrong facility.", sent.RootElement.GetProperty("data").GetProperty("reason").GetString());
+    }
+
     // --- unlocking ------------------------------------------------------------------------------
 
     [Fact]
@@ -280,4 +303,24 @@ public class HandoverTests
     [Fact]
     public void SomeoneNotOnTheListCannotAttempt()
         => Assert.Throws<ArgumentException>(() => StaffUnlock.Attempt(Staffed(), Guid.NewGuid(), "246813", DateTime.UtcNow));
+}
+
+/// <summary>The device id a tablet enrols under.</summary>
+public class DeviceIdTests
+{
+    [Fact]
+    public void TheSameKeyAlwaysGivesTheSameIdSoAnInterruptedHandoverRetriesAsItself()
+    {
+        var signer = NCBRS.Client.Sync.DeviceSigner.Generate();
+        var restored = NCBRS.Client.Sync.DeviceSigner.FromPrivateKey(signer.ExportPrivateKeyPem());
+
+        Assert.Equal(DeviceIdentity.IdFor(signer.PublicKeyPem), DeviceIdentity.IdFor(restored.PublicKeyPem));
+        Assert.Matches("^TAB-[0-9A-F]{12}$", DeviceIdentity.IdFor(signer.PublicKeyPem));
+    }
+
+    [Fact]
+    public void DifferentKeysGiveDifferentIds()
+        => Assert.NotEqual(
+            DeviceIdentity.IdFor(NCBRS.Client.Sync.DeviceSigner.Generate().PublicKeyPem),
+            DeviceIdentity.IdFor(NCBRS.Client.Sync.DeviceSigner.Generate().PublicKeyPem));
 }
