@@ -362,6 +362,17 @@ builder.Services.AddHostedService<IdempotencyPurgeService>();
 
 var app = builder.Build();
 
+// The signer is built now, not on first use. Built lazily, an Api with no
+// signing key started, reported /health ok, and then failed every certificate
+// operation with a 500 -- issuing, verifying, and the offline bundle devices
+// refresh, so every tablet's cache would expire into answering Unknown. A
+// missing, unreadable or non-ECDSA key, or the development key id, now
+// refuses to start. Not under the build-time document generator.
+if (!generatingOpenApiDocument)
+{
+    app.Services.GetRequiredService<CertificateSigner>();
+}
+
 // A device signs the bytes it sent, so verification needs those bytes back
 // after model binding has consumed the stream. Buffering is enabled only for
 // requests that actually carry a device signature -- every other request

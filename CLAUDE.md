@@ -1213,8 +1213,18 @@ a document that misdescribes the service costs that decision its value.
   an imported realm. Note `bitnami/kafka` no longer resolves; Bitnami moved
   their catalogue.
 - Certificate signing refuses to start outside Development without
-  `CertificateSigning:PfxPath`. The dev fallback mints a throwaway key whose
-  certificates stop verifying on restart.
+  `CertificateSigning:PfxPath`, or with `KeyId` left at `ncbrs-dev` (printed in
+  every QR, and the throwaway key's id). The dev fallback mints a throwaway key
+  whose certificates stop verifying on restart. **"Refuses to start" was not
+  true until #125:** the signer is a singleton built on first use, so an Api
+  with no key started, reported `/health` ok and 500'd every certificate
+  operation, the offline bundle included. `Program` now resolves it right after
+  `Build()`, and the TLS rehearsal pins that. A service that checks
+  configuration in a lazily-built singleton is checking it late — resolve it at
+  startup.
+- **`RUNBOOK.md` "Deployment: production configuration checklist"** lists every
+  setting each service needs outside Development, with the rehearsal as the
+  worked example.
 - **Security relaxations live in `appsettings.Development.json`, never the
   base file**, and outside Development the services refuse to start with them.
   The compose Keycloak is plain HTTP, so Development sets

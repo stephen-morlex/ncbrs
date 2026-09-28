@@ -37,7 +37,15 @@ public class CertificateSigningOptions
     public bool AllowEphemeralDevelopmentKey { get; set; }
 
     /// <summary>Identifies which key signed a certificate, so keys can be rotated.</summary>
-    public string KeyId { get; set; } = "ncbrs-dev";
+    public string KeyId { get; set; } = DevelopmentKeyId;
+
+    /// <summary>
+    /// The default key id, and the one the throwaway development key uses.
+    /// Refused outside Development: it is printed in every certificate's QR,
+    /// and verifiers select the key by it, so a production key under this id
+    /// would claim to be the same key as every developer's.
+    /// </summary>
+    public const string DevelopmentKeyId = "ncbrs-dev";
 
     /// <summary>
     /// Keys that no longer sign but must still verify.

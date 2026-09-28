@@ -38,6 +38,14 @@ public class CertificateSigner : IDisposable
         var settings = options.Value;
         KeyId = settings.KeyId;
 
+        if (!environment.IsDevelopment() && KeyId == CertificateSigningOptions.DevelopmentKeyId)
+        {
+            throw new InvalidOperationException(
+                $"CertificateSigning:KeyId is the development default '{CertificateSigningOptions.DevelopmentKeyId}' "
+                + "outside Development. It is printed in every certificate's QR and selects the key that "
+                + "verifies it; set a production-unique id.");
+        }
+
         _certificate = Load(settings, environment, logger);
 
         _privateKey = _certificate.GetECDsaPrivateKey()

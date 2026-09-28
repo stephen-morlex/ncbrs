@@ -87,6 +87,10 @@ export OPENSSL_CONF="$(hostpath "$WORK/openssl.cnf")"  # a native Windows openss
   openssl x509 -req -in server.csr -CA ca.pem -CAkey ca.key -CAcreateserial -out server.pem -days 2 -extfile san.ext
   cat server.key server.pem > kafka-keystore.pem
   printf 'KafkaServer {\n  org.apache.kafka.common.security.scram.ScramLoginModule required;\n};\n' > kafka-jaas.conf
+  # The certificate signing key: ECDSA P-256, as the Api requires, in a PFX.
+  openssl ecparam -name prime256v1 -genkey -noout -out signing.key
+  openssl req -new -x509 -key signing.key -out signing.pem -days 2 -subj "/CN=NCBRS rehearsal signing key"
+  openssl pkcs12 -export -inkey signing.key -in signing.pem -out signing.pfx -passout pass:rehearsal
   chmod a+r ./*  # read by the Kafka and Keycloak containers' own users; throwaway keys
 ) 2> "$WORK/openssl.log" || { cat "$WORK/openssl.log"; exit 1; }
 CERTS="$(hostpath "$WORK/certs")"
@@ -158,14 +162,15 @@ docker rm -f tls-api-seed > /dev/null
 
 echo "== The central tier in Production, every link verified"
 PROD=(-e ASPNETCORE_ENVIRONMENT=Production -e DOTNET_ENVIRONMENT=Production -e ASPNETCORE_URLS=http://0.0.0.0:8080)
+SIGNING=(-e CertificateSigning__PfxPath=/certs/signing.pfx -e CertificateSigning__PfxPassword=rehearsal -e CertificateSigning__KeyId=ncbrs-rehearsal)
 # Also serves HTTPS as api.tls: the District node refuses a plain-HTTP centre.
-run_service tls-api Api "${PROD[@]}" --network-alias api.tls -p "$API_PORT:8080" \
+run_service tls-api Api "${PROD[@]}" "${SIGNING[@]}" --network-alias api.tls -p "$API_PORT:8080" \
   -e "ASPNETCORE_URLS=http://0.0.0.0:8080;https://0.0.0.0:8443" \
   -e ASPNETCORE_Kestrel__Certificates__Default__Path=/certs/server.pem \
   -e ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/server.key \
   -e Database__Provider=Postgres -e "ConnectionStrings__Default=$PG_CS" \
   -e "Keycloak__Authority=$AUTHORITY" -e SSL_CERT_FILE=/certs/ca.pem
-run_service tls-api-untrusted Api "${PROD[@]}" -p "$UNTRUSTED_PORT:8080" -e Database__Provider=Postgres -e "ConnectionStrings__Default=$PG_CS" \
+run_service tls-api-untrusted Api "${PROD[@]}" "${SIGNING[@]}" -p "$UNTRUSTED_PORT:8080" -e Database__Provider=Postgres -e "ConnectionStrings__Default=$PG_CS" \
   -e "Keycloak__Authority=$AUTHORITY"
 run_service tls-relay Relay "${PROD[@]}" -e Database__Provider=Postgres -e "ConnectionStrings__Default=$PG_CS" \
   -e Kafka__BootstrapServers=kafka.tls:9095 -e Kafka__SaslUsername=relay -e Kafka__SaslPassword=relay-rehearsal \
@@ -216,6 +221,11 @@ said_why() { docker logs tls-api-untrusted 2>&1 | grep -q "Cannot obtain the ide
 wait_until 15 "the untrusted Api logs that it cannot reach the identity provider" said_why \
   && pass "...and logs that it cannot reach the identity provider"
 
+# Anonymous: devices provision offline verification from it. The Api used to
+# start without a key and fail this with a 500 (#125).
+expect "the Api serves its certificate signing key in Production" '"keyId":"ncbrs-rehearsal"' \
+  "$(curl -sf "http://localhost:$API_PORT/api/certificates/signing-key" | grep -o '"keyId":"[^"]*"' | head -1)"
+
 echo "== The District tier in Production: signed batches, post -> District -> centre over HTTPS"
 # The node authenticates as itself (over HTTPS to Keycloak) and forwards to the
 # centre's HTTPS listener. The centre enforces device signatures, so a batch
@@ -255,10 +265,15 @@ refuses() {  # refuses <description> <expected message> <service> <docker args..
     --entrypoint "/app/$service/NCBRS.$service" "${PROD[@]}" "$@" "$RUNTIME_IMAGE" 2>&1 || true)"
   grep -qF "$message" <<< "$output" && pass "$what" || fail "$what (no '$message')"
 }
-refuses "#119: an http:// Keycloak authority" "Keycloak:Authority is 'http://" Api \
+refuses "#119: an http:// Keycloak authority" "Keycloak:Authority is 'http://" Api "${SIGNING[@]}" \
   -e Database__Provider=Postgres -e "ConnectionStrings__Default=$PG_CS"
-refuses "#114: a Postgres connection that does not verify the server" "SSL Mode=Require outside Development" Api \
+refuses "#114: a Postgres connection that does not verify the server" "SSL Mode=Require outside Development" Api "${SIGNING[@]}" \
   -e Database__Provider=Postgres -e "ConnectionStrings__Default=${PG_CS/VerifyFull/Require}" -e "Keycloak__Authority=$AUTHORITY"
+refuses "#125: an Api with no certificate signing key" "No certificate signing key is configured" Api \
+  -e CertificateSigning__KeyId=ncbrs-rehearsal -e Database__Provider=Postgres -e "ConnectionStrings__Default=$PG_CS" -e "Keycloak__Authority=$AUTHORITY"
+refuses "#125: a signing key under the development key id" "is the development default 'ncbrs-dev'" Api \
+  -e CertificateSigning__PfxPath=/certs/signing.pfx -e CertificateSigning__PfxPassword=rehearsal \
+  -e Database__Provider=Postgres -e "ConnectionStrings__Default=$PG_CS" -e "Keycloak__Authority=$AUTHORITY"
 refuses "#113: a plaintext Kafka link" "Kafka:SecurityProtocol is Plaintext outside Development" Relay \
   -e Database__Provider=Postgres -e "ConnectionStrings__Default=$PG_CS" -e Kafka__BootstrapServers=kafka.tls:9095 \
   -e Kafka__SecurityProtocol=Plaintext
