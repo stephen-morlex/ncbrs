@@ -61,6 +61,12 @@ public static class DevelopmentDataSeeder
     private static readonly Guid CountyOfficerId = new("0199c000-0000-7000-8000-0000000000a3");
     private static readonly Guid MinistryId = new("0199c000-0000-7000-8000-0000000000a4");
 
+    // The Juba District node's own identity: the service account of the realm's
+    // confidential `ncbrs-district` client. A node uploads as itself, never as a
+    // person, so the batches it forwards are attributed to it; the records keep
+    // their own authors.
+    private static readonly Guid DistrictNodeId = new("0199c000-0000-7000-8000-0000000000a5");
+
     public static async Task SeedAsync(NcbrsDbContext db, CancellationToken cancellationToken = default)
     {
         // Areas are seeded first. Every facility is placed in a payam; without
@@ -109,6 +115,8 @@ public static class DevelopmentDataSeeder
             "33333333-3333-4333-8333-333333333333", "Nyandeng Wani", RegistrarRole.DistrictOfficer, cancellationToken);
         await EnsureRegistrar(db, MinistryId, Fac(1),
             "44444444-4444-4444-8444-444444444444", "Aluel Lako", RegistrarRole.MinistryAdmin, cancellationToken);
+        await EnsureRegistrar(db, DistrictNodeId, Fac(1),
+            "55555555-5555-4555-8555-555555555555", "Juba District node", RegistrarRole.DistrictOfficer, cancellationToken);
 
         // Enrolled devices, so sync and device-silence have something to show.
         // The last-seen times deliberately span the states a district queue

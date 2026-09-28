@@ -222,7 +222,7 @@ device reporting again clears it. There is no delivery channel — the queue is 
 - **Queue growing, link apparently up, and the node logs `District node
   configuration fault`?** It is not an outage, and it will not fix itself.
   *"The identity provider refused this node's credentials"*: correct
-  `Central__Username`/`__Password` (or `__ClientSecret`) and restart the node.
+  `Central__ClientSecret` (or `__Username`/`__Password`) and restart the node.
   *"The centre did not accept this node's token (HTTP 401)"*: the node's
   account is not valid in the realm the centre trusts (`Keycloak__Authority`),
   or the node's clock is wrong. Either way every batch is **held, not lost**,
@@ -315,7 +315,7 @@ their certificates trusted by its host (on Linux, the system bundle or
 |---|---|---|
 | `Central__BaseUrl` | yes | The centre's `https://` URL |
 | `Central__TokenEndpoint` | yes | The realm's `https://` token endpoint |
-| `Central__Username`, `__Password` | yes | The node's own service account, which must be able to act for every facility it serves (or `Central__ClientSecret` for a confidential client). Refused at startup without them |
+| `Central__ClientSecret` | yes | The node's own confidential client's secret (`Central__ClientId`, default `ncbrs-district`); see *Keycloak realm*. `Central__Username`/`__Password` remain for a node signing in as an account, but a production realm should not offer that. Refused at startup without either |
 | `ConnectionStrings__Default` | yes | A SQLite file on a **persistent** volume: it holds births in transit that exist nowhere else |
 
 ### Once per deployment, and after every migration
@@ -357,9 +357,16 @@ can be out of contact for weeks, far longer than an ordinary session lasts.
 **The management site (`ncbrs-web`)** lists **no** optional scopes, so it can
 never obtain an offline token.
 
-**The District node** signs in as its own account (`Central__Username` /
-`__Password`, or a confidential client's `__ClientSecret`). With direct access
-grants off on `ncbrs-device`, give it its own client.
+**Each District node has its own confidential client** (the dev realm's
+`ncbrs-district` is the reference): client credentials only — no browser flow,
+no password grant — a secret from the secret store, and a **service account**
+holding `district-officer` and the `/counties/<p-code>` group of the county it
+serves. Then provision an NCBRS registrar bound to that service account's
+subject (its Keycloak user id), at a facility in that county, so the centre
+can attribute what the node forwards to it. A node that cannot sign in holds
+every batch and logs `District node configuration fault`; nothing is lost.
+With every node on its own client, direct access grants can be turned off on
+`ncbrs-device`.
 
 After changing the realm: tokens signed by a new realm key are refused by an
 Api still holding the old key set until it re-fetches it (a few minutes); a

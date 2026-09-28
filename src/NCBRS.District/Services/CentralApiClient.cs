@@ -17,7 +17,13 @@ public class CentralApiOptions
     public string TokenEndpoint { get; set; } =
         "http://localhost:8080/realms/ncbrs/protocol/openid-connect/token";
 
-    public string ClientId { get; set; } = "ncbrs-device";
+    /// <summary>
+    /// The node's own confidential client. It signs in as itself with client
+    /// credentials (<see cref="ClientSecret"/>), never through the tablets'
+    /// client: a production realm turns the password grant off there, and a
+    /// node is not a person.
+    /// </summary>
+    public string ClientId { get; set; } = "ncbrs-district";
 
     public string? ClientSecret { get; set; }
 
@@ -90,8 +96,9 @@ public class CentralApiOptions
 
         return account || (secret && !partialAccount)
             ? null
-            : "Central:Username and Central:Password (the node's own account), or Central:ClientSecret, must be "
-              + "set outside Development: without them the node can forward nothing, and holds every batch.";
+            : "Central:ClientSecret (the node's own confidential client, Central:ClientId), or Central:Username and "
+              + "Central:Password, must be set outside Development: without them the node can forward nothing, and "
+              + "holds every batch.";
     }
 
     /// <summary>
@@ -208,8 +215,8 @@ public class CentralApiClient(
             // will not fix itself. The batch is held -- nothing is lost -- but
             // the reason is named and logged as an error.
             var fault = $"The identity provider refused this node's credentials (HTTP {(int)ex.StatusCode}) at "
-                        + $"{_options.TokenEndpoint}. Batches are held, not lost, until Central:Username and "
-                        + "Central:Password (or Central:ClientSecret) are corrected.";
+                        + $"{_options.TokenEndpoint}. Batches are held, not lost, until Central:ClientSecret "
+                        + "(or Central:Username and Central:Password) is corrected.";
             faults.Report(logger, fault);
 
             return new CentralForwardResult(false, Error: fault);
