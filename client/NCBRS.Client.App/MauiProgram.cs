@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using NCBRS.Client.App.Services;
 
 namespace NCBRS.Client.App;
 
@@ -19,19 +20,17 @@ public static class MauiProgram
         builder.Logging.AddDebug();
 #endif
 
-        // Where the shell wires the client-core. In a real build these are
-        // constructed from the encrypted local store (B2) after the registrar
-        // unlocks (B3):
-        //   - the device's persisted private key            -> DeviceSigner.FromPrivateKey(...)
-        //   - the granted BRN block + saved cursor          -> new DeviceBrnAllocator(...)
-        //   - the persisted outbox                          -> new SyncOutbox(deviceId, facilityId, restore)
-        //   - all composed into a FacilityClient for the session.
-        // The shell adds an HTTP client to POST FacilityClient.BuildSignedUpload()
-        // and a certificate printer for FacilityClient's provisional slips.
-        //
-        // builder.Services.AddSingleton<ILocalStore, EncryptedSqliteStore>();
-        // builder.Services.AddSingleton<DeviceSessionFactory>();
-        builder.Services.AddSingleton<MainPage>();
+        // The system browser for signing in, returning to the app the way each
+        // platform allows: its own scheme on Android, the loopback on Windows.
+#if ANDROID
+        builder.Services.AddSingleton<ISignInBrowser, AndroidSignInBrowser>();
+#elif WINDOWS
+        builder.Services.AddSingleton<ISignInBrowser, LoopbackSignInBrowser>();
+#endif
+
+        // One owner of the tablet's state for the life of the app: the store,
+        // the session rebuilt from it, and the sign-ins. See DeviceHost.
+        builder.Services.AddSingleton<DeviceHost>();
 
         return builder.Build();
     }

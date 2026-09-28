@@ -8,11 +8,33 @@ own, so nothing on the device can drift from the centre.
 
 ## Status
 
-It builds and runs, for Android (the tablet) and Windows (a desktop dev loop).
-The encrypted store (B2) is in: `MainPage` is still a demo, but it runs over
-the store (`DeviceStorage`), so a closed and reopened app keeps its queue and
-its next number. Sign-in, handover enrolment and PIN (B3), then the
-registration form (B4, first cut pending field research), come next. See `client/INTEGRATION.md` for what each has to wire.
+It builds and runs for Android (the tablet) and Windows (a desktop dev loop),
+and the device path works end to end. The screen shown always follows the
+tablet's stage (`Pages/Flow.cs`), never a remembered navigation stack:
+
+1. **Handover.** A district officer signs in, picks the facility, confirms it
+   by name and enrols the tablet. The enrolment is checked against the
+   registry, and the officer's session is ended afterwards.
+2. **Registrar sign-in.** Done once, in the system browser. The account is
+   checked against the tablet's facility straight away.
+3. **Setting up.** The tablet draws its first block of numbers, fetches the
+   certificate checks and the staff PINs, and asks for the registrar's PIN if
+   nobody at the facility has one yet.
+4. **Unlock.** The registrar picks their name and enters their PIN, with no
+   signal needed.
+5. **Register and sync.** The registration form is a placeholder until the B4
+   first cut.
+
+Anything that goes wrong has a way out on the tablet: **Sign in as someone
+else**, or **Wrong facility: hand over again**, which needs the officer and
+revokes the tablet at the registry first.
+
+All the app state lives in `Services/DeviceHost.cs`, which saves after every
+act; every rule lives in the core. See `client/INTEGRATION.md`.
+
+Signing in on the emulator: `adb reverse` both ports (below). **Keycloak asks
+for the account every time** (`prompt=login`), because the tablet's browser is
+shared.
 
 **Heads:** Android and Windows only. The fleet is Android; the Windows head
 exists so a screen can be worked on without an emulator. iOS and Mac Catalyst

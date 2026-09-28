@@ -645,10 +645,51 @@ tablet) and Windows (a desktop dev loop) heads, iOS/Mac Catalyst dropped. It
 stays out of `NCBRS.slnx`, and CI's "Build (MAUI Android)" job builds it alone.
 The encrypted store (B2) is built and tested in `NCBRS.Client.Storage`: AES-GCM,
 atomic saves, and a store it cannot read is an error, never an empty device.
-Still to build: the browser half of sign-in, handover
-enrolment and PIN screens (B3), a first cut of the guided form (B4, to be
-revised after field research), and QR printing (B7, waiting on a printer
-decision). **The app's data never leaves the tablet by backup or
+**The device path runs end to end on the emulator:**
+1. A district officer hands the tablet over.
+2. A registrar signs in once; unlocking uses the PIN, with no signal needed.
+3. Births are registered, synced, confirmed, and credited to the registrar
+   who unlocked.
+
+Still to build: a first cut of the guided form (B4, to be revised after field
+research), and QR printing (B7, waiting on a printer decision).
+
+**Handover is checked against the centre, never inferred** (`TabletHandover`).
+- The rule came from a live failure. A tablet revoked from the web app
+  "re-enrolled" into its dead identity, because the app read a 409 as success,
+  when the centre answers 409 for *any* id it holds, revoked included.
+- After enrolling, the device is read back with the officer's token. Only an
+  active enrolment at the chosen facility counts.
+- An id the centre won't take back gets a new key, so a new id. If the old id is
+  still active elsewhere, it is revoked first.
+- The device id is derived from the key (`DeviceIdentity.IdFor`), so an
+  interrupted handover retries as itself.
+- An officer's session is one-off (`InteractiveSignIn`) and ended at Keycloak
+  after the handover.
+- Every sign-in URL carries `prompt=login`. The tablet's browser is shared, and
+  without it the registrar is signed straight in as the officer.
+- A registrar's account is checked against the tablet's facility immediately
+  after sign-in. If it isn't permitted there, the sign-in is revoked on the
+  spot.
+- "Wrong facility: hand over again" revokes the tablet at the centre and
+  confirms it before discarding the key. It is refused while any births are
+  waiting to sync.
+
+**Staff PINs come from the centre** (draft 6.7).
+- A registrar sets their PIN at the centre, and the tablet provisions every
+  registrar's hash for its facility. Any of them can then unlock, and each
+  birth is credited to whoever unlocked.
+- Wrong guesses are counted for the *device*, not per name.
+- `PinPolicyParityTests` and `DevicePinCompatibilityTests` hold the tablet's
+  rules and lock to the centre's real code.
+- Digits are normalised to ASCII, so a PIN typed on an Arabic keypad is the
+  same PIN.
+
+**Keycloak redirect trap.** `new Uri("scheme://auth").AbsoluteUri` is
+`scheme://auth/`: .NET adds the slash and Keycloak matches exactly, so the
+Android redirect has a path (`ss.gov.ncbrs.client://auth/callback`).
+`ncbrs-device` now allows only that redirect and the Windows loopback
+`http://127.0.0.1:53682/auth`; before, it allowed `*`. **The app's data never leaves the tablet by backup or
 device transfer** (`allowBackup="false"` plus data-extraction rules): restored
 onto a second tablet, it would be two devices on one identity and one BRN
 cursor. Cleartext HTTP is allowed to `localhost` in Debug builds only.

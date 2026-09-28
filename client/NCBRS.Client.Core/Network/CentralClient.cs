@@ -62,6 +62,22 @@ public sealed record CentralResult<T>(
     string? Detail = null)
 {
     public bool Succeeded => Outcome == CentralOutcome.Succeeded;
+
+    /// <summary>
+    /// The centre refused on account of the <em>device</em>: not enrolled,
+    /// suspended, revoked, enrolled elsewhere, or not its signature. Only a
+    /// district officer can put that right, by handing the tablet over again.
+    /// </summary>
+    public bool RefusedTheDevice => RefusedOn("data.deviceId");
+
+    /// <summary>
+    /// The centre refused on account of the <em>account</em>: it may not act
+    /// for this facility. Another account can; this one never will here.
+    /// </summary>
+    public bool RefusedTheAccountHere => RefusedOn("facilityId");
+
+    private bool RefusedOn(string field)
+        => Outcome == CentralOutcome.Refused && Errors?.Any(error => error.Field == field) == true;
 }
 
 /// <summary>
@@ -106,6 +122,31 @@ public sealed class CentralClient(HttpClient http, CentralEndpoints endpoints, A
         EnrolDeviceRequest request, CancellationToken cancellationToken = default)
         => SendAsync<DeviceResponse>(
             HttpMethod.Post, endpoints.Centre, "api/devices", Envelope(request, Guid.CreateVersion7()), signer: null, cancellationToken);
+
+    /// <summary>
+    /// The centre's record of a device, read with an officer's token. What a
+    /// handover checks after enrolling, rather than trusting a status code: a
+    /// 409 means only that the id exists, in whatever state.
+    /// </summary>
+    public async Task<CentralResult<DeviceResponse>> GetDeviceAsync(
+        string deviceId, CancellationToken cancellationToken = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(endpoints.Centre, $"api/devices/{Uri.EscapeDataString(deviceId)}"));
+        return await AuthorisedExchangeAsync<DeviceResponse>(request, cancellationToken);
+    }
+
+    /// <summary>
+    /// Withdraw this device for good: the officer's act when a tablet was
+    /// handed over to the wrong facility, before it is handed over again under
+    /// a new key. There is no un-revoke at the centre; a revoked id stays
+    /// visible, and 409 answers a device that is revoked already.
+    /// </summary>
+    public Task<CentralResult<DeviceResponse>> RevokeDeviceAsync(
+        string deviceId, string reason, CancellationToken cancellationToken = default)
+        => SendAsync<DeviceResponse>(
+            HttpMethod.Post, endpoints.Centre, $"api/devices/{Uri.EscapeDataString(deviceId)}/revoke",
+            Envelope(new ChangeDeviceStatusRequest { Reason = reason }, Guid.CreateVersion7()),
+            signer: null, cancellationToken);
 
     /// <summary>
     /// Draw the next block of registration numbers for this device. Signed:
