@@ -76,7 +76,7 @@ public sealed class DeviceSession : IDisposable
 
     /// <summary>
     /// Write the session's current state into <paramref name="state"/>, leaving
-    /// what the session does not own (the offline token, the PIN) untouched.
+    /// what the session does not own (the offline token, the staff PINs and the attempt count) untouched.
     /// </summary>
     public DeviceState Capture(DeviceState state)
     {

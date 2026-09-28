@@ -8,7 +8,39 @@ namespace NCBRS.Client.Auth;
 /// the registrar can be checked offline. Only the salted PBKDF2 hash is stored —
 /// never the PIN — because the device this sits on is exactly what a thief holds.
 /// </summary>
-public sealed record PinCredential(string SaltBase64, int Iterations, string HashBase64);
+public sealed record PinCredential(string SaltBase64, int Iterations, string HashBase64)
+{
+    private const string ServerAlgorithm = "pbkdf2-sha256";
+
+    /// <summary>
+    /// A credential from the centre's self-describing hash
+    /// (<c>pbkdf2-sha256$iterations$salt$hash</c>, as the centre stores a PIN a
+    /// registrar set there). The same derivation the lock verifies with, so a
+    /// PIN set at the centre unlocks the tablet. Null for a format this device
+    /// cannot verify: an entry it cannot check must never be one that unlocks.
+    /// </summary>
+    public static PinCredential? FromServerHash(string? hash)
+    {
+        var parts = hash?.Split('$');
+        if (parts is not [ServerAlgorithm, var iterations, var salt, var derived]
+            || !int.TryParse(iterations, out var count) || count < 1)
+        {
+            return null;
+        }
+
+        try
+        {
+            Convert.FromBase64String(salt);
+            Convert.FromBase64String(derived);
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
+
+        return new PinCredential(salt, count, derived);
+    }
+}
 
 public enum UnlockOutcome
 {

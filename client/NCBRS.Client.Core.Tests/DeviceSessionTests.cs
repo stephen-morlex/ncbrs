@@ -182,13 +182,13 @@ public sealed class DeviceSessionTests : IDisposable
     {
         var state = Provisioned();
         state.OfflineToken = "offline-token";
-        state.Pin = new PinState(null, NCBRS.Client.Auth.OfflinePinLock.CreateCredential("2468", iterations: 1_000), 3, null);
+        state.Attempts = new PinAttempts(3, null);
         using var session = DeviceSession.Restore(state);
 
         session.Capture(state);
 
         Assert.Equal("offline-token", state.OfflineToken);
-        Assert.Equal(3, state.Pin.FailedAttempts);
+        Assert.Equal(3, state.Attempts.FailedAttempts);
     }
 
     [Fact]

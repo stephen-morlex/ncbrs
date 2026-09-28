@@ -44,8 +44,21 @@ public sealed class DeviceState
     /// <summary>The registrar's Keycloak offline token. Rotated on every renewal, so saved on every renewal.</summary>
     public string? OfflineToken { get; set; }
 
-    /// <summary>The registrar's PIN and how many wrong guesses have been made against it.</summary>
-    public PinState? Pin { get; set; }
+    /// <summary>
+    /// The facility's registrars and their PIN credentials, provisioned from the
+    /// centre, so any of them can unlock this tablet offline and the births
+    /// they register are credited to them.
+    /// </summary>
+    public List<StaffCredential> Staff { get; set; } = [];
+
+    /// <summary>When the staff credentials were issued by the centre.</summary>
+    public DateTime? StaffIssuedAtUtc { get; set; }
+
+    /// <summary>
+    /// Wrong PINs, counted for the <em>device</em>, not per person: per-person
+    /// counters would give a thief five guesses for every name on the list.
+    /// </summary>
+    public PinAttempts Attempts { get; set; } = new(0, null);
 }
 
 /// <summary>Fixed at handover: the enrolled device, its facility, and where it reaches the system.</summary>
@@ -71,12 +84,8 @@ public sealed record BundleState(
     IReadOnlyList<CertificateRevocationList> RevocationLists,
     DateTime FetchedAtUtc);
 
-/// <summary>
-/// The registrar the PIN unlocks, their PIN credential, and the attempt state,
-/// saved after <em>every</em> attempt.
-/// </summary>
-public sealed record PinState(
-    Guid? RegistrarId,
-    PinCredential Credential,
-    int FailedAttempts,
-    DateTime? LockedUntilUtc);
+/// <summary>A registrar who may unlock this tablet, and the credential they unlock it with.</summary>
+public sealed record StaffCredential(Guid RegistrarId, string DisplayName, RegistrarRole Role, PinCredential Credential);
+
+/// <summary>The device's unlock attempt state, saved after <em>every</em> attempt.</summary>
+public sealed record PinAttempts(int FailedAttempts, DateTime? LockedUntilUtc);

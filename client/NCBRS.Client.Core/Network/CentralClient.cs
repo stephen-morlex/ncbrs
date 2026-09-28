@@ -105,7 +105,7 @@ public sealed class CentralClient(HttpClient http, CentralEndpoints endpoints, A
     public Task<CentralResult<DeviceResponse>> EnrolDeviceAsync(
         EnrolDeviceRequest request, CancellationToken cancellationToken = default)
         => SendAsync<DeviceResponse>(
-            endpoints.Centre, "api/devices", Envelope(request, Guid.CreateVersion7()), signer: null, cancellationToken);
+            HttpMethod.Post, endpoints.Centre, "api/devices", Envelope(request, Guid.CreateVersion7()), signer: null, cancellationToken);
 
     /// <summary>
     /// Draw the next block of registration numbers for this device. Signed:
@@ -119,6 +119,7 @@ public sealed class CentralClient(HttpClient http, CentralEndpoints endpoints, A
         int blockSize = 200,
         CancellationToken cancellationToken = default)
         => SendAsync<BrnBlockResponse>(
+            HttpMethod.Post,
             endpoints.Centre,
             $"api/BirthRecords/{facilityId}/request-brn-block",
             Envelope(new BrnBlockRequest { BlockSize = blockSize, DeviceId = deviceId }, Guid.CreateVersion7()),
@@ -134,6 +135,48 @@ public sealed class CentralClient(HttpClient http, CentralEndpoints endpoints, A
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(endpoints.Centre, "api/certificates/offline-bundle"));
         return await ExchangeAsync<OfflineVerificationBundle>(request, cancellationToken);
+    }
+
+    /// <summary>
+    /// The facilities the signed-in officer may act for, to choose the one a
+    /// tablet is handed over to. The centre scopes the list to the officer's
+    /// county; the tablet does not filter it again.
+    /// </summary>
+    public async Task<CentralResult<IReadOnlyList<FacilitySummary>>> ListFacilitiesAsync(
+        string? name = null, CancellationToken cancellationToken = default)
+    {
+        var path = $"api/facilities?limit={PageRequest.MaxLimit}"
+                   + (string.IsNullOrWhiteSpace(name) ? "" : $"&name={Uri.EscapeDataString(name.Trim())}");
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(endpoints.Centre, path));
+        var page = await AuthorisedExchangeAsync<Page<FacilitySummary>>(request, cancellationToken);
+        return new CentralResult<IReadOnlyList<FacilitySummary>>(
+            page.Outcome, page.Value?.Items, page.StatusCode, page.Errors, page.RetryAfter, page.Detail);
+    }
+
+    /// <summary>
+    /// Set, or change, the signed-in registrar's own offline PIN at the centre.
+    /// The centre holds the policy (length, no repeats, no runs) and answers
+    /// Refused with the reason; changing a PIN needs the current one, so a
+    /// token alone cannot lock a colleague out.
+    /// </summary>
+    public Task<CentralResult<SetDevicePinResponse>> SetOwnPinAsync(
+        string pin, string? currentPin = null, CancellationToken cancellationToken = default)
+        => SendAsync<SetDevicePinResponse>(
+            HttpMethod.Put, endpoints.Centre, "api/me/device-pin",
+            Envelope(new SetDevicePinRequest { Pin = pin, CurrentPin = currentPin }, Guid.CreateVersion7()),
+            signer: null, cancellationToken);
+
+    /// <summary>
+    /// The PIN hashes of the facility's registrars, which is what lets any of
+    /// them unlock this tablet offline. Every fetch is audited at the centre
+    /// against the device named here.
+    /// </summary>
+    public async Task<CentralResult<DeviceCredentialBundle>> FetchStaffCredentialsAsync(
+        Guid facilityId, string deviceId, CancellationToken cancellationToken = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(endpoints.Centre,
+            $"api/facilities/{facilityId}/device-credentials?deviceId={Uri.EscapeDataString(deviceId)}"));
+        return await AuthorisedExchangeAsync<DeviceCredentialBundle>(request, cancellationToken);
     }
 
     /// <summary>
@@ -160,9 +203,9 @@ public sealed class CentralClient(HttpClient http, CentralEndpoints endpoints, A
             ClientJson.Options);
 
     private async Task<CentralResult<T>> SendAsync<T>(
-        Uri root, string path, byte[] body, DeviceSigner? signer, CancellationToken cancellationToken)
+        HttpMethod method, Uri root, string path, byte[] body, DeviceSigner? signer, CancellationToken cancellationToken)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(root, path)) { Content = Json(body) };
+        using var request = new HttpRequestMessage(method, new Uri(root, path)) { Content = Json(body) };
 
         // Serialised once and these exact bytes signed and sent: re-serialising
         // after signing changes whitespace or order and the signature fails.

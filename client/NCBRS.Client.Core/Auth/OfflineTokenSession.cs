@@ -96,20 +96,7 @@ public sealed class OfflineTokenSession(
 
     /// <summary>Where to send the registrar's browser to sign in.</summary>
     public Uri AuthorizationUrl(PkceChallenge pkce, Uri redirectUri)
-    {
-        var query = new Dictionary<string, string>
-        {
-            ["response_type"] = "code",
-            ["client_id"] = endpoints.ClientId,
-            ["redirect_uri"] = redirectUri.AbsoluteUri,
-            ["scope"] = Scope,
-            ["state"] = pkce.State,
-            ["code_challenge"] = pkce.Challenge,
-            ["code_challenge_method"] = "S256",
-        };
-
-        return new Uri($"{endpoints.Authorization.AbsoluteUri}?{string.Join("&", query.Select(pair => $"{pair.Key}={Uri.EscapeDataString(pair.Value)}"))}");
-    }
+        => AuthorizationCodeFlow.Url(endpoints, pkce, redirectUri, Scope);
 
     /// <summary>
     /// Complete a sign-in: trade the code the browser came back with for the
@@ -119,18 +106,11 @@ public sealed class OfflineTokenSession(
     public async Task<SignInResult> RedeemAsync(
         string code, PkceChallenge pkce, Uri redirectUri, CancellationToken cancellationToken = default)
     {
-        using var response = await http.PostAsync(endpoints.Token, new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            ["grant_type"] = "authorization_code",
-            ["client_id"] = endpoints.ClientId,
-            ["code"] = code,
-            ["redirect_uri"] = redirectUri.AbsoluteUri,
-            ["code_verifier"] = pkce.Verifier,
-        }), cancellationToken);
+        using var response = await AuthorizationCodeFlow.ExchangeAsync(http, endpoints, code, pkce, redirectUri, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
-            return new SignInResult(false, $"The sign-in was not accepted ({(int)response.StatusCode} {await ErrorOf(response, cancellationToken)}).");
+            return new SignInResult(false, await AuthorizationCodeFlow.RefusalAsync(response, cancellationToken));
         }
 
         return await AcceptAsync(await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken), cancellationToken);
@@ -273,7 +253,7 @@ public sealed class OfflineTokenSession(
         }
     }
 
-    private static async Task<string?> ErrorOf(HttpResponseMessage response, CancellationToken cancellationToken)
+    internal static async Task<string?> ErrorOf(HttpResponseMessage response, CancellationToken cancellationToken)
     {
         try
         {

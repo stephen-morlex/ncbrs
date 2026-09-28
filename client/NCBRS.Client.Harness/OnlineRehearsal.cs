@@ -80,6 +80,29 @@ internal static class OnlineRehearsal
             return 1;
         }
 
+        // 2b. The registrar sets their offline PIN at the centre, the device
+        //     provisions its facility's staff credentials, and that PIN unlocks
+        //     the tablet with no network: the centre's hash and the tablet's lock
+        //     agreeing, live. The current PIN is sent as well, so a re-run
+        //     against a database where it is already set changes nothing.
+        const string pin = "246813";
+        var pinSet = await asRegistrar.SetOwnPinAsync(pin, currentPin: pin);
+        Check("the registrar set their offline PIN at the centre", pinSet.Succeeded, Describe(pinSet));
+        var staff = await asRegistrar.FetchStaffCredentialsAsync(facilityId, deviceId);
+        var deviceState = new NCBRS.Client.Storage.DeviceState();
+        if (staff.Value is { } bundle)
+        {
+            NCBRS.Client.Storage.StaffUnlock.Provision(deviceState, bundle);
+        }
+
+        var unlocker = deviceState.Staff.Find(person => person.RegistrarId == pinSet.Value?.RegistrarId);
+        Check("the device provisioned the facility's staff credentials, the registrar among them",
+            staff.Succeeded && unlocker is not null, Describe(staff));
+        Check("the PIN set at the centre unlocks the tablet offline, and a wrong one does not",
+            unlocker is not null
+            && !NCBRS.Client.Storage.StaffUnlock.Attempt(deviceState, unlocker.RegistrarId, "975310", DateTime.UtcNow).Unlocked
+            && NCBRS.Client.Storage.StaffUnlock.Attempt(deviceState, unlocker.RegistrarId, pin, DateTime.UtcNow).Unlocked);
+
         var facility = new FacilityClient(
             deviceId, facilityId,
             new DeviceBrnAllocator(deviceId, block.Value!.BlockStart, block.Value.BlockEnd),
