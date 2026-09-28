@@ -1119,6 +1119,46 @@ pre-audit authorization sweep, plan §17 24).
   surveillance risk is name search, which *is* scoped. Recorded for the
   auditor as a choice to confirm, not an oversight.
 
+## Sealed USB transfer files (WS-H2, registry side built)
+A post with no network at all carries its births on a USB stick to a
+connected sync point. The signed transfer envelope gave integrity (a changed
+file is refused) but **no confidentiality**: names and dates of birth sat in
+it as base64, on media that passes through several hands. Now a file is
+**signed, then sealed** to the registry.
+
+- **`SealedTransfer` (Contracts)** is ECIES over P-256: a fresh ephemeral key
+  per file, ECDH with the registry's key, HKDF-SHA256, and AES-256-GCM. The
+  version, key id and ephemeral key are bound in as associated data. That
+  binding is mutation-checked: without it, a file relabelled with another key
+  id opened.
+- **A fresh key per file** means no two files share a key, and a tablet holds
+  nothing that opens a stick, not even one it sealed.
+- It lives in Contracts, like `DeviceSignature`, because the tablet seals and
+  the registry opens. `TransferEnvelopes` (the signed envelope) moved there
+  for the same reason.
+- **The transfer key is not the signing key.** One proves documents genuine
+  and is published; the other decrypts personal data and never leaves the
+  registry.
+  - `TransferKeyring` is loaded and resolved at startup (the #125 lesson). It
+    is refused outside Development without `TransferEncryption:PrivateKeyPath`,
+    or with the development key id.
+  - Development may use a throwaway key.
+  - Unlike retired *signing* keys, retired *transfer* keys keep their private
+    halves: a stick sealed before a rotation may take weeks to arrive.
+- **The public half rides in the offline bundle** (`TransferKey`), which a
+  tablet already refreshes. It exports exactly when it cannot reach the
+  registry, so it must already hold the key.
+- **`POST /api/Sync/transfers`** takes the sealed file as the usual
+  `ApiRequest` data (it is JSON). It opens the file, checks the envelope's
+  device matches its batch, then runs **the same pipeline as a sync**
+  (`ProcessBatchAsync`): the signing device's enrolment and signature, the
+  uploader's permission for the facility, per-record processing. The audit
+  says how the batch arrived (`SyncBatchProcessed:SealedTransfer:{keyId}`).
+- Uploaded twice (two sticks, or a stick and a later sync), the births are held
+  once, since records deduplicate by BRN.
+- **Still to build:** the tablet's export screen, and an upload page for
+  district officers in the web app.
+
 ## Device silence alerts (WS-F4, built)
 "A silent device is indistinguishable from a district with no births, and only
 one of those needs intervention" — the plan's own note, and the whole

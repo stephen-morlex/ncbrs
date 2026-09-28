@@ -114,6 +114,11 @@ builder.Services.AddScoped<CountyLookup>();
 builder.Services.Configure<CertificateSigningOptions>(
     builder.Configuration.GetSection(CertificateSigningOptions.SectionName));
 builder.Services.AddSingleton<CertificateSigner>();
+// The key USB transfer files are sealed to. Held for the process like the
+// signing key, and separate from it: see TransferEncryptionOptions.
+builder.Services.Configure<TransferEncryptionOptions>(
+    builder.Configuration.GetSection(TransferEncryptionOptions.SectionName));
+builder.Services.AddSingleton<TransferKeyring>();
 builder.Services.Configure<StatutoryRegistrationOptions>(
     builder.Configuration.GetSection(StatutoryRegistrationOptions.SectionName));
 builder.Services.Configure<CertificateRevocationOptions>(
@@ -371,6 +376,10 @@ var app = builder.Build();
 if (!generatingOpenApiDocument)
 {
     app.Services.GetRequiredService<CertificateSigner>();
+
+    // The transfer key likewise: a registry that cannot open a sealed file
+    // would accept tablets' exports into nothing.
+    app.Services.GetRequiredService<TransferKeyring>();
 }
 
 // A device signs the bytes it sent, so verification needs those bytes back

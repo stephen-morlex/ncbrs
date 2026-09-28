@@ -72,5 +72,17 @@ public record OfflineVerificationBundle(
     /// every certificate signed before the rotation -- years of genuine
     /// documents -- and be unable to tell that from a forgery.
     /// </summary>
-    IReadOnlyList<VerificationKeyResponse> Keys
+    IReadOnlyList<VerificationKeyResponse> Keys,
+
+    /// <summary>
+    /// The registry's transfer key: what a tablet seals a USB transfer file
+    /// to, so the births on the stick can be read by the registry alone. In the
+    /// bundle because a tablet exports exactly when it cannot reach the
+    /// registry, and must already hold the key. Null from a registry that
+    /// predates sealed transfers.
+    /// </summary>
+    TransferKeyResponse? TransferKey = null
 );
+
+/// <summary>The public half of the registry's transfer key (<c>SealedTransfer</c>): P-256, SPKI PEM.</summary>
+public record TransferKeyResponse(string KeyId, string Algorithm, string PublicKeyPem);

@@ -48,10 +48,90 @@ public class SyncController(
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<SyncBatchResponse>> SubmitBatch(ApiRequest<SyncBatchRequest> envelope)
-    {
-        var batch = envelope.Data;
-        var transactionId = TransactionContext.Get(HttpContext)?.TransactionId;
+        => await ProcessBatchAsync(
+            envelope.Data,
+            await Request.ReadRawAsync(HttpContext.RequestAborted),
+            Request.Headers[DeviceSignature.HeaderName],
+            TransactionContext.Get(HttpContext)?.TransactionId,
+            via: null);
 
+    /// <summary>
+    /// Receives a sealed USB transfer file (WS-H2) carried from a post with no
+    /// network at all, uploaded by whoever brought it to a connection — a
+    /// district office, a connected clinic.
+    ///
+    /// The file is opened with the registry's transfer key, which only the
+    /// registry holds; carriers pass on what they cannot read. Inside is the
+    /// device's signed batch, and from there it is exactly a sync: the same
+    /// enrolment and signature checks against the <em>device</em> that
+    /// signed it, the same per-record processing, the same answer. The
+    /// uploader must still be permitted for the batch's facility, as for any
+    /// sync.
+    /// </summary>
+    [HttpPost("transfers", Name = "UploadSealedTransfer")]
+    [ProducesResponseType(typeof(SyncBatchResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<SyncBatchResponse>> SubmitTransfer(
+        ApiRequest<SealedTransferFile> upload,
+        [FromServices] TransferKeyring transferKeys,
+        [FromServices] Microsoft.Extensions.Options.IOptions<Microsoft.AspNetCore.Mvc.JsonOptions> json)
+    {
+        // The sealed file is JSON already, so it travels as the data of the
+        // usual envelope: documented in the contract like any other body, and
+        // an upload retried under the same transaction id replays its answer.
+        var opened = transferKeys.Open(upload.Data);
+        if (!opened.Opened)
+        {
+            return ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status400BadRequest, "Transfer file not opened.", "file", opened.Reason!));
+        }
+
+        var envelope = TransferEnvelopes.Read(opened.Plaintext);
+        if (!envelope.Accepted)
+        {
+            return ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status400BadRequest, "Transfer file not readable.", "file", envelope.Reason!));
+        }
+
+        ApiRequest<SyncBatchRequest>? request;
+        try
+        {
+            request = System.Text.Json.JsonSerializer.Deserialize<ApiRequest<SyncBatchRequest>>(
+                envelope.Body, json.Value.JsonSerializerOptions);
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            request = null;
+        }
+
+        if (request?.Data is not { } batch)
+        {
+            return ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status400BadRequest, "Transfer file not readable.", "file",
+                "The transfer file does not carry a sync batch."));
+        }
+
+        // The envelope names the device that signed it; the batch inside must
+        // be that device's. Otherwise one device's signature could be carried
+        // on another's batch — the signature check would still run against the
+        // batch's device and fail, but the refusal would blame the wrong one.
+        if (!string.Equals(envelope.DeviceId, batch.DeviceId, StringComparison.Ordinal))
+        {
+            return ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status400BadRequest, "Transfer file not readable.", "file",
+                $"The transfer file is from device '{envelope.DeviceId}' but carries a batch from '{batch.DeviceId}'."));
+        }
+
+        return await ProcessBatchAsync(batch, envelope.Body!, envelope.Signature, request.Meta?.TransactionId,
+            via: $"SealedTransfer:{opened.KeyId}");
+    }
+
+    private async Task<ActionResult<SyncBatchResponse>> ProcessBatchAsync(
+        SyncBatchRequest batch, ReadOnlyMemory<byte> rawBody, string? signature, Guid? transactionId, string? via)
+    {
         var registrar = await currentRegistrar.GetAsync(HttpContext.RequestAborted);
         if (registrar is null)
         {
@@ -85,8 +165,8 @@ public class SyncController(
         var deviceCheck = await devices.CheckAsync(
             batch.DeviceId,
             batch.FacilityId,
-            await Request.ReadRawAsync(HttpContext.RequestAborted),
-            Request.Headers[DeviceSignature.HeaderName],
+            rawBody,
+            signature,
             HttpContext.RequestAborted);
 
         if (!deviceCheck.Accepted)
@@ -157,7 +237,9 @@ public class SyncController(
             EntityType = nameof(SyncBatch),
             CountyCode = await districts.ForFacilityAsync(batch.FacilityId, HttpContext.RequestAborted),
             EntityId = syncBatch.SyncBatchId.ToString(),
-            Action = "SyncBatchProcessed",
+            // How the batch arrived is part of its chain of custody: a sealed
+            // file on a stick passed through hands a direct upload did not.
+            Action = via is null ? "SyncBatchProcessed" : $"SyncBatchProcessed:{via}",
             UserId = registrar.RegistrarId,
             DeviceId = batch.DeviceId,
             TransactionId = transactionId

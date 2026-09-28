@@ -283,6 +283,8 @@ their certificates trusted by its host (on Linux, the system bundle or
 | `Keycloak__Authority` | yes | The realm's `https://` URL, exactly as in the tokens' `iss` |
 | `CertificateSigning__PfxPath`, `__PfxPassword` | yes | The signing key (secret store or HSM): ECDSA P-256. Refused at startup without it |
 | `CertificateSigning__KeyId` | yes | A production-unique id, printed in every QR. The default `ncbrs-dev` is refused at startup. On rotation, the outgoing key goes in `RetiredKeys` (public certificate only) |
+| `TransferEncryption__PrivateKeyPath` | yes | The transfer key tablets seal USB transfer files to (P-256, PKCS#8 PEM, from the secret store): `openssl ecparam -name prime256v1 -genkey -noout \| openssl pkcs8 -topk8 -nocrypt`. It **decrypts personal data**, so it is a separate key from the signing key and never published. Refused at startup without it |
+| `TransferEncryption__KeyId` | yes | A production-unique id, named in every sealed file. The default `ncbrs-transfer-dev` is refused at startup. On rotation, keep the outgoing key in `RetiredKeys` **with its private key**: a stick sealed before the rotation may take weeks to arrive |
 | `WebClientCors__AllowedOrigins__0` | if the site is on another origin | Exact `https://` origin; wildcards refused |
 | `UnauthenticatedRateLimit__TrustedProxies__0` | if behind a proxy | The proxy's IP, so `X-Forwarded-For` is believed from it and nowhere else |
 | `StatutoryRegistration__WindowDays` | if the Act differs | Set in law; default 90 |
