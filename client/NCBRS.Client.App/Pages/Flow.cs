@@ -36,6 +36,13 @@ public abstract class FlowPage : ContentPage
 
     protected ActivityIndicator Busy { get; }
 
+    protected ScrollView? Scroller { get; private set; }
+
+    /// <summary>
+    /// Lays the page out. The status line goes at the end unless the page places
+    /// it itself: on a long form it belongs beside the button that produced it,
+    /// or it lands below the fold and the tap appears to do nothing.
+    /// </summary>
     protected void Build(params View[] views)
     {
         var stack = new VerticalStackLayout { Padding = 24, Spacing = 14 };
@@ -44,9 +51,27 @@ public abstract class FlowPage : ContentPage
             stack.Add(view);
         }
 
-        stack.Add(Busy);
-        stack.Add(Status);
-        Content = new ScrollView { Content = stack };
+        if (!views.Contains(Busy))
+        {
+            stack.Add(Busy);
+        }
+
+        if (!views.Contains(Status))
+        {
+            stack.Add(Status);
+        }
+
+        Content = Scroller = new ScrollView { Content = stack };
+    }
+
+    /// <summary>Show a problem where the registrar is looking: set it, and bring it into view.</summary>
+    protected async Task ShowProblemAsync(string text)
+    {
+        Status.Text = text;
+        if (Scroller is not null)
+        {
+            await Scroller.ScrollToAsync(Status, ScrollToPosition.Center, animated: true);
+        }
     }
 
     /// <summary>Run an act with the page busy, showing a failure rather than crashing the app.</summary>

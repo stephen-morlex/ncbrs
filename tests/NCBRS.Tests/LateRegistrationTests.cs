@@ -162,6 +162,46 @@ public class LateRegistrationTests : IDisposable
             .IssueAsync(brn, registrar, "TABLET-07", Guid.CreateVersion7());
     }
 
+    // --- the tablet decides lateness as the centre does ---------------------
+
+    /// <summary>
+    /// The tablet shows the late-registration section, and requires it, by its
+    /// own reckoning of the window. If that reckoning differed from the
+    /// service's by a day, births on the boundary would be refused at sync,
+    /// weeks later, in one direction or the other. So the real service and the
+    /// tablet's rule are run over the same births, either side of the edge.
+    /// </summary>
+    [Theory]
+    [InlineData(89, false)]
+    [InlineData(90, false)]
+    [InlineData(91, false)]
+    [InlineData(200, false)]
+    [InlineData(89, true)]
+    [InlineData(90, true)]
+    [InlineData(91, true)]
+    [InlineData(200, true)]
+    public async Task TheTabletDecidesLatenessAsTheCentreDoes(int bornDaysAgo, bool withEvidence)
+    {
+        var capturedAt = DateTime.UtcNow;
+        var request = Request($"1001{bornDaysAgo:D2}", bornDaysAgo, capturedAt, withEvidence ? Evidence() : null);
+
+        var centreRefuses = (await RegisterAsync(request)).Outcome == RegistrationOutcome.LateRegistrationEvidenceRequired;
+        var tabletRefuses = NCBRS.Client.RegistrationRules.WindowProblems(request, WindowDays)
+            .Any(problem => problem.Field == "lateRegistration");
+
+        Assert.Equal(centreRefuses, tabletRefuses);
+        Assert.Equal(bornDaysAgo > WindowDays, NCBRS.Client.RegistrationRules.IsLate(request.DateOfBirth, capturedAt, WindowDays));
+    }
+
+    [Fact]
+    public void TheTabletsWindowIsTheCentresDefault()
+    {
+        var centre = new StatutoryRegistrationOptions();
+
+        Assert.Equal(centre.WindowDays, NCBRS.Client.RegistrationRules.DefaultStatutoryWindowDays);
+        Assert.Equal(centre.ClockSkewTolerance, NCBRS.Client.RegistrationRules.ClockSkewTolerance);
+    }
+
     // --- the window -------------------------------------------------------
 
     [Fact]
