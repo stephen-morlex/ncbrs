@@ -17,7 +17,7 @@ public class FacilityClientTests
 {
     private const string Device = "TABLET-1";
     private static readonly Guid Facility = Guid.Parse("0199c000-0000-7000-8000-00000000f001");
-    private static readonly JsonSerializerOptions Json = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    private static readonly JsonSerializerOptions Json = NCBRS.Client.Network.ClientJson.Options;
 
     private static (FacilityClient Client, DeviceSigner Signer) Build(long blockStart = 100_000, long blockEnd = 100_009)
     {
@@ -44,9 +44,12 @@ public class FacilityClientTests
         Assert.False(draft.IsProvisional);
         Assert.Equal(1, client.PendingCount);
 
-        // The number, facility and device are the client's to set.
-        var batch = JsonSerializer.Deserialize<SyncBatchRequest>(client.BuildSignedUpload().Body, Json)!;
-        var record = Assert.Single(batch.Records);
+        // The number, facility and device are the client's to set -- inside the
+        // { meta, data } envelope the centre binds, under the upload's own id.
+        var upload = client.BuildSignedUpload();
+        var envelope = JsonSerializer.Deserialize<ApiRequest<SyncBatchRequest>>(upload.Body, Json)!;
+        Assert.Equal(upload.TransactionId, envelope.Meta!.TransactionId);
+        var record = Assert.Single(envelope.Data.Records);
         Assert.Equal("100000", record.Birth.Brn);
         Assert.Equal(Facility, record.Birth.FacilityId);
         Assert.Equal(Device, record.Birth.DeviceId);
@@ -107,8 +110,10 @@ public class FacilityClientTests
         var opened = OfflineTransferFile.Open(file, signer.PublicKeyPem);
 
         Assert.True(opened.Accepted);
-        var batch = JsonSerializer.Deserialize<SyncBatchRequest>(opened.Body!, Json)!;
-        Assert.Equal("100000", Assert.Single(batch.Records).Birth.Brn);
+        // The same envelope an upload sends, so a sync point can forward it verbatim.
+        var envelope = JsonSerializer.Deserialize<ApiRequest<SyncBatchRequest>>(opened.Body!, Json)!;
+        Assert.NotNull(envelope.Meta?.TransactionId);
+        Assert.Equal("100000", Assert.Single(envelope.Data.Records).Birth.Brn);
     }
 
     [Fact]

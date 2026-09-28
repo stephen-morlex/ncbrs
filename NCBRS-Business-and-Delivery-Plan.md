@@ -654,7 +654,7 @@ row.
 | # | Task | Notes |
 |---|---|---|
 | 12 | **B4 field research with midwives and CHWs — start now** | Longest lead time; cannot be parallelised (§15, "the scheduling trap") |
-| 13 | MAUI shell: B2 encrypted store, B3 unlock screen, B7 QR printing, B8 scheduled bundle refetch, platform boilerplate | Every piece of offline logic it wraps is built and tested in `client/NCBRS.Client.Core` |
+| 13 | MAUI shell: B2 encrypted store, B3 unlock screen, B7 QR printing, B8 scheduled bundle refetch, platform boilerplate | Every piece of offline logic it wraps is built and tested in `client/NCBRS.Client.Core`, **and so is the network layer** (#127): every call to the centre or a District node, and the connectivity window that drives them, proven in Production by the TLS rehearsal. Building it found the device's upload shape had never been acceptable to the centre. **Still a decision:** how a registrar signs in on a tablet (password grant and a 30-minute idle session in the dev realm) |
 
 ### D. Needs infrastructure
 
