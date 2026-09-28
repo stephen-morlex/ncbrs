@@ -88,10 +88,17 @@ bundle (which carries the whole key set) resolves it.
 
 ## Incident: the Api refuses to start (certificate signing)
 
-Outside Development, signing refuses to start without
-`CertificateSigning:PfxPath`. Provide the real key (secret store / HSM). The dev
-fallback mints a throwaway key whose certificates stop verifying on restart, so
-never rely on it outside dev.
+Outside Development, the Api refuses to start without
+`CertificateSigning:PfxPath` (an ECDSA P-256 key), with a key it cannot read,
+or with `CertificateSigning:KeyId` left at the development default `ncbrs-dev`.
+Provide the real key (secret store / HSM) and a production-unique key id. The
+dev fallback mints a throwaway key whose certificates stop verifying on restart,
+so never rely on it outside dev.
+
+Until #125 this was only checked on first use: an Api with no key started,
+reported `/health` ok, and failed every certificate operation with a 500 —
+including the offline bundle, so facility tablets could not refresh and their
+verification went to "Unknown" as their caches expired.
 
 ## Incident: a service refuses to start (HTTPS, CORS, database or Kafka TLS)
 
@@ -208,6 +215,79 @@ by BRN, never counters, so the same event applied twice says what it said once.
 Replaying a partition, or rebuilding from offset 0, leaves totals unchanged;
 out-of-order arrivals are held and applied in occurrence order. Replay is a
 supported operation, not a fault.
+
+## Deployment: production configuration checklist
+
+Everything a deployment must set, per service. Every value comes from the
+environment or a secret store: the shipped `appsettings.json` names no
+address, credential or instance (the Development file carries the local
+stack's), and every service refuses to start outside Development when a link
+is not encrypted and verified. **`scripts/tls-rehearsal.sh` is a working
+example of all of it** — it runs each service in Production against TLS
+Postgres, Kafka and Keycloak, and CI runs it on every pull request.
+
+Never set `ASPNETCORE_ENVIRONMENT` / `DOTNET_ENVIRONMENT` to `Development` to
+get past a refusal: that also migrates and seeds on startup and allows the
+throwaway signing key.
+
+**Every service that talks to Keycloak or Postgres** needs the CA that signed
+their certificates trusted by its host (on Linux, the system bundle or
+`SSL_CERT_FILE`), and Postgres connections name theirs too.
+
+### Api (`NCBRS.Api`)
+
+| Setting | Required | Notes |
+|---|---|---|
+| `Database__Provider` | `Postgres` | SQLite is refused |
+| `ConnectionStrings__Default` | yes | `SSL Mode=VerifyFull` (or `VerifyCA`), `Root Certificate=<path>` if the CA is not in the system store. Connect as the **application role**, never the owner (see *database privileges*) |
+| `Keycloak__Authority` | yes | The realm's `https://` URL, exactly as in the tokens' `iss` |
+| `CertificateSigning__PfxPath`, `__PfxPassword` | yes | The signing key (secret store or HSM): ECDSA P-256. Refused at startup without it |
+| `CertificateSigning__KeyId` | yes | A production-unique id, printed in every QR. The default `ncbrs-dev` is refused at startup. On rotation, the outgoing key goes in `RetiredKeys` (public certificate only) |
+| `WebClientCors__AllowedOrigins__0` | if the site is on another origin | Exact `https://` origin; wildcards refused |
+| `UnauthenticatedRateLimit__TrustedProxies__0` | if behind a proxy | The proxy's IP, so `X-Forwarded-For` is believed from it and nowhere else |
+| `StatutoryRegistration__WindowDays` | if the Act differs | Set in law; default 90 |
+| TLS | yes | Terminate at the proxy, or set `ASPNETCORE_URLS=https://…` with `ASPNETCORE_Kestrel__Certificates__Default__Path`/`__KeyPath` |
+
+`DeviceEnrolment__Required` and `__RequireSignature` default to on and stay on.
+
+### Relay (`NCBRS.Relay`)
+
+| Setting | Required | Notes |
+|---|---|---|
+| `Database__Provider`, `ConnectionStrings__Default` | yes | As the Api |
+| `Kafka__BootstrapServers` | yes | The broker's TLS listener |
+| `Kafka__SaslUsername`, `__SaslPassword` | yes | SCRAM-SHA-512 by default (`Kafka__SaslMechanism`). Or `Kafka__SecurityProtocol=Ssl` with `__SslCertificateLocation`/`__SslKeyLocation` |
+| `Kafka__SslCaLocation` | if the broker's CA is not in the system store | |
+
+### Consumer (`NCBRS.Consumer`)
+
+| Setting | Required | Notes |
+|---|---|---|
+| `Keycloak__Authority` | yes | As the Api |
+| `Kafka__*` | yes | As the Relay, with its own credentials |
+| `ConnectionStrings__ReadModel` | yes | Its own store (the reporting replica); rebuildable from Kafka, so it needs no backup |
+| `Dhis2Export__*` | before exporting | Data element UIDs and `OrgUnits__<county p-code>` (see *DHIS2 export configuration*) |
+| `WebClientCors__AllowedOrigins__0` | as the Api | |
+
+### District node (`NCBRS.District`)
+
+| Setting | Required | Notes |
+|---|---|---|
+| `Central__BaseUrl` | yes | The centre's `https://` URL |
+| `Central__TokenEndpoint` | yes | The realm's `https://` token endpoint |
+| `Central__Username`, `__Password` | yes | The node's own service account, which must be able to act for every facility it serves |
+| `ConnectionStrings__Default` | yes | A SQLite file on a **persistent** volume: it holds births in transit that exist nowhere else |
+
+### Once per deployment, and after every migration
+
+- Apply migrations as a deployment step (`dotnet ef database update`), never
+  from a running service.
+- Run `deploy/postgres/app-role-grants.sql` as the owner (see *database
+  privileges*).
+- Keycloak: the county groups and group-membership mapper (see *county
+  groups*).
+- WAL archiving on its own volume, and monitoring on the Api's `/health`
+  `status` (see the WAL incident).
 
 ## Deployment: county groups in Keycloak (reporting scope)
 

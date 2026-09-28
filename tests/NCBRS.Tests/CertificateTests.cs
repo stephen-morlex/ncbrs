@@ -117,6 +117,52 @@ public class CertificateSignerTests
     [Fact]
     public void WithoutOptingIn_EvenDevelopmentRefusesToStart()
         => Assert.Throws<InvalidOperationException>(() => Signer(allowEphemeral: false));
+
+    /// <summary>A real ECDSA P-256 key in a PFX, as a deployment supplies one.</summary>
+    private static string ProductionKeyFile()
+    {
+        using var key = System.Security.Cryptography.ECDsa.Create(System.Security.Cryptography.ECCurve.NamedCurves.nistP256);
+        var request = new System.Security.Cryptography.X509Certificates.CertificateRequest(
+            "CN=NCBRS test signing key", key, System.Security.Cryptography.HashAlgorithmName.SHA256);
+        using var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(1));
+
+        var path = Path.Combine(Path.GetTempPath(), $"ncbrs-signing-{Guid.NewGuid():N}.pfx");
+        File.WriteAllBytes(path, certificate.Export(System.Security.Cryptography.X509Certificates.X509ContentType.Pfx, "test"));
+        return path;
+    }
+
+    private static CertificateSigner ProductionSigner(string keyId, string pfxPath, string environment = "Production")
+        => new(
+            Options.Create(new CertificateSigningOptions { PfxPath = pfxPath, PfxPassword = "test", KeyId = keyId }),
+            new DevelopmentEnvironment { EnvironmentName = environment },
+            NullLogger<CertificateSigner>.Instance);
+
+    /// <summary>
+    /// The key id is printed in every certificate's QR and selects the key that
+    /// verifies it. A production key under the default id would claim to be
+    /// the same key as every developer's throwaway one.
+    /// </summary>
+    [Fact]
+    public void AProductionKeyUnderTheDevelopmentIdIsRefused()
+    {
+        var pfx = ProductionKeyFile();
+        try
+        {
+            var refused = Assert.Throws<InvalidOperationException>(
+                () => ProductionSigner(CertificateSigningOptions.DevelopmentKeyId, pfx));
+            Assert.Contains("KeyId", refused.Message);
+
+            using var production = ProductionSigner("ncbrs-moh-2026", pfx);
+            Assert.Equal("ncbrs-moh-2026", production.KeyId);
+
+            // Development keeps the default: it is what the throwaway key uses.
+            using var development = ProductionSigner(CertificateSigningOptions.DevelopmentKeyId, pfx, Environments.Development);
+        }
+        finally
+        {
+            File.Delete(pfx);
+        }
+    }
 }
 
 /// <summary>
