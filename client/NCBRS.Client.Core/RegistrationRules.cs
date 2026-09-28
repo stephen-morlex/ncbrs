@@ -26,6 +26,23 @@ public static class RegistrationRules
     /// </summary>
     public const int DefaultStatutoryWindowDays = 90;
 
+    /// <summary>
+    /// The window the registry applied, read from its refusal of a birth on the
+    /// statutory window ("…outside the 30-day statutory window…"). When the
+    /// registry has ruled on a birth, its window is the truth, not this
+    /// tablet's default: a correction judged by the default would show the
+    /// wrong part of the form, or refuse the very evidence the registry asked
+    /// for. Null when no refusal names one. <c>LateRegistrationTests</c> reads
+    /// it back from the real service's words.
+    /// </summary>
+    public static int? WindowStatedIn(IEnumerable<ApiError> reasons)
+        => reasons
+            .Where(reason => reason.Field == "lateRegistration")
+            .Select(reason => System.Text.RegularExpressions.Regex.Match(reason.Message, @"(\d+)-day statutory window"))
+            .Where(match => match.Success)
+            .Select(match => (int?)int.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture))
+            .FirstOrDefault();
+
     /// <summary>How far ahead of the centre's clock a device's clock may be before a date is refused as in the future.</summary>
     public static readonly TimeSpan ClockSkewTolerance = TimeSpan.FromHours(12);
 

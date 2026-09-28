@@ -60,7 +60,9 @@ public sealed class DeviceSession : IDisposable
         var allocator = new DeviceBrnAllocator(
             identity.DeviceId, brn.BlockStart, brn.BlockEnd, brn.NextAvailable,
             brn.ProvisionalSequence, brn.PendingBlockStart, brn.PendingBlockEnd);
-        var outbox = new SyncOutbox(identity.DeviceId, identity.FacilityId, state.Outbox);
+        var outbox = new SyncOutbox(
+            identity.DeviceId, identity.FacilityId, state.Outbox,
+            state.Refused.ToDictionary(entry => entry.Key, entry => (IReadOnlyList<NCBRS.Models.ApiError>)entry.Value));
         var facility = new FacilityClient(identity.DeviceId, identity.FacilityId, allocator, outbox, signer, lowBlockThreshold);
 
         var sync = new ClientSyncState
@@ -86,6 +88,7 @@ public sealed class DeviceSession : IDisposable
             _brn.BlockStart, _brn.BlockEnd, _brn.NextAvailable, _brn.ProvisionalSequence,
             _brn.PendingBlockStart, _brn.PendingBlockEnd);
         state.Outbox = [.. _outbox.Pending];
+        state.Refused = _outbox.Refused.ToDictionary(entry => entry.Key, entry => entry.Value.ToList());
         state.InFlight = Sync.InFlight;
         state.Bundle = Sync.Bundle is { HasBundle: true, FetchedAtUtc: { } fetchedAt } bundle
             ? new BundleState([.. bundle.SigningKeys], [.. bundle.RevocationLists], fetchedAt)

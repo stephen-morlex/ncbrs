@@ -135,7 +135,13 @@ vital-event models all come from `NCBRS.Contracts`, shared with the server.
    verification bundle if due — calling your `persist` callback after each
    change, and **before** an upload is sent, so a window cut short leaves
    nothing the next one cannot finish. Persist the outbox and allocator there
-   too. Rejected records stay queued; `AssignedBrn` on a settled provisional
+   too. A record the centre refuses is **held**, with its reasons
+   (`FacilityClient.Refused`), and left out of uploads. Sent unchanged, it
+   would only be refused again. Show the reasons, and correct it with
+   `Correct(brn, corrected)`, which keeps its BRN and capture time and
+   releases it for the next window. When the refusal is about the window, judge
+   the correction by the centre's window (`RegistrationRules.WindowStatedIn`),
+   not the default. `AssignedBrn` on a settled provisional
    record replaces the number the family is holding. Driving `CentralClient`
    directly instead: persist the `SignedUpload` before sending it, and retry
    **that** upload — the same bytes under the same transaction id — until it

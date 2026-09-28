@@ -193,6 +193,25 @@ public class LateRegistrationTests : IDisposable
         Assert.Equal(bornDaysAgo > WindowDays, NCBRS.Client.RegistrationRules.IsLate(request.DateOfBirth, capturedAt, WindowDays));
     }
 
+    /// <summary>
+    /// A tablet correcting a refused birth takes the window from the registry's
+    /// refusal, so a deployment whose window differs from the tablet's default
+    /// still gets the right correction. Read from the real service's words, in
+    /// both directions, at a window that is not the default.
+    /// </summary>
+    [Theory]
+    [InlineData(45, false)]
+    [InlineData(10, true)]
+    public async Task TheTabletReadsTheWindowFromTheRegistrysRefusal(int bornDaysAgo, bool withEvidence)
+    {
+        var request = Request($"1002{bornDaysAgo:D2}", bornDaysAgo, DateTime.UtcNow, withEvidence ? Evidence() : null);
+
+        var result = await RegisterAsync(request, windowDays: 30);
+
+        Assert.Equal(RegistrationOutcome.LateRegistrationEvidenceRequired, result.Outcome);
+        Assert.Equal(30, NCBRS.Client.RegistrationRules.WindowStatedIn([new ApiError("lateRegistration", result.Detail!)]));
+    }
+
     [Fact]
     public void TheTabletsWindowIsTheCentresDefault()
     {

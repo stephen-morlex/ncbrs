@@ -77,7 +77,23 @@ public sealed class FacilityClient
 
     public Guid FacilityId => _facilityId;
 
+    /// <summary>Every birth not yet settled with the centre, refused ones included.</summary>
     public int PendingCount => _outbox.Count;
+
+    /// <summary>What the next upload would carry: queued births not held for correction.</summary>
+    public int SendableCount => _outbox.SendableCount;
+
+    /// <summary>The births the centre refused, with its reasons, held until corrected.</summary>
+    public IReadOnlyList<(SyncBirthRecord Record, IReadOnlyList<ApiError> Reasons)> Refused
+        => [.. _outbox.Pending
+            .Where(record => _outbox.Refused.ContainsKey(record.Birth.Brn))
+            .Select(record => (record, _outbox.Refused[record.Birth.Brn]))];
+
+    /// <summary>
+    /// Correct a refused birth and release it for the next upload. Its BRN and
+    /// capture time stay what they were (<see cref="SyncOutbox.Correct"/>).
+    /// </summary>
+    public void Correct(string brn, RegisterBirthRequest corrected) => _outbox.Correct(brn, corrected);
 
     public long BlockRemaining => _brn.Remaining;
 

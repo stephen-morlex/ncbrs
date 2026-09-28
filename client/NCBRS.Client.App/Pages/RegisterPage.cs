@@ -46,9 +46,29 @@ public sealed partial class RegisterPage : FlowPage
     private readonly Entry _priorLive = Field("Children born alive before this one", keyboard: Keyboard.Numeric);
     private readonly Entry _prenatal = Field("Antenatal visits (optional)", keyboard: Keyboard.Numeric);
 
-    public RegisterPage(DeviceHost host) : base("Register a birth")
+    /// <summary>A refused birth being corrected, or null for a new registration.</summary>
+    private readonly SyncBirthRecord? _correcting;
+
+    /// <summary>
+    /// When the birth was captured. A new one is captured now; a correction
+    /// keeps the original moment, because the statutory window is measured to
+    /// it — correcting a typo must not make a birth late.
+    /// </summary>
+    private DateTime CapturedAt => _correcting?.Birth.RegisteredAtUtc ?? DateTime.UtcNow;
+
+    /// <summary>
+    /// The statutory window this birth is judged by: the tablet's default, or,
+    /// correcting a birth the registry refused on the window, the registry's
+    /// own — its ruling on this birth outranks the tablet's assumption.
+    /// </summary>
+    private readonly int _windowDays;
+
+    public RegisterPage(DeviceHost host, SyncBirthRecord? correcting = null, IReadOnlyList<ApiError>? reasons = null)
+        : base(correcting is null ? "Register a birth" : "Correct a refused birth")
     {
         _host = host;
+        _correcting = correcting;
+        _windowDays = RegistrationRules.WindowStatedIn(reasons ?? []) ?? RegistrationRules.DefaultStatutoryWindowDays;
         _plurality.SelectedIndex = 0;
         _order.IsVisible = false;
         _plurality.SelectedIndexChanged += (_, _) => _order.IsVisible = Picked<BirthPlurality>(_plurality) is not BirthPlurality.Singleton;
@@ -72,8 +92,8 @@ public sealed partial class RegisterPage : FlowPage
             Flow.Advance(host);
         };
 
-        Build(
-            Heading($"Unlocked: {host.UnlockedAs?.DisplayName}"),
+        var form = new View[]
+        {
             new Label
             {
                 Text = "First version of this form, to be reworked with midwives and community health workers.",
@@ -84,16 +104,87 @@ public sealed partial class RegisterPage : FlowPage
             _late,
             new HorizontalStackLayout { Spacing = 8, Children = { _withStatistics, new Label { Text = "Add maternal statistics", VerticalOptions = LayoutOptions.Center } } },
             _statistics,
-            Status, Busy, register, _result, _queue, sync, lockTablet);
+            Status, Busy,
+        };
+
+        if (correcting is not null)
+        {
+            // The registry's reasons first, then the birth as it was sent, to put right.
+            Fill(correcting.Birth);
+            register.Text = "Save the correction";
+            var back = new Button { Text = "Back, without saving", BackgroundColor = Colors.Gray };
+            back.Clicked += (_, _) => Flow.Show(new RefusedPage(host));
+            Build([
+                Heading($"Correct {correcting.Birth.Brn}"),
+                new Label
+                {
+                    FontSize = 14, TextColor = Colors.DarkRed,
+                    Text = "The registry refused this birth:\n"
+                           + string.Join("\n", (reasons ?? []).Select(reason => $"• {Label(reason.Field)}: {reason.Message}")),
+                },
+                Note($"Its number {correcting.Birth.Brn} and the time it was first entered stay the same. "
+                     + "Put right what the registry refused; it is sent again at the next sync."),
+                .. form, register, back]);
+            return;
+        }
+
+        var refused = new Button { BackgroundColor = Colors.DarkRed, IsVisible = false };
+        refused.Clicked += (_, _) => Flow.Show(new RefusedPage(host));
+        _refusedBanner = refused;
+
+        Build([
+            Heading($"Unlocked: {host.UnlockedAs?.DisplayName}"),
+            refused,
+            .. form, register, _result, _queue, sync, lockTablet]);
         Refresh();
     }
+
+    private Button? _refusedBanner;
+
+    /// <summary>The form, filled from a birth as it was sent.</summary>
+    private void Fill(RegisterBirthRequest birth)
+    {
+        _child.Text = birth.ChildFullName;
+        _born.Date = birth.DateOfBirth.Date;
+        Select(_sex, birth.Sex);
+        Select(_plurality, birth.Plurality);
+        _order.Text = birth.BirthOrder?.ToString(CultureInfo.InvariantCulture);
+        _weight.Text = birth.BirthWeightGrams?.ToString(CultureInfo.InvariantCulture);
+        _gestation.Text = birth.GestationalAgeWeeks?.ToString(CultureInfo.InvariantCulture);
+        _mother.Text = birth.MotherFullName;
+        _father.Text = birth.FatherFullName;
+        ShowLateSection();
+
+        if (birth.LateRegistration is { } late)
+        {
+            Select(_evidence, late.EvidenceType);
+            _evidenceReference.Text = late.EvidenceReference;
+            _declarant.Text = late.DeclarantName;
+            _relationship.Text = late.DeclarantRelationship;
+        }
+
+        if (birth.MaternalStatistics is { } statistics)
+        {
+            _withStatistics.IsChecked = true;
+            if (statistics.MotherEducationLevel is { } education)
+            {
+                Select(_education, education);
+            }
+
+            _priorLive.Text = statistics.PriorLiveBirths.ToString(CultureInfo.InvariantCulture);
+            _prenatal.Text = statistics.PrenatalVisitCount?.ToString(CultureInfo.InvariantCulture);
+        }
+    }
+
+    private static void Select<T>(Picker picker, T value) where T : struct, Enum
+        => picker.SelectedIndex = picker.ItemsSource.Cast<Option<T>>().ToList().FindIndex(option => option.Value.Equals(value));
 
     /// <summary>Shown, and required, exactly when the registry will treat the birth as late.</summary>
     private void ShowLateSection()
     {
-        var late = RegistrationRules.IsLate(BornOn, DateTime.UtcNow);
+        var late = RegistrationRules.IsLate(BornOn, CapturedAt, _windowDays);
         _late.IsVisible = late;
-        _lateNote.Text = $"This birth is more than {RegistrationRules.DefaultStatutoryWindowDays} days ago. "
+        _lateNote.Text = $"This birth is more than {_windowDays} days ago. "
                          + "The law asks for evidence and someone to declare it; a district registrar checks them before a certificate is issued.";
     }
 
@@ -101,17 +192,32 @@ public sealed partial class RegisterPage : FlowPage
 
     private async Task RegisterAsync()
     {
-        var capturedAt = DateTime.UtcNow;
+        var capturedAt = CapturedAt;
         // Every problem at once — the form's own and the registry's — so the
         // registrar fixes them in one pass, not one tap each.
         var problems = Read(capturedAt, out var birth)
-            .Concat(RegistrationRules.Problems(birth, capturedAt)
+            .Concat(RegistrationRules.Problems(birth, capturedAt, _windowDays)
                 .Where(problem => !(problem.Field == "sex" && Picked<Sex>(_sex) is null))
                 .Select(problem => $"{Label(problem.Field)}: {problem.Message}"))
             .ToList();
         if (problems.Count > 0)
         {
             await ShowProblemAsync(string.Join("\n", problems));
+            return;
+        }
+
+        if (_correcting is not null)
+        {
+            if (!await DisplayAlertAsync(
+                    "Save this correction?",
+                    $"{birth.ChildFullName}, born {birth.DateOfBirth:d MMM yyyy}, stays {_correcting.Birth.Brn}. It is sent again at the next sync.",
+                    "Save", "Go back"))
+            {
+                return;
+            }
+
+            await _host.CorrectAsync(_correcting.Birth.Brn, birth);
+            Flow.Show(new RefusedPage(_host));
             return;
         }
 
@@ -254,7 +360,20 @@ public sealed partial class RegisterPage : FlowPage
     }
 
     private void Refresh()
-        => _queue.Text = $"Waiting to sync: {_host.Session?.Facility.PendingCount}   ·   numbers left: {_host.Session?.Facility.BlockRemaining}";
+    {
+        var facility = _host.Session?.Facility;
+        _queue.Text = $"Waiting to sync: {facility?.SendableCount}   ·   numbers left: {facility?.BlockRemaining}";
+
+        // Never out of sight: a refused birth is one the registry does not have.
+        var refused = facility?.Refused.Count ?? 0;
+        if (_refusedBanner is not null)
+        {
+            _refusedBanner.IsVisible = refused > 0;
+            _refusedBanner.Text = refused == 1
+                ? "1 birth was refused by the registry. Tap to correct it."
+                : $"{refused} births were refused by the registry. Tap to correct them.";
+        }
+    }
 
     /// <summary>
     /// Held is never shown as confirmed: a District node has the births, the

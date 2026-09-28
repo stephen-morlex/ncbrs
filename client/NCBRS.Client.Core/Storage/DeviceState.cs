@@ -32,6 +32,13 @@ public sealed class DeviceState
     public List<SyncBirthRecord> Outbox { get; set; } = [];
 
     /// <summary>
+    /// The births in <see cref="Outbox"/> the centre refused, by BRN, with its
+    /// reasons. Held until corrected; lost, a restarted tablet would resend them
+    /// unchanged and have them refused again, every window.
+    /// </summary>
+    public Dictionary<string, List<ApiError>> Refused { get; set; } = [];
+
+    /// <summary>
     /// The upload sent, or about to be, and not yet settled. Kept byte for
     /// byte: the next window resends these exact bytes under the same
     /// transaction id, never a rebuilt batch.
