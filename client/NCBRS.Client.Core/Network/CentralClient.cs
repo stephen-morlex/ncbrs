@@ -184,7 +184,19 @@ public sealed class CentralClient(HttpClient http, CentralEndpoints endpoints, A
     private async Task<CentralResult<T>> AuthorisedExchangeAsync<T>(
         HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var token = await accessToken(cancellationToken);
+        string? token;
+        try
+        {
+            token = await accessToken(cancellationToken);
+        }
+        catch (HttpRequestException ex)
+        {
+            // The identity provider did not answer. That is the link, not the
+            // sign-in: telling a registrar to sign in again because the mast is
+            // down would send them to fix the wrong thing.
+            return new CentralResult<T>(CentralOutcome.Unreachable, Detail: $"Could not renew the sign-in: {ex.Message}");
+        }
+
         if (string.IsNullOrWhiteSpace(token))
         {
             return new CentralResult<T>(

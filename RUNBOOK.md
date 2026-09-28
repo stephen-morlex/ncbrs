@@ -168,6 +168,25 @@ are never limited, so registrations are unaffected.
 - If it is a single outside address, the limit is doing its job.
 - A monitor polling `/health` well under twice a second never reaches it.
 
+## Incident: a tablet is lost or stolen
+
+A tablet holds its registrar's sign-in as a Keycloak **offline token**, valid
+for up to 60 days unused. Do **both** of these, the same day:
+
+1. **Revoke the device in NCBRS** (Devices → the device → Revoke, or
+   `POST /api/devices/{id}/revoke`). Every write that names a device — sync,
+   registration, corrections, BRN blocks, certificates — needs the device's
+   signature and is refused from then on. Suspend instead if it may turn up
+   in a drawer; suspension is reversible, revocation is not.
+2. **Revoke the registrar's offline sign-in in Keycloak** (admin console →
+   Users → the registrar → Sessions → sign out the offline session for
+   `ncbrs-device`). Without this the token still **reads** — a name search in
+   the registrar's county — for up to 60 days, because reads do not need the
+   device key.
+
+Then have the registrar sign in on the replacement tablet. A tablet that is
+found again signs in afresh too: its offline token is dead once revoked.
+
 ## Incident: a facility has gone quiet
 
 A silent device is indistinguishable from a district with no births — only one
@@ -309,6 +328,43 @@ their certificates trusted by its host (on Linux, the system bundle or
   groups*).
 - WAL archiving on its own volume, and monitoring on the Api's `/health`
   `status` (see the WAL incident).
+
+## Deployment: Keycloak realm
+
+`keycloak/ncbrs-realm.json` is the **dev** realm and the reference for a
+production one. What must differ, and what must not:
+
+**Tablets (`ncbrs-device`) sign in once and hold an offline token.** A post
+can be out of contact for weeks, far longer than an ordinary session lasts.
+- Authorization code with PKCE (`pkce.code.challenge.method: S256`), and
+  `offline_access` as an optional client scope. **Direct access grants off**
+  (the dev realm keeps them on for the test harness, the load driver and the
+  District node).
+- **Redirect URIs: the app's own callback only** — never `*`, as in the dev
+  realm. A wildcard lets any page receive a registrar's code.
+- List `defaultClientScopes` explicitly (`web-origins`, `acr`, `profile`,
+  `roles`, `basic`, `email`) whenever `optionalClientScopes` is listed.
+  Keycloak's import gives a client that lists only its optional scopes **no**
+  default scopes: its tokens then carry no roles and every tablet write is
+  refused with 403. This happened while setting this up.
+- Only `facility-registrar` and `community-health-worker` hold `offline_access`
+  (as a composite). District officers and the Ministry sign in online and are
+  refused an offline token.
+- `offlineSessionIdleTimeout` 60 days, `offlineSessionMaxLifespan` 180 days:
+  after either, the registrar signs in again. Shortening the first shortens
+  how long a post can be out of contact without a new sign-in.
+
+**The management site (`ncbrs-web`)** lists **no** optional scopes, so it can
+never obtain an offline token.
+
+**The District node** signs in as its own account (`Central__Username` /
+`__Password`, or a confidential client's `__ClientSecret`). With direct access
+grants off on `ncbrs-device`, give it its own client.
+
+After changing the realm: tokens signed by a new realm key are refused by an
+Api still holding the old key set until it re-fetches it (a few minutes); a
+real key rotation keeps the old key published alongside the new, so this only
+bites when a realm is recreated.
 
 ## Deployment: county groups in Keycloak (reporting scope)
 

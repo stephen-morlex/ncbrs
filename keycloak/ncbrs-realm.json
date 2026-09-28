@@ -8,15 +8,21 @@
   "accessTokenLifespan": 900,
   "ssoSessionIdleTimeout": 1800,
   "offlineSessionIdleTimeout": 5184000,
+  "offlineSessionMaxLifespanEnabled": true,
+  "offlineSessionMaxLifespan": 15552000,
   "roles": {
     "realm": [
       {
         "name": "facility-registrar",
-        "description": "Registers births at their own facility. Maps to RegistrarRole.FacilityRegistrar."
+        "description": "Registers births at their own facility. Maps to RegistrarRole.FacilityRegistrar. Holds offline_access: a tablet's sign-in must outlive weeks without connectivity.",
+        "composite": true,
+        "composites": { "realm": ["offline_access"] }
       },
       {
         "name": "community-health-worker",
-        "description": "Registers births in the community for their facility. Maps to RegistrarRole.CommunityHealthWorker."
+        "description": "Registers births in the community for their facility. Maps to RegistrarRole.CommunityHealthWorker. Holds offline_access, as a registrar.",
+        "composite": true,
+        "composites": { "realm": ["offline_access"] }
       },
       {
         "name": "district-officer",
@@ -59,6 +65,7 @@
         "basic",
         "email"
       ],
+      "optionalClientScopes": [],
       "protocolMappers": [
         {
           "name": "ncbrs-api-audience",
@@ -87,7 +94,7 @@
     {
       "clientId": "ncbrs-device",
       "name": "NCBRS facility device",
-      "description": "The tablet/phone app used at facilities and village posts.",
+      "description": "Facility tablet app. Signs in once (code + PKCE) and holds an offline token for weeks offline. Password grant is dev-only; see RUNBOOK 'Deployment: Keycloak realm'.",
       "enabled": true,
       "publicClient": true,
       "standardFlowEnabled": true,
@@ -100,8 +107,20 @@
         "*"
       ],
       "attributes": {
+        "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "+"
       },
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "basic",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "offline_access"
+      ],
       "protocolMappers": [
         {
           "name": "ncbrs-api-audience",

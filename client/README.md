@@ -35,8 +35,10 @@ the centre uses rather than a reimplementation that could drift.
   `CentralClient` makes every call the tablet needs — enrol, BRN block, the
   verification bundle, and sync, directly or through a District node — and
   `ConnectivityWindow` uses a connection opportunity in the order that matters
-  (births, then numbers, then the bundle). How a registrar signs in stays the
-  shell's: the layer takes a token provider.
+  (births, then numbers, then the bundle). **Sign-in** is a Keycloak offline
+  token held by `OfflineTokenSession`: one browser sign-in (code + PKCE), then
+  renewed each window and rotated on every use; the shell owns only the browser
+  step and the encrypted store.
 - **`NCBRS.Client.Harness`** — a narrated walk of the offline acts, and
   `online` mode: the whole device path against a real stack. The TLS
   rehearsal runs it in Production, through a District node and direct.
