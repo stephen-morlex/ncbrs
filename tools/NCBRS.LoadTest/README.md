@@ -48,7 +48,8 @@ variables:
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `NCBRS_LOAD_API_BASE` | `http://localhost:5259/` | Central-tier base URL |
+| `NCBRS_LOAD_API_BASE` | `http://localhost:5259/` | Central-tier base URL (enrolment always goes here) |
+| `NCBRS_LOAD_SYNC_BASE` | `API_BASE` | Where batches go. A District node's URL drives the offline tier's real path, post → District → centre; its `200` (forwarded) and `202` (held) both count as accepted |
 | `NCBRS_LOAD_TOKEN_URL` | Keycloak `ncbrs` realm token endpoint | OIDC token endpoint |
 | `NCBRS_LOAD_CLIENT_ID` | `ncbrs-device` | Public client with direct-access grants |
 | `NCBRS_LOAD_USERNAME` / `_PASSWORD` | `nurse.lado` / `password` | The sync identity. Fleet mode needs `CanEnrolDevices` (e.g. `district.officer`) |
