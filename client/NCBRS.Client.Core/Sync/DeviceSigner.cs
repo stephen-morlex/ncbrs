@@ -48,6 +48,15 @@ public sealed class DeviceSigner
         return new DeviceSigner(privateKeyPem, ecdsa.ExportSubjectPublicKeyInfoPem());
     }
 
+    /// <summary>
+    /// The private key, for the device's encrypted store (B2) and nowhere else.
+    /// Without it a key made by <see cref="Generate"/> could not survive a
+    /// restart, and a tablet that lost its key would need re-enrolling as a new
+    /// device. A method rather than a property so it is never serialised or
+    /// logged by accident along with the signer.
+    /// </summary>
+    public string ExportPrivateKeyPem() => _privateKeyPem;
+
     /// <summary>The base64 signature over the raw batch body, for the <see cref="HeaderName"/> header.</summary>
     public string Sign(ReadOnlySpan<byte> body) => DeviceSignature.Sign(_privateKeyPem, body);
 }

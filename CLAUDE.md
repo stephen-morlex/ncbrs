@@ -643,7 +643,9 @@ Production through a District node and direct. What remains is the **MAUI
 shell** (`client/NCBRS.Client.App`), which **builds and runs**: Android (the
 tablet) and Windows (a desktop dev loop) heads, iOS/Mac Catalyst dropped. It
 stays out of `NCBRS.slnx`, and CI's "Build (MAUI Android)" job builds it alone.
-Still to build: the encrypted store (B2), the browser half of sign-in, handover
+The encrypted store (B2) is built and tested in `NCBRS.Client.Storage`: AES-GCM,
+atomic saves, and a store it cannot read is an error, never an empty device.
+Still to build: the browser half of sign-in, handover
 enrolment and PIN screens (B3), a first cut of the guided form (B4, to be
 revised after field research), and QR printing (B7, waiting on a printer
 decision). **The app's data never leaves the tablet by backup or

@@ -59,6 +59,16 @@ public sealed class CachedVerificationBundle : IDisposable
     /// <summary>When the bundle was last fetched, or null if never.</summary>
     public DateTime? FetchedAtUtc { get; }
 
+    /// <summary>
+    /// The signing-key set held, so the encrypted store (B2) can persist the
+    /// bundle and rebuild it with <see cref="From"/>. Public keys only: nothing
+    /// here is a secret.
+    /// </summary>
+    public IReadOnlyList<VerificationKey> SigningKeys => _keys;
+
+    /// <summary>The revocation lists held, signed by the centre, for the same reason.</summary>
+    public IReadOnlyList<CertificateRevocationList> RevocationLists => _lists;
+
     public bool HasBundle => _keys.Count > 0;
 
     /// <summary>When the cached revocation view stops being trustworthy, or null if nothing is cached.</summary>

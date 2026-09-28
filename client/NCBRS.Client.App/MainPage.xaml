@@ -8,10 +8,10 @@
             <Label Text="NCBRS — offline registration"
                    FontSize="20" FontAttributes="Bold" />
             <Label FontSize="12"
-                   Text="Scaffold demonstrating the shell driving FacilityClient (client-core). A real session loads the device key, BRN block and outbox from the encrypted store after PIN unlock." />
+                   Text="Demo: the shell driving FacilityClient over the encrypted device store. Close and reopen the app - the queue and the next number carry on. Handover, sign-in and PIN unlock come next." />
 
             <Entry x:Name="ChildName" Placeholder="Child's full name" />
-            <Button Text="Register" Clicked="OnRegister" />
+            <Button x:Name="Register" Text="Register" Clicked="OnRegister" />
 
             <Label x:Name="Result" FontSize="16" />
             <Label x:Name="StatusLine" FontSize="12" />
