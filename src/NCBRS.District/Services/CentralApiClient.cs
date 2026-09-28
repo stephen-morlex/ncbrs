@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -74,10 +75,23 @@ public class CentralApiOptions
             .Select(setting => setting.Item1)
             .ToList();
 
-        return insecure.Count == 0
+        if (insecure.Count > 0)
+        {
+            return $"{string.Join(" and ", insecure)} must be HTTPS outside Development: this node sends its "
+                   + "service-account password and birth records over them.";
+        }
+
+        // A node that cannot authenticate can never forward anything. Started
+        // anyway, it held every batch and looked exactly like a node waiting
+        // out an outage.
+        var account = !string.IsNullOrWhiteSpace(Username) && !string.IsNullOrWhiteSpace(Password);
+        var partialAccount = !string.IsNullOrWhiteSpace(Username) || !string.IsNullOrWhiteSpace(Password);
+        var secret = !string.IsNullOrWhiteSpace(ClientSecret);
+
+        return account || (secret && !partialAccount)
             ? null
-            : $"{string.Join(" and ", insecure)} must be HTTPS outside Development: this node sends its "
-              + "service-account password and birth records over them.";
+            : "Central:Username and Central:Password (the node's own account), or Central:ClientSecret, must be "
+              + "set outside Development: without them the node can forward nothing, and holds every batch.";
     }
 
     /// <summary>
@@ -118,9 +132,19 @@ public record CentralForwardResult(
     /// processed" -- the batch arriving by two routes at once, or a retry
     /// overlapping the attempt it follows. Treating that as a refusal marked
     /// batches the centre had registered as rejected.
+    ///
+    /// A 401 is not about the batch at all: the centre did not accept the
+    /// node's own token. It was marking every batch Rejected, never retried —
+    /// a realm change or a clock skew silently dropping births out of the
+    /// queue. It is held until the node's credentials work (<see cref="NodeNotAccepted"/>).
+    /// A 403 stays a refusal: that is the centre declining this batch — an
+    /// unenrolled device, a signature that failed.
     /// </summary>
     public bool PermanentlyRejected =>
-        Reached && StatusCode is >= 400 and < 500 and not 408 and not 429 && RetryAfter is null;
+        Reached && StatusCode is >= 400 and < 500 and not 401 and not 408 and not 429 && RetryAfter is null;
+
+    /// <summary>The centre did not accept the node's own token.</summary>
+    public bool NodeNotAccepted => Reached && StatusCode == 401;
 }
 
 /// <summary>
@@ -142,6 +166,7 @@ public record CentralForwardResult(
 public class CentralApiClient(
     HttpClient http,
     IOptions<CentralApiOptions> options,
+    ConfigurationFaultLog faults,
     ILogger<CentralApiClient> logger)
 {
     /// <summary>The header the centre reads a caller-supplied transaction id from.</summary>
@@ -175,6 +200,19 @@ public class CentralApiClient(
             tokenTimeout.CancelAfter(_options.Timeout);
 
             token = await TokenAsync(tokenTimeout.Token);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode is HttpStatusCode.BadRequest
+                                                or HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            // The identity provider answered, and said no. Not an outage: it
+            // will not fix itself. The batch is held -- nothing is lost -- but
+            // the reason is named and logged as an error.
+            var fault = $"The identity provider refused this node's credentials (HTTP {(int)ex.StatusCode}) at "
+                        + $"{_options.TokenEndpoint}. Batches are held, not lost, until Central:Username and "
+                        + "Central:Password (or Central:ClientSecret) are corrected.";
+            faults.Report(logger, fault);
+
+            return new CentralForwardResult(false, Error: fault);
         }
         catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException
                                    && !cancellationToken.IsCancellationRequested)
@@ -214,6 +252,19 @@ public class CentralApiClient(
         {
             using var response = await http.SendAsync(request, attempt.Token);
             var body = await response.Content.ReadAsStringAsync(attempt.Token);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                // The centre did not accept the node's token. Dropped so the
+                // next attempt fetches a fresh one; the batch is held.
+                _token = null;
+                var fault = "The centre did not accept this node's token (HTTP 401). Batches are held, not lost. "
+                            + "Check the node's account in the realm the centre trusts (Keycloak:Authority), "
+                            + "and that the node's clock is right.";
+                faults.Report(logger, fault);
+
+                return new CentralForwardResult(true, 401, body, Error: fault);
+            }
 
             return new CentralForwardResult(
                 true, (int)response.StatusCode, body, RetryAfter: RetryAfterOf(response));

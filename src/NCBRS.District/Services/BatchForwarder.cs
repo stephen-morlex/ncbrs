@@ -216,7 +216,10 @@ public class BatchForwarder(
             batch.ConsecutiveTimeouts = 0;
         }
 
-        batch.LastError = result.Error ?? $"Central tier returned {result.StatusCode}.";
+        batch.LastError = result.Error
+                          ?? (result.NodeNotAccepted
+                              ? "The centre did not accept this node's own token (401): check its credentials. Held, not lost."
+                              : $"Central tier returned {result.StatusCode}.");
 
         // The centre's own estimate of when to come back, where it gave one --
         // "already in progress" resolves when the other attempt finishes, not

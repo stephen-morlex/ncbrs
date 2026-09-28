@@ -297,8 +297,23 @@ reachable at that moment.
   Attribution survives regardless — each record carries its author, which the
   centre validates, and the node is genuinely the uploader.
 - **"The centre said no" ≠ "the centre did not answer".** Only 4xx (except
-  408/429) stops retrying; everything else stays queued. Conflating them
+  401/408/429) stops retrying; everything else stays queued. Conflating them
   would discard births whenever a link drops.
+- **A 401 is about the node, not the batch** (#126). It means the centre did
+  not accept the node's own token — a realm change, a clock skew, a rotated
+  credential — and it used to mark every batch `Rejected`, never retried,
+  silently dropping births out of the queue. It is held, the cached token is
+  dropped, and the fault is named. A **403** stays a refusal: that is the
+  centre declining *this batch* (an unenrolled device, a failed signature).
+- **A credentials fault is not an outage.** A token request the identity
+  provider refuses (400/401/403) was recorded as "centre unreachable" and
+  logged nothing, so a node with a wrong password looked like one waiting out
+  an outage forever. Both it and the centre's 401 are now logged as errors,
+  once a minute (`ConfigurationFaultLog`, a singleton because the typed client
+  is created per poll), and the batch's `LastError` says what to fix. Outside
+  Development a node with no usable credentials — username and password, or a
+  client secret — refuses to start. The TLS rehearsal runs a node with a wrong
+  password and checks it holds the batch and says why.
 - **Idempotency is end to end** via the caller's transaction id, carried
   through unchanged. Proven live: the centre received one transaction twice —
   once forwarded, once direct from the device — and produced one batch and

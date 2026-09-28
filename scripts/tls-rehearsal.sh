@@ -40,10 +40,11 @@ API_PORT="${TLS_REHEARSAL_API_PORT:-18080}"
 UNTRUSTED_PORT="${TLS_REHEARSAL_UNTRUSTED_PORT:-18082}"
 CONSUMER_PORT="${TLS_REHEARSAL_CONSUMER_PORT:-18081}"
 DISTRICT_PORT="${TLS_REHEARSAL_DISTRICT_PORT:-18084}"
+BAD_DISTRICT_PORT="${TLS_REHEARSAL_BAD_DISTRICT_PORT:-18085}"
 PG_PASSWORD=tls-rehearsal
 AUTHORITY=https://keycloak.tls:8443/realms/ncbrs
 PG_CS="Host=pg.tls;Port=5432;Database=ncbrs;Username=ncbrs;Password=$PG_PASSWORD;SSL Mode=VerifyFull;Root Certificate=/certs/ca.pem"
-CONTAINERS=(tls-pg tls-kafka tls-keycloak tls-api-seed tls-api tls-api-untrusted tls-relay tls-consumer tls-district tls-loaddriver)
+CONTAINERS=(tls-pg tls-kafka tls-keycloak tls-api-seed tls-api tls-api-untrusted tls-relay tls-consumer tls-district tls-district-badcreds tls-loaddriver)
 
 # A Windows docker needs Windows paths for bind mounts.
 hostpath() { if command -v cygpath > /dev/null; then cygpath -w "$1"; else echo "$1"; fi; }
@@ -257,6 +258,27 @@ expect "the centre rejected none (the device signature survived the hop)" '"reje
 expect "the centre registered every record the District carried" "$((births_before + BATCHES * BATCH_SIZE))" "$(sql 'SELECT count(*) FROM "BirthRecords"')"
 expect "no device was refused at the centre" 0 "$(sql "SELECT count(*) FROM \"AuditLogs\" WHERE \"Action\" LIKE 'DeviceRefused%'")"
 
+# #126: a node whose credentials are wrong. It must hold the batch -- never
+# drop it -- and say why, loudly: it used to look exactly like a node waiting
+# out an outage, forever.
+run_service tls-district-badcreds District "${PROD[@]}" -p "$BAD_DISTRICT_PORT:8080" \
+  -e Central__BaseUrl=https://api.tls:8443 -e "Central__TokenEndpoint=$AUTHORITY/protocol/openid-connect/token" \
+  -e Central__Username=district.officer -e Central__Password=not-the-password -e SSL_CERT_FILE=/certs/ca.pem \
+  -e "ConnectionStrings__Default=Data Source=/tmp/district.db"
+wait_until 60 "the misconfigured District answers" curl -sf "http://localhost:$BAD_DISTRICT_PORT/api/Sync/status"
+docker run --rm --network "$NET" -v "$APP:/app:ro" -v "$CERTS:/certs:ro" -w /app/LoadTest \
+  --entrypoint /app/LoadTest/NCBRS.LoadTest -e SSL_CERT_FILE=/certs/ca.pem \
+  -e NCBRS_LOAD_API_BASE=http://api.tls:8080/ -e NCBRS_LOAD_SYNC_BASE=http://tls-district-badcreds:8080/ \
+  -e "NCBRS_LOAD_TOKEN_URL=$AUTHORITY/protocol/openid-connect/token" -e NCBRS_LOAD_USERNAME=district.officer \
+  -e NCBRS_LOAD_DEVICES=2 -e NCBRS_LOAD_BATCHES=1 -e NCBRS_LOAD_WARMUP=0 -e NCBRS_LOAD_BATCH_SIZE=1 \
+  -e NCBRS_LOAD_CONCURRENCY=1 "$RUNTIME_IMAGE" > "$WORK/loaddriver-badcreds.log" 2>&1 \
+  || { fail "the misconfigured District did not accept the batch to hold"; tail -20 "$WORK/loaddriver-badcreds.log"; }
+expect "a District with wrong credentials holds the batch rather than rejecting it" '"queued":1' \
+  "$(curl -sf "http://localhost:$BAD_DISTRICT_PORT/api/Sync/status" | grep -o '"queued":[0-9]*')"
+named_the_fault() { docker logs tls-district-badcreds 2>&1 | grep -q "refused this node's credentials"; }
+wait_until 15 "the misconfigured District names its credentials fault" named_the_fault \
+  && pass "...and logs that the identity provider refused its credentials"
+
 echo "== Refusals at startup outside Development"
 refuses() {  # refuses <description> <expected message> <service> <docker args...>
   local what="$1" message="$2" service="$3"; shift 3
@@ -279,6 +301,8 @@ refuses "#113: a plaintext Kafka link" "Kafka:SecurityProtocol is Plaintext outs
   -e Kafka__SecurityProtocol=Plaintext
 refuses "#110: a District node forwarding to a plain-HTTP centre" "must be HTTPS outside Development" District \
   -e Central__BaseUrl=http://api.tls:8080 -e "Central__TokenEndpoint=$AUTHORITY/protocol/openid-connect/token"
+refuses "#126: a District node with no credentials" "Central:Username and Central:Password" District \
+  -e Central__BaseUrl=https://api.tls:8443 -e "Central__TokenEndpoint=$AUTHORITY/protocol/openid-connect/token"
 
 echo
 if (( failures > 0 )); then echo "TLS rehearsal: $failures check(s) failed"; exit 1; fi

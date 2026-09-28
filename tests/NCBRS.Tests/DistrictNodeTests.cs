@@ -104,6 +104,25 @@ public class DistrictNodeTests : IDisposable
     }
 
     /// <summary>
+    /// A 401 is the centre not accepting the node's own token -- a realm
+    /// change, a clock skew, a credential rotated at one end only. It says
+    /// nothing about the batch, and it was marking every batch Rejected, never
+    /// to be retried: a configuration fault silently dropping births out of
+    /// the queue. It is held, and the fault is named.
+    /// </summary>
+    [Fact]
+    public void TheCentreRefusingTheNodesOwnToken_HoldsTheBatch()
+    {
+        var batch = Batch();
+
+        BatchForwarder.Record(batch, new CentralForwardResult(true, 401, ""));
+
+        Assert.Equal(ForwardedBatchStatus.Queued, batch.Status);
+        Assert.NotNull(batch.NextAttemptAtUtc);
+        Assert.Contains("credentials", batch.LastError);
+    }
+
+    /// <summary>
     /// A 5xx is the centre having a bad moment, and 408/429 are explicit
     /// invitations to come back -- none is a reason to give up on a birth.
     /// </summary>

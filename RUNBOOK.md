@@ -200,6 +200,27 @@ device reporting again clears it. There is no delivery channel — the queue is 
   2026-09-27 these settings were read by nothing and the defaults always
   applied, so a node configured earlier may have been retrying on a schedule
   nobody chose.
+- **Queue growing, link apparently up, and the node logs `District node
+  configuration fault`?** It is not an outage, and it will not fix itself.
+  *"The identity provider refused this node's credentials"*: correct
+  `Central__Username`/`__Password` (or `__ClientSecret`) and restart the node.
+  *"The centre did not accept this node's token (HTTP 401)"*: the node's
+  account is not valid in the realm the centre trusts (`Keycloak__Authority`),
+  or the node's clock is wrong. Either way every batch is **held, not lost**,
+  and forwards once the fault is fixed; each batch's `lastError` says the same.
+  Before #126 a centre 401 marked batches `Rejected` and they were never
+  retried: a node upgraded from before then may hold `Rejected` batches whose
+  `centralStatusCode` is 401, and those need re-queueing by hand, once the
+  credentials are fixed, against the node's SQLite store (back it up first):
+
+  ```sql
+  UPDATE "ForwardedBatches"
+  SET "Status" = 'Queued', "NextAttemptAtUtc" = NULL, "LastError" = 'Re-queued: rejected for the node''s own 401'
+  WHERE "Status" = 'Rejected' AND "CentralStatusCode" = 401;
+  ```
+
+  The poller forwards them on its next pass. It is safe to repeat: the
+  centre recognises each batch by its transaction id.
 - **Every forwarded batch `Rejected` with 403?** Check the centre's audit for
   `DeviceRefused:SignatureFailed`. The node forwards the device's signature
   header untouched, so a failure there means the device signed different bytes
@@ -275,7 +296,7 @@ their certificates trusted by its host (on Linux, the system bundle or
 |---|---|---|
 | `Central__BaseUrl` | yes | The centre's `https://` URL |
 | `Central__TokenEndpoint` | yes | The realm's `https://` token endpoint |
-| `Central__Username`, `__Password` | yes | The node's own service account, which must be able to act for every facility it serves |
+| `Central__Username`, `__Password` | yes | The node's own service account, which must be able to act for every facility it serves (or `Central__ClientSecret` for a confidential client). Refused at startup without them |
 | `ConnectionStrings__Default` | yes | A SQLite file on a **persistent** volume: it holds births in transit that exist nowhere else |
 
 ### Once per deployment, and after every migration
