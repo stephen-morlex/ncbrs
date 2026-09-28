@@ -635,8 +635,22 @@ Production through a District node and direct. What remains is the **MAUI
 shell** (scaffolded at `client/NCBRS.Client.App`): the guided form (B4, needs
 field research), the encrypted store (B2) and QR printing (B7) — all needing a
 device-tooling environment the central-tier CI does not have — and the
-decision on how a registrar signs in on a tablet (password grant and a
-30-minute idle session in the dev realm; see `client/INTEGRATION.md`).
+browser half of sign-in.
+
+**Tablets sign in once and hold a Keycloak offline token (decided 2026-09-28,
+#128).** A post is out of contact for weeks, far past any ordinary session.
+`OfflineTokenSession` (`NCBRS.Client.Auth`) redeems the PKCE code for the
+offline token, trades it for access tokens each window, **saves the rotated
+token on every renewal** (Keycloak issues a new one each time), reports an
+ended sign-in (`invalid_grant`) as `Unauthorized` but Keycloak being
+unreachable as `Unreachable`, and signs out by revoking it at Keycloak. The
+realm lets only `facility-registrar` and `community-health-worker` hold one
+(composite `offline_access`), the web client none, 60 days idle and 180 days
+in all. **Realm-import trap:** a client that lists `optionalClientScopes` but
+not `defaultClientScopes` gets *no* default scopes — its tokens carry no roles
+and every tablet write is 403. A lost tablet needs the device revoked in NCBRS
+**and** the offline session revoked in Keycloak: the device key stops writes,
+not reads.
 - **(WS-B8)** Offline verification lives in `NCBRS.Contracts` and the client
   wraps it (`CachedVerificationBundle`, which signals when a refresh is due).
   The scheduled refetch each connectivity window is the shell's to wire —

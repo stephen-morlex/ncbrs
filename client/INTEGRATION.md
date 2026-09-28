@@ -41,12 +41,38 @@ work" is the normal case and has different remedies:
 `SyncVia` is set; enrolment, BRN blocks and the bundle always go to the centre,
 since a District node carries sync batches and nothing else.
 
-**Sign-in is not decided.** The layer takes an `AccessTokenProvider`. The dev
-realm's `ncbrs-device` client uses the password grant, its sessions go idle
-after 30 minutes, and its redirect URIs are a wildcard — none of which should
-reach production. Whether a registrar signs in at every connectivity window or
-the device holds an offline token is a decision for the programme, and the
-production realm follows from it.
+## Signing in: an offline token (decided)
+
+A registrar signs in **once** on the tablet and the device keeps a Keycloak
+**offline token** (`OfflineTokenSession`, `NCBRS.Client.Auth`), so a post out
+of contact for weeks can still sync when it returns. Its `AccessToken` is what
+`CentralClient` takes.
+
+1. **Sign in (online, once):** `var pkce = PkceChallenge.Create();` open
+   `session.AuthorizationUrl(pkce, redirectUri)` in the system browser (never
+   an embedded web view); when the app's redirect comes back with `code` and
+   `state`, check `state == pkce.State` and call
+   `session.RedeemAsync(code, pkce, redirectUri)`. An account that cannot hold
+   an offline token (anyone but a registrar or community health worker) is
+   refused here with a reason, rather than signed in on a session that would
+   stop syncing within the hour.
+2. **Persist the offline token** (encrypted, B2) in the callback the session
+   calls. Keycloak **rotates it on every use**, so the callback fires at each
+   renewal and must save the new one; a device keeping the old one ends up
+   holding a dead sign-in.
+3. **On each app start**, construct the session from the saved token. Access
+   tokens are fetched as needed.
+4. **When the network layer answers `Unauthorized`**, the sign-in has ended —
+   60 days unused, 180 days in all, or revoked by the district. Ask the
+   registrar to sign in again while there is connectivity; nothing queued is
+   lost. Keycloak being unreachable is reported as `Unreachable`, not as
+   "sign in again".
+5. **Sign out** with `SignOutAsync()`, which revokes the token at Keycloak, not
+   just on the device.
+
+A lost tablet needs its device revoked in NCBRS **and** the registrar's offline
+session revoked in Keycloak (RUNBOOK, "a tablet is lost or stolen"): the device
+key stops writes, but the token alone still reads until it is revoked.
 
 **Until this layer, no upload the device built could have been accepted.**
 `FacilityClient` serialised the bare batch; the centre binds

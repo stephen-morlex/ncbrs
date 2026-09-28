@@ -53,7 +53,26 @@ internal static class OnlineRehearsal
         Check($"the officer enrolled device {deviceId}", enrolled.Succeeded, Describe(enrolled));
 
         // 2. First connectivity as the registrar: a real block of numbers.
-        var asRegistrar = new CentralClient(http, new CentralEndpoints(centre, district), Token(http, tokenUrl, registrar));
+        // The registrar signs in once and the tablet keeps an offline token. On a
+        // real tablet that sign-in is a browser (code + PKCE); the harness uses
+        // the dev realm's password grant for the same token response.
+        var savedTokens = new List<string?>();
+        var session = new NCBRS.Client.Auth.OfflineTokenSession(
+            http,
+            new NCBRS.Client.Auth.OidcEndpoints(new Uri(tokenUrl.Replace("/token", "/auth")), new Uri(tokenUrl), new Uri(tokenUrl.Replace("/token", "/revoke"))),
+            offlineToken: null,
+            (token, _) => { savedTokens.Add(token); return Task.CompletedTask; });
+        var signIn = await session.AcceptAsync(await PasswordSignIn(http, tokenUrl, registrar, offline: true));
+        Check("the registrar signed in once and the tablet holds an offline token", signIn.SignedIn, signIn.Problem);
+
+        var officerOffline = await session.AcceptAsync(await PasswordSignIn(http, tokenUrl, officer, offline: true));
+        Check("a district officer cannot hold a tablet's offline sign-in", !officerOffline.SignedIn);
+        if (!signIn.SignedIn)
+        {
+            return 1;
+        }
+
+        var asRegistrar = new CentralClient(http, new CentralEndpoints(centre, district), session.AccessToken);
         var block = await asRegistrar.RequestBrnBlockAsync(facilityId, deviceId, signer, blockSize: 20);
         Check("the registrar drew a block of registration numbers, signed by the device", block.Succeeded, Describe(block));
         if (!block.Succeeded)
@@ -85,12 +104,19 @@ internal static class OnlineRehearsal
         Check("the verification bundle was fetched and is current", first.BundleRefreshed && !state.Bundle.RefreshDue(DateTime.UtcNow));
         Check("state was persisted as the window went", saves >= 2);
 
-        // 5. More births, then a second window straight to the centre.
+        // 5. The app restarts, as a tablet's does between visits: the only sign-in
+        //    it has is the offline token it saved. More births, then a second
+        //    window straight to the centre, renewing from that saved token.
+        session = new NCBRS.Client.Auth.OfflineTokenSession(
+            http,
+            new NCBRS.Client.Auth.OidcEndpoints(new Uri(tokenUrl.Replace("/token", "/auth")), new Uri(tokenUrl), new Uri(tokenUrl.Replace("/token", "/revoke"))),
+            savedTokens.Last(),
+            (token, _) => { savedTokens.Add(token); return Task.CompletedTask; });
         facility.RegisterBirth(Birth());
         facility.RegisterBirth(Birth());
         var direct = new ConnectivityWindow(
             facility,
-            new CentralClient(http, new CentralEndpoints(centre), Token(http, tokenUrl, registrar)),
+            new CentralClient(http, new CentralEndpoints(centre), session.AccessToken),
             signer,
             (_, _) => Task.CompletedTask);
         var second = await direct.RunAsync(state, DateTime.UtcNow);
@@ -110,6 +136,39 @@ internal static class OnlineRehearsal
             && again.Value!.Records.All(record => record.Status is SyncRecordStatus.Registered or SyncRecordStatus.Duplicate)
             && again.Value.SyncBatchId == once.Value!.SyncBatchId,
             $"{once.Outcome}/{again.Outcome}");
+        if (again.Value is { } answer)
+        {
+            facility.Settle(answer);
+        }
+
+        // 7. Every window ran on the offline token, and Keycloak rotated it: each
+        //    new one was saved, or the tablet would end up holding a dead sign-in.
+        Check("every renewal saved the rotated offline token",
+            savedTokens.Count >= 2 && savedTokens.All(token => NCBRS.Client.Auth.OfflineTokenSession.TokenType(token!) == "Offline")
+            && savedTokens.Distinct().Count() == savedTokens.Count,
+            $"{savedTokens.Count} saved");
+
+        // 8. Sign-out revokes the offline token at Keycloak. The next window then
+        //    says "sign in again" -- not "unreachable" -- and keeps the upload.
+        facility.RegisterBirth(Birth());
+        await session.SignOutAsync();
+        var afterSignOut = await new ConnectivityWindow(
+                facility,
+                new CentralClient(http, new CentralEndpoints(centre), session.AccessToken),
+                signer,
+                (_, _) => Task.CompletedTask)
+            .RunAsync(state, DateTime.UtcNow);
+        Check("after sign-out the next window asks the registrar to sign in again, and keeps the births",
+            afterSignOut.Upload == CentralOutcome.Unauthorized && state.InFlight is not null && facility.PendingCount == 1,
+            $"{afterSignOut.Upload}; {string.Join(" | ", afterSignOut.Problems)}");
+
+        var stolen = savedTokens[^2]!;   // the offline token as it stood before sign-out
+        var reuse = new NCBRS.Client.Auth.OfflineTokenSession(
+            http,
+            new NCBRS.Client.Auth.OidcEndpoints(new Uri(tokenUrl.Replace("/token", "/auth")), new Uri(tokenUrl), new Uri(tokenUrl.Replace("/token", "/revoke"))),
+            stolen,
+            (_, _) => Task.CompletedTask);
+        Check("a copy of the revoked offline token is dead at Keycloak too", await reuse.GetAccessTokenAsync() is null);
 
         Console.WriteLine(_failures == 0 ? "\nClient network layer: all steps passed" : $"\nClient network layer: {_failures} step(s) failed");
         return _failures == 0 ? 0 : 1;
@@ -146,6 +205,20 @@ internal static class OnlineRehearsal
             BirthOrder = 1,
             RegisteredAtUtc = DateTime.UtcNow,
         };
+    }
+
+    /// <summary>
+    /// The dev realm's password grant, standing in for the browser sign-in a
+    /// tablet does. With <paramref name="offline"/>, asks for an offline token.
+    /// </summary>
+    private static async Task<JsonElement> PasswordSignIn(HttpClient http, string tokenUrl, string username, bool offline)
+    {
+        using var response = await http.PostAsync(tokenUrl, new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["grant_type"] = "password", ["client_id"] = "ncbrs-device", ["username"] = username, ["password"] = "password",
+            ["scope"] = offline ? NCBRS.Client.Auth.OfflineTokenSession.Scope : "openid",
+        }));
+        return await response.Content.ReadFromJsonAsync<JsonElement>();
     }
 
     /// <summary>A password-grant token for a dev-realm fixture account, refreshed a minute before it expires.</summary>
