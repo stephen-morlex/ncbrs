@@ -1,7 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!-- Minimal so App.xaml's merge resolves. `dotnet new maui` ships a full
-     Styles.xaml of implicit control styles; copy it here to match the template
-     look, or add the Ministry's own. -->
+<!-- Implicit styles. Kept small on purpose: the screens are a first cut pending
+     field research (B4), and the look should follow what that research finds,
+     not a template's. -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- White on the primary green: black on it fails contrast, and the bar
+         is read in full sun as often as not. -->
+    <Style TargetType="NavigationPage">
+        <Setter Property="BarBackgroundColor" Value="{StaticResource Primary}" />
+        <Setter Property="BarTextColor" Value="{StaticResource White}" />
+    </Style>
+
+    <Style TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+        <Setter Property="TextColor" Value="{StaticResource White}" />
+        <Setter Property="MinimumHeightRequest" Value="48" />
+    </Style>
+
 </ResourceDictionary>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug builds only (MainApplication.cs): the dev stack is plain HTTP, reached
+     from the emulator through `adb reverse`, so it is localhost to the app.
+     Release builds carry no config and Android's default refuses cleartext. -->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>

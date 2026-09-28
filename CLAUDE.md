@@ -640,10 +640,16 @@ it found that **no upload the device built could ever have been accepted**:
 required") and a District node refuses for lacking a transaction id. The
 harness's `online` mode runs the device path, and the TLS rehearsal runs it in
 Production through a District node and direct. What remains is the **MAUI
-shell** (scaffolded at `client/NCBRS.Client.App`): the guided form (B4, needs
-field research), the encrypted store (B2) and QR printing (B7) — all needing a
-device-tooling environment the central-tier CI does not have — and the
-browser half of sign-in.
+shell** (`client/NCBRS.Client.App`), which **builds and runs**: Android (the
+tablet) and Windows (a desktop dev loop) heads, iOS/Mac Catalyst dropped. It
+stays out of `NCBRS.slnx`, and CI's "Build (MAUI Android)" job builds it alone.
+Still to build: the encrypted store (B2), the browser half of sign-in, handover
+enrolment and PIN screens (B3), a first cut of the guided form (B4, to be
+revised after field research), and QR printing (B7, waiting on a printer
+decision). **The app's data never leaves the tablet by backup or
+device transfer** (`allowBackup="false"` plus data-extraction rules): restored
+onto a second tablet, it would be two devices on one identity and one BRN
+cursor. Cleartext HTTP is allowed to `localhost` in Debug builds only.
 
 **Tablets sign in once and hold a Keycloak offline token (decided 2026-09-28,
 #128).** A post is out of contact for weeks, far past any ordinary session.

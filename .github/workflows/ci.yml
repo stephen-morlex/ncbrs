@@ -282,3 +282,25 @@ jobs:
           name: playwright-report
           path: web/playwright-report
           retention-days: 7
+
+  # The tablet app (WS-B shell). Kept out of NCBRS.slnx so no other job needs
+  # the MAUI workload; this job is what stops the shell rotting unbuilt. The
+  # runner image carries the Android SDK and a JDK, so the workload is the
+  # only install.
+  maui-android:
+    name: Build (MAUI Android)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install the MAUI Android workload
+        run: dotnet workload install maui-android
+
+      - name: Build the app
+        run: dotnet build client/NCBRS.Client.App -f net10.0-android --configuration Release

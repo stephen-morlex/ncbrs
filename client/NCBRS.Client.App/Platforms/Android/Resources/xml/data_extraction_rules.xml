@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nothing leaves the tablet by backup or device-to-device transfer. The store
+     holds this device's identity and births not yet synced: restored onto a
+     second tablet, it would be two devices claiming one identity and one BRN
+     cursor, re-handing numbers already printed on slips. allowBackup="false"
+     covers cloud backup; Android 12+ needs this for device transfer too. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+    </device-transfer>
+</data-extraction-rules>
