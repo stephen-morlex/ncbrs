@@ -20,6 +20,9 @@
     <ProjectReference Include="../../src/NCBRS.Consumer/NCBRS.Consumer.csproj" />
     <ProjectReference Include="../../src/NCBRS.District/NCBRS.District.csproj" />
     <ProjectReference Include="../../tools/NCBRS.LoadTest/NCBRS.LoadTest.csproj" />
+    <!-- For the checks that the tablet and the centre agree on a format neither
+         owns alone: a PIN hashed here must unlock the tablet. -->
+    <ProjectReference Include="../../client/NCBRS.Client.Core/NCBRS.Client.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

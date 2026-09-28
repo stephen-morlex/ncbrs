@@ -76,8 +76,13 @@ public sealed class EncryptedStateFileTests : IDisposable
                 "X-NCBRS-Device-Signature", Guid.Parse("0199c000-0000-7000-8000-0000000000c1")),
             Bundle = new BundleState([SelfSignedKey()], [ListExpiring(fetched.AddDays(7))], fetched),
             OfflineToken = "offline-token-value",
-            Pin = new PinState(Guid.Parse("0199c000-0000-7000-8000-0000000000b1"),
-                OfflinePinLock.CreateCredential("2468", iterations: 1_000), 2, null),
+            Staff =
+            [
+                new StaffCredential(Guid.Parse("0199c000-0000-7000-8000-0000000000b1"), "Nurse Lado",
+                    RegistrarRole.FacilityRegistrar, OfflinePinLock.CreateCredential("246813", iterations: 1_000)),
+            ],
+            StaffIssuedAtUtc = fetched,
+            Attempts = new PinAttempts(2, null),
         };
     }
 
@@ -103,7 +108,9 @@ public sealed class EncryptedStateFileTests : IDisposable
         Assert.Equal(saved.DevicePrivateKeyPem, loaded.DevicePrivateKeyPem);
         Assert.Equal(saved.Brn, loaded.Brn);
         Assert.Equal(saved.OfflineToken, loaded.OfflineToken);
-        Assert.Equal(saved.Pin, loaded.Pin);
+        Assert.Equal(saved.Staff, loaded.Staff);
+        Assert.Equal(saved.StaffIssuedAtUtc, loaded.StaffIssuedAtUtc);
+        Assert.Equal(saved.Attempts, loaded.Attempts);
 
         var birth = Assert.Single(loaded.Outbox);
         Assert.Equal(saved.Outbox[0].RegisteredByRegistrarId, birth.RegisteredByRegistrarId);

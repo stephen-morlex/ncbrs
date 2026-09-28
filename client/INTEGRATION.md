@@ -88,18 +88,38 @@ vital-event models all come from `NCBRS.Contracts`, shared with the server.
 
 ## Lifecycle
 
-1. **Enrol (online, once).** `DeviceSigner.Generate()`; send `PublicKeyPem` to
-   the centre's enrolment endpoint. Persist the private key in the encrypted
-   store. Never send the private key anywhere.
-2. **Provision (online).** Fetch and persist: the granted BRN block
-   (`start`/`end`), the offline signing bundle (`/offline-bundle`) and the
-   revocation lists, and the registrar PIN credential
-   (`OfflinePinLock.CreateCredential(pin)`).
-3. **Unlock (offline).** Build `OfflinePinLock` from the persisted credential +
-   rate-limit state; `Unlock(pin, now)`. Persist `FailedAttempts` /
-   `LockedUntilUtc` after **every** attempt.
+1. **Hand over (online, once): the district officer enrols the tablet.**
+   Enrolling is an officer's act, since a device enrolled by whoever holds it
+   would close no hole, and an officer cannot hold an offline token. So the
+   officer signs in on the tablet with `InteractiveSignIn`, an ordinary
+   code+PKCE session, and picks the facility from `ListFacilitiesAsync` (the
+   centre scopes the list to the officer's county). They then enrol the
+   device's key with `EnrolDeviceAsync` and **end the session**
+   (`EndAsync`, which revokes it at Keycloak), so it does not stay behind at the
+   post. `DeviceSigner.Generate()` runs first and its key is saved
+   (`ExportPrivateKeyPem()`) before enrolling; the private key is never sent.
+   Every sign-in URL carries `prompt=login`. The tablet's browser is shared,
+   and without it the registrar would be signed straight in as the officer.
+2. **Provision (online).** The registrar signs in (offline token, above),
+   draws the first BRN block, and fetches the verification bundle. Then the
+   **staff PINs**:
+   - A registrar sets their own PIN **at the centre**
+     (`SetOwnPinAsync`; the centre holds the policy and answers with its reason).
+   - The device fetches every registrar's credential for its facility
+     (`FetchStaffCredentialsAsync`, audited at the centre against the device)
+     and keeps them with `StaffUnlock.Provision`.
+   - A hash the device cannot verify is left out, never trusted.
+   - Refetch each connectivity window, so new staff can unlock and departed
+     staff cannot.
+3. **Unlock (offline).** The registrar picks their name and enters their PIN:
+   `StaffUnlock.Attempt(state, registrarId, pin, now)`. Save the state after
+   **every** attempt. **The wrong-guess counter is the device's, not each
+   person's**, or a thief would get five guesses per name on the list. The
+   centre's hash and the tablet's lock agree exactly: `DevicePinCompatibilityTests`
+   pins the real code on both sides, and the harness proves it live.
 4. **Register (offline).** Construct a `FacilityClient` for the unlocked
-   session and call `RegisterBirth(...)`. Persist the allocator cursor and the
+   session and call `RegisterBirth(..., registeredByRegistrarId)` with the
+   registrar who unlocked, so the birth is credited to them. Persist the allocator cursor and the
    outbox after each call. Surface `RegistrationDraft.BlockLow` so the slip is
    shown, and `IsProvisional` so a provisional slip is marked as such.
 4b. **Top up the block (online).** When `NeedsMoreNumbers` is true, POST
@@ -146,8 +166,8 @@ is where their state goes, so the shell does not have to decide what to save:
 
 - **`DeviceState`** is everything the tablet must still know after a restart:
   identity, device key, the allocator's whole state, the outbox, the upload in
-  flight, the verification bundle, the offline token and the PIN with its
-  attempt count.
+  flight, the verification bundle, the offline token, the staff PIN
+  credentials, and the device's wrong-guess count.
 - **`DeviceSession.Restore(state)`** rebuilds `FacilityClient` and
   `ClientSyncState` from it. **`session.Capture(state)`** writes them back,
   leaving the token and PIN (which the session does not own) alone. Save after
