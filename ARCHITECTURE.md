@@ -92,6 +92,9 @@ with a BRN drawn from its granted block. When connectivity returns it uploads a
 (registered / duplicate / rejected), and the device settles its outbox —
 keeping exactly the rejected records queued. With no network at all, the same
 signed batch travels as a **transfer file** on removable media to a sync point.
+The file is **sealed to the registry** (`SealedTransfer`), so whoever carries,
+finds or copies the stick can read nobody's details. The registry opens it at
+`POST /api/Sync/transfers` and processes it exactly as a sync.
 
 **Through the district (Tier 2).** The village post's batch reaches the centre
 via the district node, which forwards it verbatim. *Queued* is `202`,

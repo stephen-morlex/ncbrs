@@ -161,7 +161,8 @@ public class CertificatesController(
 [Produces("application/json")]
 public class CertificateVerificationController(
     CertificateSigner signer,
-    CertificateRevocationService revocations) : ControllerBase
+    CertificateRevocationService revocations,
+    TransferKeyring transferKeys) : ControllerBase
 {
     /// <summary>
     /// Checks a scanned certificate: the signature, then the revocation
@@ -224,7 +225,8 @@ public class CertificateVerificationController(
             "ECDSA-P256-SHA256",
             signer.PublicKeyPem(),
             await revocations.BuildAsync(cancellationToken: HttpContext.RequestAborted),
-            Keys(signer));
+            Keys(signer),
+            new TransferKeyResponse(transferKeys.KeyId, "ECDH-P256+HKDF-SHA256+AES-256-GCM", transferKeys.PublicKeyPem));
 
     /// <summary>
     /// The public half of the signing key, so a verifier can be provisioned

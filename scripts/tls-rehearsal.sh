@@ -92,6 +92,9 @@ export OPENSSL_CONF="$(hostpath "$WORK/openssl.cnf")"  # a native Windows openss
   openssl ecparam -name prime256v1 -genkey -noout -out signing.key
   openssl req -new -x509 -key signing.key -out signing.pem -days 2 -subj "/CN=NCBRS rehearsal signing key"
   openssl pkcs12 -export -inkey signing.key -in signing.pem -out signing.pfx -passout pass:rehearsal
+  # The transfer key USB transfer files are sealed to: P-256, PKCS#8 PEM.
+  openssl ecparam -name prime256v1 -genkey -noout -out transfer-ec.key
+  openssl pkcs8 -topk8 -nocrypt -in transfer-ec.key -out transfer.pem
   chmod a+r ./*  # read by the Kafka and Keycloak containers' own users; throwaway keys
 ) 2> "$WORK/openssl.log" || { cat "$WORK/openssl.log"; exit 1; }
 CERTS="$(hostpath "$WORK/certs")"
@@ -165,7 +168,10 @@ docker rm -f tls-api-seed > /dev/null
 
 echo "== The central tier in Production, every link verified"
 PROD=(-e ASPNETCORE_ENVIRONMENT=Production -e DOTNET_ENVIRONMENT=Production -e ASPNETCORE_URLS=http://0.0.0.0:8080)
-SIGNING=(-e CertificateSigning__PfxPath=/certs/signing.pfx -e CertificateSigning__PfxPassword=rehearsal -e CertificateSigning__KeyId=ncbrs-rehearsal)
+# Both keys an Api must hold to start in Production: the certificate signing
+# key and the transfer key (sealed USB transfer files, #136).
+SIGNING=(-e CertificateSigning__PfxPath=/certs/signing.pfx -e CertificateSigning__PfxPassword=rehearsal -e CertificateSigning__KeyId=ncbrs-rehearsal
+  -e TransferEncryption__PrivateKeyPath=/certs/transfer.pem -e TransferEncryption__KeyId=ncbrs-rehearsal-transfer)
 # Also serves HTTPS as api.tls: the District node refuses a plain-HTTP centre.
 run_service tls-api Api "${PROD[@]}" "${SIGNING[@]}" --network-alias api.tls -p "$API_PORT:8080" \
   -e "ASPNETCORE_URLS=http://0.0.0.0:8080;https://0.0.0.0:8443" \
@@ -228,6 +234,11 @@ wait_until 15 "the untrusted Api logs that it cannot reach the identity provider
 # start without a key and fail this with a 500 (#125).
 expect "the Api serves its certificate signing key in Production" '"keyId":"ncbrs-rehearsal"' \
   "$(curl -sf "http://localhost:$API_PORT/api/certificates/signing-key" | grep -o '"keyId":"[^"]*"' | head -1)"
+
+# #136: tablets seal USB transfer files to this key, so it must reach them in
+# the bundle they already refresh.
+expect "the offline bundle publishes the transfer key tablets seal USB files to" '"keyId":"ncbrs-rehearsal-transfer"' \
+  "$(curl -sf "http://localhost:$API_PORT/api/certificates/offline-bundle" | grep -o '"transferKey":{"keyId":"[^"]*"' | grep -o '"keyId":"[^"]*"')"
 
 echo "== The District tier in Production: signed batches, post -> District -> centre over HTTPS"
 # The node authenticates as itself (over HTTPS to Keycloak) and forwards to the
@@ -319,6 +330,10 @@ refuses "#125: an Api with no certificate signing key" "No certificate signing k
   -e CertificateSigning__KeyId=ncbrs-rehearsal -e Database__Provider=Postgres -e "ConnectionStrings__Default=$PG_CS" -e "Keycloak__Authority=$AUTHORITY"
 refuses "#125: a signing key under the development key id" "is the development default 'ncbrs-dev'" Api \
   -e CertificateSigning__PfxPath=/certs/signing.pfx -e CertificateSigning__PfxPassword=rehearsal \
+  -e Database__Provider=Postgres -e "ConnectionStrings__Default=$PG_CS" -e "Keycloak__Authority=$AUTHORITY"
+refuses "#136: an Api with no transfer key" "TransferEncryption:PrivateKeyPath must name" Api \
+  -e CertificateSigning__PfxPath=/certs/signing.pfx -e CertificateSigning__PfxPassword=rehearsal -e CertificateSigning__KeyId=ncbrs-rehearsal \
+  -e TransferEncryption__KeyId=ncbrs-rehearsal-transfer \
   -e Database__Provider=Postgres -e "ConnectionStrings__Default=$PG_CS" -e "Keycloak__Authority=$AUTHORITY"
 refuses "#113: a plaintext Kafka link" "Kafka:SecurityProtocol is Plaintext outside Development" Relay \
   -e Database__Provider=Postgres -e "ConnectionStrings__Default=$PG_CS" -e Kafka__BootstrapServers=kafka.tls:9095 \
