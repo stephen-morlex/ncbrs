@@ -68,7 +68,7 @@ public class DistrictForwardingTests : IDisposable
     /// </summary>
     private sealed class FakeCentral : HttpMessageHandler
     {
-        private readonly List<(byte[] Body, string? Signature, CancellationToken Token)> _batches = [];
+        private readonly List<(byte[] Body, string? Signature, string? TransactionId, CancellationToken Token)> _batches = [];
 
         /// <summary>Called with the 1-based attempt number; null answers 200.</summary>
         public Func<int, CancellationToken, Task<HttpResponseMessage>>? Respond { get; set; }
@@ -76,7 +76,7 @@ public class DistrictForwardingTests : IDisposable
         /// <summary>Completes when the first batch arrives.</summary>
         public TaskCompletionSource FirstReceived { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public IReadOnlyList<(byte[] Body, string? Signature, CancellationToken Token)> Batches
+        public IReadOnlyList<(byte[] Body, string? Signature, string? TransactionId, CancellationToken Token)> Batches
         {
             get { lock (_batches) { return [.. _batches]; } }
         }
@@ -93,11 +93,14 @@ public class DistrictForwardingTests : IDisposable
             var signature = request.Headers.TryGetValues(DeviceSignature.HeaderName, out var values)
                 ? values.Single()
                 : null;
+            var transactionId = request.Headers.TryGetValues(CentralApiClient.TransactionIdHeader, out var ids)
+                ? ids.Single()
+                : null;
 
             int attempt;
             lock (_batches)
             {
-                _batches.Add((body, signature, cancellationToken));
+                _batches.Add((body, signature, transactionId, cancellationToken));
                 attempt = _batches.Count;
             }
 
@@ -155,11 +158,16 @@ public class DistrictForwardingTests : IDisposable
         CentralApiOptions options,
         byte[] body,
         string? signature,
-        CancellationToken requestAborted = default)
+        CancellationToken requestAborted = default,
+        string? transactionIdHeader = null)
     {
         var http = new DefaultHttpContext { RequestAborted = requestAborted };
         http.Request.Body = new MemoryStream(body);
         http.Request.ContentType = "application/json";
+        if (transactionIdHeader is not null)
+        {
+            http.Request.Headers[CentralApiClient.TransactionIdHeader] = transactionIdHeader;
+        }
         if (signature is not null)
         {
             http.Request.Headers[DeviceSignature.HeaderName] = signature;
@@ -248,6 +256,88 @@ public class DistrictForwardingTests : IDisposable
         Assert.Equal(2, centre.Batches.Count);
         Assert.Equal("c2lnbmF0dXJl", centre.Batches[1].Signature);
         Assert.Equal(body, centre.Batches[1].Body);
+    }
+
+    // --- the transaction id, however the device sent it ---------------------------------------
+
+    /// <summary>
+    /// The centre accepts the transaction id from the X-Transaction-Id header
+    /// when the body has none, and the load driver sends it that way, with
+    /// <c>"meta": null</c>. The node answered those batches 500. Found by the
+    /// TLS rehearsal, the first thing to send it such a batch.
+    /// </summary>
+    [Fact]
+    public async Task ABatchNamedOnlyInTheHeaderIsHeldAndForwarded()
+    {
+        var centre = new FakeCentral();
+        var transactionId = Guid.NewGuid();
+        var body = Encoding.UTF8.GetBytes(
+            "{\"meta\":null,\"data\":{\"deviceId\":\"TABLET-07\",\"facilityId\":\"" + FacilityId + "\",\"records\":[{}]}}");
+
+        await using var db = NewDb();
+        var result = await Controller(db, centre, Options(), body, "sig", transactionIdHeader: transactionId.ToString())
+            .SubmitBatch();
+
+        Assert.Equal(StatusCodes.Status200OK, StatusOf(result));
+        Assert.Equal(transactionId, (await db.ForwardedBatches.SingleAsync()).TransactionId);
+        Assert.Equal(transactionId.ToString(), Assert.Single(centre.Batches).TransactionId);
+    }
+
+    /// <summary>
+    /// The node never forwarded the id as a header, so a batch named only in
+    /// the header reached the centre with no id at all: each retry after a
+    /// timeout was new work to the centre's idempotency layer. Now every
+    /// attempt carries it, the poller's retries included.
+    /// </summary>
+    [Fact]
+    public async Task EveryAttemptCarriesTheTransactionIdToTheCentre()
+    {
+        var centre = new FakeCentral
+        {
+            Respond = (attempt, _) => attempt == 1
+                ? throw new HttpRequestException("connection refused")
+                : Task.FromResult(FakeCentral.Json("{}"))
+        };
+        var options = Options();
+        var transactionId = Guid.NewGuid();
+
+        await using (var db = NewDb())
+        {
+            var held = await Controller(db, centre, options, DeviceBody(transactionId), "sig").SubmitBatch();
+            Assert.Equal(StatusCodes.Status202Accepted, StatusOf(held));
+
+            var batch = await db.ForwardedBatches.SingleAsync();
+            batch.NextAttemptAtUtc = DateTime.UtcNow.AddSeconds(-1);
+            await db.SaveChangesAsync();
+        }
+
+        await using (var db = NewDb())
+        {
+            await BatchForwarder.DrainAsync(db, Client(centre, options), options, 20, NullLogger.Instance, default);
+        }
+
+        Assert.Equal(2, centre.Batches.Count);
+        Assert.All(centre.Batches, sent => Assert.Equal(transactionId.ToString(), sent.TransactionId));
+    }
+
+    /// <summary>
+    /// A malformed batch is the sender's fault and answers 400. The JSON
+    /// accessors throw on the wrong type instead of returning false, so each
+    /// of these used to answer 500.
+    /// </summary>
+    [Theory]
+    [InlineData("{\"meta\":null,\"data\":null}")]
+    [InlineData("{\"meta\":\"not-an-object\",\"data\":{\"deviceId\":\"TABLET-07\"}}")]
+    [InlineData("{\"meta\":{\"transactionId\":42},\"data\":{\"deviceId\":\"TABLET-07\",\"facilityId\":\"0199a1b2-0001-7000-8000-000000000001\"}}")]
+    [InlineData("{\"meta\":{\"transactionId\":\"0199a1b2-0001-7000-8000-00000000000a\"},\"data\":{\"deviceId\":7,\"facilityId\":13}}")]
+    [InlineData("{\"meta\":{\"transactionId\":\"0199a1b2-0001-7000-8000-00000000000a\"},\"data\":[]}")]
+    public async Task AMalformedBatchIsRefusedNotCrashedOn(string json)
+    {
+        await using var db = NewDb();
+        var result = await Controller(db, new FakeCentral(), Options(), Encoding.UTF8.GetBytes(json), signature: null)
+            .SubmitBatch();
+
+        Assert.Equal(StatusCodes.Status400BadRequest, StatusOf(result));
     }
 
     [Fact]
@@ -347,7 +437,7 @@ public class DistrictForwardingTests : IDisposable
             }
         };
 
-        var result = await Client(centre, Options()).ForwardAsync("{}", null, TimeSpan.FromSeconds(10));
+        var result = await Client(centre, Options()).ForwardAsync(Guid.NewGuid(), "{}", null, TimeSpan.FromSeconds(10));
 
         Assert.Equal(TimeSpan.FromSeconds(30), result.RetryAfter);
         Assert.False(result.PermanentlyRejected);
@@ -383,7 +473,7 @@ public class DistrictForwardingTests : IDisposable
             }
         };
 
-        var result = await Client(centre, Options()).ForwardAsync("{}", null, TimeSpan.FromMilliseconds(200));
+        var result = await Client(centre, Options()).ForwardAsync(Guid.NewGuid(), "{}", null, TimeSpan.FromMilliseconds(200));
 
         Assert.True(result.TimedOut);
         Assert.False(result.Reached);

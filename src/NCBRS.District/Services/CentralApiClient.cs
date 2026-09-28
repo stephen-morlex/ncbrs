@@ -144,6 +144,9 @@ public class CentralApiClient(
     IOptions<CentralApiOptions> options,
     ILogger<CentralApiClient> logger)
 {
+    /// <summary>The header the centre reads a caller-supplied transaction id from.</summary>
+    public const string TransactionIdHeader = "X-Transaction-Id";
+
     private readonly CentralApiOptions _options = options.Value;
 
     private string? _token;
@@ -158,6 +161,7 @@ public class CentralApiClient(
     /// caller has to treat it differently from a centre that never answered.
     /// </summary>
     public async Task<CentralForwardResult> ForwardAsync(
+        Guid transactionId,
         string payload,
         string? deviceSignature,
         TimeSpan timeout,
@@ -190,6 +194,13 @@ public class CentralApiClient(
         };
 
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        // Always, whichever way the device named its submission. The centre
+        // accepts the id from this header or from meta.transactionId (the body
+        // wins where both are present, and they are the same value here), so a
+        // device that sent it only as a header still has it at the centre -- and a
+        // retry after a timeout is recognised there as the same work, not new.
+        request.Headers.TryAddWithoutValidation(TransactionIdHeader, transactionId.ToString());
 
         if (!string.IsNullOrEmpty(deviceSignature))
         {
