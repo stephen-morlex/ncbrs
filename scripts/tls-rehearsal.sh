@@ -236,7 +236,7 @@ echo "== The District tier in Production: signed batches, post -> District -> ce
 # back refused and shows as Rejected below.
 run_service tls-district District "${PROD[@]}" --network-alias district.tls -p "$DISTRICT_PORT:8080" \
   -e Central__BaseUrl=https://api.tls:8443 -e "Central__TokenEndpoint=$AUTHORITY/protocol/openid-connect/token" \
-  -e Central__Username=district.officer -e Central__Password=password -e SSL_CERT_FILE=/certs/ca.pem \
+  -e Central__ClientSecret=dev-district-node-secret -e SSL_CERT_FILE=/certs/ca.pem \
   -e "ConnectionStrings__Default=Data Source=/tmp/district.db" -e Forwarder__PollInterval=00:00:02
 wait_until 60 "District answers" curl -sf "http://localhost:$DISTRICT_PORT/api/Sync/status"
 
@@ -259,13 +259,17 @@ expect "the District forwarded every batch to the centre over HTTPS" "\"forwarde
 expect "the centre rejected none (the device signature survived the hop)" '"rejected":0' "$(grep -o '"rejected":[0-9]*' <<< "$status")"
 expect "the centre registered every record the District carried" "$((births_before + BATCHES * BATCH_SIZE))" "$(sql 'SELECT count(*) FROM "BirthRecords"')"
 expect "no device was refused at the centre" 0 "$(sql "SELECT count(*) FROM \"AuditLogs\" WHERE \"Action\" LIKE 'DeviceRefused%'")"
+# #129: the node signs in as itself (client credentials on its own confidential
+# client), so the centre attributes what it forwards to the node, not a person.
+expect "every batch the District forwarded is attributed to the node itself" "$BATCHES" \
+  "$(sql "SELECT count(*) FROM \"SyncBatches\" b JOIN \"Registrars\" r ON r.\"RegistrarId\" = b.\"UploadedByRegistrarId\" WHERE r.\"ExternalSubjectId\" = '55555555-5555-4555-8555-555555555555'")"
 
 # #126: a node whose credentials are wrong. It must hold the batch -- never
 # drop it -- and say why, loudly: it used to look exactly like a node waiting
 # out an outage, forever.
 run_service tls-district-badcreds District "${PROD[@]}" -p "$BAD_DISTRICT_PORT:8080" \
   -e Central__BaseUrl=https://api.tls:8443 -e "Central__TokenEndpoint=$AUTHORITY/protocol/openid-connect/token" \
-  -e Central__Username=district.officer -e Central__Password=not-the-password -e SSL_CERT_FILE=/certs/ca.pem \
+  -e Central__ClientSecret=not-the-secret -e SSL_CERT_FILE=/certs/ca.pem \
   -e "ConnectionStrings__Default=Data Source=/tmp/district.db"
 wait_until 60 "the misconfigured District answers" curl -sf "http://localhost:$BAD_DISTRICT_PORT/api/Sync/status"
 docker run --rm --network "$NET" -v "$APP:/app:ro" -v "$CERTS:/certs:ro" -w /app/LoadTest \
@@ -321,7 +325,7 @@ refuses "#113: a plaintext Kafka link" "Kafka:SecurityProtocol is Plaintext outs
   -e Kafka__SecurityProtocol=Plaintext
 refuses "#110: a District node forwarding to a plain-HTTP centre" "must be HTTPS outside Development" District \
   -e Central__BaseUrl=http://api.tls:8080 -e "Central__TokenEndpoint=$AUTHORITY/protocol/openid-connect/token"
-refuses "#126: a District node with no credentials" "Central:Username and Central:Password" District \
+refuses "#126: a District node with no credentials" "Central:ClientSecret (the node" District \
   -e Central__BaseUrl=https://api.tls:8443 -e "Central__TokenEndpoint=$AUTHORITY/protocol/openid-connect/token"
 
 echo

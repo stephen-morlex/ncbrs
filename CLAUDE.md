@@ -295,7 +295,15 @@ reachable at that moment.
   are short-lived and a batch may sit for days; a node hoarding bearer tokens
   on district hardware is a worse exposure than the problem it solves.
   Attribution survives regardless — each record carries its author, which the
-  centre validates, and the node is genuinely the uploader.
+  centre validates, and the node is genuinely the uploader. **"Itself" is its
+  own confidential Keycloak client** (`ncbrs-district`, #129): client
+  credentials (`Central:ClientSecret`), a service account holding
+  `district-officer` and its county group, and an NCBRS registrar bound to that
+  service account's subject, so every batch it forwards is attributed to the
+  node (the rehearsal checks it). It used to sign in through the tablets'
+  client with a person's password — which a production realm cannot allow once
+  the tablets' password grant is off. The dev seed and realm are held to
+  exactly one registrar per realm user, the node's service account included.
 - **"The centre said no" ≠ "the centre did not answer".** Only 4xx (except
   401/408/429) stops retrying; everything else stays queued. Conflating them
   would discard births whenever a link drops.

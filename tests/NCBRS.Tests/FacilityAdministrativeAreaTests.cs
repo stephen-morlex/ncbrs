@@ -83,9 +83,21 @@ public class FacilityAdministrativeAreaTests : IDisposable
 
         var subjects = await db.Registrars.Select(r => r.ExternalSubjectId).ToListAsync();
 
-        Assert.Contains("11111111-1111-4111-8111-111111111111", subjects);
-        Assert.Contains("44444444-4444-4444-8444-444444444444", subjects);
-        Assert.Equal(4, subjects.Count);
+        // Exactly the dev realm's users -- its people and the District node's
+        // service account -- so a login or a node token always resolves to a
+        // registrar, and neither side can gain an identity the other lacks.
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "NCBRS.slnx")))
+        {
+            directory = directory.Parent;
+        }
+
+        using var realm = System.Text.Json.JsonDocument.Parse(
+            File.ReadAllText(Path.Combine(directory!.FullName, "keycloak", "ncbrs-realm.json")));
+        var realmUsers = realm.RootElement.GetProperty("users").EnumerateArray()
+            .Select(user => user.GetProperty("id").GetString()!).Order().ToList();
+
+        Assert.Equal(realmUsers, subjects.Select(subject => subject ?? "").Order().ToList());
         Assert.Contains(await db.Registrars.ToListAsync(), r => r.Role == RegistrarRole.MinistryAdmin);
     }
 
