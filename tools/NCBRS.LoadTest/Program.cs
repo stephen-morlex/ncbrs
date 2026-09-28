@@ -37,6 +37,7 @@ var cfg = Config.FromEnvironment(args);
 Console.WriteLine($"""
     NCBRS load driver (WS-A7)
       API            {cfg.ApiBase}
+      sync via       {(cfg.SyncBase == cfg.ApiBase ? "the centre" : cfg.SyncBase)}
       facility       {cfg.FacilityId}
       devices        {(cfg.Devices <= 1 ? cfg.DeviceId : $"{cfg.Devices} enrolled per run (fleet)")}
       signing        {(cfg.Sign ? "on — each batch signed with its device key" : "off")}
@@ -66,7 +67,10 @@ http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer
 Console.WriteLine("ok");
 
 var runToken = Guid.NewGuid().ToString("N")[..8];
-var batchUri = new Uri(new Uri(cfg.ApiBase), "api/sync/batches");
+// Batches go to SyncBase, which is the centre unless a District node is named:
+// that is how a village post actually uploads. Enrolment always goes to the
+// centre, which is the only place devices are registered.
+var batchUri = new Uri(new Uri(cfg.SyncBase), "api/sync/batches");
 var enrolUri = new Uri(new Uri(cfg.ApiBase), "api/devices");
 
 // The device fleet the load is spread across. A real burst is many *distinct*
@@ -366,6 +370,7 @@ internal sealed class Counters
 
 internal sealed record Config(
     string ApiBase,
+    string SyncBase,
     string TokenUrl,
     string ClientId,
     string Username,
@@ -391,8 +396,14 @@ internal sealed record Config(
         int I(string key, int fallback) => int.TryParse(S(key, ""), out var v) ? v : fallback;
         long L(string key, long fallback) => long.TryParse(S(key, ""), out var v) ? v : fallback;
 
+        var apiBase = S("API_BASE", "http://localhost:5259/");
+
         return new Config(
-            ApiBase: S("API_BASE", "http://localhost:5259/"),
+            ApiBase: apiBase,
+            // A District node's address, to drive the offline tier's real path:
+            // post -> District -> centre. The District answers 200 when it
+            // forwarded inline and 202 when it is holding the batch; both count.
+            SyncBase: S("SYNC_BASE", apiBase),
             TokenUrl: S("TOKEN_URL", "http://localhost:8080/realms/ncbrs/protocol/openid-connect/token"),
             ClientId: S("CLIENT_ID", "ncbrs-device"),
             Username: S("USERNAME", "nurse.lado"),

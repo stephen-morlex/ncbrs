@@ -1240,7 +1240,13 @@ a document that misdescribes the service costs that decision its value.
   private Docker network (`pg.tls`, `kafka.tls`, `keycloak.tls`), the services
   published self-contained for linux-x64 and run in Production: 72 births
   through every link, HTTPS-realm tokens accepted, forged and untrusted ones
-  refused and the untrusted case logged, and the #113/#114/#119 refusals.
+  refused and the untrusted case logged, and the #110/#113/#114/#119 refusals.
+  **It covers the District tier too:** the load driver (`NCBRS_LOAD_SYNC_BASE`)
+  pushes signed batches from an enrolled fleet through a District node in
+  Production, which forwards them to the Api's HTTPS listener with a token
+  fetched over HTTPS; every batch must be forwarded, none rejected, every
+  record registered and no device refused. Dropping the signature header
+  (the #100 regression) fails four of those checks; its first run found #123.
   Mutation-checked: disabling #121's logging fails exactly that check. It is
   the only test that runs a service in Production; a change to settings,
   startup checks or connection wiring should expect to meet it. Runs in Git
