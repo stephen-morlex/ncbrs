@@ -47,9 +47,11 @@ the centre uses rather than a reimplementation that could drift.
 See **[INTEGRATION.md](INTEGRATION.md)** for how the MAUI shell wires these
 together (lifecycle, what the shell must persist, the sync contract).
 
-The **MAUI application shell** (the guided registration form B4, certificate
-printing B7, PIN unlock B3) is a separate concern that needs device tooling and
-field research with midwives/CHWs; it wraps this core and carries no
-registration logic of its own, so nothing on the device can diverge from the
-centre. It is intended to live in its own repository/project once that tooling
-and the pilot are in place.
+The **MAUI application shell** (`NCBRS.Client.App`) wraps this core and carries
+no registration logic of its own, so nothing on the device can diverge from the
+centre. It now builds and runs, on Android (the tablet) and Windows (a desktop
+dev loop), and CI builds the Android head on every pull request. Next come the
+encrypted store (B2), sign-in, enrolment and PIN unlock (B3), and a first cut of
+the registration form (B4), which will be revised once field research with
+midwives and CHWs is done. Printing (B7) waits on a printer decision. See its
+[README](NCBRS.Client.App/README.md).

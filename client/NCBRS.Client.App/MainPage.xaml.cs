@@ -38,10 +38,14 @@ public partial class MainPage : ContentPage
             return;
         }
 
+        // A date of birth is always sent: left unset it is DateTime.MinValue,
+        // which the centre accepts as a date and is meaningless as one.
         var draft = _client.RegisterBirth(new RegisterBirthRequest
         {
             ChildFullName = name,
+            DateOfBirth = DateTime.Today,
             Sex = Sex.Undetermined,
+            RegisteredAtUtc = DateTime.UtcNow,
         });
 
         Result.Text = draft.IsProvisional
