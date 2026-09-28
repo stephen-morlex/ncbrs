@@ -73,6 +73,42 @@ public class TransportSecurityTests
         {
             BaseUrl = "https://central.ncbrs.ss",
             TokenEndpoint = "https://id.ncbrs.ss/realms/ncbrs/protocol/openid-connect/token",
+            Username = "district-node-juba",
+            Password = "from-the-secret-store",
+        }.RefusalOutsideDevelopment(isDevelopment: false));
+
+    /// <summary>
+    /// A node with no usable credentials can never forward anything, and used
+    /// to start anyway, holding every batch while looking like it was waiting
+    /// out an outage. Either the node's own account (username and password) or
+    /// a confidential client's secret.
+    /// </summary>
+    [Theory]
+    [InlineData(null, null, null)]
+    [InlineData("district-node-juba", null, null)]
+    [InlineData(null, "orphan-password", null)]
+    public void ADistrictNodeWithoutUsableCredentialsIsRefused(string? username, string? password, string? secret)
+    {
+        var options = new CentralApiOptions
+        {
+            BaseUrl = "https://central.ncbrs.ss",
+            TokenEndpoint = "https://id.ncbrs.ss/realms/ncbrs/protocol/openid-connect/token",
+            Username = username,
+            Password = password,
+            ClientSecret = secret,
+        };
+
+        Assert.Contains("Central:", options.RefusalOutsideDevelopment(isDevelopment: false));
+        Assert.Null(options.RefusalOutsideDevelopment(isDevelopment: true));
+    }
+
+    [Fact]
+    public void ADistrictNodeWithAClientSecretStarts()
+        => Assert.Null(new CentralApiOptions
+        {
+            BaseUrl = "https://central.ncbrs.ss",
+            TokenEndpoint = "https://id.ncbrs.ss/realms/ncbrs/protocol/openid-connect/token",
+            ClientSecret = "from-the-secret-store",
         }.RefusalOutsideDevelopment(isDevelopment: false));
 
     // --- and the shipped base settings do not relax anything -----------------------------------

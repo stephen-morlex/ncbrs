@@ -46,6 +46,10 @@ builder.Services.Configure<ForwarderOptions>(
 // be cancelled -- and rolled back at the centre -- on every attempt.
 builder.Services.AddHttpClient<CentralApiClient>(http => http.Timeout = Timeout.InfiniteTimeSpan);
 
+// One for the process: the client above is created afresh per poll, and the
+// once-a-minute throttle on configuration faults has to outlive it.
+builder.Services.AddSingleton<ConfigurationFaultLog>();
+
 builder.Services.AddHostedService<BatchForwarder>();
 
 var app = builder.Build();

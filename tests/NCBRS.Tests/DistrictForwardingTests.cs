@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NCBRS.Devices;
@@ -76,6 +77,12 @@ public class DistrictForwardingTests : IDisposable
         /// <summary>Completes when the first batch arrives.</summary>
         public TaskCompletionSource FirstReceived { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        /// <summary>When set, the token endpoint refuses the node with this status.</summary>
+        public HttpStatusCode? TokenRefusal { get; set; }
+
+        /// <summary>Called on every token request.</summary>
+        public Action? OnTokenRequest { get; set; }
+
         public IReadOnlyList<(byte[] Body, string? Signature, string? TransactionId, CancellationToken Token)> Batches
         {
             get { lock (_batches) { return [.. _batches]; } }
@@ -86,6 +93,13 @@ public class DistrictForwardingTests : IDisposable
         {
             if (request.RequestUri!.AbsolutePath.EndsWith("/token", StringComparison.Ordinal))
             {
+                OnTokenRequest?.Invoke();
+
+                if (TokenRefusal is { } refusal)
+                {
+                    return Json("""{"error":"invalid_grant","error_description":"Invalid user credentials"}""", refusal);
+                }
+
                 return Json("""{"access_token":"node-token","expires_in":300}""");
             }
 
@@ -130,11 +144,12 @@ public class DistrictForwardingTests : IDisposable
             TimeoutPerRecord = perRecord ?? TimeSpan.FromMilliseconds(200),
         };
 
-    private static CentralApiClient Client(FakeCentral centre, CentralApiOptions options)
+    private static CentralApiClient Client(FakeCentral centre, CentralApiOptions options, ILogger<CentralApiClient>? logger = null)
         => new(
             new HttpClient(centre) { Timeout = Timeout.InfiniteTimeSpan },
             Microsoft.Extensions.Options.Options.Create(options),
-            NullLogger<CentralApiClient>.Instance);
+            new ConfigurationFaultLog(),
+            logger ?? NullLogger<CentralApiClient>.Instance);
 
     /// <summary>
     /// A batch as a device sends it -- deliberately with irregular whitespace,
@@ -256,6 +271,93 @@ public class DistrictForwardingTests : IDisposable
         Assert.Equal(2, centre.Batches.Count);
         Assert.Equal("c2lnbmF0dXJl", centre.Batches[1].Signature);
         Assert.Equal(body, centre.Batches[1].Body);
+    }
+
+    // --- the node's own credentials: a fault to name, never a reason to drop births -----------
+
+    /// <summary>
+    /// A token request refused for bad credentials was recorded as "the centre
+    /// is unreachable" and logged nothing, so a District with a wrong password
+    /// looked exactly like one waiting out an outage -- forever. The batch is
+    /// held, as before, but the reason now says what is wrong.
+    /// </summary>
+    [Theory]
+    [InlineData(HttpStatusCode.Unauthorized)]
+    [InlineData(HttpStatusCode.BadRequest)]
+    public async Task ANodeWhoseCredentialsAreRefused_HoldsTheBatchAndNamesTheFault(HttpStatusCode refusal)
+    {
+        var centre = new FakeCentral { TokenRefusal = refusal };
+
+        await using var db = NewDb();
+        var held = await Controller(db, centre, Options(), DeviceBody(Guid.NewGuid()), "sig").SubmitBatch();
+
+        Assert.Equal(StatusCodes.Status202Accepted, StatusOf(held));
+        Assert.Empty(centre.Batches);
+        var batch = await db.ForwardedBatches.SingleAsync();
+        Assert.Equal(ForwardedBatchStatus.Queued, batch.Status);
+        Assert.Contains("credentials", batch.LastError);
+    }
+
+    /// <summary>
+    /// Logged as an error, because it will never fix itself -- but once a
+    /// minute, not once per batch per poll.
+    /// </summary>
+    [Fact]
+    public async Task ARefusedCredentialIsLoggedAsAnErrorOnceAMinute()
+    {
+        var centre = new FakeCentral { TokenRefusal = HttpStatusCode.Unauthorized };
+        var logger = new CapturingLogger<CentralApiClient>();
+        var client = Client(centre, Options(), logger);
+
+        for (var i = 0; i < 5; i++)
+        {
+            var result = await client.ForwardAsync(Guid.NewGuid(), "{}", null, TimeSpan.FromSeconds(5));
+            Assert.False(result.Reached);
+        }
+
+        var error = Assert.Single(logger.Entries, entry => entry.Level == LogLevel.Error);
+        Assert.Contains("credentials", error.Message);
+    }
+
+    /// <summary>
+    /// The centre answering 401 means it did not accept the node's token. The
+    /// cached token is dropped so the next attempt fetches a fresh one, and the
+    /// fault is logged -- the batch itself is held (see DistrictNodeTests).
+    /// </summary>
+    [Fact]
+    public async Task TheCentreRefusingTheNodesToken_IsLoggedAndTheTokenRefetched()
+    {
+        var tokenRequests = 0;
+        var centre = new FakeCentral { Respond = (_, _) => Task.FromResult(FakeCentral.Json("", HttpStatusCode.Unauthorized)) };
+        centre.OnTokenRequest = () => tokenRequests++;
+        var logger = new CapturingLogger<CentralApiClient>();
+        var client = Client(centre, Options(), logger);
+
+        var first = await client.ForwardAsync(Guid.NewGuid(), "{}", null, TimeSpan.FromSeconds(5));
+        await client.ForwardAsync(Guid.NewGuid(), "{}", null, TimeSpan.FromSeconds(5));
+
+        Assert.Equal(401, first.StatusCode);
+        Assert.False(first.PermanentlyRejected);
+        Assert.Equal(2, tokenRequests);
+        Assert.Single(logger.Entries, entry => entry.Level == LogLevel.Error);
+    }
+
+    private sealed class CapturingLogger<T> : ILogger<T>
+    {
+        public List<(LogLevel Level, string Message)> Entries { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            lock (Entries)
+            {
+                Entries.Add((logLevel, formatter(state, exception)));
+            }
+        }
     }
 
     // --- the transaction id, however the device sent it ---------------------------------------
