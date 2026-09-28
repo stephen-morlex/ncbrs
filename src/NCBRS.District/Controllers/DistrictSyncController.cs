@@ -74,12 +74,15 @@ public class DistrictSyncController(
         // right outcome for a body nobody can read the same way twice.
         var payload = Encoding.UTF8.GetString(bytes);
 
+        Guid.TryParse(Request.Headers[CentralApiClient.TransactionIdHeader].ToString(), out var headerTransactionId);
+
         if (envelope.ValueKind != JsonValueKind.Object
-            || !TryRead(envelope, out var transactionId, out var deviceId, out var facilityId, out var records))
+            || !TryRead(envelope, headerTransactionId, out var transactionId, out var deviceId, out var facilityId, out var records))
         {
             return BadRequest(new
             {
-                error = "The batch must carry meta.transactionId, data.deviceId and data.facilityId."
+                error = "The batch must carry a transaction id (meta.transactionId or the X-Transaction-Id header), "
+                        + "data.deviceId and data.facilityId."
             });
         }
 
@@ -216,8 +219,26 @@ public class DistrictSyncController(
             : Ok(response);
     }
 
+    /// <summary>
+    /// Reads what the node needs to hold and route a batch, and nothing else.
+    ///
+    /// The transaction id comes from <c>meta.transactionId</c> or, failing that,
+    /// the <c>X-Transaction-Id</c> header — the same two places the centre
+    /// accepts it, with the body winning as it does there. The node read only
+    /// the body, so a batch that named itself in the header (as the load driver
+    /// does, and as the centre allows) was refused here though the centre would
+    /// take it.
+    ///
+    /// Every property is checked for its JSON type before it is read. The
+    /// <c>JsonElement</c> accessors throw on the wrong type rather than
+    /// returning false, so <c>"meta": null</c>, a numeric id or a string where
+    /// an object belongs used to answer 500 — found by the TLS rehearsal, the
+    /// first thing to send this node a batch not shaped like its own tests. A
+    /// malformed batch is the sender's fault, and the answer is 400.
+    /// </summary>
     private static bool TryRead(
         JsonElement envelope,
+        Guid headerTransactionId,
         out Guid transactionId,
         out string deviceId,
         out Guid facilityId,
@@ -228,10 +249,14 @@ public class DistrictSyncController(
         facilityId = Guid.Empty;
         records = 0;
 
-        if (!envelope.TryGetProperty("meta", out var meta)
-            || !meta.TryGetProperty("transactionId", out var transaction)
-            || !transaction.TryGetGuid(out transactionId)
-            || transactionId == Guid.Empty)
+        if (!(Property(envelope, "meta", JsonValueKind.Object) is { } meta
+              && Property(meta, "transactionId", JsonValueKind.String) is { } transaction
+              && transaction.TryGetGuid(out transactionId)))
+        {
+            transactionId = headerTransactionId;
+        }
+
+        if (transactionId == Guid.Empty)
         {
             // Required here, unlike at the centre where one is generated. The
             // node has nothing else to deduplicate a retry on, and a device
@@ -240,28 +265,33 @@ public class DistrictSyncController(
             return false;
         }
 
-        if (!envelope.TryGetProperty("data", out var data))
+        if (Property(envelope, "data", JsonValueKind.Object) is not { } data)
         {
             return false;
         }
 
-        if (data.TryGetProperty("deviceId", out var device))
-        {
-            deviceId = device.GetString() ?? string.Empty;
-        }
+        deviceId = Property(data, "deviceId", JsonValueKind.String)?.GetString() ?? string.Empty;
 
-        if (data.TryGetProperty("facilityId", out var facility))
+        if (Property(data, "facilityId", JsonValueKind.String) is { } facility)
         {
             facility.TryGetGuid(out facilityId);
         }
 
-        if (data.TryGetProperty("records", out var list) && list.ValueKind == JsonValueKind.Array)
+        if (Property(data, "records", JsonValueKind.Array) is { } list)
         {
             records = list.GetArrayLength();
         }
 
         return !string.IsNullOrWhiteSpace(deviceId) && facilityId != Guid.Empty;
     }
+
+    /// <summary>The named property if it is present and of the expected kind, else null.</summary>
+    private static JsonElement? Property(JsonElement parent, string name, JsonValueKind kind)
+        => parent.ValueKind == JsonValueKind.Object
+           && parent.TryGetProperty(name, out var value)
+           && value.ValueKind == kind
+            ? value
+            : null;
 }
 
 /// <summary>

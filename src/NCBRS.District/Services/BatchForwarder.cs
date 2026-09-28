@@ -150,7 +150,7 @@ public class BatchForwarder(
         Claim(batch, timeout);
         await db.SaveChangesAsync(cancellationToken);
 
-        var result = await central.ForwardAsync(batch.Payload, batch.DeviceSignature, timeout, cancellationToken);
+        var result = await central.ForwardAsync(batch.TransactionId, batch.Payload, batch.DeviceSignature, timeout, cancellationToken);
 
         Record(batch, result, forwarder);
         await db.SaveChangesAsync(cancellationToken);

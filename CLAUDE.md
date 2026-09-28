@@ -302,7 +302,17 @@ reachable at that moment.
 - **Idempotency is end to end** via the caller's transaction id, carried
   through unchanged. Proven live: the centre received one transaction twice —
   once forwarded, once direct from the device — and produced one batch and
-  two records.
+  two records. **The id is read from where the centre reads it** —
+  `meta.transactionId`, or failing that the `X-Transaction-Id` header, body
+  winning — **and forwarded as the header on every attempt.** The node used to
+  read only the body and never forward the header, so a batch named in the
+  header was refused here (as a 500) though the centre accepts it, and would
+  have reached the centre with no id, making each retry new work there.
+- **A malformed batch answers 400, never 500.** `TryRead` checks each
+  property's JSON type before reading it: the `JsonElement` accessors throw on
+  the wrong type rather than returning false, so `"meta": null` or a numeric
+  id crashed the request. Both faults were found by the TLS rehearsal, the
+  first thing to send the node a batch not shaped like its own tests.
 - **No authentication of its own.** The centre authenticates every batch
   properly, and a second identity system on a district box would add a place
   credentials live without adding a check. Device enrolment (WS-B9) is what
