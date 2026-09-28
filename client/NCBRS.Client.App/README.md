@@ -9,10 +9,10 @@ own, so nothing on the device can drift from the centre.
 ## Status
 
 It builds and runs, for Android (the tablet) and Windows (a desktop dev loop).
-`MainPage` is still the demo that drives `FacilityClient` with a hard-coded
-block; the encrypted store (B2), sign-in, enrolment and PIN (B3), and the
-registration form (B4, first cut pending field research) come next, in that
-order. See `client/INTEGRATION.md` for what each has to wire.
+The encrypted store (B2) is in: `MainPage` is still a demo, but it runs over
+the store (`DeviceStorage`), so a closed and reopened app keeps its queue and
+its next number. Sign-in, handover enrolment and PIN (B3), then the
+registration form (B4, first cut pending field research), come next. See `client/INTEGRATION.md` for what each has to wire.
 
 **Heads:** Android and Windows only. The fleet is Android; the Windows head
 exists so a screen can be worked on without an emulator. iOS and Mac Catalyst

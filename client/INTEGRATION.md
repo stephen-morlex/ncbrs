@@ -1,8 +1,9 @@
 # WS-B client integration guide
 
 How the MAUI shell wires up `NCBRS.Client.Core`. The core is the offline-first
-**logic**, complete and unit-tested; the shell adds three things it cannot: the
-screens (B4), the at-rest-encrypted local store (B2), and printing (B7). The
+**logic**, complete and unit-tested, and it now includes the at-rest-encrypted
+store (B2). The shell adds what it cannot: the screens (B4), the platform's key
+store, and printing (B7). The
 shell holds **no registration logic of its own** — everything below is in the
 core, so nothing on the device can diverge from what the centre does.
 
@@ -19,6 +20,8 @@ core, so nothing on the device can diverge from what the centre does.
 | The workflow that composes them | `FacilityClient` | `NCBRS.Client` |
 | Every call to the centre (or a District node) | `CentralClient` | `NCBRS.Client.Network` |
 | One connectivity window, in the right order | `ConnectivityWindow` | `NCBRS.Client.Network` |
+| The encrypted store, and the session rebuilt from it (B2) | `EncryptedStateFile`, `DeviceState`, `DeviceSession`, `StateKey` | `NCBRS.Client.Storage` |
+| The encrypted store, and the session rebuilt from it (B2) | `EncryptedStateFile`, `DeviceState`, `DeviceSession`, `StateKey` | `NCBRS.Client.Storage` |
 
 ## The network layer
 
@@ -136,24 +139,45 @@ re-serialising after signing changes whitespace or property order and the
 signature fails. A device may never send `ncbrs-web`; that is the management
 site's channel, and the centre refuses it from any other client.
 
-## What the shell must persist (B2, encrypted)
+## The encrypted store (B2, built)
 
-The core is a set of pure state machines; it does no I/O. After each operation
-the shell saves the state so it survives offline across restarts:
+The core is a set of pure state machines; it does no I/O. `NCBRS.Client.Storage`
+is where their state goes, so the shell does not have to decide what to save:
 
-- Device private key (once).
-- BRN allocator: `NextAvailable`, `ProvisionalSequence`, and any staged
-  `PendingBlockStart` / `PendingBlockEnd`.
-- Outbox: `Pending`.
-- PIN lock: `FailedAttempts`, `LockedUntilUtc`.
-- Offline bundle: the signing keys + revocation lists + fetched-at time.
+- **`DeviceState`** is everything the tablet must still know after a restart:
+  identity, device key, the allocator's whole state, the outbox, the upload in
+  flight, the verification bundle, the offline token and the PIN with its
+  attempt count.
+- **`DeviceSession.Restore(state)`** rebuilds `FacilityClient` and
+  `ClientSyncState` from it. **`session.Capture(state)`** writes them back,
+  leaving the token and PIN (which the session does not own) alone. Save after
+  **every** act, and before showing its result: a number on a slip the store
+  does not know about is one the next registration can hand out again.
+- **`EncryptedStateFile`** is AES-256-GCM, with a fresh nonce on every save. It
+  writes a temporary file, flushes it and renames it over the old one, so a
+  battery dying mid-save keeps the previous state whole. **A file it cannot
+  read throws `StateFileUnreadableException`, never "no state".** Read as
+  empty, the app would start as a fresh device and its first save would
+  overwrite births nobody has synced. Stop and send the tablet to the district.
+- **`StateKey.ResolveAsync`** gets the key from the platform key store
+  (SecureStorage, Android Keystore). It creates one **only when no store
+  exists yet**. A missing key beside an existing store is refused for the same
+  reason.
+
+Two things the obvious approach gets wrong, both pinned by tests:
+
+- **The allocator's `BlockStart` and `BlockEnd` are part of its state,** not
+  just the cursor. Rolling over to a staged block replaces the current one, so a
+  store that kept only `NextAvailable` restores it against the old range.
+- **`DeviceSigner.ExportPrivateKeyPem()`** is the only way to persist a
+  generated key; without it a restarted tablet would need enrolling again.
 
 Losing the allocator cursor re-hands printed numbers; losing the PIN state
 resets the brute-force limit — so these saves are not optional.
-
 ## What is not in the core
 
-`FacilityClient` is what the shell drives. The shell still owns the encrypted
-store (B2), the guided registration form designed with midwives/CHWs (B4), and
-certificate printing with a QR (B7) — none of which is registration logic, and
-all of which need a device environment.
+`FacilityClient` is what the shell drives. The shell owns only the platform's
+places for the store (the app data directory and SecureStorage, in
+`NCBRS.Client.App/DeviceStorage.cs`), the guided registration form designed
+with midwives/CHWs (B4), and certificate printing with a QR (B7) — none of
+which is registration logic.

@@ -26,6 +26,21 @@ public class DeviceSignerTests
         Assert.Equal("X-NCBRS-Device-Signature", DeviceSigner.HeaderName);
     }
 
+    /// <summary>
+    /// A generated key has to survive a restart, or a tablet whose app was
+    /// closed would need enrolling again as a new device.
+    /// </summary>
+    [Fact]
+    public void AGeneratedKeyCanBeExportedAndRestoredAsTheSameDevice()
+    {
+        var original = DeviceSigner.Generate();
+
+        var restored = DeviceSigner.FromPrivateKey(original.ExportPrivateKeyPem());
+
+        Assert.Equal(original.PublicKeyPem, restored.PublicKeyPem);
+        Assert.True(DeviceSignature.Verify(original.PublicKeyPem, Body, restored.Sign(Body)).Valid);
+    }
+
     [Fact]
     public void ATamperedBodyDoesNotVerify()
     {
