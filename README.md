@@ -72,6 +72,12 @@ dotnet run --project src/NCBRS.Consumer
 dotnet run --project src/NCBRS.District
 ```
 
+The node signs in as itself, on the dev realm's `ncbrs-district` client. Its
+secret is a fixture in `keycloak/ncbrs-realm.json`, but it is still a
+credential, so it comes from the environment rather than a settings file:
+set `Central__ClientSecret=dev-district-node-secret` before starting the node.
+Without it the node starts, holds every batch and logs a configuration fault.
+
 | Service | Port | |
 |---|---|---|
 | API | 5259 | Swagger at `/swagger` |

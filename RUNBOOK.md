@@ -222,7 +222,7 @@ device reporting again clears it. There is no delivery channel — the queue is 
 - **Queue growing, link apparently up, and the node logs `District node
   configuration fault`?** It is not an outage, and it will not fix itself.
   *"The identity provider refused this node's credentials"*: correct
-  `Central__Username`/`__Password` (or `__ClientSecret`) and restart the node.
+  `Central__ClientSecret` (or `__Username`/`__Password`) and restart the node.
   *"The centre did not accept this node's token (HTTP 401)"*: the node's
   account is not valid in the realm the centre trusts (`Keycloak__Authority`),
   or the node's clock is wrong. Either way every batch is **held, not lost**,

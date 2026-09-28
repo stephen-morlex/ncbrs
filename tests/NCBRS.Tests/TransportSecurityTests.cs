@@ -152,4 +152,17 @@ public class TransportSecurityTests
     public void TheBaseSettingsDoNotAllowAThrowawaySigningKey()
         => Assert.False(ShippedSettings.SetsTrue(
             ShippedSettings.Read("NCBRS.Api", "appsettings.json"), "CertificateSigning", "AllowEphemeralDevelopmentKey"));
+
+    /// <summary>
+    /// The node's credentials come from the environment, in Development too.
+    /// The dev secret is a realm fixture, but a settings file that holds one is
+    /// the pattern a real secret gets copied into.
+    /// </summary>
+    [Theory]
+    [InlineData("appsettings.json", "ClientSecret")]
+    [InlineData("appsettings.json", "Password")]
+    [InlineData("appsettings.Development.json", "ClientSecret")]
+    [InlineData("appsettings.Development.json", "Password")]
+    public void NoDistrictSettingsFileHoldsACredential(string file, string key)
+        => Assert.False(ShippedSettings.Sets(ShippedSettings.Read("NCBRS.District", file), "Central", key, out _));
 }
