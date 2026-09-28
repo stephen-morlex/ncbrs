@@ -36,6 +36,11 @@ tablet's stage (`Pages/Flow.cs`), never a remembered navigation stack:
    at once, beside the button. The registrar confirms the birth, read back in
    words, before a number is used.
 
+**A birth the registry refuses** raises a red banner on the main screen. It
+opens the refused births, each with the registry's reasons, and each opens the
+form prefilled to correct it, keeping its number. Nothing there deletes a
+birth.
+
 Anything that goes wrong has a way out on the tablet: **Sign in as someone
 else**, or **Wrong facility: hand over again**, which needs the officer and
 revokes the tablet at the registry first.

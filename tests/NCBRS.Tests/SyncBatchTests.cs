@@ -202,6 +202,39 @@ public class SyncBatchTests : IDisposable
     }
 
     /// <summary>
+    /// A refusal by the registration service names its field, as the online
+    /// path does. Flattened to "record", a tablet reading it weeks later could
+    /// not tell "needs late-registration evidence" from any other reason, and
+    /// so could not open the part of its form that puts it right.
+    /// </summary>
+    [Fact]
+    public async Task ALateBirthWithoutEvidence_IsRefusedOnTheLateRegistrationField()
+    {
+        var late = Record("100003") with
+        {
+            DateOfBirth = DateTime.UtcNow.Date.AddDays(-200),
+            RegisteredAtUtc = DateTime.UtcNow,
+        };
+
+        var outcome = Assert.Single((await SubmitAsync(Batch(late))).Records);
+
+        Assert.Equal(SyncRecordStatus.Rejected, outcome.Status);
+        var error = Assert.Single(outcome.Errors!);
+        Assert.Equal("lateRegistration", error.Field);
+        Assert.Contains("90-day statutory window", error.Message);
+    }
+
+    [Fact]
+    public async Task ACaptureTimeBeforeTheBirth_IsRefusedOnTheCaptureTimeField()
+    {
+        var implausible = Record("100004") with { RegisteredAtUtc = new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc) };
+
+        var outcome = Assert.Single((await SubmitAsync(Batch(implausible))).Records);
+
+        Assert.Equal("registeredAtUtc", Assert.Single(outcome.Errors!).Field);
+    }
+
+    /// <summary>
     /// A device that never saw the response for its last upload re-sends it.
     /// Already-held records are reported as duplicates, not failures.
     /// </summary>

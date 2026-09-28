@@ -258,7 +258,7 @@ public class SyncController(
             if (!result.Succeeded)
             {
                 await RollbackAsync(ambient, savepoint);
-                return Rejected(record.Brn, [new ApiError("record", result.Detail ?? "Registration failed.")]);
+                return Rejected(record.Brn, [new ApiError(FieldOf(result.Outcome), result.Detail ?? "Registration failed.")]);
             }
 
             // A record that arrived under a provisional identifier is given a
@@ -363,6 +363,19 @@ public class SyncController(
         // batch doesn't carry it along into its own SaveChanges.
         db.ChangeTracker.Clear();
     }
+
+    /// <summary>
+    /// The field a registration refusal is about, named as the online path names
+    /// it. Flattened to "record", a device reading a refusal weeks later could
+    /// not tell "this birth needs late-registration evidence" from any other
+    /// reason, so could not open the part of the form that puts it right.
+    /// </summary>
+    private static string FieldOf(RegistrationOutcome outcome) => outcome switch
+    {
+        RegistrationOutcome.LateRegistrationEvidenceRequired => "lateRegistration",
+        RegistrationOutcome.ImplausibleCaptureTime => "registeredAtUtc",
+        _ => "record",
+    };
 
     private static SyncRecordOutcome Rejected(string brn, IEnumerable<ApiError> errors)
         => new(brn, SyncRecordStatus.Rejected, errors.ToList());

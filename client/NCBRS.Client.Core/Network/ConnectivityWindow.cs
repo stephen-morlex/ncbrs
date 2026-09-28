@@ -91,7 +91,11 @@ public sealed class ConnectivityWindow(
         if (state.Bundle.RefreshDue(nowUtc, BundleRefreshLead))
         {
             var bundle = await central.FetchOfflineBundleAsync(cancellationToken);
-            if (bundle is { Succeeded: true, Value: { } fetched })
+            // An answer missing its keys or its list is not a bundle. Taken as
+            // one it crashed the window — the births already uploaded in it
+            // included — so it is reported like any other failed fetch, and the
+            // bundle held stays in use.
+            if (bundle is { Succeeded: true, Value: { Keys: { Count: > 0 }, Revocations: not null } fetched })
             {
                 var previous = state.Bundle;
                 state.Bundle = CachedVerificationBundle.From(
@@ -123,7 +127,7 @@ public sealed class ConnectivityWindow(
         {
             if (state.InFlight is null)
             {
-                if (facility.PendingCount == 0)
+                if (facility.SendableCount == 0)
                 {
                     break;
                 }
@@ -177,6 +181,7 @@ public sealed class ConnectivityWindow(
             CentralOutcome.Unauthorized => $"{what} could not be sent: sign in again while there is connectivity.",
             CentralOutcome.Unreachable => $"{what} could not reach the centre; it will be tried again next time.",
             CentralOutcome.Refused => $"{what} was refused by the centre ({result.StatusCode}).{errors}",
+            CentralOutcome.Succeeded => $"{what} came back incomplete and was not used; the one held stays in use.",
             _ => $"{what}: {result.Outcome}.",
         };
     }

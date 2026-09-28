@@ -675,8 +675,33 @@ won't, because they are the core's (`RegistrationRules`):
 
 Proven there: a late birth was refused without evidence, and with it was filed
 `PendingApproval` with the window stored. Still to build: QR printing (B7,
-waiting on a printer decision), and a way to correct a record the centre
-refused, which stays queued.
+waiting on a printer decision).
+
+**A birth the centre refuses is held and corrected, never resent unchanged.**
+Before this, a refused record stayed in the outbox as it was: it was sent every
+window and refused every window, forever, and the registrar was never told why.
+- `SyncOutbox` now holds a refused record with the centre's reasons
+  (`Refused`, persisted in `DeviceState`) and leaves it out of uploads until a
+  registrar corrects it.
+- `Correct` keeps the **BRN and the capture time** whatever the correction
+  says. The number is on the family's slip, and the window is measured to
+  capture, so fixing a typo must not make a birth late.
+- **Nothing on the tablet deletes a refused birth.** It may be the only copy of
+  a birth the registry never received.
+- **The centre's sync refusals now name their field** (`SyncController.FieldOf`),
+  as the online path always did: `lateRegistration` and `registeredAtUtc`
+  instead of a flat `record`. Without it a tablet could not tell "needs
+  late-registration evidence" from any other reason.
+- **Correcting a birth refused on the window uses the centre's window**, read
+  from its refusal (`RegistrationRules.WindowStatedIn`). The centre's ruling on
+  a birth outranks the tablet's default. This is what makes a deployment whose
+  window differs from the tablet's recoverable rather than a dead end.
+- Proven on the emulator with the dev API at 30 days: a 45-day birth that the
+  tablet thought was on time was refused, held, corrected with evidence under
+  the centre's window, and filed `PendingApproval` with window 30 and its
+  original capture time.
+- **An offline bundle answered without keys crashed the whole window**, births
+  uploaded in it included. It is now reported and the held bundle kept.
 
 **Handover is checked against the centre, never inferred** (`TabletHandover`).
 - The rule came from a live failure. A tablet revoked from the web app

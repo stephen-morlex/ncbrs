@@ -351,6 +351,13 @@ public sealed class DeviceHost(ISignInBrowser browser)
         return draft;
     }
 
+    /// <summary>Correct a refused birth and save it, released for the next sync.</summary>
+    public async Task CorrectAsync(string brn, RegisterBirthRequest corrected)
+    {
+        Session!.Facility.Correct(brn, corrected);
+        await SaveAsync();
+    }
+
     public async Task<(WindowReport Report, IReadOnlyList<string> StaffProblems)> SyncAsync()
     {
         var centre = Centre();

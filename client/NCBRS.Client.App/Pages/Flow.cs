@@ -18,8 +18,11 @@ public static class Flow
         _ => new RegisterPage(host),
     };
 
-    public static void Advance(DeviceHost host)
-        => Application.Current!.Windows[0].Page = new NavigationPage(For(host));
+    public static void Advance(DeviceHost host) => Show(For(host));
+
+    /// <summary>A page within a stage (the refused births, a correction), shown in place.</summary>
+    public static void Show(Page page)
+        => Application.Current!.Windows[0].Page = new NavigationPage(page);
 }
 
 /// <summary>Shared layout for the flow's pages: a title, the content, and a line for what happened.</summary>
