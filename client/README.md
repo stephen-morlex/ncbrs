@@ -31,7 +31,15 @@ the centre uses rather than a reimplementation that could drift.
   (`DeviceBrnAllocator`), B6 local outbox + sync batch (`SyncOutbox`), B8
   offline certificate verification (`CachedVerificationBundle`), B9 device-key
   signing (`DeviceSigner`), and H2 signed offline transfer (`OfflineTransferFile`),
-  composed by the `FacilityClient` workflow.
+  composed by the `FacilityClient` workflow. **The network layer** is built too:
+  `CentralClient` makes every call the tablet needs — enrol, BRN block, the
+  verification bundle, and sync, directly or through a District node — and
+  `ConnectivityWindow` uses a connection opportunity in the order that matters
+  (births, then numbers, then the bundle). How a registrar signs in stays the
+  shell's: the layer takes a token provider.
+- **`NCBRS.Client.Harness`** — a narrated walk of the offline acts, and
+  `online` mode: the whole device path against a real stack. The TLS
+  rehearsal runs it in Production, through a District node and direct.
 - **`NCBRS.Client.Core.Tests`** — xUnit tests for the above.
 
 See **[INTEGRATION.md](INTEGRATION.md)** for how the MAUI shell wires these

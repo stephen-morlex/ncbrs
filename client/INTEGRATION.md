@@ -17,6 +17,42 @@ core, so nothing on the device can diverge from what the centre does.
 | Offline certificate verification (B8) | `CachedVerificationBundle` | `NCBRS.Client.Certificates` |
 | Signed offline transfer file (H2) | `OfflineTransferFile` | `NCBRS.Client.Sync` |
 | The workflow that composes them | `FacilityClient` | `NCBRS.Client` |
+| Every call to the centre (or a District node) | `CentralClient` | `NCBRS.Client.Network` |
+| One connectivity window, in the right order | `ConnectivityWindow` | `NCBRS.Client.Network` |
+
+## The network layer
+
+`CentralClient` speaks the centre's contract exactly: the `{ meta, data }`
+envelope, a transaction id on every write, and the device signature over the
+exact bytes sent on every write that names the device. Every call returns a
+`CentralResult` rather than throwing, because on a village link "it did not
+work" is the normal case and has different remedies:
+
+| `CentralOutcome` | Means | The shell does |
+|---|---|---|
+| `Succeeded` | The centre's answer is in `Value` | Nothing more; `ConnectivityWindow` settles it |
+| `Held` | A District node has the batch; the centre has not seen it | **Do not tell the family the registration is confirmed.** Keep the upload; the next window resends it and gets the centre's answer |
+| `InProgress` | The same transaction is being processed | Resend the same upload after `RetryAfter` |
+| `Refused` | A reason retrying will not change (`Errors`) | Show it; the records stay queued |
+| `Unauthorized` | No sign-in, or the centre did not accept it | Ask the registrar to sign in while there is connectivity |
+| `Unreachable` | No answer, or the centre cannot right now | Try next window |
+
+`CentralEndpoints(Centre, SyncVia)` sends uploads through a District node when
+`SyncVia` is set; enrolment, BRN blocks and the bundle always go to the centre,
+since a District node carries sync batches and nothing else.
+
+**Sign-in is not decided.** The layer takes an `AccessTokenProvider`. The dev
+realm's `ncbrs-device` client uses the password grant, its sessions go idle
+after 30 minutes, and its redirect URIs are a wildcard — none of which should
+reach production. Whether a registrar signs in at every connectivity window or
+the device holds an offline token is a decision for the programme, and the
+production realm follows from it.
+
+**Until this layer, no upload the device built could have been accepted.**
+`FacilityClient` serialised the bare batch; the centre binds
+`ApiRequest<SyncBatchRequest>` and refused it with "data is required", and a
+District node refused it for lacking a transaction id. The TLS rehearsal now
+runs the device path in Production and fails if that shape comes back.
 
 The signature format, provisional-identifier format, certificate verifier and
 vital-event models all come from `NCBRS.Contracts`, shared with the server.
@@ -43,10 +79,18 @@ vital-event models all come from `NCBRS.Contracts`, shared with the server.
    persist the staged block. The allocator rolls over to it when the current
    block runs dry, so a device that tops up in time never issues a `PROV-`
    identifier. The fallback still fires if no window came in time.
-5. **Sync (online).** `BuildSignedUpload()` → POST `Body` **verbatim** with the
-   `HeaderName` header. Feed the `SyncBatchResponse` to `Settle(...)`; persist
-   the outbox. Rejected records stay queued; `AssignedBrn` on a settled
-   provisional record replaces the number the family is holding.
+5. **Sync (online).** Call `ConnectivityWindow.RunAsync(state, now)` each
+   time there is connectivity. It finishes the upload already in flight
+   (`ClientSyncState.InFlight`), uploads what was registered since, settles
+   both through `Settle(...)`, tops up the BRN block if low and refreshes the
+   verification bundle if due — calling your `persist` callback after each
+   change, and **before** an upload is sent, so a window cut short leaves
+   nothing the next one cannot finish. Persist the outbox and allocator there
+   too. Rejected records stay queued; `AssignedBrn` on a settled provisional
+   record replaces the number the family is holding. Driving `CentralClient`
+   directly instead: persist the `SignedUpload` before sending it, and retry
+   **that** upload — the same bytes under the same transaction id — until it
+   is settled; never rebuild it.
 6. **Transfer (no network at all).** `BuildTransferFile()` → write to removable
    media; a sync point opens it with `OfflineTransferFile.Open(bytes, publicKey)`
    and forwards the body if accepted (H2).

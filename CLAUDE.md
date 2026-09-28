@@ -620,10 +620,23 @@ The Tier-1 facility/village client (WS-B) is the programme's critical path.
 Its **offline-first core now exists and is tested** in `client/` — BRN block
 allocation, the local outbox and sync-batch settlement, offline certificate
 verification, PIN unlock and device-key signing, composed by `FacilityClient`
-and exercised by `client/NCBRS.Client.Harness`. What remains is the **MAUI
+and exercised by `client/NCBRS.Client.Harness`. **Its network layer exists too**
+(`NCBRS.Client.Network`, #127): `CentralClient` makes every call the tablet
+needs and reads every answer as what the device must do (succeeded, held at a
+District node, in progress, refused, unauthorised, unreachable);
+`ConnectivityWindow` uses a connection in the order that matters — births,
+then numbers, then the verification bundle — persisting the in-flight upload
+**before** sending it and resending those exact bytes until settled. Building
+it found that **no upload the device built could ever have been accepted**:
+`FacilityClient` sent the bare batch, which the centre refuses ("data is
+required") and a District node refuses for lacking a transaction id. The
+harness's `online` mode runs the device path, and the TLS rehearsal runs it in
+Production through a District node and direct. What remains is the **MAUI
 shell** (scaffolded at `client/NCBRS.Client.App`): the guided form (B4, needs
 field research), the encrypted store (B2) and QR printing (B7) — all needing a
-device-tooling environment the central-tier CI does not have.
+device-tooling environment the central-tier CI does not have — and the
+decision on how a registrar signs in on a tablet (password grant and a
+30-minute idle session in the dev realm; see `client/INTEGRATION.md`).
 - **(WS-B8)** Offline verification lives in `NCBRS.Contracts` and the client
   wraps it (`CachedVerificationBundle`, which signals when a refresh is due).
   The scheduled refetch each connectivity window is the shell's to wire —

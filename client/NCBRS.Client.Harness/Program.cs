@@ -14,6 +14,12 @@ using NCBRS.Models;
 // a village post performs with no connectivity, then the sync when it returns,
 // printing what happens at each step. Nothing here is mocked — it drives the
 // real FacilityClient and the shared Contracts crypto.
+//
+// `online` instead runs the device path against a real stack (OnlineRehearsal).
+if (args is ["online", ..])
+{
+    return await OnlineRehearsal.RunAsync();
+}
 
 const string deviceId = "TABLET-TEREKEKA-01";
 var facilityId = Guid.Parse("0199c000-0000-7000-8000-00000000f004");
@@ -91,11 +97,11 @@ Section("5. Signed offline transfer file (WS-H2)");
 var file = client.BuildTransferFile();
 var opened = OfflineTransferFile.Open(file, signer.PublicKeyPem);
 Console.WriteLine($"Transfer file {file.Length} bytes; opened: {opened.Accepted} from {opened.DeviceId}");
-// The body is base64 inside the envelope; corrupt that exact base64 (the same
-// bytes signed in step 4) so the signature no longer matches.
+// The body is base64 inside the envelope; corrupt that exact base64 (the bytes
+// the file carries) so the signature no longer matches.
 var forgedBody = Convert.ToBase64String("{\"records\":[{\"brn\":\"999999\"}]}"u8.ToArray());
 var tampered = System.Text.Encoding.UTF8.GetBytes(
-    System.Text.Encoding.UTF8.GetString(file).Replace(Convert.ToBase64String(upload.Body), forgedBody));
+    System.Text.Encoding.UTF8.GetString(file).Replace(Convert.ToBase64String(opened.Body!), forgedBody));
 Console.WriteLine($"Tampered file accepted: {OfflineTransferFile.Open(tampered, signer.PublicKeyPem).Accepted} (must be False)");
 
 // 6. Sync: the centre answers per record. Registered/duplicate settle; a
@@ -133,3 +139,4 @@ using var bundle = CachedVerificationBundle.From(
 Console.WriteLine($"With a bundle, a forged QR -> verdict {bundle.Verify("not.a.real.certificate", now).Verdict}");
 
 Console.WriteLine("\nEnd-to-end run complete.");
+return 0;

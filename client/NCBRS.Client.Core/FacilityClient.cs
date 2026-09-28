@@ -1,5 +1,6 @@
 using System.Text.Json;
 using NCBRS.Client.Brn;
+using NCBRS.Client.Network;
 using NCBRS.Client.Sync;
 using NCBRS.Models;
 
@@ -8,8 +9,16 @@ namespace NCBRS.Client;
 /// <summary>What one offline registration produced: its number, whether it is provisional, and whether the block is running low.</summary>
 public sealed record RegistrationDraft(string Brn, bool IsProvisional, bool BlockLow);
 
-/// <summary>A signed upload ready to POST: the exact body bytes, the signature, and the header to carry it in.</summary>
-public sealed record SignedUpload(byte[] Body, string Signature, string HeaderName);
+/// <summary>
+/// A signed upload ready to POST: the exact body bytes, the signature, the
+/// header to carry it in, and the transaction id inside the body.
+///
+/// Persist it until it is settled and retry <em>it</em>, not a rebuilt one: the
+/// same bytes under the same transaction id are what let the centre (and a
+/// District node) recognise a retry after a lost response as work it has
+/// already done, and answer with the result it already produced.
+/// </summary>
+public sealed record SignedUpload(byte[] Body, string Signature, string HeaderName, Guid TransactionId);
 
 /// <summary>
 /// The offline-first workflow of the Tier-1 client, composing the tested
@@ -34,7 +43,7 @@ public sealed class FacilityClient
     // The body is signed and uploaded byte-for-byte, so it is serialised once,
     // here, in the shape the centre parses. Re-serialising it anywhere else
     // would break the signature — the same rule the raw-body signing rests on.
-    private static readonly JsonSerializerOptions BodyJson = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    private static readonly JsonSerializerOptions BodyJson = ClientJson.Options;
 
     private readonly string _deviceId;
     private readonly Guid _facilityId;
@@ -63,6 +72,10 @@ public sealed class FacilityClient
         _signer = signer;
         _lowBlockThreshold = lowBlockThreshold;
     }
+
+    public string DeviceId => _deviceId;
+
+    public Guid FacilityId => _facilityId;
 
     public int PendingCount => _outbox.Count;
 
@@ -104,18 +117,46 @@ public sealed class FacilityClient
         return new RegistrationDraft(allocation.Value, allocation.IsProvisional, _brn.IsLow(_lowBlockThreshold));
     }
 
-    /// <summary>Build and sign the current outbox for upload. The caller POSTs <see cref="SignedUpload.Body"/> verbatim with the signature header.</summary>
+    /// <summary>
+    /// Build and sign the current outbox for upload, under a new transaction
+    /// id. Persist the result and POST <see cref="SignedUpload.Body"/> verbatim
+    /// with the signature header (<see cref="Network.CentralClient.UploadAsync"/>
+    /// does both); retry that same upload until it is settled.
+    /// </summary>
     public SignedUpload BuildSignedUpload()
     {
-        var body = SerializeBatch();
-        return new SignedUpload(body, _signer.Sign(body), DeviceSigner.HeaderName);
+        var transactionId = Guid.CreateVersion7();
+        var body = SerializeBatch(transactionId);
+        return new SignedUpload(body, _signer.Sign(body), DeviceSigner.HeaderName, transactionId);
     }
 
-    /// <summary>Pack the current outbox as a signed transfer file for a post with no network at all (WS-H2).</summary>
-    public byte[] BuildTransferFile() => OfflineTransferFile.Pack(_deviceId, SerializeBatch(), _signer);
+    /// <summary>
+    /// Pack the current outbox as a signed transfer file for a post with no
+    /// network at all (WS-H2). The body inside is the same envelope an upload
+    /// sends, transaction id included, so the sync point that opens it can
+    /// forward it to the centre verbatim.
+    /// </summary>
+    public byte[] BuildTransferFile() => OfflineTransferFile.Pack(_deviceId, SerializeBatch(Guid.CreateVersion7()), _signer);
 
     /// <summary>Apply the centre's response, settling accepted records and leaving rejected ones queued.</summary>
     public OutboxSettlement Settle(SyncBatchResponse response) => _outbox.Settle(response);
 
-    private byte[] SerializeBatch() => JsonSerializer.SerializeToUtf8Bytes(_outbox.BuildBatch(), BodyJson);
+    /// <summary>
+    /// The batch in the <c>{ meta, data }</c> envelope every centre endpoint
+    /// takes, naming the transaction in <c>meta.transactionId</c>.
+    ///
+    /// Until the network layer this serialised the bare batch. The centre binds
+    /// <c>ApiRequest&lt;SyncBatchRequest&gt;</c> and refused that shape with
+    /// "data is required", and a District node needs the transaction id to
+    /// hold and deduplicate it — so no upload the device built could ever have
+    /// been accepted. Found the first time the client was pointed at the API.
+    /// </summary>
+    private byte[] SerializeBatch(Guid transactionId)
+        => JsonSerializer.SerializeToUtf8Bytes(
+            new ApiRequest<SyncBatchRequest>
+            {
+                Meta = new RequestMeta { TransactionId = transactionId },
+                Data = _outbox.BuildBatch(),
+            },
+            BodyJson);
 }

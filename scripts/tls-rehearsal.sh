@@ -97,8 +97,10 @@ export OPENSSL_CONF="$(hostpath "$WORK/openssl.cnf")"  # a native Windows openss
 CERTS="$(hostpath "$WORK/certs")"
 
 echo "== Publishing the Api, Relay, Consumer, District node and load driver for linux-x64"
-for service in Api Relay Consumer District LoadTest; do
-  project="src/NCBRS.$service"; [[ "$service" == LoadTest ]] && project="tools/NCBRS.LoadTest"
+for service in Api Relay Consumer District LoadTest Client.Harness; do
+  project="src/NCBRS.$service"
+  [[ "$service" == LoadTest ]] && project="tools/NCBRS.LoadTest"
+  [[ "$service" == Client.Harness ]] && project="client/NCBRS.Client.Harness"
   dotnet publish "$project" -c Release -r linux-x64 --self-contained -p:OpenApiGenerateDocuments=false \
     --artifacts-path "$(hostpath "$WORK/artifacts")" -o "$(hostpath "$WORK/app/$service")" -v q -nologo > "$WORK/publish-$service.log" 2>&1 \
     || { cat "$WORK/publish-$service.log"; exit 1; }
@@ -278,6 +280,24 @@ expect "a District with wrong credentials holds the batch rather than rejecting 
 named_the_fault() { docker logs tls-district-badcreds 2>&1 | grep -q "refused this node's credentials"; }
 wait_until 15 "the misconfigured District names its credentials fault" named_the_fault \
   && pass "...and logs that the identity provider refused its credentials"
+
+echo "== The device path through the client network layer (NCBRS.Client.Core)"
+# What a tablet does from handover to its second connectivity window, using the
+# client core and nothing else: the officer enrols the device, the registrar
+# draws a signed number block, births are registered offline, window 1 goes
+# through the District node, window 2 straight to the centre over HTTPS, and a
+# repeated upload is recognised. The upload shape the device built before this
+# layer was refused by the centre every time ("data is required").
+if docker run --rm --network "$NET" -v "$APP:/app:ro" -v "$CERTS:/certs:ro" -w /app/Client.Harness \
+  --entrypoint /app/Client.Harness/NCBRS.Client.Harness -e SSL_CERT_FILE=/certs/ca.pem \
+  -e NCBRS_CLIENT_CENTRE=https://api.tls:8443/ -e NCBRS_CLIENT_SYNC_VIA=http://district.tls:8080/ \
+  -e "NCBRS_CLIENT_TOKEN_URL=$AUTHORITY/protocol/openid-connect/token" \
+  "$RUNTIME_IMAGE" online > "$WORK/client-harness.log" 2>&1; then
+  pass "the device path, end to end: $(grep -c '  PASS  ' "$WORK/client-harness.log") client steps"
+else
+  fail "the device path failed a step"
+fi
+sed 's/^/    /' "$WORK/client-harness.log" | grep -E "PASS|FAIL"
 
 echo "== Refusals at startup outside Development"
 refuses() {  # refuses <description> <expected message> <service> <docker args...>
