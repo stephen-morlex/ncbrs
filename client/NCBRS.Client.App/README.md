@@ -22,8 +22,19 @@ tablet's stage (`Pages/Flow.cs`), never a remembered navigation stack:
    nobody at the facility has one yet.
 4. **Unlock.** The registrar picks their name and enters their PIN, with no
    signal needed.
-5. **Register and sync.** The registration form is a placeholder until the B4
-   first cut.
+5. **Register and sync.** The registration form (B4) is a **first cut**, to be
+   reworked with midwives and community health workers. It covers:
+   - the child, date of birth, sex, plurality and birth order, weight and
+     gestation;
+   - the parents;
+   - a late-registration section, shown and required exactly when the registry
+     will treat the birth as late;
+   - optional maternal statistics.
+
+   Its checks are the core's `RegistrationRules`, held to the registry's
+   validator and statutory-window decision by parity tests. Every problem shows
+   at once, beside the button. The registrar confirms the birth, read back in
+   words, before a number is used.
 
 Anything that goes wrong has a way out on the tablet: **Sign in as someone
 else**, or **Wrong facility: hand over again**, which needs the officer and

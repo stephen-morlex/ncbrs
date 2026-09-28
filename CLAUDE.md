@@ -651,8 +651,32 @@ atomic saves, and a store it cannot read is an error, never an empty device.
 3. Births are registered, synced, confirmed, and credited to the registrar
    who unlocked.
 
-Still to build: a first cut of the guided form (B4, to be revised after field
-research), and QR printing (B7, waiting on a printer decision).
+**The registration form (B4) is a first cut, over the registry's own request.**
+It is to be reworked with midwives and CHWs. The layout will change; the rules
+won't, because they are the core's (`RegistrationRules`):
+- **`ShapeProblems`** restates the Api's `RegisterBirthRequestValidator`.
+  `RegistrationRulesParityTests` runs both over the same requests and requires
+  the same fields refused, in the same words.
+- **`WindowProblems`** restates the registration service's decisions: a capture
+  time before the birth, and the statutory window **in both directions**, since
+  late needs evidence and on-time must not carry it. The parity test sits in
+  `LateRegistrationTests`, beside the real service, either side of the 90-day
+  edge.
+- **The window is legal configuration at the centre;** the tablet holds its
+  default (`DefaultStatutoryWindowDays`), pinned to it. A deployment that
+  changes the window must change the tablet too, or it sends on-time births as
+  late and the reverse, and the centre refuses both.
+- **Sex is never defaulted.** The enum's first value is Male, so an untouched
+  form would register a boy.
+- **The registrar confirms the birth, read back in words,** before a number is
+  used.
+- **Every problem shows at once, beside the button.** A status line at the foot
+  of a long form looked like a dead tap on the emulator.
+
+Proven there: a late birth was refused without evidence, and with it was filed
+`PendingApproval` with the window stored. Still to build: QR printing (B7,
+waiting on a printer decision), and a way to correct a record the centre
+refused, which stays queued.
 
 **Handover is checked against the centre, never inferred** (`TabletHandover`).
 - The rule came from a live failure. A tablet revoked from the web app
