@@ -1,5 +1,6 @@
 using NCBRS.Certificates;
 using NCBRS.Client.Certificates;
+using NCBRS.Client.Localization;
 using NCBRS.Client.Sync;
 using NCBRS.Models;
 
@@ -89,7 +90,7 @@ public sealed class ConnectivityWindow(
             }
             else
             {
-                problems.Add(Describe("A new block of registration numbers", block));
+                problems.Add(Describe(Strings.Window_Block, block));
             }
         }
 
@@ -120,7 +121,7 @@ public sealed class ConnectivityWindow(
             }
             else
             {
-                problems.Add(Describe("The certificate verification bundle", bundle));
+                problems.Add(Describe(Strings.Window_Bundle, bundle));
             }
         }
 
@@ -165,13 +166,13 @@ public sealed class ConnectivityWindow(
                     // centre's per-record answer.
                     state.InFlight = null;
                     await persist(state, cancellationToken);
-                    problems.Add(Describe("The upload", result));
+                    problems.Add(Describe(Strings.Window_Upload, result));
                     return last;
 
                 default:
                     // Held, in progress, unauthorised or unreachable: keep the
                     // upload exactly as it is for the next window.
-                    problems.Add(Describe("The upload", result));
+                    problems.Add(Describe(Strings.Window_Upload, result));
                     return last;
             }
         }
@@ -185,16 +186,16 @@ public sealed class ConnectivityWindow(
             ? " " + string.Join("; ", list.Select(error => $"{error.Field}: {error.Message}"))
             : "";
 
+        // The registry's own reasons (errors) stay in the registry's words.
         return result.Outcome switch
         {
-            CentralOutcome.Held => $"{what} is held at the District node and will reach the centre when it can. "
-                                   + "Do not tell the family the registration is confirmed yet.",
-            CentralOutcome.InProgress => $"{what} is still being processed at the centre; it will be checked again.",
-            CentralOutcome.Unauthorized => $"{what} could not be sent: sign in again while there is connectivity.",
-            CentralOutcome.Unreachable => $"{what} could not reach the centre; it will be tried again next time.",
-            CentralOutcome.Refused => $"{what} was refused by the centre ({result.StatusCode}).{errors}",
-            CentralOutcome.Succeeded => $"{what} came back incomplete and was not used; the one held stays in use.",
-            _ => $"{what}: {result.Outcome}.",
+            CentralOutcome.Held => Language.Format(Strings.Window_Held, what),
+            CentralOutcome.InProgress => Language.Format(Strings.Window_InProgress, what),
+            CentralOutcome.Unauthorized => Language.Format(Strings.Window_Unauthorized, what),
+            CentralOutcome.Unreachable => Language.Format(Strings.Window_Unreachable, what),
+            CentralOutcome.Refused => Language.Format(Strings.Window_Refused, what, result.StatusCode, errors),
+            CentralOutcome.Succeeded => Language.Format(Strings.Window_Incomplete, what),
+            _ => Language.Format(Strings.Window_Other, what, Language.Name(result.Outcome)),
         };
     }
 }

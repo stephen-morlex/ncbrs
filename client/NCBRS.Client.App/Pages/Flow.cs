@@ -1,4 +1,5 @@
 using NCBRS.Client.App.Services;
+using NCBRS.Client.Localization;
 
 namespace NCBRS.Client.App.Pages;
 
@@ -20,9 +21,47 @@ public static class Flow
 
     public static void Advance(DeviceHost host) => Show(For(host));
 
-    /// <summary>A page within a stage (the refused births, a correction), shown in place.</summary>
+    /// <summary>
+    /// A page within a stage (the refused births, a correction), shown in place,
+    /// laid out in the current language's direction.
+    /// </summary>
     public static void Show(Page page)
-        => Application.Current!.Windows[0].Page = new NavigationPage(page);
+    {
+        page.FlowDirection = AppLanguage.Direction;
+        Application.Current!.Windows[0].Page = new NavigationPage(page) { FlowDirection = AppLanguage.Direction };
+        AppLanguage.ApplyToWindow();
+    }
+
+    /// <summary>
+    /// The English / العربية switch. It rebuilds the page the tablet is on, in
+    /// the other language; <paramref name="confirmFirst"/> lets a page with
+    /// something typed in it ask before that is cleared.
+    /// </summary>
+    public static Button LanguageSwitch(DeviceHost host, Func<Task<bool>>? confirmFirst = null)
+    {
+        var button = new Button
+        {
+            Text = Strings.Language_Switch,
+            BackgroundColor = Colors.Transparent,
+            TextColor = Color.FromArgb("#1B5E20"),
+            BorderColor = Color.FromArgb("#1B5E20"),
+            BorderWidth = 1,
+            HorizontalOptions = LayoutOptions.End,
+        };
+        button.Clicked += async (_, _) =>
+        {
+            if (confirmFirst is not null && !await confirmFirst())
+            {
+                return;
+            }
+
+            // Safe from inside an async handler because Language.Use changes the
+            // process-wide defaults, not the async-local current culture.
+            AppLanguage.Toggle();
+            Advance(host);
+        };
+        return button;
+    }
 }
 
 /// <summary>Shared layout for the flow's pages: a title, the content, and a line for what happened.</summary>

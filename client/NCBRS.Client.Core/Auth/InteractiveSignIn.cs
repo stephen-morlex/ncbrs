@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using NCBRS.Client.Localization;
 using NCBRS.Client.Network;
 
 namespace NCBRS.Client.Auth;
@@ -47,7 +48,7 @@ internal static class AuthorizationCodeFlow
         }), cancellationToken);
 
     public static async Task<string> RefusalAsync(HttpResponseMessage response, CancellationToken cancellationToken)
-        => $"The sign-in was not accepted ({(int)response.StatusCode} {await OfflineTokenSession.ErrorOf(response, cancellationToken)}).";
+        => Language.Format(Strings.SignIn_NotAccepted, (int)response.StatusCode, await OfflineTokenSession.ErrorOf(response, cancellationToken));
 }
 
 /// <summary>

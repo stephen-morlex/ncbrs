@@ -11,6 +11,9 @@ public partial class App : Application
     {
         InitializeComponent();
         _host = host;
+
+        // Before the first page is built, so it is built in the right language.
+        AppLanguage.Apply();
     }
 
     protected override Window CreateWindow(IActivationState? activationState)

@@ -19,4 +19,25 @@
     <ProjectReference Include="../../src/NCBRS.Contracts/NCBRS.Contracts.csproj" />
   </ItemGroup>
 
+  <!-- What the tablet says, in English and Arabic. Here rather than in the app
+       so CI can hold the two to the same keys and placeholders, and so the
+       core's own messages to registrars are translatable too. A strongly typed
+       class is generated: a missing string is a compile error, not a blank. -->
+  <ItemGroup>
+    <!-- Named to match the generated class's namespace; left to the default
+         (root namespace + folder) the class looks for a resource that is not there. -->
+    <EmbeddedResource Update="Localization\Strings.ar.resx">
+      <ManifestResourceName>NCBRS.Client.Localization.Strings.ar</ManifestResourceName>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Localization\Strings.resx">
+      <ManifestResourceName>NCBRS.Client.Localization.Strings</ManifestResourceName>
+      <Generator>MSBuild:Compile</Generator>
+      <StronglyTypedFileName>$(IntermediateOutputPath)Strings.Designer.cs</StronglyTypedFileName>
+      <StronglyTypedLanguage>CSharp</StronglyTypedLanguage>
+      <StronglyTypedNamespace>NCBRS.Client.Localization</StronglyTypedNamespace>
+      <StronglyTypedClassName>Strings</StronglyTypedClassName>
+      <PublicClass>true</PublicClass>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>

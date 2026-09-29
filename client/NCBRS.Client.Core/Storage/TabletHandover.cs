@@ -1,3 +1,4 @@
+using NCBRS.Client.Localization;
 using NCBRS.Client.Network;
 using NCBRS.Client.Sync;
 using NCBRS.Models;
@@ -81,14 +82,14 @@ public static class TabletHandover
 
             if (!enrolled.Succeeded && enrolled.StatusCode != 409)
             {
-                return new HandoverResult(false, Describe("The tablet was not enrolled", enrolled));
+                return new HandoverResult(false, Describe(Strings.Handover_NotEnrolled, enrolled));
             }
 
             // Read back, never inferred: what the centre now holds for this id.
             var record = await asOfficer.GetDeviceAsync(deviceId, cancellationToken);
             if (!record.Succeeded)
             {
-                return new HandoverResult(false, Describe("The enrolment could not be confirmed", record));
+                return new HandoverResult(false, Describe(Strings.Handover_NotConfirmed, record));
             }
 
             switch (Judge(record.Value, facility.FacilityId))
@@ -100,15 +101,14 @@ public static class TabletHandover
 
                 case EnrolmentVerdict.Suspended:
                     return new HandoverResult(false,
-                        $"This tablet ({deviceId}) is suspended at the registry: {record.Value!.StatusReason}. "
-                        + "A district officer reinstates it from the web app, or revokes it so it can be handed over again.");
+                        Language.Format(Strings.Handover_Suspended, deviceId, record.Value!.StatusReason));
 
                 case EnrolmentVerdict.EnrolledElsewhere:
                     var revoked = await asOfficer.RevokeDeviceAsync(deviceId,
                         $"Handed over again, to {facility.Name}; replaced by a new key.", cancellationToken);
                     if (!revoked.Succeeded)
                     {
-                        return new HandoverResult(false, Describe("The tablet's enrolment elsewhere could not be withdrawn", revoked));
+                        return new HandoverResult(false, Describe(Strings.Handover_ElsewhereNotWithdrawn, revoked));
                     }
 
                     break;
@@ -125,7 +125,7 @@ public static class TabletHandover
             rekeyed = true;
         }
 
-        return new HandoverResult(false, "The tablet could not be enrolled even under a new key. Contact the district office.");
+        return new HandoverResult(false, Strings.Handover_GaveUp);
     }
 
     /// <summary>
@@ -148,7 +148,7 @@ public static class TabletHandover
         var record = await asOfficer.GetDeviceAsync(identity.DeviceId, cancellationToken);
         return record.Value is { Status: DeviceStatus.Revoked }
             ? null
-            : Describe("The tablet was not withdrawn, so it cannot be handed over again", revoked);
+            : Describe(Strings.Handover_NotWithdrawn, revoked);
     }
 
     /// <summary>
@@ -174,26 +174,24 @@ public static class TabletHandover
         if (staff.RefusedTheAccountHere)
         {
             return new AccountCheck(false, EndSignIn: true,
-                Problem: $"This account is not permitted at {facility}, which this tablet is enrolled to. "
-                         + $"Sign in with an account from {facility}. If the tablet was handed to the wrong facility, "
-                         + "a district officer hands it over again.");
+                Problem: Language.Format(Strings.Account_NotHere, facility));
         }
 
         if (staff.RefusedTheDevice)
         {
             return new AccountCheck(false,
-                Problem: $"The registry does not accept this tablet: {Detail(staff)}. A district officer must hand it over again.");
+                Problem: Language.Format(Strings.Account_DeviceRefused, Detail(staff)));
         }
 
         if (staff.Outcome == CentralOutcome.Unauthorized)
         {
-            return new AccountCheck(false, EndSignIn: true, Problem: "The registry did not accept the sign-in. Sign in again.");
+            return new AccountCheck(false, EndSignIn: true, Problem: Strings.Account_NotAccepted);
         }
 
         // No signal is not a refusal: the account is checked again next window.
         return new AccountCheck(true, Problem: staff.Outcome == CentralOutcome.Unreachable
-            ? "Signed in, but the registry could not be reached to check the account. It is checked again when there is signal."
-            : Describe("The account could not be checked", staff));
+            ? Strings.Account_NoSignal
+            : Describe(Strings.Account_NotChecked, staff));
     }
 
     private static string Detail<T>(CentralResult<T> result)

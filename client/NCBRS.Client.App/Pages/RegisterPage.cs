@@ -1,6 +1,6 @@
 using System.Globalization;
-using System.Text.RegularExpressions;
 using NCBRS.Client.App.Services;
+using NCBRS.Client.Localization;
 using NCBRS.Client.Network;
 using NCBRS.Models;
 
@@ -17,34 +17,34 @@ namespace NCBRS.Client.App.Pages;
 /// still present, and the registrar confirms before anything is saved: a
 /// number handed out is printed on a slip and cannot be taken back.
 /// </summary>
-public sealed partial class RegisterPage : FlowPage
+public sealed class RegisterPage : FlowPage
 {
     private readonly DeviceHost _host;
     private readonly Label _queue = new() { FontSize = 13 };
     private readonly Label _result = new() { FontSize = 16 };
 
-    private readonly Entry _child = Field("Child's full name");
+    private readonly Entry _child = Field(Strings.Register_ChildName);
     private readonly DatePicker _born = new() { MaximumDate = DateTime.Today, Date = DateTime.Today, Format = "d MMM yyyy" };
-    private readonly Picker _sex = Choice<Sex>("Sex", [Sex.Female, Sex.Male, Sex.Undetermined]);
-    private readonly Picker _plurality = Choice<BirthPlurality>("Single or multiple birth", Enum.GetValues<BirthPlurality>());
-    private readonly Entry _order = Field("Birth order among the twins or triplets (1, 2, 3…)", keyboard: Keyboard.Numeric);
-    private readonly Entry _weight = Field("Birth weight in grams (optional)", keyboard: Keyboard.Numeric);
-    private readonly Entry _gestation = Field("Gestational age in weeks (optional)", keyboard: Keyboard.Numeric);
-    private readonly Entry _mother = Field("Mother's full name");
-    private readonly Entry _father = Field("Father's full name");
+    private readonly Picker _sex = Choice<Sex>(Strings.Register_Sex, [Sex.Female, Sex.Male, Sex.Undetermined]);
+    private readonly Picker _plurality = Choice<BirthPlurality>(Strings.Register_Plurality, Enum.GetValues<BirthPlurality>());
+    private readonly Entry _order = Field(Strings.Register_Order, keyboard: Keyboard.Numeric);
+    private readonly Entry _weight = Field(Strings.Register_Weight, keyboard: Keyboard.Numeric);
+    private readonly Entry _gestation = Field(Strings.Register_Gestation, keyboard: Keyboard.Numeric);
+    private readonly Entry _mother = Field(Strings.Register_Mother);
+    private readonly Entry _father = Field(Strings.Register_Father);
 
     private readonly VerticalStackLayout _late;
     private readonly Label _lateNote = new() { FontSize = 13, TextColor = Colors.DarkRed };
-    private readonly Picker _evidence = Choice<LateRegistrationEvidenceType>("Evidence seen", Enum.GetValues<LateRegistrationEvidenceType>());
-    private readonly Entry _evidenceReference = Field("Evidence reference, e.g. card number (optional)");
-    private readonly Entry _declarant = Field("Declarant's full name");
-    private readonly Entry _relationship = Field("Declarant's relationship to the child, e.g. mother");
+    private readonly Picker _evidence = Choice<LateRegistrationEvidenceType>(Strings.Register_Evidence, Enum.GetValues<LateRegistrationEvidenceType>());
+    private readonly Entry _evidenceReference = Field(Strings.Register_EvidenceReference);
+    private readonly Entry _declarant = Field(Strings.Register_Declarant);
+    private readonly Entry _relationship = Field(Strings.Register_Relationship);
 
     private readonly CheckBox _withStatistics = new();
     private readonly VerticalStackLayout _statistics;
-    private readonly Picker _education = Choice<EducationLevel>("Mother's education", Enum.GetValues<EducationLevel>());
-    private readonly Entry _priorLive = Field("Children born alive before this one", keyboard: Keyboard.Numeric);
-    private readonly Entry _prenatal = Field("Antenatal visits (optional)", keyboard: Keyboard.Numeric);
+    private readonly Picker _education = Choice<EducationLevel>(Strings.Register_Education, Enum.GetValues<EducationLevel>());
+    private readonly Entry _priorLive = Field(Strings.Register_PriorLive, keyboard: Keyboard.Numeric);
+    private readonly Entry _prenatal = Field(Strings.Register_Prenatal, keyboard: Keyboard.Numeric);
 
     /// <summary>A refused birth being corrected, or null for a new registration.</summary>
     private readonly SyncBirthRecord? _correcting;
@@ -64,7 +64,7 @@ public sealed partial class RegisterPage : FlowPage
     private readonly int _windowDays;
 
     public RegisterPage(DeviceHost host, SyncBirthRecord? correcting = null, IReadOnlyList<ApiError>? reasons = null)
-        : base(correcting is null ? "Register a birth" : "Correct a refused birth")
+        : base(correcting is null ? Strings.Register_Title : Strings.Register_CorrectTitle)
     {
         _host = host;
         _correcting = correcting;
@@ -73,21 +73,21 @@ public sealed partial class RegisterPage : FlowPage
         _order.IsVisible = false;
         _plurality.SelectedIndexChanged += (_, _) => _order.IsVisible = Picked<BirthPlurality>(_plurality) is not BirthPlurality.Singleton;
 
-        _late = Section("Registered late", _lateNote, _evidence, _evidenceReference, _declarant, _relationship);
+        _late = Section(Strings.Register_Late, _lateNote, _evidence, _evidenceReference, _declarant, _relationship);
         _born.DateSelected += (_, _) => ShowLateSection();
         ShowLateSection();
 
-        _statistics = Section("Statistics (optional, never delays the registration)", _education, _priorLive, _prenatal);
+        _statistics = Section(Strings.Register_Statistics, _education, _priorLive, _prenatal);
         _statistics.IsVisible = false;
         _withStatistics.CheckedChanged += (_, args) => _statistics.IsVisible = args.Value;
 
-        var register = new Button { Text = "Register this birth" };
+        var register = new Button { Text = Strings.Register_Submit };
         register.Clicked += async (_, _) => await RunAsync(RegisterAsync);
-        var sync = new Button { Text = "Sync now" };
+        var sync = new Button { Text = Strings.Register_Sync };
         sync.Clicked += async (_, _) => await RunAsync(SyncAsync);
-        var export = new Button { Text = "No signal? Save births for a USB stick or card", BackgroundColor = Colors.DarkSlateGray };
+        var export = new Button { Text = Strings.Register_Export, BackgroundColor = Colors.DarkSlateGray };
         export.Clicked += async (_, _) => await RunAsync(ExportAsync);
-        var lockTablet = new Button { Text = "Lock", BackgroundColor = Colors.Gray };
+        var lockTablet = new Button { Text = Strings.Register_Lock, BackgroundColor = Colors.Gray };
         lockTablet.Clicked += (_, _) =>
         {
             host.Lock();
@@ -98,13 +98,13 @@ public sealed partial class RegisterPage : FlowPage
         {
             new Label
             {
-                Text = "First version of this form, to be reworked with midwives and community health workers.",
+                Text = Strings.Register_FirstCut,
                 FontSize = 12, FontAttributes = FontAttributes.Italic,
             },
-            Caption("The child"), _child, Caption("Date of birth"), _born, _sex, _plurality, _order, _weight, _gestation,
-            Caption("The parents"), _mother, _father,
+            Caption(Strings.Register_Child), _child, Caption(Strings.Register_DateOfBirth), _born, _sex, _plurality, _order, _weight, _gestation,
+            Caption(Strings.Register_Parents), _mother, _father,
             _late,
-            new HorizontalStackLayout { Spacing = 8, Children = { _withStatistics, new Label { Text = "Add maternal statistics", VerticalOptions = LayoutOptions.Center } } },
+            new HorizontalStackLayout { Spacing = 8, Children = { _withStatistics, new Label { Text = Strings.Register_AddStatistics, VerticalOptions = LayoutOptions.Center } } },
             _statistics,
             Status, Busy,
         };
@@ -113,19 +113,19 @@ public sealed partial class RegisterPage : FlowPage
         {
             // The registry's reasons first, then the birth as it was sent, to put right.
             Fill(correcting.Birth);
-            register.Text = "Save the correction";
-            var back = new Button { Text = "Back, without saving", BackgroundColor = Colors.Gray };
+            register.Text = Strings.Register_SaveCorrection;
+            var back = new Button { Text = Strings.Register_BackNoSave, BackgroundColor = Colors.Gray };
             back.Clicked += (_, _) => Flow.Show(new RefusedPage(host));
             Build([
-                Heading($"Correct {correcting.Birth.Brn}"),
+                Heading(Language.Format(Strings.Register_CorrectHeading, correcting.Birth.Brn)),
                 new Label
                 {
                     FontSize = 14, TextColor = Colors.DarkRed,
-                    Text = "The registry refused this birth:\n"
-                           + string.Join("\n", (reasons ?? []).Select(reason => $"• {Label(reason.Field)}: {reason.Message}")),
+                    // The field in the registrar's language; the reason in the registry's words.
+                    Text = Strings.Register_RefusedBecause + "\n"
+                           + string.Join("\n", (reasons ?? []).Select(reason => $"• {Language.Field(reason.Field)}: {reason.Message}")),
                 },
-                Note($"Its number {correcting.Birth.Brn} and the time it was first entered stay the same. "
-                     + "Put right what the registry refused; it is sent again at the next sync."),
+                Note(Language.Format(Strings.Register_CorrectNote, correcting.Birth.Brn)),
                 .. form, register, back]);
             return;
         }
@@ -134,8 +134,14 @@ public sealed partial class RegisterPage : FlowPage
         refused.Clicked += (_, _) => Flow.Show(new RefusedPage(host));
         _refusedBanner = refused;
 
+        // Switching rebuilds the page, so a half-typed birth would be lost: ask first.
+        var language = Flow.LanguageSwitch(host, async () =>
+            !HasInput() || await DisplayAlertAsync(Strings.Language_Switch, Strings.Register_LanguageClears,
+                Strings.Language_Switch, Strings.Common_Cancel));
+
         Build([
-            Heading($"Unlocked: {host.UnlockedAs?.DisplayName}"),
+            language,
+            Heading(Language.Format(Strings.Register_Unlocked, host.UnlockedAs?.DisplayName)),
             refused,
             .. form, register, _result, _queue, sync, export, _exported, lockTablet]);
         Refresh();
@@ -188,8 +194,7 @@ public sealed partial class RegisterPage : FlowPage
     {
         var late = RegistrationRules.IsLate(BornOn, CapturedAt, _windowDays);
         _late.IsVisible = late;
-        _lateNote.Text = $"This birth is more than {_windowDays} days ago. "
-                         + "The law asks for evidence and someone to declare it; a district registrar checks them before a certificate is issued.";
+        _lateNote.Text = Language.Format(Strings.Register_LateNote, _windowDays);
     }
 
     private DateTime BornOn => DateTime.SpecifyKind((_born.Date ?? DateTime.Today).Date, DateTimeKind.Utc);
@@ -202,7 +207,9 @@ public sealed partial class RegisterPage : FlowPage
         var problems = Read(capturedAt, out var birth)
             .Concat(RegistrationRules.Problems(birth, capturedAt, _windowDays)
                 .Where(problem => !(problem.Field == "sex" && Picked<Sex>(_sex) is null))
-                .Select(problem => $"{Label(problem.Field)}: {problem.Message}"))
+                // The field in the registrar's language; the rule in the registry's
+                // words, which the tablet's copy is held to by parity tests.
+                .Select(problem => $"{Language.Field(problem.Field)}: {problem.Message}"))
             .ToList();
         if (problems.Count > 0)
         {
@@ -213,9 +220,9 @@ public sealed partial class RegisterPage : FlowPage
         if (_correcting is not null)
         {
             if (!await DisplayAlertAsync(
-                    "Save this correction?",
-                    $"{birth.ChildFullName}, born {birth.DateOfBirth:d MMM yyyy}, stays {_correcting.Birth.Brn}. It is sent again at the next sync.",
-                    "Save", "Go back"))
+                    Strings.Register_ConfirmCorrectionTitle,
+                    Language.Format(Strings.Register_ConfirmCorrectionBody, birth.ChildFullName, birth.DateOfBirth, _correcting.Birth.Brn),
+                    Strings.Common_Save, Strings.Common_GoBack))
             {
                 return;
             }
@@ -227,22 +234,22 @@ public sealed partial class RegisterPage : FlowPage
 
         // Confirmed before a number is used: once on a slip it cannot be taken back.
         if (!await DisplayAlertAsync(
-                "Register this birth?",
-                $"{birth.ChildFullName}, {Words(birth.Sex.ToString()).ToLowerInvariant()}, born {birth.DateOfBirth:d MMM yyyy}"
-                + (birth.MotherFullName is { Length: > 0 } mother ? $", mother {mother}" : "")
-                + (birth.LateRegistration is not null ? ". Registered late, with evidence." : "."),
-                "Register", "Go back"))
+                Strings.Register_ConfirmTitle,
+                Language.Format(Strings.Register_ConfirmBody, birth.ChildFullName, Language.Name(birth.Sex), birth.DateOfBirth)
+                + (birth.MotherFullName is { Length: > 0 } mother ? Language.Format(Strings.Register_ConfirmMother, mother) : "")
+                + (birth.LateRegistration is not null ? Strings.Register_ConfirmLate : Strings.Register_ConfirmEnd),
+                Strings.Register_ConfirmYes, Strings.Common_GoBack))
         {
             return;
         }
 
         var draft = await _host.RegisterAsync(birth);
         _result.Text = draft.IsProvisional
-            ? $"PROVISIONAL slip: {draft.Brn}\nA permanent number is given when the tablet syncs."
-            : $"Registered — BRN {draft.Brn}";
+            ? Language.Format(Strings.Register_Provisional, draft.Brn)
+            : Language.Format(Strings.Register_Registered, draft.Brn);
         if (draft.BlockLow)
         {
-            _result.Text += "\nNumbers are running low: sync when there is signal.";
+            _result.Text += "\n" + Strings.Register_BlockLow;
         }
 
         Clear();
@@ -260,25 +267,25 @@ public sealed partial class RegisterPage : FlowPage
                 return null;
             }
 
-            if (int.TryParse(entry.Text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var value))
+            if (int.TryParse(Language.WesternDigits(entry.Text).Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var value))
             {
                 return value;
             }
 
-            problems.Add($"{what} must be a whole number.");
+            problems.Add(Language.Format(Strings.Register_WholeNumber, what));
             return null;
         }
 
         decimal? weeks = null;
         if (!string.IsNullOrWhiteSpace(_gestation.Text))
         {
-            if (decimal.TryParse(_gestation.Text.Trim().Replace(',', '.'), NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed))
+            if (decimal.TryParse(Language.WesternDigits(_gestation.Text).Trim().Replace(',', '.').Replace('٫', '.'), NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed))
             {
                 weeks = parsed;
             }
             else
             {
-                problems.Add("Gestational age must be a number of weeks.");
+                problems.Add(Strings.Register_GestationNumber);
             }
         }
 
@@ -286,7 +293,7 @@ public sealed partial class RegisterPage : FlowPage
         // defaulted to it would register every untouched answer as a boy.
         if (Picked<Sex>(_sex) is not { } sex)
         {
-            problems.Add("Choose the child's sex (Undetermined if it cannot be told).");
+            problems.Add(Strings.Register_ChooseSex);
             sex = default;
         }
 
@@ -297,7 +304,7 @@ public sealed partial class RegisterPage : FlowPage
         {
             if (Picked<LateRegistrationEvidenceType>(_evidence) is not { } evidence)
             {
-                problems.Add("Choose the evidence seen for a late registration.");
+                problems.Add(Strings.Register_ChooseEvidence);
             }
             else
             {
@@ -317,8 +324,8 @@ public sealed partial class RegisterPage : FlowPage
             statistics = new MaternalStatisticsRequest
             {
                 MotherEducationLevel = Picked<EducationLevel>(_education),
-                PriorLiveBirths = Whole(_priorLive, "Children born alive before") ?? 0,
-                PrenatalVisitCount = Whole(_prenatal, "Antenatal visits"),
+                PriorLiveBirths = Whole(_priorLive, Strings.Register_WhatPriorLive) ?? 0,
+                PrenatalVisitCount = Whole(_prenatal, Strings.Register_WhatPrenatal),
             };
         }
 
@@ -328,8 +335,8 @@ public sealed partial class RegisterPage : FlowPage
             DateOfBirth = BornOn,
             Sex = sex,
             Plurality = plurality,
-            BirthOrder = plurality == BirthPlurality.Singleton ? null : Whole(_order, "Birth order"),
-            BirthWeightGrams = Whole(_weight, "Birth weight"),
+            BirthOrder = plurality == BirthPlurality.Singleton ? null : Whole(_order, Strings.Register_WhatOrder),
+            BirthWeightGrams = Whole(_weight, Strings.Register_WhatWeight),
             GestationalAgeWeeks = weeks,
             MotherFullName = Text(_mother),
             FatherFullName = Text(_father),
@@ -340,6 +347,11 @@ public sealed partial class RegisterPage : FlowPage
 
         return problems;
     }
+
+    private bool HasInput()
+        => new[] { _child, _order, _weight, _gestation, _mother, _father, _evidenceReference, _declarant, _relationship, _priorLive, _prenatal }
+               .Any(entry => !string.IsNullOrWhiteSpace(entry.Text))
+           || _sex.SelectedIndex >= 0 || _evidence.SelectedIndex >= 0 || _withStatistics.IsChecked;
 
     private void Clear()
     {
@@ -371,12 +383,11 @@ public sealed partial class RegisterPage : FlowPage
 
         await Share.Default.RequestAsync(new ShareFileRequest
         {
-            Title = $"{count} births, sealed for the registry",
+            Title = Language.Format(Strings.Export_ShareTitle, count),
             File = new ShareFile(path!, "application/json"),
         });
 
-        _result.Text = $"{count} births sealed for the registry. Save the file to a USB stick or card and take it to the district office. "
-                       + "They stay on this tablet, and are sent again at the next sync, until the registry confirms them.";
+        _result.Text = Language.Format(Strings.Export_Done, count);
         Refresh();
     }
 
@@ -391,14 +402,13 @@ public sealed partial class RegisterPage : FlowPage
     private void Refresh()
     {
         var facility = _host.Session?.Facility;
-        _queue.Text = $"Waiting to sync: {facility?.SendableCount}   ·   numbers left: {facility?.BlockRemaining}";
+        _queue.Text = Language.Format(Strings.Register_Queue, facility?.SendableCount, facility?.BlockRemaining);
 
         // A stick is not a confirmation: say how many on the last one the
         // registry has not yet confirmed, so nobody takes it for registered.
         var unconfirmed = _host.ExportedAndUnconfirmed;
         _exported.IsVisible = unconfirmed > 0;
-        _exported.Text = $"{unconfirmed} of the births saved for a USB stick on {_host.State.LastExport?.AtUtc.ToLocalTime():d MMM} "
-                         + "are not yet confirmed by the registry.";
+        _exported.Text = Language.Format(Strings.Register_ExportedUnconfirmed, unconfirmed, _host.State.LastExport?.AtUtc.ToLocalTime());
 
         // Never out of sight: a refused birth is one the registry does not have.
         var refused = facility?.Refused.Count ?? 0;
@@ -406,8 +416,8 @@ public sealed partial class RegisterPage : FlowPage
         {
             _refusedBanner.IsVisible = refused > 0;
             _refusedBanner.Text = refused == 1
-                ? "1 birth was refused by the registry. Tap to correct it."
-                : $"{refused} births were refused by the registry. Tap to correct them.";
+                ? Strings.Register_RefusedOne
+                : Language.Format(Strings.Register_RefusedMany, refused);
         }
     }
 
@@ -421,23 +431,26 @@ public sealed partial class RegisterPage : FlowPage
         var rejected = report.Settlements.SelectMany(settlement => settlement.Rejected).ToList();
         var assigned = string.Concat(settled
             .Where(outcome => outcome.AssignedBrn is not null)
-            .Select(outcome => $"\n{outcome.Brn} is now BRN {outcome.AssignedBrn}"));
+            .Select(outcome => "\n" + Language.Format(Strings.Sync_Assigned, outcome.Brn, outcome.AssignedBrn)));
         var refusals = string.Concat(rejected.Select(outcome =>
-            $"\n{outcome.Brn} refused: {string.Join("; ", outcome.Errors?.Select(error => error.Message) ?? [])}"));
+            "\n" + Language.Format(Strings.Sync_Refused, outcome.Brn,
+                string.Join("; ", outcome.Errors?.Select(error => error.Message) ?? []))));
 
         var upload = report.Upload switch
         {
-            null => "Nothing waiting to send.",
-            CentralOutcome.Succeeded => $"Sent: {settled.Count} registered with the registry"
-                                        + (rejected.Count > 0 ? $", {rejected.Count} refused and kept here" : "")
+            null => Strings.Sync_Nothing,
+            CentralOutcome.Succeeded => Language.Format(Strings.Sync_Sent, settled.Count)
+                                        + (rejected.Count > 0 ? Language.Format(Strings.Sync_SentRefused, rejected.Count) : "")
                                         + assigned + refusals,
-            CentralOutcome.Held => "Held at the district office. NOT yet confirmed by the registry. Do not tell the family it is registered.",
-            CentralOutcome.Unauthorized => "The tablet's sign-in has ended. A registrar must sign in again while there is signal.",
-            CentralOutcome.Unreachable => "No connection to the registry. The births are kept and will go next time.",
-            _ => $"Upload: {report.Upload}",
+            CentralOutcome.Held => Strings.Sync_Held,
+            CentralOutcome.Unauthorized => Strings.Sync_Unauthorized,
+            CentralOutcome.Unreachable => Strings.Sync_Unreachable,
+            _ => Language.Format(Strings.Sync_Other, Language.Name(report.Upload.Value)),
         };
 
-        return upload + (report.BlockGranted is { } block ? $"\nNew numbers: {block.BlockStart} to {block.BlockEnd}" : "");
+        return upload + (report.BlockGranted is { } block
+            ? "\n" + Language.Format(Strings.Sync_NewNumbers, block.BlockStart, block.BlockEnd)
+            : "");
     }
 
     // --- small helpers ------------------------------------------------------------------------------
@@ -448,19 +461,10 @@ public sealed partial class RegisterPage : FlowPage
     private static T? Picked<T>(Picker picker) where T : struct, Enum
         => picker.SelectedItem is Option<T> option ? option.Value : null;
 
+    /// <summary>A coded answer, shown in the registrar's language, carrying its code.</summary>
     private sealed record Option<T>(T Value) where T : struct, Enum
     {
-        public override string ToString() => Words(Value.ToString());
-    }
-
-    [GeneratedRegex("(?<=[a-z])(?=[A-Z])")]
-    private static partial Regex WordBoundary();
-
-    /// <summary>HealthFacilityRecord → "Health facility record".</summary>
-    private static string Words(string name)
-    {
-        var words = WordBoundary().Split(name);
-        return string.Join(' ', words.Select((word, i) => i == 0 ? word : word.ToLowerInvariant()));
+        public override string ToString() => Language.Name(Value);
     }
 
     private static string? Text(Entry entry) => string.IsNullOrWhiteSpace(entry.Text) ? null : entry.Text.Trim();
@@ -478,22 +482,4 @@ public sealed partial class RegisterPage : FlowPage
 
         return section;
     }
-
-    /// <summary>The registry's field names, as a registrar would say them.</summary>
-    private static string Label(string field) => field switch
-    {
-        "childFullName" => "Child's name",
-        "dateOfBirth" => "Date of birth",
-        "sex" => "Sex",
-        "plurality" => "Single or multiple birth",
-        "birthOrder" => "Birth order",
-        "birthWeightGrams" => "Birth weight",
-        "gestationalAgeWeeks" => "Gestational age",
-        "motherFullName" => "Mother's name",
-        "fatherFullName" => "Father's name",
-        "registeredAtUtc" => "Tablet clock",
-        "lateRegistration" => "Late registration",
-        _ when field.StartsWith("lateRegistration.") => "Late registration",
-        _ => field,
-    };
 }
