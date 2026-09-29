@@ -48,6 +48,16 @@ public sealed class DeviceState
     /// <summary>What certificates are verified against offline (B8). Null until first fetched.</summary>
     public BundleState? Bundle { get; set; }
 
+    /// <summary>The registry's transfer key, from the bundle: what USB exports are sealed to.</summary>
+    public TransferKeyResponse? TransferKey { get; set; }
+
+    /// <summary>
+    /// The last export to removable media: when, and which births. They stay
+    /// queued until the registry confirms them; this is what lets the tablet
+    /// say which births are on a stick somewhere and not yet confirmed.
+    /// </summary>
+    public ExportRecord? LastExport { get; set; }
+
     /// <summary>The registrar's Keycloak offline token. Rotated on every renewal, so saved on every renewal.</summary>
     public string? OfflineToken { get; set; }
 
@@ -112,3 +122,6 @@ public sealed record StaffCredential(Guid RegistrarId, string DisplayName, Regis
 
 /// <summary>The device's unlock attempt state, saved after <em>every</em> attempt.</summary>
 public sealed record PinAttempts(int FailedAttempts, DateTime? LockedUntilUtc);
+
+/// <summary>A sealed transfer file written for removable media, and the births on it.</summary>
+public sealed record ExportRecord(DateTime AtUtc, List<string> Brns);

@@ -85,6 +85,8 @@ public sealed partial class RegisterPage : FlowPage
         register.Clicked += async (_, _) => await RunAsync(RegisterAsync);
         var sync = new Button { Text = "Sync now" };
         sync.Clicked += async (_, _) => await RunAsync(SyncAsync);
+        var export = new Button { Text = "No signal? Save births for a USB stick or card", BackgroundColor = Colors.DarkSlateGray };
+        export.Clicked += async (_, _) => await RunAsync(ExportAsync);
         var lockTablet = new Button { Text = "Lock", BackgroundColor = Colors.Gray };
         lockTablet.Clicked += (_, _) =>
         {
@@ -135,11 +137,13 @@ public sealed partial class RegisterPage : FlowPage
         Build([
             Heading($"Unlocked: {host.UnlockedAs?.DisplayName}"),
             refused,
-            .. form, register, _result, _queue, sync, lockTablet]);
+            .. form, register, _result, _queue, sync, export, _exported, lockTablet]);
         Refresh();
     }
 
     private Button? _refusedBanner;
+
+    private readonly Label _exported = new() { FontSize = 13 };
 
     /// <summary>The form, filled from a birth as it was sent.</summary>
     private void Fill(RegisterBirthRequest birth)
@@ -351,6 +355,31 @@ public sealed partial class RegisterPage : FlowPage
         Status.Text = "";
     }
 
+    /// <summary>
+    /// Seal what is waiting to sync and hand it to the share sheet, from where
+    /// the registrar saves it to a USB stick or card. Sealed to the registry:
+    /// whoever carries or finds the stick reads nobody's details.
+    /// </summary>
+    private async Task ExportAsync()
+    {
+        var (path, count, problem) = await _host.ExportAsync();
+        if (problem is not null)
+        {
+            await ShowProblemAsync(problem);
+            return;
+        }
+
+        await Share.Default.RequestAsync(new ShareFileRequest
+        {
+            Title = $"{count} births, sealed for the registry",
+            File = new ShareFile(path!, "application/json"),
+        });
+
+        _result.Text = $"{count} births sealed for the registry. Save the file to a USB stick or card and take it to the district office. "
+                       + "They stay on this tablet, and are sent again at the next sync, until the registry confirms them.";
+        Refresh();
+    }
+
     private async Task SyncAsync()
     {
         var (report, staff) = await _host.SyncAsync();
@@ -363,6 +392,13 @@ public sealed partial class RegisterPage : FlowPage
     {
         var facility = _host.Session?.Facility;
         _queue.Text = $"Waiting to sync: {facility?.SendableCount}   ·   numbers left: {facility?.BlockRemaining}";
+
+        // A stick is not a confirmation: say how many on the last one the
+        // registry has not yet confirmed, so nobody takes it for registered.
+        var unconfirmed = _host.ExportedAndUnconfirmed;
+        _exported.IsVisible = unconfirmed > 0;
+        _exported.Text = $"{unconfirmed} of the births saved for a USB stick on {_host.State.LastExport?.AtUtc.ToLocalTime():d MMM} "
+                         + "are not yet confirmed by the registry.";
 
         // Never out of sight: a refused birth is one the registry does not have.
         var refused = facility?.Refused.Count ?? 0;

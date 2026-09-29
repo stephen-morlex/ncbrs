@@ -42,6 +42,7 @@ const Pages: { path: string; role: Role; ready: RegExp | string }[] = [
   { path: `/records?brn=${SeededBrn}`, role: 'ministryAdmin', ready: SeededBrn },
   { path: '/records/search', role: 'ministryAdmin', ready: /Search/ },
   { path: '/records/new', role: 'registrar', ready: 'Register the birth' },
+  { path: '/records/transfer', role: 'registrar', ready: 'Transfer file from the tablet' },
   { path: `/records/correct?brn=${SeededBrn}`, role: 'registrar', ready: 'Submit the correction' },
   { path: `/records/certificate?brn=${SeededBrn}`, role: 'registrar', ready: /certificate/i },
   { path: '/review/amendments', role: 'ministryAdmin', ready: /correction|amendment/i },

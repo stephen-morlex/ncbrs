@@ -146,9 +146,16 @@ vital-event models all come from `NCBRS.Contracts`, shared with the server.
    directly instead: persist the `SignedUpload` before sending it, and retry
    **that** upload — the same bytes under the same transaction id — until it
    is settled; never rebuild it.
-6. **Transfer (no network at all).** `BuildTransferFile()` → write to removable
-   media; a sync point opens it with `OfflineTransferFile.Open(bytes, publicKey)`
-   and forwards the body if accepted (H2).
+6. **Transfer (no network at all).**
+   `BuildSealedTransferFile(state.TransferKey)` seals the queued births to the
+   registry's transfer key, which arrives in the verification bundle. Write the
+   file to removable media (the app uses the share sheet); a district officer
+   uploads it at `POST /api/Sync/transfers` (the web's "Upload a transfer
+   file"), and the registry processes it as a sync.
+   - **Keep the births queued.** A stick can be lost. They settle as already
+     held when the registry has them.
+   - **Never write the unsealed `BuildTransferFile()` to media:** it names
+     every child in readable base64.
 7. **Verify a certificate (offline).** `CachedVerificationBundle.Verify(qr, now)`.
    Check `RefreshDue(now)` each connectivity window and refetch the bundle
    before it goes stale, or it will correctly but uselessly answer Unknown.

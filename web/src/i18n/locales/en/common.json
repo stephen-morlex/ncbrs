@@ -27,7 +27,8 @@
       "revocationList": "Revocation list",
       "auditTrail": "Audit trail",
       "dashboard": "Dashboard",
-      "dhis2Export": "DHIS2 export"
+      "dhis2Export": "DHIS2 export",
+      "uploadTransfer": "Upload a transfer file"
     },
     "soon": "soon"
   },
@@ -59,5 +60,24 @@
     "notBuiltYetDescription": "Routed and gated, but not built yet. The navigation shows it so the shape of the system is legible before every part of it exists.",
     "notFoundTitle": "No such page",
     "notFoundDescription": "Check the address, or use the navigation."
+  },
+  "transfer": {
+    "title": "Upload a transfer file",
+    "description": "Births saved on a USB stick or card by a tablet with no signal. The file is sealed: only the registry can read it, so it names nobody while it travels.",
+    "fileLabel": "Transfer file from the tablet",
+    "fileHint": "The file ends in .ncbrs-transfer.json.",
+    "upload": "Upload",
+    "notSealed": "This is not a sealed transfer file from an NCBRS tablet. Choose the file the tablet saved.",
+    "unreadable": "The file could not be read. Choose it again, or ask for a fresh copy from the tablet.",
+    "unreachable": "The registry did not answer. Check the connection before trying again; the file is safe to upload again.",
+    "refusedTitle": "The registry did not accept this file",
+    "resultTitle": "Uploaded",
+    "registered": "{{count}} registered",
+    "duplicates": "{{count}} already held",
+    "rejected": "{{count}} refused",
+    "duplicatesNote": "Births already held were sent earlier, by this file or by the tablet itself. Nothing is registered twice.",
+    "rejectedTitle": "Refused births",
+    "rejectedNote": "Tell the post: these births stay on the tablet, and the registrar corrects them there. The tablet learns of the refusal the next time it syncs.",
+    "rejectedItem": "BRN {{brn}}"
   }
 }

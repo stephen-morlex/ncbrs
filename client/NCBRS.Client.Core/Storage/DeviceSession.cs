@@ -68,6 +68,7 @@ public sealed class DeviceSession : IDisposable
         var sync = new ClientSyncState
         {
             InFlight = state.InFlight,
+            TransferKey = state.TransferKey,
             Bundle = state.Bundle is { } bundle
                 ? CachedVerificationBundle.From(bundle.SigningKeys, bundle.RevocationLists, bundle.FetchedAtUtc)
                 : CachedVerificationBundle.Empty,
@@ -90,6 +91,7 @@ public sealed class DeviceSession : IDisposable
         state.Outbox = [.. _outbox.Pending];
         state.Refused = _outbox.Refused.ToDictionary(entry => entry.Key, entry => entry.Value.ToList());
         state.InFlight = Sync.InFlight;
+        state.TransferKey = Sync.TransferKey;
         state.Bundle = Sync.Bundle is { HasBundle: true, FetchedAtUtc: { } fetchedAt } bundle
             ? new BundleState([.. bundle.SigningKeys], [.. bundle.RevocationLists], fetchedAt)
             : null;

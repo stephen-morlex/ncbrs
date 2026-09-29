@@ -351,6 +351,52 @@ public sealed class DeviceHost(ISignInBrowser browser)
         return draft;
     }
 
+    /// <summary>
+    /// Seal the births waiting to sync into a transfer file for a USB stick or
+    /// card, readable by the registry alone. Written to the app's cache, from
+    /// where the share sheet carries it to removable media; the births stay
+    /// queued until the registry confirms them, because a stick can be lost.
+    /// </summary>
+    public async Task<(string? Path, int Count, string? Problem)> ExportAsync()
+    {
+        if (Session!.Sync.TransferKey is not { } key)
+        {
+            return (null, 0, "This tablet has not yet received the registry's key for sealing transfer files. "
+                             + "Sync once while there is signal, then export.");
+        }
+
+        if (Session.Facility.SendableCount == 0)
+        {
+            return (null, 0, "No births are waiting to sync, so there is nothing to export.");
+        }
+
+        var export = Session.Facility.BuildSealedTransferFile(key);
+        var now = DateTime.UtcNow;
+
+        // One export at a time in the cache: an older file carries fewer
+        // births, and a copy lying around serves nobody.
+        var directory = Path.Combine(FileSystem.CacheDirectory, "exports");
+        Directory.CreateDirectory(directory);
+        foreach (var old in Directory.GetFiles(directory))
+        {
+            File.Delete(old);
+        }
+
+        var path = Path.Combine(directory, $"ncbrs-{State.Identity!.DeviceId}-{now:yyyyMMdd-HHmm}.ncbrs-transfer.json");
+        await File.WriteAllBytesAsync(path, export.File);
+
+        State.LastExport = new ExportRecord(now, [.. export.Brns]);
+        await SaveAsync();
+        return (path, export.Brns.Count, null);
+    }
+
+    /// <summary>How many births from the last export the registry has not yet confirmed.</summary>
+    public int ExportedAndUnconfirmed
+        => State.LastExport is { } last && Session is { } session
+            ? last.Brns.Count(brn => session.Facility.Refused.All(refused => refused.Record.Birth.Brn != brn)
+                                     && State.Outbox.Exists(record => record.Birth.Brn == brn))
+            : 0;
+
     /// <summary>Correct a refused birth and save it, released for the next sync.</summary>
     public async Task CorrectAsync(string brn, RegisterBirthRequest corrected)
     {

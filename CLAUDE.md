@@ -1119,7 +1119,7 @@ pre-audit authorization sweep, plan §17 24).
   surveillance risk is name search, which *is* scoped. Recorded for the
   auditor as a choice to confirm, not an oversight.
 
-## Sealed USB transfer files (WS-H2, registry side built)
+## Sealed USB transfer files (WS-H2, built)
 A post with no network at all carries its births on a USB stick to a
 connected sync point. The signed transfer envelope gave integrity (a changed
 file is refused) but **no confidentiality**: names and dates of birth sat in
@@ -1156,8 +1156,22 @@ it as base64, on media that passes through several hands. Now a file is
   says how the batch arrived (`SyncBatchProcessed:SealedTransfer:{keyId}`).
 - Uploaded twice (two sticks, or a stick and a later sync), the births are held
   once, since records deduplicate by BRN.
-- **Still to build:** the tablet's export screen, and an upload page for
-  district officers in the web app.
+- **The tablet side is built too.** "No signal? Save births for a USB stick or
+  card" (`FacilityClient.BuildSealedTransferFile`) seals what is waiting to
+  sync and hands it to the share sheet.
+  - The births **stay queued**, because a stick can be lost. The tablet shows
+    how many from the last export the registry has not yet confirmed.
+  - A window fetches the bundle whenever no transfer key is held, not just
+    when it is due. Otherwise an upgraded tablet with a fresh bundle would
+    wait days, unable to export.
+- **The web's "Upload a transfer file" page** (`/records/transfer`,
+  `CanRegisterBirths`) passes the file on unread and shows each birth's
+  outcome. It tells the officer that refused births are the tablet's to
+  correct.
+- Proven on the emulator: two births exported unsynced. The sealed file names
+  nobody and no BRN. Uploaded by the district officer, the births were
+  Confirmed, credited to the registrar who registered them, and audited as
+  arriving by sealed transfer. The tablet's next sync settled them.
 
 ## Device silence alerts (WS-F4, built)
 "A silent device is indistinguishable from a district with no births, and only

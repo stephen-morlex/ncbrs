@@ -41,6 +41,9 @@ const RecordSearch = lazy(() =>
 const RegisterBirth = lazy(() =>
   import('@/records/RegisterBirth').then((module) => ({ default: module.RegisterBirth })),
 )
+const UploadTransfer = lazy(() =>
+  import('@/sync/UploadTransfer').then((module) => ({ default: module.UploadTransfer })),
+)
 
 const RequestCorrection = lazy(() =>
   import('@/records/RequestCorrection').then((module) => ({ default: module.RequestCorrection })),
@@ -195,6 +198,17 @@ export default function App() {
           element={
             <RequireAuth policy="CanRegisterBirths">
               <RegisterBirth />
+            </RequireAuth>
+          }
+        />
+
+        {/* The same policy as the endpoint behind it: an upload is a sync,
+            carried on a stick instead of a link. */}
+        <Route
+          path="/records/transfer"
+          element={
+            <RequireAuth policy="CanRegisterBirths">
+              <UploadTransfer />
             </RequireAuth>
           }
         />
