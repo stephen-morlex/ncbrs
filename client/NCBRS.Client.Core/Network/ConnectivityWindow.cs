@@ -22,6 +22,12 @@ public sealed class ClientSyncState
 
     /// <summary>What the device verifies certificates against offline (B8).</summary>
     public CachedVerificationBundle Bundle { get; set; } = CachedVerificationBundle.Empty;
+
+    /// <summary>
+    /// The registry's transfer key, from the same bundle: what a USB transfer
+    /// file is sealed to. Null until a bundle carrying one is fetched.
+    /// </summary>
+    public TransferKeyResponse? TransferKey { get; set; }
 }
 
 /// <summary>What one connectivity window achieved, for the shell to show and act on.</summary>
@@ -88,7 +94,10 @@ public sealed class ConnectivityWindow(
         }
 
         var refreshed = false;
-        if (state.Bundle.RefreshDue(nowUtc, BundleRefreshLead))
+        // Also when no transfer key is held: a tablet whose bundle is still
+        // fresh would otherwise wait days for one — unable, meanwhile, to seal
+        // an export, which is exactly what a post losing its signal needs.
+        if (state.Bundle.RefreshDue(nowUtc, BundleRefreshLead) || state.TransferKey is null)
         {
             var bundle = await central.FetchOfflineBundleAsync(cancellationToken);
             // An answer missing its keys or its list is not a bundle. Taken as
@@ -102,6 +111,9 @@ public sealed class ConnectivityWindow(
                     fetched.Keys.Select(key => new VerificationKey(key.KeyId, key.PublicKeyPem, key.Active)),
                     [fetched.Revocations],
                     nowUtc);
+                // Kept when an older registry sends none: a key already held
+                // still seals, and losing it would stop exports for nothing.
+                state.TransferKey = fetched.TransferKey ?? state.TransferKey;
                 previous.Dispose();
                 refreshed = true;
                 await persist(state, cancellationToken);

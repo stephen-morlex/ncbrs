@@ -37,6 +37,9 @@ public class ConnectivityWindowTests
             issuedAtUtc = Now, nextUpdateUtc = Now.AddDays(7), count = 0, entries = Array.Empty<object>(), signature = "sig",
         },
         keys = new[] { new { keyId = "moh-2026", publicKeyPem = "-----BEGIN CERTIFICATE-----", active = true } },
+        // As the registry sends it today. Without one, every window asks again
+        // (SealedExportTests), which is right, but is not "nothing to do".
+        transferKey = new { keyId = "moh-transfer-2026", algorithm = "ECDH-P256+HKDF-SHA256+AES-256-GCM", publicKeyPem = "-----BEGIN PUBLIC KEY-----" },
     });
 
     /// <summary>Answers each path the way the centre would.</summary>

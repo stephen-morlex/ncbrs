@@ -20,6 +20,9 @@ public sealed record RegistrationDraft(string Brn, bool IsProvisional, bool Bloc
 /// </summary>
 public sealed record SignedUpload(byte[] Body, string Signature, string HeaderName, Guid TransactionId);
 
+/// <summary>A sealed transfer file, and the births it carries.</summary>
+public sealed record SealedExport(byte[] File, IReadOnlyList<string> Brns);
+
 /// <summary>
 /// The offline-first workflow of the Tier-1 client, composing the tested
 /// client-core pieces into the acts a registrar actually performs. This is the
@@ -153,6 +156,21 @@ public sealed class FacilityClient
     /// forward it to the centre verbatim.
     /// </summary>
     public byte[] BuildTransferFile() => OfflineTransferFile.Pack(_deviceId, SerializeBatch(Guid.CreateVersion7()), _signer);
+
+    /// <summary>
+    /// The births waiting to sync, signed and <b>sealed</b> to the registry's
+    /// transfer key, for a USB stick or card: readable by the registry alone,
+    /// whoever carries it. They stay queued here — the stick may be lost —
+    /// and the registry settles them as duplicates if they later arrive by
+    /// sync as well.
+    /// </summary>
+    public SealedExport BuildSealedTransferFile(TransferKeyResponse registryKey)
+    {
+        var brns = _outbox.BuildBatch().Records.Select(record => record.Birth.Brn).ToList();
+        var file = OfflineTransferFile.PackSealed(
+            _deviceId, SerializeBatch(Guid.CreateVersion7()), _signer, registryKey.PublicKeyPem, registryKey.KeyId);
+        return new SealedExport(file, brns);
+    }
 
     /// <summary>Apply the centre's response, settling accepted records and leaving rejected ones queued.</summary>
     public OutboxSettlement Settle(SyncBatchResponse response) => _outbox.Settle(response);

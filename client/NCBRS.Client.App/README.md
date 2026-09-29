@@ -41,6 +41,12 @@ opens the refused births, each with the registry's reasons, and each opens the
 form prefilled to correct it, keeping its number. Nothing there deletes a
 birth.
 
+**No signal at all?** "Save births for a USB stick or card" seals what is
+waiting to sync to the registry and opens the share sheet (Files, USB, SD
+card). The file names nobody; a district officer uploads it on the web's
+"Upload a transfer file" page. The births stay on the tablet until the
+registry confirms them, and the screen says how many are still unconfirmed.
+
 Anything that goes wrong has a way out on the tablet: **Sign in as someone
 else**, or **Wrong facility: hand over again**, which needs the officer and
 revokes the tablet at the registry first.

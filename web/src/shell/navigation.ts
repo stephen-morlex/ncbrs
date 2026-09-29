@@ -5,6 +5,7 @@ import {
   FileDown,
   FileSearch,
   GitCompareArrows,
+  HardDriveUpload,
   Hash,
   History,
   Hospital,
@@ -71,6 +72,14 @@ export const navigation: NavGroup[] = [
         id: 'registerBirth',
         to: '/records/new',
         icon: ScrollText,
+        policy: 'CanRegisterBirths',
+      },
+      // Births a tablet with no signal saved to a USB stick, sealed so only
+      // the registry reads them. A sync, carried by hand: the same policy.
+      {
+        id: 'uploadTransfer',
+        to: '/records/transfer',
+        icon: HardDriveUpload,
         policy: 'CanRegisterBirths',
       },
     ],
