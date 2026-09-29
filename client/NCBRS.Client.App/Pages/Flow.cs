@@ -1,4 +1,5 @@
 using NCBRS.Client.App.Services;
+using NCBRS.Client.Localization;
 
 namespace NCBRS.Client.App.Pages;
 
@@ -20,9 +21,53 @@ public static class Flow
 
     public static void Advance(DeviceHost host) => Show(For(host));
 
-    /// <summary>A page within a stage (the refused births, a correction), shown in place.</summary>
+    /// <summary>
+    /// A page within a stage (the refused births, a correction), shown in place,
+    /// laid out in the current language's direction.
+    /// </summary>
     public static void Show(Page page)
-        => Application.Current!.Windows[0].Page = new NavigationPage(page);
+    {
+        page.FlowDirection = AppLanguage.Direction;
+        Application.Current!.Windows[0].Page = new NavigationPage(page) { FlowDirection = AppLanguage.Direction };
+        AppLanguage.ApplyToWindow();
+    }
+
+    /// <summary>
+    /// The English / العربية switch. It rebuilds the page the tablet is on, in
+    /// the other language; <paramref name="confirmFirst"/> lets a page with
+    /// something typed in it ask before that is cleared.
+    /// </summary>
+    public static Button LanguageSwitch(DeviceHost host, Func<Task<bool>>? confirmFirst = null)
+    {
+        var button = new Button
+        {
+            Text = Strings.Language_Switch,
+            BackgroundColor = Colors.Transparent,
+            TextColor = Color.FromArgb("#1B5E20"),
+            BorderColor = Color.FromArgb("#1B5E20"),
+            BorderWidth = 1,
+            HorizontalOptions = LayoutOptions.End,
+        };
+        button.Clicked += async (_, _) =>
+        {
+            if (confirmFirst is not null && !await confirmFirst())
+            {
+                return;
+            }
+
+            // Posted, not run here. A culture set inside an async method lasts
+            // only as long as that method: the UI thread's own culture reverts
+            // when it returns, and controls that format themselves later (the
+            // date picker) kept the old language while the text changed. Found
+            // on the emulator: English labels over an Arabic date.
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                AppLanguage.Toggle();
+                Advance(host);
+            });
+        };
+        return button;
+    }
 }
 
 /// <summary>Shared layout for the flow's pages: a title, the content, and a line for what happened.</summary>

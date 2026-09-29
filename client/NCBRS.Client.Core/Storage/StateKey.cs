@@ -1,3 +1,5 @@
+using NCBRS.Client.Localization;
+
 namespace NCBRS.Client.Storage;
 
 /// <summary>
@@ -27,9 +29,7 @@ public static class StateKey
 
         if (storeExists)
         {
-            throw new StateFileUnreadableException(
-                "The device store exists but its key is gone from the platform key store. "
-                + "Do not reset the app: the store may hold births that have not been synced.");
+            throw new StateFileUnreadableException(Strings.Store_KeyLost);
         }
 
         var key = EncryptedStateFile.NewKey();

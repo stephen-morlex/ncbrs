@@ -41,6 +41,14 @@ opens the refused births, each with the registry's reasons, and each opens the
 form prefilled to correct it, keeping its number. Nothing there deletes a
 birth.
 
+**English and Arabic.** Every screen is in both; the Arabic is Modern Standard
+Arabic, a draft for the Ministry to review. The first run follows the tablet's
+own language; after that, the English / العربية switch on the unlock and main
+screens decides, remembered on the tablet (Preferences, not the encrypted
+store). In Arabic the whole window mirrors, title bar included. The strings live
+in the core (`NCBRS.Client.Core/Localization`, see its README) so CI checks both
+languages carry every string and the same placeholders.
+
 **No signal at all?** "Save births for a USB stick or card" seals what is
 waiting to sync to the registry and opens the share sheet (Files, USB, SD
 card). The file names nobody; a district officer uploads it on the web's

@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text.Json;
+using NCBRS.Client.Localization;
 using NCBRS.Client.Network;
 
 namespace NCBRS.Client.Storage;
@@ -92,7 +93,7 @@ public sealed class EncryptedStateFile
             if (sealedBytes.Length < HeaderSize || sealedBytes[0] != FormatVersion)
             {
                 throw new StateFileUnreadableException(
-                    "The device store is not in a format this version of the app can read.");
+                    Strings.Store_UnknownFormat);
             }
 
             var nonce = sealedBytes.AsSpan(1, NonceSize);
@@ -108,18 +109,17 @@ public sealed class EncryptedStateFile
             catch (AuthenticationTagMismatchException exception)
             {
                 throw new StateFileUnreadableException(
-                    "The device store could not be decrypted: the key is not the one it was written with, "
-                    + "or the file has been altered.", exception);
+                    Strings.Store_NotDecrypted, exception);
             }
 
             try
             {
                 return JsonSerializer.Deserialize<DeviceState>(plaintext, ClientJson.Options)
-                       ?? throw new StateFileUnreadableException("The device store is empty.");
+                       ?? throw new StateFileUnreadableException(Strings.Store_Empty);
             }
             catch (JsonException exception)
             {
-                throw new StateFileUnreadableException("The device store decrypted but could not be parsed.", exception);
+                throw new StateFileUnreadableException(Strings.Store_NotParsed, exception);
             }
             finally
             {

@@ -1,5 +1,6 @@
 using NCBRS.Client.App.Services;
 using NCBRS.Client.Auth;
+using NCBRS.Client.Localization;
 using NCBRS.Client.Storage;
 
 namespace NCBRS.Client.App.Pages;
@@ -7,9 +8,9 @@ namespace NCBRS.Client.App.Pages;
 /// <summary>A registrar signs the tablet in once; it then keeps an offline sign-in for weeks without signal.</summary>
 public sealed class RegistrarSignInPage : FlowPage
 {
-    public RegistrarSignInPage(DeviceHost host) : base("Sign in")
+    public RegistrarSignInPage(DeviceHost host) : base(Strings.SignIn_Title)
     {
-        var signIn = new Button { Text = "Registrar: sign in" };
+        var signIn = new Button { Text = Strings.SignIn_Button };
         signIn.Clicked += async (_, _) => await RunAsync(async () =>
         {
             if (await host.RegistrarSignInAsync() is { } problem)
@@ -22,10 +23,9 @@ public sealed class RegistrarSignInPage : FlowPage
         });
 
         Build(
-            Heading($"Tablet {host.State.Identity?.DeviceId} is enrolled"),
-            Note($"Enrolled to {host.EnrolledTo}."),
-            Note("A registrar or community health worker at this facility signs it in once. It then stays signed in "
-                 + "while offline, and syncs whenever there is signal."),
+            Heading(Language.Format(Strings.SignIn_Heading, host.State.Identity?.DeviceId)),
+            Note(Language.Format(Strings.SignIn_EnrolledTo, host.EnrolledTo)),
+            Note(Strings.SignIn_Intro),
             signIn,
             new Recovery(host, RunAsync, Status).View);
     }
@@ -40,8 +40,8 @@ public sealed class Recovery
 {
     public Recovery(DeviceHost host, Func<Func<Task>, Task> run, Label status)
     {
-        var someoneElse = new Button { Text = "Sign in as someone else", BackgroundColor = Colors.Gray, IsVisible = host.State.OfflineToken is not null };
-        var again = new Button { Text = "Wrong facility: hand over again (district officer)", BackgroundColor = Colors.Gray };
+        var someoneElse = new Button { Text = Strings.Recovery_SomeoneElse, BackgroundColor = Colors.Gray, IsVisible = host.State.OfflineToken is not null };
+        var again = new Button { Text = Strings.Recovery_HandOverAgain, BackgroundColor = Colors.Gray };
 
         someoneElse.Clicked += async (_, _) => await run(async () =>
         {
@@ -66,12 +66,11 @@ public sealed class Recovery
             Margin = new Thickness(0, 24, 0, 0),
             Children =
             {
-                new Label { Text = "Not the right facility or account?", FontAttributes = FontAttributes.Bold },
+                new Label { Text = Strings.Recovery_Title, FontAttributes = FontAttributes.Bold },
                 new Label
                 {
                     FontSize = 13,
-                    Text = $"This tablet is enrolled to {host.EnrolledTo}. A registrar from another facility cannot use it. "
-                           + "If it was handed over to the wrong facility, a district officer revokes it here and hands it over again.",
+                    Text = Language.Format(Strings.Recovery_Body, host.EnrolledTo),
                 },
                 someoneElse,
                 again,
@@ -92,15 +91,15 @@ public sealed class ProvisionPage : FlowPage
     private readonly DeviceHost _host;
     private readonly PinForm _pin;
 
-    public ProvisionPage(DeviceHost host) : base("Setting up")
+    public ProvisionPage(DeviceHost host) : base(Strings.Provision_Title)
     {
         _host = host;
         _pin = new PinForm(host, askCurrent: false, onSet: () => Flow.Advance(host), run: RunAsync, status: Status);
-        var retry = new Button { Text = "Try again" };
+        var retry = new Button { Text = Strings.Provision_Retry };
         retry.Clicked += async (_, _) => await RunAsync(ProvisionAsync);
         Build(
-            Heading("Setting up this tablet"),
-            Note($"Enrolled to {host.EnrolledTo}. Drawing a block of registration numbers, the certificate checks, and who can unlock it."),
+            Heading(Strings.Provision_Heading),
+            Note(Language.Format(Strings.Provision_Intro, host.EnrolledTo)),
             retry,
             _pin.View,
             new Recovery(host, RunAsync, Status).View);
@@ -123,7 +122,7 @@ public sealed class ProvisionPage : FlowPage
 
         _pin.View.IsVisible = _host.State.Brn is not null && _host.State.Staff.Count == 0;
         Status.Text = _pin.View.IsVisible && problems.Count == 0
-            ? "Nobody at this facility has an offline PIN yet. Set yours to unlock the tablet."
+            ? Strings.Provision_NoPins
             : string.Join("\n", problems);
     }
 }
@@ -133,10 +132,10 @@ public sealed class PinForm
 {
     public PinForm(DeviceHost host, bool askCurrent, Action onSet, Func<Func<Task>, Task> run, Label status)
     {
-        var current = new Entry { Placeholder = "Current PIN (blank if you have never set one)", IsPassword = true, Keyboard = Keyboard.Numeric, IsVisible = askCurrent };
-        var pin = new Entry { Placeholder = "New PIN (6 to 12 digits)", IsPassword = true, Keyboard = Keyboard.Numeric };
-        var again = new Entry { Placeholder = "New PIN again", IsPassword = true, Keyboard = Keyboard.Numeric };
-        var set = new Button { Text = "Set my PIN" };
+        var current = new Entry { Placeholder = Strings.Pin_Current, IsPassword = true, Keyboard = Keyboard.Numeric, IsVisible = askCurrent };
+        var pin = new Entry { Placeholder = Strings.Pin_New, IsPassword = true, Keyboard = Keyboard.Numeric };
+        var again = new Entry { Placeholder = Strings.Pin_Again, IsPassword = true, Keyboard = Keyboard.Numeric };
+        var set = new Button { Text = Strings.Pin_Set };
         set.Clicked += async (_, _) => await run(async () =>
         {
             // Checked here first, against the registry's own rules
@@ -149,7 +148,7 @@ public sealed class PinForm
 
             if (PinPolicy.Normalise(pin.Text) != PinPolicy.Normalise(again.Text))
             {
-                status.Text = "The two PINs are different.";
+                status.Text = Strings.Pin_Different;
                 return;
             }
 
@@ -170,8 +169,8 @@ public sealed class PinForm
             IsVisible = false,
             Children =
             {
-                new Label { Text = "Your offline PIN", FontAttributes = FontAttributes.Bold },
-                new Label { Text = "Set at the registry, so it works on any tablet at this facility. Not a run or a repeated digit.", FontSize = 13 },
+                new Label { Text = Strings.Pin_Title, FontAttributes = FontAttributes.Bold },
+                new Label { Text = Strings.Pin_Intro, FontSize = 13 },
                 current, pin, again, set,
             },
         };
@@ -186,25 +185,25 @@ public sealed class PinForm
 /// </summary>
 public sealed class UnlockPage : FlowPage
 {
-    public UnlockPage(DeviceHost host) : base("Unlock")
+    public UnlockPage(DeviceHost host) : base(Strings.Unlock_Title)
     {
         var person = new Picker
         {
-            Title = "Who are you?",
+            Title = Strings.Unlock_Who,
             ItemsSource = host.State.Staff.ToList(),
             ItemDisplayBinding = new Binding(nameof(StaffCredential.DisplayName)),
         };
-        var pin = new Entry { Placeholder = "PIN", IsPassword = true, Keyboard = Keyboard.Numeric };
-        var unlock = new Button { Text = "Unlock" };
+        var pin = new Entry { Placeholder = Strings.Unlock_Pin, IsPassword = true, Keyboard = Keyboard.Numeric };
+        var unlock = new Button { Text = Strings.Unlock_Button };
         var pinForm = new PinForm(host, askCurrent: true, onSet: () => Flow.Advance(host), run: RunAsync, status: Status);
-        var changePin = new Button { Text = "Set or change my PIN (needs signal)", BackgroundColor = Colors.Gray };
+        var changePin = new Button { Text = Strings.Unlock_ChangePin, BackgroundColor = Colors.Gray };
         changePin.Clicked += (_, _) => pinForm.View.IsVisible = !pinForm.View.IsVisible;
 
         unlock.Clicked += async (_, _) => await RunAsync(async () =>
         {
             if (person.SelectedItem is not StaffCredential who)
             {
-                Status.Text = "Choose your name.";
+                Status.Text = Strings.Unlock_ChooseName;
                 return;
             }
 
@@ -217,10 +216,10 @@ public sealed class UnlockPage : FlowPage
             }
 
             Status.Text = result.Outcome == UnlockOutcome.LockedOut
-                ? $"Too many wrong PINs. Locked until {result.LockedUntilUtc?.ToLocalTime():HH:mm}."
-                : $"Wrong PIN. {result.AttemptsRemaining} tries left before the tablet locks.";
+                ? Language.Format(Strings.Unlock_LockedOut, result.LockedUntilUtc?.ToLocalTime())
+                : Language.Format(Strings.Unlock_Wrong, result.AttemptsRemaining);
         });
 
-        Build(Heading("Unlock"), person, pin, unlock, changePin, pinForm.View);
+        Build(Flow.LanguageSwitch(host), Heading(Strings.Unlock_Title), person, pin, unlock, changePin, pinForm.View);
     }
 }

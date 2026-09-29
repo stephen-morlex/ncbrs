@@ -677,6 +677,29 @@ Proven there: a late birth was refused without evidence, and with it was filed
 `PendingApproval` with the window stored. Still to build: QR printing (B7,
 waiting on a printer decision).
 
+**The tablet speaks English and Arabic (Modern Standard, a draft for Ministry
+review).**
+- **Where the strings live:** all 217 are in `NCBRS.Client.Core/Localization`
+  (resx, strongly typed), not the app, so CI holds the two languages to the
+  same keys and placeholders (`LanguageTests`). The core's own messages to
+  registrars are translated too.
+- **The switch** is English / العربية on the unlock and main screens. The first
+  run follows the tablet's language, and the choice is remembered in
+  Preferences. In Arabic the window mirrors, the Android title bar included.
+- **Deliberately still English:** the registry's own reasons, the tablet's
+  copies of its rules (held to the registry's words by parity tests), and audit
+  reasons sent to the registry. The form shows the field in the registrar's
+  language beside the rule's words.
+- **Arabic-Indic digits** (٣١٠٠, ٫) are read as digits (`Language.WesternDigits`),
+  so a weight typed on an Arabic keypad is not "not a number".
+- **Two traps found on the emulator:**
+  - **A culture set inside an `async` handler reverts when the handler returns.**
+    The labels switched but the date picker kept the old language, so the
+    switch posts to the main thread.
+  - **Perl edits that write any non-ASCII character re-encode the whole file**,
+    corrupting every other non-ASCII character in it. Edit such files with the
+    Edit tool.
+
 **A birth the centre refuses is held and corrected, never resent unchanged.**
 Before this, a refused record stayed in the outbox as it was: it was sent every
 window and refused every window, forever, and the registrar was never told why.

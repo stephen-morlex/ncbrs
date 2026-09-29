@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using NCBRS.Client.Localization;
 using NCBRS.Client.Network;
 
 namespace NCBRS.Client.Auth;
@@ -125,8 +126,7 @@ public sealed class OfflineTokenSession(
         var refresh = tokenResponse.TryGetProperty("refresh_token", out var value) ? value.GetString() : null;
         if (refresh is null || TokenType(refresh) != "Offline")
         {
-            LastProblem = "This account cannot keep a tablet signed in while offline. Tablets need a registrar or "
-                          + "community health worker account.";
+            LastProblem = Strings.SignIn_CannotHoldOffline;
             return Task.FromResult(new SignInResult(false, LastProblem));
         }
 
@@ -170,7 +170,7 @@ public sealed class OfflineTokenSession(
             // The offline session lapsed (60 days unused, 180 in all) or was
             // revoked. Only signing in again resolves it.
             await ForgetAsync(cancellationToken);
-            LastProblem = "The tablet's sign-in has ended. Sign in again while there is connectivity.";
+            LastProblem = Strings.SignIn_Ended;
             return null;
         }
 
@@ -179,7 +179,7 @@ public sealed class OfflineTokenSession(
             throw new HttpRequestException($"The identity provider could not answer ({(int)response.StatusCode}).");
         }
 
-        LastProblem = $"The identity provider refused to renew the sign-in ({(int)response.StatusCode} {error}).";
+        LastProblem = Language.Format(Strings.SignIn_RenewRefused, (int)response.StatusCode, error);
         return null;
     }
 

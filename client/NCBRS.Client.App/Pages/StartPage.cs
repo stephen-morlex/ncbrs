@@ -1,4 +1,5 @@
 using NCBRS.Client.App.Services;
+using NCBRS.Client.Localization;
 
 namespace NCBRS.Client.App.Pages;
 
@@ -20,10 +21,9 @@ public sealed class StartPage(DeviceHost host) : ContentPage
 /// </summary>
 public sealed class UnreadablePage : FlowPage
 {
-    public UnreadablePage(DeviceHost host) : base("Records cannot be opened")
+    public UnreadablePage(DeviceHost host) : base(Strings.Unreadable_Title)
         => Build(
-            Heading("This tablet's records cannot be opened"),
-            Note("Do not reset or reinstall the app: it may hold births that have not been sent. "
-                 + "Contact the district office."),
+            Heading(Strings.Unreadable_Heading),
+            Note(Strings.Unreadable_Body),
             Note(host.UnreadableReason ?? ""));
 }

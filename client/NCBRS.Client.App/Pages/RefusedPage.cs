@@ -1,4 +1,5 @@
 using NCBRS.Client.App.Services;
+using NCBRS.Client.Localization;
 
 namespace NCBRS.Client.App.Pages;
 
@@ -11,21 +12,21 @@ namespace NCBRS.Client.App.Pages;
 /// </summary>
 public sealed class RefusedPage : FlowPage
 {
-    public RefusedPage(DeviceHost host) : base("Refused births")
+    public RefusedPage(DeviceHost host) : base(Strings.Refused_Title)
     {
         var refused = host.Session?.Facility.Refused ?? [];
         var list = new VerticalStackLayout { Spacing = 16 };
 
         foreach (var (record, reasons) in refused)
         {
-            var correct = new Button { Text = $"Correct {record.Birth.Brn}" };
+            var correct = new Button { Text = Language.Format(Strings.Refused_Correct, record.Birth.Brn) };
             correct.Clicked += (_, _) => Flow.Show(new RegisterPage(host, record, reasons));
             list.Add(new VerticalStackLayout
             {
                 Spacing = 6,
                 Children =
                 {
-                    new Label { Text = $"{record.Birth.Brn}: {record.Birth.ChildFullName}, born {record.Birth.DateOfBirth:d MMM yyyy}", FontAttributes = FontAttributes.Bold },
+                    new Label { Text = Language.Format(Strings.Refused_Item, record.Birth.Brn, record.Birth.ChildFullName, record.Birth.DateOfBirth), FontAttributes = FontAttributes.Bold },
                     new Label
                     {
                         FontSize = 13, TextColor = Colors.DarkRed,
@@ -36,14 +37,14 @@ public sealed class RefusedPage : FlowPage
             });
         }
 
-        var back = new Button { Text = "Back to registering", BackgroundColor = Colors.Gray };
+        var back = new Button { Text = Strings.Refused_Back, BackgroundColor = Colors.Gray };
         back.Clicked += (_, _) => Flow.Advance(host);
 
         Build(
-            Heading(refused.Count == 0 ? "No refused births" : "Births the registry refused"),
+            Heading(refused.Count == 0 ? Strings.Refused_HeadingNone : Strings.Refused_Heading),
             Note(refused.Count == 0
-                ? "Every birth sent has been accepted, or is waiting to sync."
-                : "Each is kept on this tablet with the registry's reasons. Correct it and it is sent again at the next sync."),
+                ? Strings.Refused_NoneNote
+                : Strings.Refused_Note),
             list,
             back);
     }

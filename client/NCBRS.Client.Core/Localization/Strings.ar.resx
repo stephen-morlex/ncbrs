@@ -1,0 +1,659 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Account_DeviceRefused" xml:space="preserve">
+    <value>السجل لا يقبل هذا الجهاز: {0}. يجب أن يعيد مسؤول المقاطعة تسليمه.</value>
+  </data>
+  <data name="Account_NoSignal" xml:space="preserve">
+    <value>تم تسجيل الدخول، لكن تعذّر الوصول إلى السجل للتحقق من الحساب. سيُعاد التحقق عند توفّر الإشارة.</value>
+  </data>
+  <data name="Account_NotAccepted" xml:space="preserve">
+    <value>لم يقبل السجل تسجيل الدخول. سجّل الدخول مجددًا.</value>
+  </data>
+  <data name="Account_NotChecked" xml:space="preserve">
+    <value>تعذّر التحقق من الحساب</value>
+  </data>
+  <data name="Account_NotHere" xml:space="preserve">
+    <value>هذا الحساب غير مسموح له في {0}، وهو المرفق المسجَّل لديه هذا الجهاز. سجّل الدخول بحساب من {0}. وإذا سُلِّم الجهاز إلى مرفق خاطئ، يعيد مسؤول المقاطعة تسليمه.</value>
+  </data>
+  <data name="BirthPlurality_HigherOrderMultiple" xml:space="preserve">
+    <value>توائم متعددة (أربعة فأكثر)</value>
+  </data>
+  <data name="BirthPlurality_Singleton" xml:space="preserve">
+    <value>ولادة مفردة</value>
+  </data>
+  <data name="BirthPlurality_Triplet" xml:space="preserve">
+    <value>توأم ثلاثي</value>
+  </data>
+  <data name="BirthPlurality_Twin" xml:space="preserve">
+    <value>توأم ثنائي</value>
+  </data>
+  <data name="CentralOutcome_Held" xml:space="preserve">
+    <value>محفوظ في مكتب المقاطعة</value>
+  </data>
+  <data name="CentralOutcome_InProgress" xml:space="preserve">
+    <value>قيد المعالجة</value>
+  </data>
+  <data name="CentralOutcome_Refused" xml:space="preserve">
+    <value>مرفوض</value>
+  </data>
+  <data name="CentralOutcome_Succeeded" xml:space="preserve">
+    <value>نجح</value>
+  </data>
+  <data name="CentralOutcome_Unauthorized" xml:space="preserve">
+    <value>تسجيل الدخول غير مقبول</value>
+  </data>
+  <data name="CentralOutcome_Unreachable" xml:space="preserve">
+    <value>تعذّر الوصول إلى السجل</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>إلغاء</value>
+  </data>
+  <data name="Common_GoBack" xml:space="preserve">
+    <value>رجوع</value>
+  </data>
+  <data name="Common_Ok" xml:space="preserve">
+    <value>حسنًا</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>حفظ</value>
+  </data>
+  <data name="EducationLevel_LowerSecondary" xml:space="preserve">
+    <value>ثانوي أدنى</value>
+  </data>
+  <data name="EducationLevel_None" xml:space="preserve">
+    <value>بلا تعليم</value>
+  </data>
+  <data name="EducationLevel_NotStated" xml:space="preserve">
+    <value>غير مذكور</value>
+  </data>
+  <data name="EducationLevel_PostSecondaryNonTertiary" xml:space="preserve">
+    <value>ما بعد الثانوي، غير جامعي</value>
+  </data>
+  <data name="EducationLevel_Primary" xml:space="preserve">
+    <value>ابتدائي</value>
+  </data>
+  <data name="EducationLevel_Tertiary" xml:space="preserve">
+    <value>جامعي أو عالٍ</value>
+  </data>
+  <data name="EducationLevel_UpperSecondary" xml:space="preserve">
+    <value>ثانوي أعلى</value>
+  </data>
+  <data name="Export_Done" xml:space="preserve">
+    <value>خُتمت {0} ولادات للسجل. احفظ الملف على ذاكرة USB أو بطاقة وسلّمه إلى مكتب المقاطعة. وتبقى على هذا الجهاز، وتُرسَل مجددًا في المزامنة التالية، حتى يؤكدها السجل.</value>
+  </data>
+  <data name="Export_ShareTitle" xml:space="preserve">
+    <value>{0} ولادات، مختومة للسجل</value>
+  </data>
+  <data name="Field_birthOrder" xml:space="preserve">
+    <value>ترتيب الولادة</value>
+  </data>
+  <data name="Field_birthWeightGrams" xml:space="preserve">
+    <value>الوزن عند الولادة</value>
+  </data>
+  <data name="Field_childFullName" xml:space="preserve">
+    <value>اسم الطفل</value>
+  </data>
+  <data name="Field_dateOfBirth" xml:space="preserve">
+    <value>تاريخ الولادة</value>
+  </data>
+  <data name="Field_fatherFullName" xml:space="preserve">
+    <value>اسم الأب</value>
+  </data>
+  <data name="Field_gestationalAgeWeeks" xml:space="preserve">
+    <value>عمر الحمل</value>
+  </data>
+  <data name="Field_lateRegistration" xml:space="preserve">
+    <value>التسجيل المتأخر</value>
+  </data>
+  <data name="Field_motherFullName" xml:space="preserve">
+    <value>اسم الأم</value>
+  </data>
+  <data name="Field_plurality" xml:space="preserve">
+    <value>ولادة مفردة أو متعددة</value>
+  </data>
+  <data name="Field_registeredAtUtc" xml:space="preserve">
+    <value>ساعة الجهاز</value>
+  </data>
+  <data name="Field_sex" xml:space="preserve">
+    <value>الجنس</value>
+  </data>
+  <data name="Handover_BadDistrict" xml:space="preserve">
+    <value>عنوان عقدة المقاطعة غير صالح.</value>
+  </data>
+  <data name="Handover_ChooseFacility" xml:space="preserve">
+    <value>اختر المرفق الصحي الذي سيُستخدم فيه هذا الجهاز.</value>
+  </data>
+  <data name="Handover_ConfirmBody" xml:space="preserve">
+    <value>سيسجّل الولادات لدى {0} ({1}) فقط، لا غير.</value>
+  </data>
+  <data name="Handover_ConfirmTitle" xml:space="preserve">
+    <value>تسجيل هذا الجهاز اللوحي؟</value>
+  </data>
+  <data name="Handover_ConfirmYes" xml:space="preserve">
+    <value>تسجيل</value>
+  </data>
+  <data name="Handover_District" xml:space="preserve">
+    <value>عنوان عقدة المقاطعة (اختياري)</value>
+  </data>
+  <data name="Handover_ElsewhereNotWithdrawn" xml:space="preserve">
+    <value>تعذّر سحب تسجيل الجهاز لدى مرفق آخر</value>
+  </data>
+  <data name="Handover_Enrol" xml:space="preserve">
+    <value>تسجيل هذا الجهاز اللوحي</value>
+  </data>
+  <data name="Handover_Facility" xml:space="preserve">
+    <value>المرفق الصحي</value>
+  </data>
+  <data name="Handover_GaveUp" xml:space="preserve">
+    <value>تعذّر تسجيل الجهاز حتى بمفتاح جديد. اتصل بمكتب المقاطعة.</value>
+  </data>
+  <data name="Handover_Intro" xml:space="preserve">
+    <value>يسجّل مسؤول المقاطعة الجهاز اللوحي لدى مرفقه الصحي، وينتهي تسجيل دخول المسؤول فور الانتهاء.</value>
+  </data>
+  <data name="Handover_Label" xml:space="preserve">
+    <value>تسمية، مثل: جهاز جناح الولادة (اختياري)</value>
+  </data>
+  <data name="Handover_ListFailed" xml:space="preserve">
+    <value>تعذّر عرض قائمة المرافق الصحية</value>
+  </data>
+  <data name="Handover_NeedAddresses" xml:space="preserve">
+    <value>أدخل عنوان السجل وعنوان تسجيل الدخول.</value>
+  </data>
+  <data name="Handover_NoFacilities" xml:space="preserve">
+    <value>لا يحق لهذا الحساب تسليم أجهزة لوحية لأي مرفق صحي.</value>
+  </data>
+  <data name="Handover_NotConfirmed" xml:space="preserve">
+    <value>تعذّر تأكيد التسجيل</value>
+  </data>
+  <data name="Handover_NotEnrolled" xml:space="preserve">
+    <value>لم يُسجَّل الجهاز</value>
+  </data>
+  <data name="Handover_NotWithdrawn" xml:space="preserve">
+    <value>لم يُسحب الجهاز، لذا لا يمكن إعادة تسليمه</value>
+  </data>
+  <data name="Handover_OfficerSignIn" xml:space="preserve">
+    <value>مسؤول المقاطعة: تسجيل الدخول</value>
+  </data>
+  <data name="Handover_Registry" xml:space="preserve">
+    <value>عنوان السجل</value>
+  </data>
+  <data name="Handover_RekeyedBody" xml:space="preserve">
+    <value>سُحبت الهوية السابقة لهذا الجهاز في السجل، لذلك سُجّل لدى {0} باسم {1}.</value>
+  </data>
+  <data name="Handover_RekeyedTitle" xml:space="preserve">
+    <value>سُجّل بهوية جديدة</value>
+  </data>
+  <data name="Handover_SignInAddress" xml:space="preserve">
+    <value>عنوان تسجيل الدخول</value>
+  </data>
+  <data name="Handover_Suspended" xml:space="preserve">
+    <value>هذا الجهاز ({0}) موقوف في السجل: {1}. يعيد مسؤول المقاطعة تفعيله من تطبيق الويب، أو يلغيه ليمكن إعادة تسليمه.</value>
+  </data>
+  <data name="Handover_Title" xml:space="preserve">
+    <value>تسليم هذا الجهاز اللوحي</value>
+  </data>
+  <data name="Host_AccountNotHere" xml:space="preserve">
+    <value>الحساب المسجَّل دخوله غير مسموح له في {0}. سجّل الدخول بحساب آخر.</value>
+  </data>
+  <data name="Host_DeviceRefused" xml:space="preserve">
+    <value>السجل لا يقبل هذا الجهاز ({0}). يجب أن يعيد مسؤول المقاطعة تسليمه.</value>
+  </data>
+  <data name="Host_HandOverBlocked" xml:space="preserve">
+    <value>توجد ولادات بانتظار المزامنة، ويجب أن تصل إلى السجل قبل إعادة تسليم هذا الجهاز.</value>
+  </data>
+  <data name="Host_NoBlock" xml:space="preserve">
+    <value>لم تُمنح مجموعة من أرقام التسجيل</value>
+  </data>
+  <data name="Host_NoTransferKey" xml:space="preserve">
+    <value>لم يتلقَّ هذا الجهاز بعدُ مفتاح السجل لختم ملفات النقل. زامِن مرة واحدة عند توفّر الإشارة، ثم صدِّر.</value>
+  </data>
+  <data name="Host_NothingToExport" xml:space="preserve">
+    <value>لا توجد ولادات بانتظار المزامنة، فلا شيء للتصدير.</value>
+  </data>
+  <data name="Host_PinCurrentWrong" xml:space="preserve">
+    <value>رمز PIN الحالي غير صحيح. إنه الرمز الذي تفتح به الأجهزة اللوحية.</value>
+  </data>
+  <data name="Host_PinExists" xml:space="preserve">
+    <value>لديك رمز PIN بالفعل. أدخله بوصفه الرمز الحالي لتغييره.</value>
+  </data>
+  <data name="Host_PinNotSet" xml:space="preserve">
+    <value>لم يُعيَّن رمز PIN</value>
+  </data>
+  <data name="Host_SignInClosed" xml:space="preserve">
+    <value>أُغلق تسجيل الدخول قبل اكتماله.</value>
+  </data>
+  <data name="Host_SignInMismatch" xml:space="preserve">
+    <value>عاد تسجيل الدخول لطلب مختلف. حاول مجددًا.</value>
+  </data>
+  <data name="Host_StaffNotRefreshed" xml:space="preserve">
+    <value>لم تُحدَّث قائمة الموظفين</value>
+  </data>
+  <data name="Host_StaffSkipped" xml:space="preserve">
+    <value>لا يستطيع {0} فتح هذا الجهاز: رمزه بصيغة لا يمكن التحقق منها.</value>
+  </data>
+  <data name="Language_Switch" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="LateRegistrationEvidenceType_AntenatalOrDeliveryCard" xml:space="preserve">
+    <value>بطاقة رعاية الحمل أو الولادة</value>
+  </data>
+  <data name="LateRegistrationEvidenceType_BirthAttendantAttestation" xml:space="preserve">
+    <value>إفادة القابلة أو مرافق الولادة</value>
+  </data>
+  <data name="LateRegistrationEvidenceType_CourtOrder" xml:space="preserve">
+    <value>أمر محكمة</value>
+  </data>
+  <data name="LateRegistrationEvidenceType_HealthFacilityRecord" xml:space="preserve">
+    <value>سجل مرفق صحي</value>
+  </data>
+  <data name="LateRegistrationEvidenceType_ImmunisationRecord" xml:space="preserve">
+    <value>سجل التطعيم</value>
+  </data>
+  <data name="LateRegistrationEvidenceType_ReligiousRecord" xml:space="preserve">
+    <value>سجل ديني</value>
+  </data>
+  <data name="LateRegistrationEvidenceType_SchoolRecord" xml:space="preserve">
+    <value>سجل مدرسي</value>
+  </data>
+  <data name="LateRegistrationEvidenceType_SwornAffidavit" xml:space="preserve">
+    <value>إقرار مشفوع باليمين</value>
+  </data>
+  <data name="Pin_Again" xml:space="preserve">
+    <value>أعد إدخال رمز PIN الجديد</value>
+  </data>
+  <data name="Pin_Current" xml:space="preserve">
+    <value>رمز PIN الحالي (اتركه فارغًا إن لم تعيّن رمزًا من قبل)</value>
+  </data>
+  <data name="Pin_Different" xml:space="preserve">
+    <value>الرمزان غير متطابقين.</value>
+  </data>
+  <data name="Pin_Intro" xml:space="preserve">
+    <value>يُعيَّن في السجل ليعمل على أي جهاز لوحي في هذا المرفق. لا يكون أرقامًا متتالية ولا رقمًا مكرَّرًا.</value>
+  </data>
+  <data name="Pin_New" xml:space="preserve">
+    <value>رمز PIN الجديد (من 6 إلى 12 رقمًا)</value>
+  </data>
+  <data name="Pin_Set" xml:space="preserve">
+    <value>تعيين رمزي</value>
+  </data>
+  <data name="Pin_Title" xml:space="preserve">
+    <value>رمز PIN الخاص بك للعمل دون اتصال</value>
+  </data>
+  <data name="Provision_Heading" xml:space="preserve">
+    <value>إعداد هذا الجهاز اللوحي</value>
+  </data>
+  <data name="Provision_Intro" xml:space="preserve">
+    <value>مسجَّل لدى {0}. جارٍ الحصول على مجموعة من أرقام التسجيل، وبيانات التحقق من الشهادات، ومن يحق لهم فتح الجهاز.</value>
+  </data>
+  <data name="Provision_NoPins" xml:space="preserve">
+    <value>لا أحد في هذا المرفق لديه رمز PIN للعمل دون اتصال بعد. عيِّن رمزك لفتح الجهاز.</value>
+  </data>
+  <data name="Provision_Retry" xml:space="preserve">
+    <value>إعادة المحاولة</value>
+  </data>
+  <data name="Provision_Title" xml:space="preserve">
+    <value>الإعداد</value>
+  </data>
+  <data name="Recovery_Body" xml:space="preserve">
+    <value>هذا الجهاز مسجَّل لدى {0}، ولا يمكن لمسجِّل من مرفق آخر استخدامه. وإذا سُلِّم إلى مرفق خاطئ، يلغيه مسؤول المقاطعة هنا ثم يعيد تسليمه.</value>
+  </data>
+  <data name="Recovery_HandOverAgain" xml:space="preserve">
+    <value>مرفق خاطئ: إعادة التسليم (مسؤول المقاطعة)</value>
+  </data>
+  <data name="Recovery_SomeoneElse" xml:space="preserve">
+    <value>تسجيل الدخول بحساب آخر</value>
+  </data>
+  <data name="Recovery_Title" xml:space="preserve">
+    <value>ليس المرفق أو الحساب الصحيح؟</value>
+  </data>
+  <data name="Refused_Back" xml:space="preserve">
+    <value>العودة إلى التسجيل</value>
+  </data>
+  <data name="Refused_Correct" xml:space="preserve">
+    <value>تصحيح {0}</value>
+  </data>
+  <data name="Refused_Heading" xml:space="preserve">
+    <value>الولادات التي رفضها السجل</value>
+  </data>
+  <data name="Refused_HeadingNone" xml:space="preserve">
+    <value>لا توجد ولادات مرفوضة</value>
+  </data>
+  <data name="Refused_Item" xml:space="preserve">
+    <value>{0}: {1}، تاريخ الولادة {2:d MMM yyyy}</value>
+  </data>
+  <data name="Refused_NoneNote" xml:space="preserve">
+    <value>قُبلت كل الولادات المرسلة، أو هي بانتظار المزامنة.</value>
+  </data>
+  <data name="Refused_Note" xml:space="preserve">
+    <value>تُحفظ كل ولادة على هذا الجهاز مع أسباب السجل. صحّحها لتُرسَل مجددًا في المزامنة التالية.</value>
+  </data>
+  <data name="Refused_Title" xml:space="preserve">
+    <value>الولادات المرفوضة</value>
+  </data>
+  <data name="Register_AddStatistics" xml:space="preserve">
+    <value>إضافة إحصاءات الأمومة</value>
+  </data>
+  <data name="Register_BackNoSave" xml:space="preserve">
+    <value>رجوع دون حفظ</value>
+  </data>
+  <data name="Register_BlockLow" xml:space="preserve">
+    <value>الأرقام توشك على النفاد: زامِن عند توفّر الإشارة.</value>
+  </data>
+  <data name="Register_Child" xml:space="preserve">
+    <value>الطفل</value>
+  </data>
+  <data name="Register_ChildName" xml:space="preserve">
+    <value>الاسم الكامل للطفل</value>
+  </data>
+  <data name="Register_ChooseEvidence" xml:space="preserve">
+    <value>اختر الدليل الذي اطُّلع عليه للتسجيل المتأخر.</value>
+  </data>
+  <data name="Register_ChooseSex" xml:space="preserve">
+    <value>اختر جنس الطفل (اختر «غير محدد» إن تعذّر تحديده).</value>
+  </data>
+  <data name="Register_ConfirmBody" xml:space="preserve">
+    <value>{0}، {1}، تاريخ الولادة {2:d MMM yyyy}</value>
+  </data>
+  <data name="Register_ConfirmCorrectionBody" xml:space="preserve">
+    <value>{0}، تاريخ الولادة {1:d MMM yyyy}، يبقى برقم {2}، وسيُرسَل مجددًا في المزامنة التالية.</value>
+  </data>
+  <data name="Register_ConfirmCorrectionTitle" xml:space="preserve">
+    <value>حفظ هذا التصحيح؟</value>
+  </data>
+  <data name="Register_ConfirmEnd" xml:space="preserve">
+    <value>.</value>
+  </data>
+  <data name="Register_ConfirmLate" xml:space="preserve">
+    <value>. تسجيل متأخر، مع دليل.</value>
+  </data>
+  <data name="Register_ConfirmMother" xml:space="preserve">
+    <value>، الأم {0}</value>
+  </data>
+  <data name="Register_ConfirmTitle" xml:space="preserve">
+    <value>تسجيل هذه الولادة؟</value>
+  </data>
+  <data name="Register_ConfirmYes" xml:space="preserve">
+    <value>تسجيل</value>
+  </data>
+  <data name="Register_CorrectHeading" xml:space="preserve">
+    <value>تصحيح {0}</value>
+  </data>
+  <data name="Register_CorrectNote" xml:space="preserve">
+    <value>يبقى رقمها {0} ووقت إدخالها الأول كما هما. صحّح ما رفضه السجل، وستُرسَل مجددًا في المزامنة التالية.</value>
+  </data>
+  <data name="Register_CorrectTitle" xml:space="preserve">
+    <value>تصحيح ولادة مرفوضة</value>
+  </data>
+  <data name="Register_DateOfBirth" xml:space="preserve">
+    <value>تاريخ الولادة</value>
+  </data>
+  <data name="Register_Declarant" xml:space="preserve">
+    <value>الاسم الكامل للمُقِرّ</value>
+  </data>
+  <data name="Register_Education" xml:space="preserve">
+    <value>تعليم الأم</value>
+  </data>
+  <data name="Register_Evidence" xml:space="preserve">
+    <value>الدليل الذي اطُّلع عليه</value>
+  </data>
+  <data name="Register_EvidenceReference" xml:space="preserve">
+    <value>مرجع الدليل، مثل رقم البطاقة (اختياري)</value>
+  </data>
+  <data name="Register_Export" xml:space="preserve">
+    <value>لا توجد إشارة؟ احفظ الولادات على ذاكرة USB أو بطاقة</value>
+  </data>
+  <data name="Register_ExportedUnconfirmed" xml:space="preserve">
+    <value>لم يؤكد السجل بعدُ {0} من الولادات المحفوظة على ذاكرة USB بتاريخ {1:d MMM}.</value>
+  </data>
+  <data name="Register_Father" xml:space="preserve">
+    <value>الاسم الكامل للأب</value>
+  </data>
+  <data name="Register_FirstCut" xml:space="preserve">
+    <value>نسخة أولى من هذا النموذج، ستُعاد صياغتها مع القابلات وعاملي الصحة المجتمعية.</value>
+  </data>
+  <data name="Register_Gestation" xml:space="preserve">
+    <value>عمر الحمل بالأسابيع (اختياري)</value>
+  </data>
+  <data name="Register_GestationNumber" xml:space="preserve">
+    <value>يجب أن يكون عمر الحمل عددًا من الأسابيع.</value>
+  </data>
+  <data name="Register_LanguageClears" xml:space="preserve">
+    <value>يؤدي تغيير اللغة إلى مسح ما كُتب في النموذج. هل تريد التغيير؟</value>
+  </data>
+  <data name="Register_Late" xml:space="preserve">
+    <value>تسجيل متأخر</value>
+  </data>
+  <data name="Register_LateNote" xml:space="preserve">
+    <value>مضى على هذه الولادة أكثر من {0} يومًا. يشترط القانون دليلًا وشخصًا يُقرّ بها، ويتحقق منهما مسجِّل المقاطعة قبل إصدار الشهادة.</value>
+  </data>
+  <data name="Register_Lock" xml:space="preserve">
+    <value>قفل</value>
+  </data>
+  <data name="Register_Mother" xml:space="preserve">
+    <value>الاسم الكامل للأم</value>
+  </data>
+  <data name="Register_Order" xml:space="preserve">
+    <value>ترتيب الولادة بين التوائم (1، 2، 3…)</value>
+  </data>
+  <data name="Register_Parents" xml:space="preserve">
+    <value>الوالدان</value>
+  </data>
+  <data name="Register_Plurality" xml:space="preserve">
+    <value>ولادة مفردة أو متعددة</value>
+  </data>
+  <data name="Register_Prenatal" xml:space="preserve">
+    <value>زيارات رعاية الحمل (اختياري)</value>
+  </data>
+  <data name="Register_PriorLive" xml:space="preserve">
+    <value>الأطفال المولودون أحياءً قبل هذا الطفل</value>
+  </data>
+  <data name="Register_Provisional" xml:space="preserve">
+    <value>إيصال مؤقت: {0}
+يُمنح رقم دائم عند مزامنة الجهاز.</value>
+  </data>
+  <data name="Register_Queue" xml:space="preserve">
+    <value>بانتظار المزامنة: {0}   ·   الأرقام المتبقية: {1}</value>
+  </data>
+  <data name="Register_RefusedBecause" xml:space="preserve">
+    <value>رفض السجل هذه الولادة:</value>
+  </data>
+  <data name="Register_RefusedMany" xml:space="preserve">
+    <value>رفض السجل {0} ولادات. اضغط لتصحيحها.</value>
+  </data>
+  <data name="Register_RefusedOne" xml:space="preserve">
+    <value>رفض السجل ولادة واحدة. اضغط لتصحيحها.</value>
+  </data>
+  <data name="Register_Registered" xml:space="preserve">
+    <value>سُجِّلت — رقم تسجيل الولادة {0}</value>
+  </data>
+  <data name="Register_Relationship" xml:space="preserve">
+    <value>صلة المُقِرّ بالطفل، مثل: الأم</value>
+  </data>
+  <data name="Register_SaveCorrection" xml:space="preserve">
+    <value>حفظ التصحيح</value>
+  </data>
+  <data name="Register_Sex" xml:space="preserve">
+    <value>الجنس</value>
+  </data>
+  <data name="Register_Statistics" xml:space="preserve">
+    <value>إحصاءات (اختيارية، ولا تؤخّر التسجيل أبدًا)</value>
+  </data>
+  <data name="Register_Submit" xml:space="preserve">
+    <value>تسجيل هذه الولادة</value>
+  </data>
+  <data name="Register_Sync" xml:space="preserve">
+    <value>مزامنة الآن</value>
+  </data>
+  <data name="Register_Title" xml:space="preserve">
+    <value>تسجيل ولادة</value>
+  </data>
+  <data name="Register_Unlocked" xml:space="preserve">
+    <value>مفتوح بواسطة: {0}</value>
+  </data>
+  <data name="Register_Weight" xml:space="preserve">
+    <value>الوزن عند الولادة بالغرام (اختياري)</value>
+  </data>
+  <data name="Register_WhatOrder" xml:space="preserve">
+    <value>ترتيب الولادة</value>
+  </data>
+  <data name="Register_WhatPrenatal" xml:space="preserve">
+    <value>عدد زيارات رعاية الحمل</value>
+  </data>
+  <data name="Register_WhatPriorLive" xml:space="preserve">
+    <value>عدد الأطفال المولودين أحياءً من قبل</value>
+  </data>
+  <data name="Register_WhatWeight" xml:space="preserve">
+    <value>الوزن عند الولادة</value>
+  </data>
+  <data name="Register_WholeNumber" xml:space="preserve">
+    <value>يجب أن يكون {0} عددًا صحيحًا.</value>
+  </data>
+  <data name="Sex_Female" xml:space="preserve">
+    <value>أنثى</value>
+  </data>
+  <data name="Sex_Male" xml:space="preserve">
+    <value>ذكر</value>
+  </data>
+  <data name="Sex_Undetermined" xml:space="preserve">
+    <value>غير محدد</value>
+  </data>
+  <data name="SignIn_Button" xml:space="preserve">
+    <value>المسجِّل: تسجيل الدخول</value>
+  </data>
+  <data name="SignIn_CannotHoldOffline" xml:space="preserve">
+    <value>لا يستطيع هذا الحساب إبقاء الجهاز مسجَّل الدخول دون اتصال. تحتاج الأجهزة اللوحية إلى حساب مسجِّل أو عامل صحة مجتمعية.</value>
+  </data>
+  <data name="SignIn_Ended" xml:space="preserve">
+    <value>انتهى تسجيل دخول الجهاز. سجّل الدخول مجددًا عند توفّر الاتصال.</value>
+  </data>
+  <data name="SignIn_EnrolledTo" xml:space="preserve">
+    <value>مسجَّل لدى {0}.</value>
+  </data>
+  <data name="SignIn_Heading" xml:space="preserve">
+    <value>الجهاز اللوحي {0} مسجَّل</value>
+  </data>
+  <data name="SignIn_Intro" xml:space="preserve">
+    <value>يسجّل الدخولَ مرةً واحدةً مسجِّلٌ أو عاملُ صحةٍ مجتمعية في هذا المرفق، ويبقى بعدها مسجَّلَ الدخول دون اتصال، ويُزامِن كلما توفّرت الإشارة.</value>
+  </data>
+  <data name="SignIn_NotAccepted" xml:space="preserve">
+    <value>لم يُقبل تسجيل الدخول ({0} {1}).</value>
+  </data>
+  <data name="SignIn_RenewRefused" xml:space="preserve">
+    <value>رفض مزوّد الهوية تجديد تسجيل الدخول ({0} {1}).</value>
+  </data>
+  <data name="SignIn_Title" xml:space="preserve">
+    <value>تسجيل الدخول</value>
+  </data>
+  <data name="Store_Empty" xml:space="preserve">
+    <value>مخزن الجهاز فارغ.</value>
+  </data>
+  <data name="Store_KeyLost" xml:space="preserve">
+    <value>مخزن الجهاز موجود لكن مفتاحه لم يعد في مخزن مفاتيح النظام. لا تُعِد ضبط التطبيق: فقد يحتوي المخزن على ولادات لم تُزامَن.</value>
+  </data>
+  <data name="Store_NotDecrypted" xml:space="preserve">
+    <value>تعذّر فك تشفير مخزن الجهاز: المفتاح ليس الذي كُتب به، أو أن الملف قد عُدِّل.</value>
+  </data>
+  <data name="Store_NotParsed" xml:space="preserve">
+    <value>فُكّ تشفير مخزن الجهاز لكن تعذّرت قراءة محتواه.</value>
+  </data>
+  <data name="Store_UnknownFormat" xml:space="preserve">
+    <value>مخزن الجهاز بصيغة لا يستطيع هذا الإصدار من التطبيق قراءتها.</value>
+  </data>
+  <data name="Sync_Assigned" xml:space="preserve">
+    <value>أصبح رقم تسجيل {0} هو {1}</value>
+  </data>
+  <data name="Sync_Held" xml:space="preserve">
+    <value>محفوظة في مكتب المقاطعة، ولم يؤكدها السجل بعد. لا تُخبر الأسرة بأنها سُجِّلت.</value>
+  </data>
+  <data name="Sync_NewNumbers" xml:space="preserve">
+    <value>أرقام جديدة: من {0} إلى {1}</value>
+  </data>
+  <data name="Sync_Nothing" xml:space="preserve">
+    <value>لا شيء بانتظار الإرسال.</value>
+  </data>
+  <data name="Sync_Other" xml:space="preserve">
+    <value>الرفع: {0}</value>
+  </data>
+  <data name="Sync_Refused" xml:space="preserve">
+    <value>رُفض {0}: {1}</value>
+  </data>
+  <data name="Sync_Sent" xml:space="preserve">
+    <value>أُرسلت: {0} مسجَّلة في السجل</value>
+  </data>
+  <data name="Sync_SentRefused" xml:space="preserve">
+    <value>، و{0} مرفوضة ومحفوظة هنا</value>
+  </data>
+  <data name="Sync_Unauthorized" xml:space="preserve">
+    <value>انتهى تسجيل دخول الجهاز. يجب أن يسجّل مسجِّلٌ الدخول مجددًا عند توفّر الإشارة.</value>
+  </data>
+  <data name="Sync_Unreachable" xml:space="preserve">
+    <value>لا اتصال بالسجل. الولادات محفوظة وستُرسَل في المرة القادمة.</value>
+  </data>
+  <data name="Unlock_Button" xml:space="preserve">
+    <value>فتح</value>
+  </data>
+  <data name="Unlock_ChangePin" xml:space="preserve">
+    <value>تعيين رمزي أو تغييره (يتطلب إشارة)</value>
+  </data>
+  <data name="Unlock_ChooseName" xml:space="preserve">
+    <value>اختر اسمك.</value>
+  </data>
+  <data name="Unlock_LockedOut" xml:space="preserve">
+    <value>محاولات خاطئة كثيرة. الجهاز مقفل حتى {0:HH:mm}.</value>
+  </data>
+  <data name="Unlock_Pin" xml:space="preserve">
+    <value>رمز PIN</value>
+  </data>
+  <data name="Unlock_Title" xml:space="preserve">
+    <value>فتح القفل</value>
+  </data>
+  <data name="Unlock_Who" xml:space="preserve">
+    <value>من أنت؟</value>
+  </data>
+  <data name="Unlock_Wrong" xml:space="preserve">
+    <value>رمز PIN خاطئ. المحاولات المتبقية قبل قفل الجهاز: {0}.</value>
+  </data>
+  <data name="Unreadable_Body" xml:space="preserve">
+    <value>لا تُعِد ضبط التطبيق ولا تُعِد تثبيته: فقد يحتوي على ولادات لم تُرسَل بعد. اتصل بمكتب المقاطعة.</value>
+  </data>
+  <data name="Unreadable_Heading" xml:space="preserve">
+    <value>تعذّر فتح سجلات هذا الجهاز اللوحي</value>
+  </data>
+  <data name="Unreadable_Title" xml:space="preserve">
+    <value>تعذّر فتح السجلات</value>
+  </data>
+  <data name="Window_Block" xml:space="preserve">
+    <value>مجموعة جديدة من أرقام التسجيل</value>
+  </data>
+  <data name="Window_Bundle" xml:space="preserve">
+    <value>بيانات التحقق من الشهادات</value>
+  </data>
+  <data name="Window_Held" xml:space="preserve">
+    <value>{0} محفوظ في عقدة المقاطعة وسيصل إلى المركز حين يمكن ذلك. لا تُخبر الأسرة بأن التسجيل مؤكد بعد.</value>
+  </data>
+  <data name="Window_InProgress" xml:space="preserve">
+    <value>{0} لا يزال قيد المعالجة في المركز، وسيُعاد التحقق منه.</value>
+  </data>
+  <data name="Window_Incomplete" xml:space="preserve">
+    <value>عاد {0} ناقصًا ولم يُستخدم، وتبقى النسخة المحفوظة قيد الاستخدام.</value>
+  </data>
+  <data name="Window_Other" xml:space="preserve">
+    <value>{0}: {1}.</value>
+  </data>
+  <data name="Window_Refused" xml:space="preserve">
+    <value>رفض المركز {0} ({1}).{2}</value>
+  </data>
+  <data name="Window_Unauthorized" xml:space="preserve">
+    <value>تعذّر إرسال {0}: سجّل الدخول مجددًا عند توفّر الاتصال.</value>
+  </data>
+  <data name="Window_Unreachable" xml:space="preserve">
+    <value>تعذّر وصول {0} إلى المركز، وسيُعاد المحاولة في المرة القادمة.</value>
+  </data>
+  <data name="Window_Upload" xml:space="preserve">
+    <value>الرفع</value>
+  </data>
+</root>

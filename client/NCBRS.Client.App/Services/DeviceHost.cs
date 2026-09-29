@@ -1,4 +1,5 @@
 using NCBRS.Client.Auth;
+using NCBRS.Client.Localization;
 using NCBRS.Client.Network;
 using NCBRS.Client.Storage;
 using NCBRS.Client.Sync;
@@ -89,12 +90,12 @@ public sealed class DeviceHost(ISignInBrowser browser)
         var callback = await browser.SignInAsync(officer.AuthorizationUrl(pkce, browser.RedirectUri));
         if (callback is null)
         {
-            return (null, "The sign-in was closed before it finished.");
+            return (null, Strings.Host_SignInClosed);
         }
 
         if (callback.State != pkce.State)
         {
-            return (null, "The sign-in came back for a different request. Try again.");
+            return (null, Strings.Host_SignInMismatch);
         }
 
         var result = await officer.RedeemAsync(callback.Code, pkce, browser.RedirectUri);
@@ -142,7 +143,7 @@ public sealed class DeviceHost(ISignInBrowser browser)
     {
         if (!CanHandOverAgain)
         {
-            return "Births are waiting to sync. They must reach the registry before this tablet is handed over again.";
+            return Strings.Host_HandOverBlocked;
         }
 
         var identity = State.Identity!;
@@ -212,12 +213,12 @@ public sealed class DeviceHost(ISignInBrowser browser)
         var callback = await browser.SignInAsync(session.AuthorizationUrl(pkce, browser.RedirectUri));
         if (callback is null)
         {
-            return "The sign-in was closed before it finished.";
+            return Strings.Host_SignInClosed;
         }
 
         if (callback.State != pkce.State)
         {
-            return "The sign-in came back for a different request. Try again.";
+            return Strings.Host_SignInMismatch;
         }
 
         var result = await session.RedeemAsync(callback.Code, pkce, browser.RedirectUri);
@@ -259,17 +260,16 @@ public sealed class DeviceHost(ISignInBrowser browser)
             }
             else if (block.RefusedTheDevice)
             {
-                problems.Add("The registry does not accept this tablet ("
-                             + string.Join("; ", block.Errors!.Select(error => error.Message))
-                             + "). A district officer must hand it over again.");
+                problems.Add(Language.Format(Strings.Host_DeviceRefused,
+                    string.Join("; ", block.Errors!.Select(error => error.Message))));
             }
             else if (block.RefusedTheAccountHere)
             {
-                problems.Add($"The signed-in account is not permitted at {EnrolledTo}. Sign in as someone else.");
+                problems.Add(Language.Format(Strings.Host_AccountNotHere, EnrolledTo));
             }
             else
             {
-                problems.Add(Describe("No block of registration numbers", block));
+                problems.Add(Describe(Strings.Host_NoBlock, block));
             }
         }
 
@@ -303,11 +303,11 @@ public sealed class DeviceHost(ISignInBrowser browser)
             if (set.Errors?.Any(error => error.Field == "data.currentPin") == true)
             {
                 return [currentPin.Length == 0
-                    ? "You already have an offline PIN. Enter it as the current PIN to change it."
-                    : "The current PIN is not right. It is the PIN you already unlock tablets with."];
+                    ? Strings.Host_PinExists
+                    : Strings.Host_PinCurrentWrong];
             }
 
-            return [Describe("The PIN was not set", set)];
+            return [Describe(Strings.Host_PinNotSet, set)];
         }
 
         return await RefreshStaffAsync(centre);
@@ -318,12 +318,12 @@ public sealed class DeviceHost(ISignInBrowser browser)
         var staff = await centre.FetchStaffCredentialsAsync(State.Identity!.FacilityId, State.Identity.DeviceId);
         if (staff.Value is not { } bundle)
         {
-            return [Describe("The staff list was not refreshed", staff)];
+            return [Describe(Strings.Host_StaffNotRefreshed, staff)];
         }
 
         var skipped = StaffUnlock.Provision(State, bundle);
         await SaveAsync();
-        return skipped.Select(name => $"{name} cannot unlock this tablet: their PIN is in a form it cannot check.").ToList();
+        return skipped.Select(name => Language.Format(Strings.Host_StaffSkipped, name)).ToList();
     }
 
     // --- unlock, register, sync -------------------------------------------------------------------
@@ -361,13 +361,12 @@ public sealed class DeviceHost(ISignInBrowser browser)
     {
         if (Session!.Sync.TransferKey is not { } key)
         {
-            return (null, 0, "This tablet has not yet received the registry's key for sealing transfer files. "
-                             + "Sync once while there is signal, then export.");
+            return (null, 0, Strings.Host_NoTransferKey);
         }
 
         if (Session.Facility.SendableCount == 0)
         {
-            return (null, 0, "No births are waiting to sync, so there is nothing to export.");
+            return (null, 0, Strings.Host_NothingToExport);
         }
 
         var export = Session.Facility.BuildSealedTransferFile(key);
@@ -425,7 +424,7 @@ public sealed class DeviceHost(ISignInBrowser browser)
     }
 
     public static string Describe<T>(string what, CentralResult<T> result)
-        => $"{what}: {result.Outcome}"
+        => $"{what}: {Language.Name(result.Outcome)}"
            + (result.Errors is { Count: > 0 } errors ? " — " + string.Join("; ", errors.Select(error => error.Message)) : "")
            + (result.Detail is { Length: > 0 } detail ? $" ({detail})" : "");
 }

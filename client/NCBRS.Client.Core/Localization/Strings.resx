@@ -1,0 +1,664 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Account_DeviceRefused" xml:space="preserve">
+    <value>The registry does not accept this tablet: {0}. A district officer must hand it over again.</value>
+  </data>
+  <data name="Account_NoSignal" xml:space="preserve">
+    <value>Signed in, but the registry could not be reached to check the account. It is checked again when there is signal.</value>
+  </data>
+  <data name="Account_NotAccepted" xml:space="preserve">
+    <value>The registry did not accept the sign-in. Sign in again.</value>
+  </data>
+  <data name="Account_NotChecked" xml:space="preserve">
+    <value>The account could not be checked</value>
+  </data>
+  <data name="Account_NotHere" xml:space="preserve">
+    <value>This account is not permitted at {0}, which this tablet is enrolled to. Sign in with an account from {0}. If the tablet was handed to the wrong facility, a district officer hands it over again.</value>
+  </data>
+  <data name="BirthPlurality_HigherOrderMultiple" xml:space="preserve">
+    <value>Higher-order multiple</value>
+  </data>
+  <data name="BirthPlurality_Singleton" xml:space="preserve">
+    <value>Singleton</value>
+  </data>
+  <data name="BirthPlurality_Triplet" xml:space="preserve">
+    <value>Triplet</value>
+  </data>
+  <data name="BirthPlurality_Twin" xml:space="preserve">
+    <value>Twin</value>
+  </data>
+  <data name="CentralOutcome_Held" xml:space="preserve">
+    <value>held at the district office</value>
+  </data>
+  <data name="CentralOutcome_InProgress" xml:space="preserve">
+    <value>still in progress</value>
+  </data>
+  <data name="CentralOutcome_Refused" xml:space="preserve">
+    <value>refused</value>
+  </data>
+  <data name="CentralOutcome_Succeeded" xml:space="preserve">
+    <value>succeeded</value>
+  </data>
+  <data name="CentralOutcome_Unauthorized" xml:space="preserve">
+    <value>sign-in not accepted</value>
+  </data>
+  <data name="CentralOutcome_Unreachable" xml:space="preserve">
+    <value>registry not reachable</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Common_GoBack" xml:space="preserve">
+    <value>Go back</value>
+  </data>
+  <data name="Common_Ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="EducationLevel_LowerSecondary" xml:space="preserve">
+    <value>Lower secondary</value>
+  </data>
+  <data name="EducationLevel_None" xml:space="preserve">
+    <value>No schooling</value>
+  </data>
+  <data name="EducationLevel_NotStated" xml:space="preserve">
+    <value>Not stated</value>
+  </data>
+  <data name="EducationLevel_PostSecondaryNonTertiary" xml:space="preserve">
+    <value>Post-secondary, not university</value>
+  </data>
+  <data name="EducationLevel_Primary" xml:space="preserve">
+    <value>Primary</value>
+  </data>
+  <data name="EducationLevel_Tertiary" xml:space="preserve">
+    <value>University or college</value>
+  </data>
+  <data name="EducationLevel_UpperSecondary" xml:space="preserve">
+    <value>Upper secondary</value>
+  </data>
+  <data name="Export_Done" xml:space="preserve">
+    <value>{0} births sealed for the registry. Save the file to a USB stick or card and take it to the district office. They stay on this tablet, and are sent again at the next sync, until the registry confirms them.</value>
+  </data>
+  <data name="Export_ShareTitle" xml:space="preserve">
+    <value>{0} births, sealed for the registry</value>
+  </data>
+  <data name="Field_birthOrder" xml:space="preserve">
+    <value>Birth order</value>
+  </data>
+  <data name="Field_birthWeightGrams" xml:space="preserve">
+    <value>Birth weight</value>
+  </data>
+  <data name="Field_childFullName" xml:space="preserve">
+    <value>Child's name</value>
+  </data>
+  <data name="Field_dateOfBirth" xml:space="preserve">
+    <value>Date of birth</value>
+  </data>
+  <data name="Field_fatherFullName" xml:space="preserve">
+    <value>Father's name</value>
+  </data>
+  <data name="Field_gestationalAgeWeeks" xml:space="preserve">
+    <value>Gestational age</value>
+  </data>
+  <data name="Field_lateRegistration" xml:space="preserve">
+    <value>Late registration</value>
+  </data>
+  <data name="Field_motherFullName" xml:space="preserve">
+    <value>Mother's name</value>
+  </data>
+  <data name="Field_plurality" xml:space="preserve">
+    <value>Single or multiple birth</value>
+  </data>
+  <data name="Field_registeredAtUtc" xml:space="preserve">
+    <value>Tablet clock</value>
+  </data>
+  <data name="Field_sex" xml:space="preserve">
+    <value>Sex</value>
+  </data>
+  <data name="Handover_BadDistrict" xml:space="preserve">
+    <value>The district node address is not an address.</value>
+  </data>
+  <data name="Handover_ChooseFacility" xml:space="preserve">
+    <value>Choose the facility this tablet is for.</value>
+  </data>
+  <data name="Handover_ConfirmBody" xml:space="preserve">
+    <value>It will register births for {0} ({1}) and nowhere else.</value>
+  </data>
+  <data name="Handover_ConfirmTitle" xml:space="preserve">
+    <value>Enrol this tablet?</value>
+  </data>
+  <data name="Handover_ConfirmYes" xml:space="preserve">
+    <value>Enrol</value>
+  </data>
+  <data name="Handover_District" xml:space="preserve">
+    <value>District node address (optional)</value>
+  </data>
+  <data name="Handover_ElsewhereNotWithdrawn" xml:space="preserve">
+    <value>The tablet's enrolment elsewhere could not be withdrawn</value>
+  </data>
+  <data name="Handover_Enrol" xml:space="preserve">
+    <value>Enrol this tablet</value>
+  </data>
+  <data name="Handover_Facility" xml:space="preserve">
+    <value>Facility</value>
+  </data>
+  <data name="Handover_GaveUp" xml:space="preserve">
+    <value>The tablet could not be enrolled even under a new key. Contact the district office.</value>
+  </data>
+  <data name="Handover_Intro" xml:space="preserve">
+    <value>A district officer enrols the tablet to its facility. The officer's sign-in ends as soon as it is done.</value>
+  </data>
+  <data name="Handover_Label" xml:space="preserve">
+    <value>Label, e.g. Maternity ward tablet (optional)</value>
+  </data>
+  <data name="Handover_ListFailed" xml:space="preserve">
+    <value>The facilities could not be listed</value>
+  </data>
+  <data name="Handover_NeedAddresses" xml:space="preserve">
+    <value>Enter the registry and sign-in addresses.</value>
+  </data>
+  <data name="Handover_NoFacilities" xml:space="preserve">
+    <value>This account may not hand tablets over to any facility.</value>
+  </data>
+  <data name="Handover_NotConfirmed" xml:space="preserve">
+    <value>The enrolment could not be confirmed</value>
+  </data>
+  <data name="Handover_NotEnrolled" xml:space="preserve">
+    <value>The tablet was not enrolled</value>
+  </data>
+  <data name="Handover_NotWithdrawn" xml:space="preserve">
+    <value>The tablet was not withdrawn, so it cannot be handed over again</value>
+  </data>
+  <data name="Handover_OfficerSignIn" xml:space="preserve">
+    <value>District officer: sign in</value>
+  </data>
+  <data name="Handover_Registry" xml:space="preserve">
+    <value>Registry address</value>
+  </data>
+  <data name="Handover_RekeyedBody" xml:space="preserve">
+    <value>This tablet's earlier identity was withdrawn at the registry, so it was enrolled to {0} as {1}.</value>
+  </data>
+  <data name="Handover_RekeyedTitle" xml:space="preserve">
+    <value>Enrolled under a new identity</value>
+  </data>
+  <data name="Handover_SignInAddress" xml:space="preserve">
+    <value>Sign-in address</value>
+  </data>
+  <data name="Handover_Suspended" xml:space="preserve">
+    <value>This tablet ({0}) is suspended at the registry: {1}. A district officer reinstates it from the web app, or revokes it so it can be handed over again.</value>
+  </data>
+  <data name="Handover_Title" xml:space="preserve">
+    <value>Hand over this tablet</value>
+  </data>
+  <data name="Host_AccountNotHere" xml:space="preserve">
+    <value>The signed-in account is not permitted at {0}. Sign in as someone else.</value>
+  </data>
+  <data name="Host_DeviceRefused" xml:space="preserve">
+    <value>The registry does not accept this tablet ({0}). A district officer must hand it over again.</value>
+  </data>
+  <data name="Host_HandOverBlocked" xml:space="preserve">
+    <value>Births are waiting to sync. They must reach the registry before this tablet is handed over again.</value>
+  </data>
+  <data name="Host_NoBlock" xml:space="preserve">
+    <value>No block of registration numbers</value>
+  </data>
+  <data name="Host_NoTransferKey" xml:space="preserve">
+    <value>This tablet has not yet received the registry's key for sealing transfer files. Sync once while there is signal, then export.</value>
+  </data>
+  <data name="Host_NothingToExport" xml:space="preserve">
+    <value>No births are waiting to sync, so there is nothing to export.</value>
+  </data>
+  <data name="Host_PinCurrentWrong" xml:space="preserve">
+    <value>The current PIN is not right. It is the PIN you already unlock tablets with.</value>
+  </data>
+  <data name="Host_PinExists" xml:space="preserve">
+    <value>You already have an offline PIN. Enter it as the current PIN to change it.</value>
+  </data>
+  <data name="Host_PinNotSet" xml:space="preserve">
+    <value>The PIN was not set</value>
+  </data>
+  <data name="Host_SignInClosed" xml:space="preserve">
+    <value>The sign-in was closed before it finished.</value>
+  </data>
+  <data name="Host_SignInMismatch" xml:space="preserve">
+    <value>The sign-in came back for a different request. Try again.</value>
+  </data>
+  <data name="Host_StaffNotRefreshed" xml:space="preserve">
+    <value>The staff list was not refreshed</value>
+  </data>
+  <data name="Host_StaffSkipped" xml:space="preserve">
+    <value>{0} cannot unlock this tablet: their PIN is in a form it cannot check.</value>
+  </data>
+  <data name="Language_Switch" xml:space="preserve">
+    <value>العربية</value>
+    <comment>The switch names the language it switches TO, written in that language.</comment>
+  </data>
+  <data name="LateRegistrationEvidenceType_AntenatalOrDeliveryCard" xml:space="preserve">
+    <value>Antenatal or delivery card</value>
+  </data>
+  <data name="LateRegistrationEvidenceType_BirthAttendantAttestation" xml:space="preserve">
+    <value>Birth attendant's attestation</value>
+  </data>
+  <data name="LateRegistrationEvidenceType_CourtOrder" xml:space="preserve">
+    <value>Court order</value>
+  </data>
+  <data name="LateRegistrationEvidenceType_HealthFacilityRecord" xml:space="preserve">
+    <value>Health facility record</value>
+  </data>
+  <data name="LateRegistrationEvidenceType_ImmunisationRecord" xml:space="preserve">
+    <value>Immunisation record</value>
+  </data>
+  <data name="LateRegistrationEvidenceType_ReligiousRecord" xml:space="preserve">
+    <value>Religious record</value>
+  </data>
+  <data name="LateRegistrationEvidenceType_SchoolRecord" xml:space="preserve">
+    <value>School record</value>
+  </data>
+  <data name="LateRegistrationEvidenceType_SwornAffidavit" xml:space="preserve">
+    <value>Sworn affidavit</value>
+    <comment>A legal instrument: agree the wording with the Ministry.</comment>
+  </data>
+  <data name="Pin_Again" xml:space="preserve">
+    <value>New PIN again</value>
+  </data>
+  <data name="Pin_Current" xml:space="preserve">
+    <value>Current PIN (blank if you have never set one)</value>
+  </data>
+  <data name="Pin_Different" xml:space="preserve">
+    <value>The two PINs are different.</value>
+  </data>
+  <data name="Pin_Intro" xml:space="preserve">
+    <value>Set at the registry, so it works on any tablet at this facility. Not a run or a repeated digit.</value>
+  </data>
+  <data name="Pin_New" xml:space="preserve">
+    <value>New PIN (6 to 12 digits)</value>
+  </data>
+  <data name="Pin_Set" xml:space="preserve">
+    <value>Set my PIN</value>
+  </data>
+  <data name="Pin_Title" xml:space="preserve">
+    <value>Your offline PIN</value>
+  </data>
+  <data name="Provision_Heading" xml:space="preserve">
+    <value>Setting up this tablet</value>
+  </data>
+  <data name="Provision_Intro" xml:space="preserve">
+    <value>Enrolled to {0}. Drawing a block of registration numbers, the certificate checks, and who can unlock it.</value>
+  </data>
+  <data name="Provision_NoPins" xml:space="preserve">
+    <value>Nobody at this facility has an offline PIN yet. Set yours to unlock the tablet.</value>
+  </data>
+  <data name="Provision_Retry" xml:space="preserve">
+    <value>Try again</value>
+  </data>
+  <data name="Provision_Title" xml:space="preserve">
+    <value>Setting up</value>
+  </data>
+  <data name="Recovery_Body" xml:space="preserve">
+    <value>This tablet is enrolled to {0}. A registrar from another facility cannot use it. If it was handed over to the wrong facility, a district officer revokes it here and hands it over again.</value>
+  </data>
+  <data name="Recovery_HandOverAgain" xml:space="preserve">
+    <value>Wrong facility: hand over again (district officer)</value>
+  </data>
+  <data name="Recovery_SomeoneElse" xml:space="preserve">
+    <value>Sign in as someone else</value>
+  </data>
+  <data name="Recovery_Title" xml:space="preserve">
+    <value>Not the right facility or account?</value>
+  </data>
+  <data name="Refused_Back" xml:space="preserve">
+    <value>Back to registering</value>
+  </data>
+  <data name="Refused_Correct" xml:space="preserve">
+    <value>Correct {0}</value>
+  </data>
+  <data name="Refused_Heading" xml:space="preserve">
+    <value>Births the registry refused</value>
+  </data>
+  <data name="Refused_HeadingNone" xml:space="preserve">
+    <value>No refused births</value>
+  </data>
+  <data name="Refused_Item" xml:space="preserve">
+    <value>{0}: {1}, born {2:d MMM yyyy}</value>
+  </data>
+  <data name="Refused_NoneNote" xml:space="preserve">
+    <value>Every birth sent has been accepted, or is waiting to sync.</value>
+  </data>
+  <data name="Refused_Note" xml:space="preserve">
+    <value>Each is kept on this tablet with the registry's reasons. Correct it and it is sent again at the next sync.</value>
+  </data>
+  <data name="Refused_Title" xml:space="preserve">
+    <value>Refused births</value>
+  </data>
+  <data name="Register_AddStatistics" xml:space="preserve">
+    <value>Add maternal statistics</value>
+  </data>
+  <data name="Register_BackNoSave" xml:space="preserve">
+    <value>Back, without saving</value>
+  </data>
+  <data name="Register_BlockLow" xml:space="preserve">
+    <value>Numbers are running low: sync when there is signal.</value>
+  </data>
+  <data name="Register_Child" xml:space="preserve">
+    <value>The child</value>
+  </data>
+  <data name="Register_ChildName" xml:space="preserve">
+    <value>Child's full name</value>
+  </data>
+  <data name="Register_ChooseEvidence" xml:space="preserve">
+    <value>Choose the evidence seen for a late registration.</value>
+  </data>
+  <data name="Register_ChooseSex" xml:space="preserve">
+    <value>Choose the child's sex (Undetermined if it cannot be told).</value>
+  </data>
+  <data name="Register_ConfirmBody" xml:space="preserve">
+    <value>{0}, {1}, born {2:d MMM yyyy}</value>
+  </data>
+  <data name="Register_ConfirmCorrectionBody" xml:space="preserve">
+    <value>{0}, born {1:d MMM yyyy}, stays {2}. It is sent again at the next sync.</value>
+  </data>
+  <data name="Register_ConfirmCorrectionTitle" xml:space="preserve">
+    <value>Save this correction?</value>
+  </data>
+  <data name="Register_ConfirmEnd" xml:space="preserve">
+    <value>.</value>
+  </data>
+  <data name="Register_ConfirmLate" xml:space="preserve">
+    <value>. Registered late, with evidence.</value>
+  </data>
+  <data name="Register_ConfirmMother" xml:space="preserve">
+    <value>, mother {0}</value>
+  </data>
+  <data name="Register_ConfirmTitle" xml:space="preserve">
+    <value>Register this birth?</value>
+  </data>
+  <data name="Register_ConfirmYes" xml:space="preserve">
+    <value>Register</value>
+  </data>
+  <data name="Register_CorrectHeading" xml:space="preserve">
+    <value>Correct {0}</value>
+  </data>
+  <data name="Register_CorrectNote" xml:space="preserve">
+    <value>Its number {0} and the time it was first entered stay the same. Put right what the registry refused; it is sent again at the next sync.</value>
+  </data>
+  <data name="Register_CorrectTitle" xml:space="preserve">
+    <value>Correct a refused birth</value>
+  </data>
+  <data name="Register_DateOfBirth" xml:space="preserve">
+    <value>Date of birth</value>
+  </data>
+  <data name="Register_Declarant" xml:space="preserve">
+    <value>Declarant's full name</value>
+  </data>
+  <data name="Register_Education" xml:space="preserve">
+    <value>Mother's education</value>
+  </data>
+  <data name="Register_Evidence" xml:space="preserve">
+    <value>Evidence seen</value>
+  </data>
+  <data name="Register_EvidenceReference" xml:space="preserve">
+    <value>Evidence reference, e.g. card number (optional)</value>
+  </data>
+  <data name="Register_Export" xml:space="preserve">
+    <value>No signal? Save births for a USB stick or card</value>
+  </data>
+  <data name="Register_ExportedUnconfirmed" xml:space="preserve">
+    <value>{0} of the births saved for a USB stick on {1:d MMM} are not yet confirmed by the registry.</value>
+  </data>
+  <data name="Register_Father" xml:space="preserve">
+    <value>Father's full name</value>
+  </data>
+  <data name="Register_FirstCut" xml:space="preserve">
+    <value>First version of this form, to be reworked with midwives and community health workers.</value>
+  </data>
+  <data name="Register_Gestation" xml:space="preserve">
+    <value>Gestational age in weeks (optional)</value>
+  </data>
+  <data name="Register_GestationNumber" xml:space="preserve">
+    <value>Gestational age must be a number of weeks.</value>
+  </data>
+  <data name="Register_LanguageClears" xml:space="preserve">
+    <value>Switching language clears what has been typed in the form. Switch anyway?</value>
+  </data>
+  <data name="Register_Late" xml:space="preserve">
+    <value>Registered late</value>
+  </data>
+  <data name="Register_LateNote" xml:space="preserve">
+    <value>This birth is more than {0} days ago. The law asks for evidence and someone to declare it; a district registrar checks them before a certificate is issued.</value>
+    <comment>A statutory term: agree the wording with the Ministry.</comment>
+  </data>
+  <data name="Register_Lock" xml:space="preserve">
+    <value>Lock</value>
+  </data>
+  <data name="Register_Mother" xml:space="preserve">
+    <value>Mother's full name</value>
+  </data>
+  <data name="Register_Order" xml:space="preserve">
+    <value>Birth order among the twins or triplets (1, 2, 3…)</value>
+  </data>
+  <data name="Register_Parents" xml:space="preserve">
+    <value>The parents</value>
+  </data>
+  <data name="Register_Plurality" xml:space="preserve">
+    <value>Single or multiple birth</value>
+  </data>
+  <data name="Register_Prenatal" xml:space="preserve">
+    <value>Antenatal visits (optional)</value>
+  </data>
+  <data name="Register_PriorLive" xml:space="preserve">
+    <value>Children born alive before this one</value>
+  </data>
+  <data name="Register_Provisional" xml:space="preserve">
+    <value>PROVISIONAL slip: {0}
+A permanent number is given when the tablet syncs.</value>
+    <comment>Must read as clearly provisional: a family holds this slip.</comment>
+  </data>
+  <data name="Register_Queue" xml:space="preserve">
+    <value>Waiting to sync: {0}   ·   numbers left: {1}</value>
+  </data>
+  <data name="Register_RefusedBecause" xml:space="preserve">
+    <value>The registry refused this birth:</value>
+  </data>
+  <data name="Register_RefusedMany" xml:space="preserve">
+    <value>{0} births were refused by the registry. Tap to correct them.</value>
+  </data>
+  <data name="Register_RefusedOne" xml:space="preserve">
+    <value>1 birth was refused by the registry. Tap to correct it.</value>
+  </data>
+  <data name="Register_Registered" xml:space="preserve">
+    <value>Registered — BRN {0}</value>
+  </data>
+  <data name="Register_Relationship" xml:space="preserve">
+    <value>Declarant's relationship to the child, e.g. mother</value>
+  </data>
+  <data name="Register_SaveCorrection" xml:space="preserve">
+    <value>Save the correction</value>
+  </data>
+  <data name="Register_Sex" xml:space="preserve">
+    <value>Sex</value>
+  </data>
+  <data name="Register_Statistics" xml:space="preserve">
+    <value>Statistics (optional, never delays the registration)</value>
+  </data>
+  <data name="Register_Submit" xml:space="preserve">
+    <value>Register this birth</value>
+  </data>
+  <data name="Register_Sync" xml:space="preserve">
+    <value>Sync now</value>
+  </data>
+  <data name="Register_Title" xml:space="preserve">
+    <value>Register a birth</value>
+  </data>
+  <data name="Register_Unlocked" xml:space="preserve">
+    <value>Unlocked: {0}</value>
+  </data>
+  <data name="Register_Weight" xml:space="preserve">
+    <value>Birth weight in grams (optional)</value>
+  </data>
+  <data name="Register_WhatOrder" xml:space="preserve">
+    <value>Birth order</value>
+  </data>
+  <data name="Register_WhatPrenatal" xml:space="preserve">
+    <value>Antenatal visits</value>
+  </data>
+  <data name="Register_WhatPriorLive" xml:space="preserve">
+    <value>Children born alive before</value>
+  </data>
+  <data name="Register_WhatWeight" xml:space="preserve">
+    <value>Birth weight</value>
+  </data>
+  <data name="Register_WholeNumber" xml:space="preserve">
+    <value>{0} must be a whole number.</value>
+  </data>
+  <data name="Sex_Female" xml:space="preserve">
+    <value>Female</value>
+  </data>
+  <data name="Sex_Male" xml:space="preserve">
+    <value>Male</value>
+  </data>
+  <data name="Sex_Undetermined" xml:space="preserve">
+    <value>Undetermined</value>
+  </data>
+  <data name="SignIn_Button" xml:space="preserve">
+    <value>Registrar: sign in</value>
+  </data>
+  <data name="SignIn_CannotHoldOffline" xml:space="preserve">
+    <value>This account cannot keep a tablet signed in while offline. Tablets need a registrar or community health worker account.</value>
+  </data>
+  <data name="SignIn_Ended" xml:space="preserve">
+    <value>The tablet's sign-in has ended. Sign in again while there is connectivity.</value>
+  </data>
+  <data name="SignIn_EnrolledTo" xml:space="preserve">
+    <value>Enrolled to {0}.</value>
+  </data>
+  <data name="SignIn_Heading" xml:space="preserve">
+    <value>Tablet {0} is enrolled</value>
+  </data>
+  <data name="SignIn_Intro" xml:space="preserve">
+    <value>A registrar or community health worker at this facility signs it in once. It then stays signed in while offline, and syncs whenever there is signal.</value>
+  </data>
+  <data name="SignIn_NotAccepted" xml:space="preserve">
+    <value>The sign-in was not accepted ({0} {1}).</value>
+  </data>
+  <data name="SignIn_RenewRefused" xml:space="preserve">
+    <value>The identity provider refused to renew the sign-in ({0} {1}).</value>
+  </data>
+  <data name="SignIn_Title" xml:space="preserve">
+    <value>Sign in</value>
+  </data>
+  <data name="Store_Empty" xml:space="preserve">
+    <value>The device store is empty.</value>
+  </data>
+  <data name="Store_KeyLost" xml:space="preserve">
+    <value>The device store exists but its key is gone from the platform key store. Do not reset the app: the store may hold births that have not been synced.</value>
+  </data>
+  <data name="Store_NotDecrypted" xml:space="preserve">
+    <value>The device store could not be decrypted: the key is not the one it was written with, or the file has been altered.</value>
+  </data>
+  <data name="Store_NotParsed" xml:space="preserve">
+    <value>The device store decrypted but could not be parsed.</value>
+  </data>
+  <data name="Store_UnknownFormat" xml:space="preserve">
+    <value>The device store is not in a format this version of the app can read.</value>
+  </data>
+  <data name="Sync_Assigned" xml:space="preserve">
+    <value>{0} is now BRN {1}</value>
+  </data>
+  <data name="Sync_Held" xml:space="preserve">
+    <value>Held at the district office. NOT yet confirmed by the registry. Do not tell the family it is registered.</value>
+    <comment>Must never read as a confirmation.</comment>
+  </data>
+  <data name="Sync_NewNumbers" xml:space="preserve">
+    <value>New numbers: {0} to {1}</value>
+  </data>
+  <data name="Sync_Nothing" xml:space="preserve">
+    <value>Nothing waiting to send.</value>
+  </data>
+  <data name="Sync_Other" xml:space="preserve">
+    <value>Upload: {0}</value>
+  </data>
+  <data name="Sync_Refused" xml:space="preserve">
+    <value>{0} refused: {1}</value>
+  </data>
+  <data name="Sync_Sent" xml:space="preserve">
+    <value>Sent: {0} registered with the registry</value>
+  </data>
+  <data name="Sync_SentRefused" xml:space="preserve">
+    <value>, {0} refused and kept here</value>
+  </data>
+  <data name="Sync_Unauthorized" xml:space="preserve">
+    <value>The tablet's sign-in has ended. A registrar must sign in again while there is signal.</value>
+  </data>
+  <data name="Sync_Unreachable" xml:space="preserve">
+    <value>No connection to the registry. The births are kept and will go next time.</value>
+  </data>
+  <data name="Unlock_Button" xml:space="preserve">
+    <value>Unlock</value>
+  </data>
+  <data name="Unlock_ChangePin" xml:space="preserve">
+    <value>Set or change my PIN (needs signal)</value>
+  </data>
+  <data name="Unlock_ChooseName" xml:space="preserve">
+    <value>Choose your name.</value>
+  </data>
+  <data name="Unlock_LockedOut" xml:space="preserve">
+    <value>Too many wrong PINs. Locked until {0:HH:mm}.</value>
+  </data>
+  <data name="Unlock_Pin" xml:space="preserve">
+    <value>PIN</value>
+  </data>
+  <data name="Unlock_Title" xml:space="preserve">
+    <value>Unlock</value>
+  </data>
+  <data name="Unlock_Who" xml:space="preserve">
+    <value>Who are you?</value>
+  </data>
+  <data name="Unlock_Wrong" xml:space="preserve">
+    <value>Wrong PIN. {0} tries left before the tablet locks.</value>
+  </data>
+  <data name="Unreadable_Body" xml:space="preserve">
+    <value>Do not reset or reinstall the app: it may hold births that have not been sent. Contact the district office.</value>
+  </data>
+  <data name="Unreadable_Heading" xml:space="preserve">
+    <value>This tablet's records cannot be opened</value>
+  </data>
+  <data name="Unreadable_Title" xml:space="preserve">
+    <value>Records cannot be opened</value>
+  </data>
+  <data name="Window_Block" xml:space="preserve">
+    <value>A new block of registration numbers</value>
+  </data>
+  <data name="Window_Bundle" xml:space="preserve">
+    <value>The certificate verification bundle</value>
+  </data>
+  <data name="Window_Held" xml:space="preserve">
+    <value>{0} is held at the District node and will reach the centre when it can. Do not tell the family the registration is confirmed yet.</value>
+  </data>
+  <data name="Window_InProgress" xml:space="preserve">
+    <value>{0} is still being processed at the centre; it will be checked again.</value>
+  </data>
+  <data name="Window_Incomplete" xml:space="preserve">
+    <value>{0} came back incomplete and was not used; the one held stays in use.</value>
+  </data>
+  <data name="Window_Other" xml:space="preserve">
+    <value>{0}: {1}.</value>
+  </data>
+  <data name="Window_Refused" xml:space="preserve">
+    <value>{0} was refused by the centre ({1}).{2}</value>
+  </data>
+  <data name="Window_Unauthorized" xml:space="preserve">
+    <value>{0} could not be sent: sign in again while there is connectivity.</value>
+  </data>
+  <data name="Window_Unreachable" xml:space="preserve">
+    <value>{0} could not reach the centre; it will be tried again next time.</value>
+  </data>
+  <data name="Window_Upload" xml:space="preserve">
+    <value>The upload</value>
+  </data>
+</root>
