@@ -28,14 +28,22 @@ public static class Language
 
     public static string CodeOf(CultureInfo culture) => culture.TwoLetterISOLanguageName == "ar" ? "ar" : "en";
 
-    /// <summary>Use <paramref name="culture"/> for every string and every date from here on.</summary>
+    /// <summary>
+    /// Use <paramref name="culture"/> for every string and every date from here on.
+    ///
+    /// Deliberately sets only the process-wide defaults, never
+    /// <see cref="CultureInfo.CurrentCulture"/>. That is an async-local: set once,
+    /// it pins whichever execution context it was set in, and every later tap
+    /// resolves the culture from the context it began in. On the emulator that
+    /// put an English date under Arabic labels, and an Arabic one under English.
+    /// Left unset, every context falls back to the defaults, and one assignment
+    /// here changes them all.
+    /// </summary>
     public static void Use(CultureInfo culture)
     {
         Strings.Culture = culture;
         CultureInfo.DefaultThreadCurrentCulture = culture;
         CultureInfo.DefaultThreadCurrentUICulture = culture;
-        CultureInfo.CurrentCulture = culture;
-        CultureInfo.CurrentUICulture = culture;
     }
 
     /// <summary>A resource with placeholders, formatted in the current culture.</summary>

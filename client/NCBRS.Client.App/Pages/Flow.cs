@@ -55,16 +55,10 @@ public static class Flow
                 return;
             }
 
-            // Posted, not run here. A culture set inside an async method lasts
-            // only as long as that method: the UI thread's own culture reverts
-            // when it returns, and controls that format themselves later (the
-            // date picker) kept the old language while the text changed. Found
-            // on the emulator: English labels over an Arabic date.
-            MainThread.BeginInvokeOnMainThread(() =>
-            {
-                AppLanguage.Toggle();
-                Advance(host);
-            });
+            // Safe from inside an async handler because Language.Use changes the
+            // process-wide defaults, not the async-local current culture.
+            AppLanguage.Toggle();
+            Advance(host);
         };
         return button;
     }

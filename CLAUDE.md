@@ -693,9 +693,13 @@ review).**
 - **Arabic-Indic digits** (٣١٠٠, ٫) are read as digits (`Language.WesternDigits`),
   so a weight typed on an Arabic keypad is not "not a number".
 - **Two traps found on the emulator:**
-  - **A culture set inside an `async` handler reverts when the handler returns.**
-    The labels switched but the date picker kept the old language, so the
-    switch posts to the main thread.
+  - **Never set `CultureInfo.CurrentCulture` in the app.** It is an
+    async-local: set once at startup, it pinned the root context, and every
+    later tap resolved the culture from wherever it began. The date picker
+    showed an English date under Arabic labels, and the reverse.
+    `Language.Use` sets only `Strings.Culture` and the process-wide
+    `DefaultThreadCurrent*Culture`, which every context falls back to. A first
+    fix, posting the switch to the main thread, only moved the fault.
   - **Perl edits that write any non-ASCII character re-encode the whole file**,
     corrupting every other non-ASCII character in it. Edit such files with the
     Edit tool.
