@@ -22,6 +22,10 @@ public sealed class RegisterPage : FlowPage
     private readonly DeviceHost _host;
     private readonly Label _queue = new() { FontSize = 13 };
     private readonly Label _result = new() { FontSize = 16 };
+    private readonly Button _printSlip = new() { Text = Strings.Register_PrintSlip, IsVisible = false };
+
+    /// <summary>The last birth's slip, until the next one: a family may need it printed again before leaving.</summary>
+    private NCBRS.Client.Printing.PrintedDocument? _lastSlip;
 
     private readonly Entry _child = Field(Strings.Register_ChildName);
     private readonly DatePicker _born = new() { MaximumDate = DateTime.Today, Date = DateTime.Today, Format = "d MMM yyyy" };
@@ -150,11 +154,24 @@ public sealed class RegisterPage : FlowPage
             }
         };
 
+        _printSlip.Clicked += async (_, _) => await RunAsync(PrintSlipAsync);
+
+        // Needs signal, and leaves the form the same way checking does.
+        var printCertificate = new Button { Text = Strings.Register_PrintCertificate, BackgroundColor = Colors.DarkSlateGray, IsVisible = host.Printer is not null };
+        printCertificate.Clicked += async (_, _) =>
+        {
+            if (!HasInput() || await DisplayAlertAsync(Strings.Register_PrintCertificate, Strings.Register_LeaveClears,
+                    Strings.Register_PrintCertificate, Strings.Common_Cancel))
+            {
+                Flow.Show(new PrintCertificatePage(host));
+            }
+        };
+
         Build([
             language,
             Heading(Language.Format(Strings.Register_Unlocked, host.UnlockedAs?.DisplayName)),
             refused,
-            .. form, register, _result, _queue, sync, export, _exported, checkCertificate, lockTablet]);
+            .. form, register, _result, _printSlip, _queue, sync, export, _exported, checkCertificate, printCertificate, lockTablet]);
         Refresh();
     }
 
@@ -263,8 +280,23 @@ public sealed class RegisterPage : FlowPage
             _result.Text += "\n" + Strings.Register_BlockLow;
         }
 
+        _lastSlip = _host.SlipFor(draft, birth);
+        _printSlip.IsVisible = _host.Printer is not null;
         Clear();
         Refresh();
+    }
+
+    private async Task PrintSlipAsync()
+    {
+        if (_lastSlip is null || _host.Printer is null)
+        {
+            return;
+        }
+
+        if (await _host.Printer.PrintAsync(_lastSlip) is { } problem)
+        {
+            await ShowProblemAsync(problem);
+        }
     }
 
     /// <summary>What the registrar entered, as the registry's request. Problems that are the form's own — a number that is not a number — come back first.</summary>

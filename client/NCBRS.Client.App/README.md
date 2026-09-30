@@ -55,6 +55,16 @@ card). The file names nobody; a district officer uploads it on the web's
 "Upload a transfer file" page. The births stay on the tablet until the
 registry confirms them, and the screen says how many are still unconfirmed.
 
+**Printing** (B7), through Android's print system: pick a printer the tablet
+can reach, or save a PDF. **Print the slip** appears after each registration;
+**Print a certificate** takes the number from the family's slip (or the slip's
+code) and needs signal, because only the registry signs a certificate. The
+tablet issues it, or reprints it if one exists (the registry counts reprints),
+checks it against its own bundle, and prints only what its code proves. The
+page is built in the core (`PrintedDocumentHtml`) and drawn by an off-screen
+web view with scripts off; the dialog defaults to A4. A Bluetooth thermal
+printer for posts is next.
+
 **Check a certificate** (B8), from the main screen or the unlock screen, with
 no signal and nobody unlocked. It scans the QR code with the camera (Android;
 asked for when the screen opens) or takes the code typed or pasted, and answers

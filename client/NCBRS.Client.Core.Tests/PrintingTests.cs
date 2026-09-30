@@ -286,4 +286,48 @@ public class PrintingTests
         Assert.False(result.Ready);
         Assert.Contains("Awaiting verification by a district registrar.", result.Problem);
     }
+
+    // --- the page for Android's print system ----------------------------------
+
+    private static PrintedDocument Page(string name = "Garang Deng", bool provisional = false, bool rightToLeft = false)
+        => new(DocumentKind.Slip, "Heading", "Title", [new PrintedLine("Child", name)], "Notice", "NCBRS-SLIP1.100104", provisional, rightToLeft);
+
+    /// <summary>Every value on the page was typed by someone: a name is text, never markup.</summary>
+    [Fact]
+    public void ANameIsPrintedAsText_NeverAsMarkup()
+    {
+        var html = PrintedDocumentHtml.Render(Page("<script>alert(1)</script> & Deng"), new bool[1, 1]);
+
+        Assert.DoesNotContain("<script>", html);
+        Assert.Contains("&lt;script&gt;alert(1)&lt;/script&gt; &amp; Deng", html);
+    }
+
+    [Fact]
+    public void AnArabicPageRunsRightToLeft()
+    {
+        Assert.Contains("dir=\"rtl\"", PrintedDocumentHtml.Render(Page(rightToLeft: true), new bool[1, 1]));
+        Assert.Contains("dir=\"ltr\"", PrintedDocumentHtml.Render(Page(), new bool[1, 1]));
+    }
+
+    [Fact]
+    public void OnlyAProvisionalSlipCarriesTheWarningBox()
+    {
+        Assert.Contains("class=\"provisional\"", PrintedDocumentHtml.Render(Page(provisional: true), new bool[1, 1]));
+        Assert.DoesNotContain("class=\"provisional\"", PrintedDocumentHtml.Render(Page(), new bool[1, 1]));
+    }
+
+    [Fact]
+    public void TheQrCodeIsDrawnModuleForModule_WithAQuietZone()
+    {
+        var modules = new bool[3, 2];
+        modules[0, 0] = true;
+        modules[2, 1] = true;
+
+        var svg = PrintedDocumentHtml.Svg(modules);
+
+        Assert.Contains("viewBox=\"0 0 11 10\"", svg);
+        Assert.Contains("M4 4h1v1h-1z", svg);
+        Assert.Contains("M6 5h1v1h-1z", svg);
+        Assert.Equal(2, svg.Split("h1v1h-1z").Length - 1);
+    }
 }

@@ -1,6 +1,7 @@
 using NCBRS.Client.Auth;
 using NCBRS.Client.Localization;
 using NCBRS.Client.Network;
+using NCBRS.Client.Printing;
 using NCBRS.Client.Storage;
 using NCBRS.Client.Sync;
 using NCBRS.Models;
@@ -30,8 +31,11 @@ public enum Stage
 /// do and it saves after every act — the rule the core's state machines rely
 /// on. It holds no registration logic; every act is a call into the core.
 /// </summary>
-public sealed class DeviceHost(ISignInBrowser browser)
+public sealed class DeviceHost(ISignInBrowser browser, IDocumentPrinter? printer = null)
 {
+    /// <summary>Android's print system on the tablet; none on the Windows dev head.</summary>
+    public IDocumentPrinter? Printer => printer;
+
     private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(120) };
     private EncryptedStateFile? _store;
     private OfflineTokenSession? _registrar;
@@ -397,6 +401,23 @@ public sealed class DeviceHost(ISignInBrowser browser)
             : 0;
 
     /// <summary>Correct a refused birth and save it, released for the next sync.</summary>
+    /// <summary>The slip for a birth just registered, as the family takes it away.</summary>
+    public PrintedDocument SlipFor(RegistrationDraft draft, RegisterBirthRequest birth)
+        => PrintedDocuments.Slip(draft, birth, EnrolledTo, UnlockedAs?.DisplayName);
+
+    /// <summary>
+    /// A birth's certificate from the registry, ready to print: online only,
+    /// since only the registry can sign one. Saved after, because the sign-in
+    /// may have renewed on the way.
+    /// </summary>
+    public async Task<CertificateToPrint> FetchCertificateAsync(string brn)
+    {
+        var result = await CertificateForPrint.FetchAsync(
+            Centre(), brn.Trim(), State.Identity!.DeviceId, Session!.Signer, Session.Sync.Bundle, DateTime.UtcNow);
+        await SaveAsync();
+        return result;
+    }
+
     public async Task CorrectAsync(string brn, RegisterBirthRequest corrected)
     {
         Session!.Facility.Correct(brn, corrected);

@@ -33,6 +33,7 @@ public static class MauiProgram
         // platform allows: its own scheme on Android, the loopback on Windows.
 #if ANDROID
         builder.Services.AddSingleton<ISignInBrowser, AndroidSignInBrowser>();
+        builder.Services.AddSingleton<IDocumentPrinter, AndroidPagePrinter>();
 #elif WINDOWS
         builder.Services.AddSingleton<ISignInBrowser, LoopbackSignInBrowser>();
 #endif
