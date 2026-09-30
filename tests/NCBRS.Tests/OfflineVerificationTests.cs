@@ -217,6 +217,45 @@ public class OfflineVerificationTests : IDisposable
         Assert.Contains("replacement", result.Detail);
     }
 
+    /// <summary>
+    /// A withdrawn certificate re-printed with its signature's twin: the
+    /// signature is genuine and the text is new, so a list keyed by the text
+    /// as presented used to miss it and answer Valid.
+    /// </summary>
+    [Fact]
+    public async Task AWithdrawnCertificateReprintedWithItsTwinSignature_IsStillCaughtOffline()
+    {
+        var qr = await IssueAsync();
+        await AmendAsync();
+        var list = await FetchAsync();
+
+        var reprinted = ReprintedCertificate.WithTwinSignature(qr);
+        Assert.NotEqual(qr, reprinted);
+        Assert.NotNull(_verifier.Verify(reprinted)); // the attack is real: it verifies
+
+        var result = Device(cached: list).Verify(reprinted);
+
+        Assert.Equal(OfflineVerdict.Revoked, result.Verdict);
+        Assert.False(result.Accept);
+    }
+
+    /// <summary>
+    /// The same attack by one character: bits a lenient decoder ignores.
+    /// Found on the tablet's check screen. Only the signer's encoding decodes.
+    /// </summary>
+    [Fact]
+    public async Task ACertificateWithOneCharacterChanged_IsNotGenuine_EvenWhereTheBytesWouldMatch()
+    {
+        var qr = await IssueAsync();
+        await AmendAsync();
+        var list = await FetchAsync();
+
+        var reprinted = ReprintedCertificate.WithPaddingBitChanged(qr);
+
+        Assert.Null(_verifier.Verify(reprinted));
+        Assert.Equal(OfflineVerdict.NotGenuine, Device(cached: list).Verify(reprinted).Verdict);
+    }
+
     [Fact]
     public async Task AForgery_IsRefusedWithoutDetail()
     {

@@ -77,6 +77,15 @@ public class OfflineCertificateVerifier(
             .TrimEnd('=').Replace('+', '-').Replace('/', '_');
     }
 
+    /// <summary>
+    /// Every serial a certificate carrying <paramref name="signature"/> could
+    /// be listed under: its own, and its ECDSA twin's
+    /// (<see cref="CertificateSignatureForms.Equivalents"/>). Checking only the
+    /// text as presented lets a re-printed withdrawn certificate through.
+    /// </summary>
+    public static IReadOnlyList<string> SerialsFor(string signature)
+        => [.. CertificateSignatureForms.Equivalents(signature).Select(SerialFor)];
+
     public OfflineVerification Verify(string? qrPayload)
     {
         var canonical = verifier.Verify(qrPayload);
@@ -99,8 +108,11 @@ public class OfflineCertificateVerifier(
                 "The certificate payload is not in a recognised format.");
         }
 
-        var serial = SerialFor(qrPayload!.Split('.')[^1]);
-        var revocation = cache.Find(serial);
+        // Under either form the signature could have been issued as: the
+        // text alone can be changed without the key.
+        var revocation = SerialsFor(qrPayload!.Split('.')[^1])
+            .Select(cache.Find)
+            .FirstOrDefault(found => found is not null);
 
         if (revocation is not null)
         {

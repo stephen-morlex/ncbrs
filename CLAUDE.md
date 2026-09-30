@@ -91,6 +91,23 @@ just what it does:
    certificate payload to make this easier: that would change the canonical
    signed form and stop every certificate already issued from verifying.
 
+   **A digest of the signature's *text* is only as fixed as the text, and
+   anyone can change it without the key** (`CertificateSignatureForms`).
+   Found on the tablet's check screen, where a code with its last character
+   changed still verified: a withdrawn certificate re-printed that way passed
+   the list, online and offline. Two ways, closed differently:
+   - **Base64 padding bits.** A 64-byte signature's last character carries 4
+     bits a lenient decoder ignores. Only the signer's own encoding now
+     decodes, so a changed character is simply not genuine.
+   - **ECDSA's twin.** If (r, s) verifies, so does (r, n − s). Refusing one
+     would break about half the certificates already issued, since the signer
+     never chose, so the list is checked under **both** serials
+     (`OfflineCertificateVerifier.SerialsFor`). The text actually issued is
+     always one of them.
+   Nothing issued or published changes. Don't "simplify" the lookup back to
+   the text as presented. The P-521 order was wrong in the first draft and
+   only the test that signs under each curve and verifies the twin caught it.
+
 ## Solution layout
 Three separately deployable services over one shared library. They are split
 because they fail and scale differently: a broker outage stalls delivery

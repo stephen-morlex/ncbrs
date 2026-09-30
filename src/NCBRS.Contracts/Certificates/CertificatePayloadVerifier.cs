@@ -143,12 +143,16 @@ public sealed class CertificatePayloadVerifier : IDisposable
         }
     }
 
+    /// <summary>
+    /// Only the encoding the signer writes. A lenient decoder accepts other
+    /// texts for the same bytes, and a revocation is looked up by the text,
+    /// so a changed character would slip a withdrawn certificate past the
+    /// list. See <see cref="CertificateSignatureForms"/>.
+    /// </summary>
     private static byte[] FromBase64Url(string value)
-    {
-        var padded = value.Replace('-', '+').Replace('_', '/');
-        padded += (padded.Length % 4) switch { 2 => "==", 3 => "=", _ => "" };
-        return Convert.FromBase64String(padded);
-    }
+        => CertificateSignatureForms.TryDecode(value, out var bytes)
+            ? bytes
+            : throw new FormatException("Not the signer's encoding.");
 
     public void Dispose()
     {

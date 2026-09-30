@@ -111,11 +111,14 @@ public class CertificateRevocationService(
         // Computed before the query: EF cannot translate a hash into SQL, and
         // leaving it in the predicate would silently pull every revocation
         // in the country into memory to filter it here.
-        var serial = CertificateRevocationRecorder.SerialFor(qrPayload.Split('.')[^1]);
+        // Both forms the signature could have been issued as: ECDSA lets
+        // anyone turn (r, s) into (r, n - s) without the key, and the list
+        // names the text that was issued (CertificateSignatureForms).
+        var serials = OfflineCertificateVerifier.SerialsFor(qrPayload.Split('.')[^1]);
 
         var revocation = await db.CertificateRevocations
             .AsNoTracking()
-            .FirstOrDefaultAsync(entry => entry.SerialHash == serial, cancellationToken);
+            .FirstOrDefaultAsync(entry => serials.Contains(entry.SerialHash), cancellationToken);
 
         if (revocation is not null)
         {
