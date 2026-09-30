@@ -767,4 +767,58 @@
   <data name="Register_Check" xml:space="preserve">
     <value>التحقق من شهادة</value>
   </data>
+  <data name="Print_Heading" xml:space="preserve">
+    <value>جمهورية جنوب السودان · وزارة الصحة</value>
+  </data>
+  <data name="Print_SlipTitle" xml:space="preserve">
+    <value>إيصال تسجيل الولادة</value>
+  </data>
+  <data name="Print_SlipProvisionalTitle" xml:space="preserve">
+    <value>إيصال تسجيل ولادة مؤقت</value>
+  </data>
+  <data name="Print_CertificateTitle" xml:space="preserve">
+    <value>شهادة ميلاد</value>
+  </data>
+  <data name="Print_ProvisionalNumber" xml:space="preserve">
+    <value>الرقم المؤقت</value>
+  </data>
+  <data name="Print_Facility" xml:space="preserve">
+    <value>المرفق الصحي</value>
+  </data>
+  <data name="Print_RegisteredAt" xml:space="preserve">
+    <value>تاريخ التسجيل</value>
+  </data>
+  <data name="Print_Registrar" xml:space="preserve">
+    <value>المسجِّل</value>
+  </data>
+  <data name="Print_DateTime" xml:space="preserve">
+    <value>{0:d MMMM yyyy HH:mm}</value>
+  </data>
+  <data name="Print_SlipNotice" xml:space="preserve">
+    <value>هذا الإيصال ليس شهادة ميلاد. احتفظ به: تصدر الشهادة بهذا الرقم بعد أن يؤكد السجل التسجيل.</value>
+  </data>
+  <data name="Print_SlipProvisionalNotice" xml:space="preserve">
+    <value>نفدت أرقام التسجيل في هذا الجهاز. يمنح السجل هذه الولادة رقمها الدائم عند المزامنة التالية، وتصدر الشهادة بذلك الرقم. احتفظ بهذا الإيصال حتى ذلك الحين.</value>
+  </data>
+  <data name="Print_CertificateNotice" xml:space="preserve">
+    <value>امسح الرمز للتحقق من هذه الشهادة. لا تكون سارية إلا إذا كانت أصلية ولم تُسحب.</value>
+  </data>
+  <data name="Print_NotIssued" xml:space="preserve">
+    <value>لم يُصدر السجل الشهادة: {0}</value>
+  </data>
+  <data name="Print_NotGenuine" xml:space="preserve">
+    <value>الشهادة التي أرسلها السجل لا تجتاز التحقق على هذا الجهاز، لذا لم تُطبع. زامن الجهاز لتحديث مفاتيحه ثم أعد المحاولة.</value>
+  </data>
+  <data name="Print_Withdrawn" xml:space="preserve">
+    <value>أرسل السجل شهادة مسحوبة، لذا لم تُطبع.</value>
+  </data>
+  <data name="Check_SlipHeadline" xml:space="preserve">
+    <value>إيصال تسجيل، وليس شهادة</value>
+  </data>
+  <data name="Check_Slip" xml:space="preserve">
+    <value>طبعه جهاز لوحي عند تسجيل الولادة. لا يثبت شيئًا بمفرده: يمكن لأي شخص طباعة مثله.</value>
+  </data>
+  <data name="Check_SlipDo" xml:space="preserve">
+    <value>اطلب شهادة الميلاد، أو ابحث عن الرقم لدى السجل.</value>
+  </data>
 </root>

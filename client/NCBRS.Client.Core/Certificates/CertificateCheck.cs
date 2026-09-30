@@ -37,7 +37,18 @@ public sealed record CertificateReading(
 public static class CertificateCheck
 {
     public static CertificateReading Check(CachedVerificationBundle bundle, string scanned, DateTime nowUtc)
-        => Read(bundle.Verify(scanned.Trim(), nowUtc), bundle.CoverageAt(nowUtc), bundle.FetchedAtUtc);
+    {
+        // A slip's code is not a certificate's, and calling it a forgery would
+        // accuse a family of holding exactly what they were handed.
+        if (Printing.SlipCode.TryRead(scanned, out var brn))
+        {
+            return new CertificateReading(OfflineVerdict.Unknown,
+                Strings.Check_SlipHeadline, Strings.Check_Slip, Strings.Check_SlipDo,
+                [new CertificateFact(Strings.Check_Brn, brn)], null);
+        }
+
+        return Read(bundle.Verify(scanned.Trim(), nowUtc), bundle.CoverageAt(nowUtc), bundle.FetchedAtUtc);
+    }
 
     public static CertificateReading Read(
         OfflineVerification result, RevocationCoverage? coverage, DateTime? downloadedAtUtc = null)

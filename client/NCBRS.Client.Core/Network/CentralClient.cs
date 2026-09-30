@@ -168,6 +168,32 @@ public sealed class CentralClient(HttpClient http, CentralEndpoints endpoints, A
             cancellationToken);
 
     /// <summary>
+    /// Have the registry sign a birth's certificate. Signed by the device: the
+    /// act is recorded against it, and a stolen token must not be able to
+    /// issue certificates as any tablet it names. 409 when one is already
+    /// issued — reprinting is a separate, counted act
+    /// (<see cref="ReprintCertificateAsync"/>) — and for a record that cannot
+    /// have one yet (late and unverified, provisional, annulled).
+    /// </summary>
+    public Task<CentralResult<CertificateResponse>> IssueCertificateAsync(
+        string brn, string deviceId, DeviceSigner signer, CancellationToken cancellationToken = default)
+        => SendAsync<CertificateResponse>(
+            HttpMethod.Post, endpoints.Centre, $"api/BirthRecords/{Uri.EscapeDataString(brn)}/certificate",
+            Envelope(new IssueCertificateRequest { DeviceId = deviceId }, Guid.CreateVersion7()),
+            signer, cancellationToken);
+
+    /// <summary>
+    /// The certificate already issued, to print again. The registry counts
+    /// it: a certificate printed many times is worth being able to notice.
+    /// </summary>
+    public Task<CentralResult<CertificateResponse>> ReprintCertificateAsync(
+        string brn, string deviceId, DeviceSigner signer, CancellationToken cancellationToken = default)
+        => SendAsync<CertificateResponse>(
+            HttpMethod.Post, endpoints.Centre, $"api/BirthRecords/{Uri.EscapeDataString(brn)}/certificate/reprint",
+            Envelope(new IssueCertificateRequest { DeviceId = deviceId }, Guid.CreateVersion7()),
+            signer, cancellationToken);
+
+    /// <summary>
     /// Everything needed to verify certificates offline: every signing key in
     /// use and the current revocation list. Anonymous — it names nobody.
     /// </summary>
