@@ -661,4 +661,115 @@ A permanent number is given when the tablet syncs.</value>
   <data name="Window_Upload" xml:space="preserve">
     <value>The upload</value>
   </data>
+  <data name="Check_Title" xml:space="preserve">
+    <value>Check a certificate</value>
+  </data>
+  <data name="Check_Scan" xml:space="preserve">
+    <value>Point the camera at the QR code on the certificate.</value>
+  </data>
+  <data name="Check_NoCamera" xml:space="preserve">
+    <value>This tablet has no camera the app can use. Type or paste the certificate's code instead.</value>
+  </data>
+  <data name="Check_CameraDenied" xml:space="preserve">
+    <value>The app was not allowed to use the camera. Type or paste the code instead, or allow the camera in the tablet's settings.</value>
+  </data>
+  <data name="Check_TypeLabel" xml:space="preserve">
+    <value>Or type or paste the code</value>
+  </data>
+  <data name="Check_Button" xml:space="preserve">
+    <value>Check</value>
+  </data>
+  <data name="Check_Again" xml:space="preserve">
+    <value>Check another certificate</value>
+  </data>
+  <data name="Check_Empty" xml:space="preserve">
+    <value>Scan the QR code, or type the code, first.</value>
+  </data>
+  <data name="Check_Facts" xml:space="preserve">
+    <value>What the certificate says</value>
+  </data>
+  <data name="Check_Offline" xml:space="preserve">
+    <value>Checked on this tablet, with no network needed.</value>
+  </data>
+  <data name="Check_ListDownloaded" xml:space="preserve">
+    <value>List of withdrawn certificates downloaded {0:d MMMM yyyy HH:mm}.</value>
+  </data>
+  <data name="Check_Date" xml:space="preserve">
+    <value>{0:d MMMM yyyy}</value>
+  </data>
+  <data name="Check_Brn" xml:space="preserve">
+    <value>Registration number</value>
+  </data>
+  <data name="Check_Issued" xml:space="preserve">
+    <value>Issued</value>
+  </data>
+  <data name="Check_ValidHeadline" xml:space="preserve">
+    <value>Genuine and in force</value>
+  </data>
+  <data name="Check_Valid" xml:space="preserve">
+    <value>Signed by the Ministry of Health and not withdrawn.</value>
+  </data>
+  <data name="Check_ValidDo" xml:space="preserve">
+    <value>Accept it if the details below match the child it is presented for.</value>
+  </data>
+  <data name="Check_RevokedHeadline" xml:space="preserve">
+    <value>Withdrawn: do not accept</value>
+  </data>
+  <data name="Check_Revoked" xml:space="preserve">
+    <value>This certificate is genuine, but was withdrawn on {0:d MMMM yyyy}: {1}.</value>
+  </data>
+  <data name="Check_RevokedDo" xml:space="preserve">
+    <value>A replacement certificate can be requested from the registry.</value>
+  </data>
+  <data name="Check_AnnulledDo" xml:space="preserve">
+    <value>The registry holds that there was no such birth. Refer the holder to a registration office.</value>
+  </data>
+  <data name="Check_FakeHeadline" xml:space="preserve">
+    <value>Not genuine: do not accept</value>
+  </data>
+  <data name="Check_Fake" xml:space="preserve">
+    <value>It is not signed by the Ministry of Health, or it was changed after it was signed.</value>
+  </data>
+  <data name="Check_FakeDo" xml:space="preserve">
+    <value>If the code was typed, check every character and try again: one wrong character fails the check.</value>
+  </data>
+  <data name="Check_UnknownHeadline" xml:space="preserve">
+    <value>Cannot be checked on this tablet</value>
+  </data>
+  <data name="Check_NoBundle" xml:space="preserve">
+    <value>This tablet has not yet downloaded what it needs to check certificates.</value>
+  </data>
+  <data name="Check_UnknownGenuine" xml:space="preserve">
+    <value>The signature is genuine, but this tablet cannot tell whether the certificate has since been withdrawn. {0}</value>
+  </data>
+  <data name="Check_UnknownDo" xml:space="preserve">
+    <value>Do not rely on it yet. Sync when there is signal so the tablet can refresh its list, or send the holder to a connected office.</value>
+  </data>
+  <data name="Coverage_Stale" xml:space="preserve">
+    <value>Its list of withdrawn certificates is out of date.</value>
+  </data>
+  <data name="Coverage_Incomplete" xml:space="preserve">
+    <value>Its list of withdrawn certificates is incomplete.</value>
+  </data>
+  <data name="Coverage_Untrusted" xml:space="preserve">
+    <value>Its list of withdrawn certificates failed its own signature check.</value>
+  </data>
+  <data name="Coverage_Empty" xml:space="preserve">
+    <value>It has no list of withdrawn certificates yet.</value>
+  </data>
+  <data name="RevocationReason_Amended" xml:space="preserve">
+    <value>the record was corrected after it was issued</value>
+  </data>
+  <data name="RevocationReason_SupersededAsDuplicate" xml:space="preserve">
+    <value>the registration was found to duplicate another</value>
+  </data>
+  <data name="RevocationReason_RegistrationAnnulled" xml:space="preserve">
+    <value>the registration was annulled</value>
+  </data>
+  <data name="Register_LeaveClears" xml:space="preserve">
+    <value>What you have typed for this birth will be cleared. Leave the form anyway?</value>
+  </data>
+  <data name="Register_Check" xml:space="preserve">
+    <value>Check a certificate</value>
+  </data>
 </root>

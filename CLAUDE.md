@@ -802,9 +802,23 @@ and every tablet write is 403. A lost tablet needs the device revoked in NCBRS
 **and** the offline session revoked in Keycloak: the device key stops writes,
 not reads.
 - **(WS-B8)** Offline verification lives in `NCBRS.Contracts` and the client
-  wraps it (`CachedVerificationBundle`, which signals when a refresh is due).
-  The scheduled refetch each connectivity window is the shell's to wire —
-  without it the cache expires and the device answers Unknown to everything.
+  wraps it (`CachedVerificationBundle`, which signals when a refresh is due;
+  each connectivity window refetches it when due). **"Check a certificate"**
+  is on the tablet: camera QR scan (ZXing.Net.Maui, Android only) or type and
+  paste, from the main screen and from the unlock screen. No unlock is needed,
+  because it shows only what the paper says, checked against public keys, and
+  nothing the tablet holds.
+  - `CertificateCheck` (core, tested) turns the verifier's verdict into what
+    the checker reads. **Four answers, and "cannot be checked here" is never
+    green:** a tablet whose list of withdrawn certificates is stale has found
+    nothing wrong, but cannot approve either. It also says *why* it cannot
+    (`CachedVerificationBundle.CoverageAt`), because the remedy differs.
+  - **Nothing a code that fails verification says is shown.** It is whatever
+    someone chose to print.
+  - The verifier's `Detail` is English written for the registry and is never
+    shown; the reading is translated.
+  - The camera is asked for when the screen opens, not at install, and typing
+    works without it.
 
 ## Reporting projection (WS-A5, draft 6.4.1, built)
 `NCBRS.Consumer` builds a read model from the event stream. Delivery is

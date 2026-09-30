@@ -1,3 +1,6 @@
+#if ANDROID
+using ZXing.Net.Maui.Controls;
+#endif
 using Microsoft.Extensions.Logging;
 using NCBRS.Client.App.Services;
 
@@ -18,6 +21,12 @@ public static class MauiProgram
 
 #if DEBUG
         builder.Logging.AddDebug();
+#endif
+
+#if ANDROID
+        // The camera QR reader for checking certificates. Android only: the
+        // Windows head checks by typing or pasting the code.
+        builder.UseBarcodeReader();
 #endif
 
         // The system browser for signing in, returning to the app the way each

@@ -220,6 +220,12 @@ public sealed class UnlockPage : FlowPage
                 : Language.Format(Strings.Unlock_Wrong, result.AttemptsRemaining);
         });
 
-        Build(Flow.LanguageSwitch(host), Heading(Strings.Unlock_Title), person, pin, unlock, changePin, pinForm.View);
+        // Checking a certificate needs no one unlocked: it shows only what the
+        // paper itself says, verified against public keys, and nothing the
+        // tablet holds. A teacher or a clinic clerk at the post can use it.
+        var checkCertificate = new Button { Text = Strings.Register_Check, BackgroundColor = Colors.DarkSlateGray };
+        checkCertificate.Clicked += (_, _) => Flow.Show(new CheckCertificatePage(host));
+
+        Build(Flow.LanguageSwitch(host), Heading(Strings.Unlock_Title), person, pin, unlock, changePin, pinForm.View, checkCertificate);
     }
 }
