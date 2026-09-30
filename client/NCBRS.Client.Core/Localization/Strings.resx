@@ -772,4 +772,58 @@ A permanent number is given when the tablet syncs.</value>
   <data name="Register_Check" xml:space="preserve">
     <value>Check a certificate</value>
   </data>
+  <data name="Print_Heading" xml:space="preserve">
+    <value>Republic of South Sudan · Ministry of Health</value>
+  </data>
+  <data name="Print_SlipTitle" xml:space="preserve">
+    <value>Birth registration slip</value>
+  </data>
+  <data name="Print_SlipProvisionalTitle" xml:space="preserve">
+    <value>PROVISIONAL birth registration slip</value>
+  </data>
+  <data name="Print_CertificateTitle" xml:space="preserve">
+    <value>Certificate of Birth</value>
+  </data>
+  <data name="Print_ProvisionalNumber" xml:space="preserve">
+    <value>Provisional number</value>
+  </data>
+  <data name="Print_Facility" xml:space="preserve">
+    <value>Health facility</value>
+  </data>
+  <data name="Print_RegisteredAt" xml:space="preserve">
+    <value>Registered</value>
+  </data>
+  <data name="Print_Registrar" xml:space="preserve">
+    <value>Registrar</value>
+  </data>
+  <data name="Print_DateTime" xml:space="preserve">
+    <value>{0:d MMMM yyyy HH:mm}</value>
+  </data>
+  <data name="Print_SlipNotice" xml:space="preserve">
+    <value>This slip is not a birth certificate. Keep it safe: the certificate is issued against this number once the registry confirms the registration.</value>
+  </data>
+  <data name="Print_SlipProvisionalNotice" xml:space="preserve">
+    <value>This tablet had run out of registration numbers. The registry gives this birth its permanent number when the tablet next syncs, and the certificate is issued against that number. Keep this slip until then.</value>
+  </data>
+  <data name="Print_CertificateNotice" xml:space="preserve">
+    <value>Scan the code to check this certificate. It is valid only if it is genuine and has not been withdrawn.</value>
+  </data>
+  <data name="Print_NotIssued" xml:space="preserve">
+    <value>The registry did not issue the certificate: {0}</value>
+  </data>
+  <data name="Print_NotGenuine" xml:space="preserve">
+    <value>The certificate the registry sent does not verify on this tablet, so it was not printed. Sync to refresh the tablet's keys, then try again.</value>
+  </data>
+  <data name="Print_Withdrawn" xml:space="preserve">
+    <value>The registry sent a certificate that has been withdrawn, so it was not printed.</value>
+  </data>
+  <data name="Check_SlipHeadline" xml:space="preserve">
+    <value>A registration slip, not a certificate</value>
+  </data>
+  <data name="Check_Slip" xml:space="preserve">
+    <value>A tablet printed it when the birth was registered. It proves nothing by itself: anyone can print one.</value>
+  </data>
+  <data name="Check_SlipDo" xml:space="preserve">
+    <value>Ask for the birth certificate, or look the number up at the registry.</value>
+  </data>
 </root>

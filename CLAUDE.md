@@ -691,8 +691,36 @@ won't, because they are the core's (`RegistrationRules`):
   of a long form looked like a dead tap on the emulator.
 
 Proven there: a late birth was refused without evidence, and with it was filed
-`PendingApproval` with the window stored. Still to build: QR printing (B7,
-waiting on a printer decision).
+`PendingApproval` with the window stored.
+
+**Printing (B7): both a Bluetooth thermal printer and Android's print system
+(decided 2026-09-30).** The core is built (`NCBRS.Client.Printing`); the two
+printer paths are the shell's.
+- **Two documents, and they must never be confused.**
+  - *Offline*, the tablet prints a **registration slip**: the BRN, the child,
+    the facility and the registrar. It cannot print a certificate, because
+    only the registry holds the signing key. The slip says it is not a
+    certificate, and a provisional number is printed loudly.
+  - *Online*, it prints the **certificate** the registry signed.
+- **The slip's QR is `NCBRS-SLIP1.<brn>`** (`SlipCode`). It is unsigned and
+  says so. Scanning it gives the number to fetch the certificate by, and the
+  check screen reads it as "a slip, not a certificate", never as a forgery,
+  because the family is holding exactly what they were handed.
+- **A certificate prints the facts its own code proves**: read from the
+  signed payload and checked against the tablet's bundle, never from the
+  response's loose fields. One the tablet cannot verify, one for another
+  BRN, or one withdrawn is not printed at all.
+- **Fetching is issue, then reprint on 409** (`CertificateForPrint`).
+  Printing again *is* a reprint, and the registry counts reprints. When
+  neither works, the issue's refusal is the reason given (late and
+  unverified, provisional, annulled), because it is the one that explains it.
+- **Thermal output is one raster image** (`EscPos`, GS v 0 in 255-row bands),
+  never printer text. Cheap Bluetooth printers have Latin fonts only and
+  shape no Arabic. As dots, the slip says exactly what the screen says, in
+  either language.
+- Both printers lay out the same `PrintedDocument`, so they cannot say
+  different things. The certificate's wording and its language are a draft
+  for the Ministry, like the rest of the Arabic.
 
 **The tablet speaks English and Arabic (Modern Standard, a draft for Ministry
 review).**
