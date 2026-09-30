@@ -923,12 +923,7 @@ public class AmendmentService(
     /// in UTC. Everything is written as UTC, so an unspecified kind is
     /// already UTC and is labelled rather than converted.
     /// </summary>
-    private static DateTime AsUtc(DateTime value) => value.Kind switch
-    {
-        DateTimeKind.Utc => value,
-        DateTimeKind.Local => value.ToUniversalTime(),
-        _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
-    };
+    private static DateTime AsUtc(DateTime value) => UtcTime.AsUtc(value);
 
     /// <summary>
     /// A parent may not have been recorded at first registration, so naming

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using NCBRS.Data;
 using NCBRS.Models;
@@ -267,7 +268,10 @@ public class CertificateService(
             CanonicalVersion,
             record.Brn,
             record.ChildPerson!.FullName,
-            record.DateOfBirth.ToUniversalTime().ToString("yyyy-MM-dd"),
+            // Labelled, never converted: read back from SQLite it has no kind,
+            // and ToUniversalTime() moved it to the day before on any server
+            // east of UTC -- South Sudan included (UtcTime).
+            UtcTime.AsUtc(record.DateOfBirth).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             record.Sex.ToString(),
             record.FacilityId.ToString(),
             issuedAtUtc.ToString("yyyy-MM-ddTHH:mm:ssZ"));

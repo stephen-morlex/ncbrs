@@ -393,4 +393,28 @@ public class CertificateServiceTests : IDisposable
         Assert.Equal("2026-09-10", parts[4]);
         Assert.Equal("Female", parts[5]);
     }
+
+    /// <summary>
+    /// A date of birth is midnight UTC, which is what the tablet sends, and it
+    /// is read back from SQLite with no kind. ToUniversalTime() read that as the
+    /// server's local time: on a server east of UTC (South Sudan is UTC+2) the
+    /// certificate was signed with the day before. Found on a dev certificate;
+    /// CI runs this suite in Africa/Juba so it cannot hide behind a UTC host.
+    /// </summary>
+    [Fact]
+    public async Task TheSignedDateOfBirth_IsTheDateRegistered_WhereverTheServerIs()
+    {
+        await using (var db = NewDb())
+        {
+            var midnight = Record("100009", FacilityId, VitalEventType.LiveBirth);
+            midnight.DateOfBirth = new DateTime(2026, 9, 29, 0, 0, 0, DateTimeKind.Utc);
+            db.BirthRecords.Add(midnight);
+            await db.SaveChangesAsync();
+        }
+
+        var result = await IssueAsync("100009");
+        var parts = _signer.Verify(result.Response!.QrPayload)!.Split('|');
+
+        Assert.Equal("2026-09-29", parts[4]);
+    }
 }

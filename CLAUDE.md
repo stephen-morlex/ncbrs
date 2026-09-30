@@ -1384,6 +1384,17 @@ is the central tier (draft 6.4, 7.1); SQLite stays the dev and test provider.
   test in a rolled-back transaction — collides with the transaction EF opens
   for `SaveChanges`, and suppressing that would have quietly broken the tests
   that roll back on purpose.
+- **Read a stored date or timestamp with `UtcTime.AsUtc`, never
+  `ToUniversalTime()`.** Everything is written as UTC, and SQLite returns it
+  with no kind, which `ToUniversalTime()` treats as server-local. A date of
+  birth is midnight UTC, so on a server east of UTC it becomes the previous
+  day. That signed certificates with the wrong date of birth, and counted a
+  day-28 neonatal death as day 29. It had already been fixed locally three
+  times (revocation lists, amendment drift, dashboard ranges) and was still
+  missed twice; now there is one helper. CI's SQLite job runs in
+  `TZ=Africa/Juba` because a UTC runner cannot see this class of bug; the
+  suite's older fixtures use times like 04:30, which no shift moves across
+  midnight.
 - **Postgres timestamps keep microseconds; .NET `DateTime` keeps 100ns
   ticks.** A timestamp compared in memory against the same value read back
   from Postgres will **not** be equal. Nothing in the product does that today,

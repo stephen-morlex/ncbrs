@@ -149,6 +149,30 @@ public class OutcomeTests : IDisposable
     public async Task ADeathInsideThe28DayWindow_IsAccepted(int days)
         => Assert.True((await RecordNeonatalAsync(LiveBirthBrn, Neonatal(days))).Succeeded);
 
+    /// <summary>
+    /// A date of birth is midnight UTC as the tablet sends it, read back from
+    /// SQLite with no kind. Read as server-local time it moved to the day
+    /// before on a server east of UTC, so a death on day 28 counted as day 29
+    /// and was refused as not neonatal. CI runs this suite in Africa/Juba.
+    /// </summary>
+    [Fact]
+    public async Task ADeathOnDay28AfterAMidnightBirth_IsNeonatal_WhereverTheServerIs()
+    {
+        var bornAtMidnight = new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        await using (var db = NewDb())
+        {
+            var record = BirthRecordFor("100009", FacilityId, VitalEventType.LiveBirth);
+            record.DateOfBirth = bornAtMidnight;
+            db.BirthRecords.Add(record);
+            await db.SaveChangesAsync();
+        }
+
+        var request = Neonatal(daysAfterBirth: 0) with { DeathDateUtc = bornAtMidnight.AddDays(28).AddHours(9) };
+
+        Assert.True((await RecordNeonatalAsync("100009", request)).Succeeded);
+    }
+
     [Theory]
     [InlineData(29)]
     [InlineData(120)]
