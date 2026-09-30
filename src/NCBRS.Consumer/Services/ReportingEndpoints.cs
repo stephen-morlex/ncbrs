@@ -122,10 +122,5 @@ public static class ReportingEndpoints
     // that as local time and shift it by the server's offset -- so a birth just
     // after midnight would fall outside a query for its own month, differently
     // depending on where the server happens to run. A date on the wire is UTC.
-    private static DateTime AsUtc(DateTime value) => value.Kind switch
-    {
-        DateTimeKind.Utc => value,
-        DateTimeKind.Local => value.ToUniversalTime(),
-        _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
-    };
+    private static DateTime AsUtc(DateTime value) => UtcTime.AsUtc(value);
 }

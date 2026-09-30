@@ -13,7 +13,11 @@ namespace NCBRS.Client.Tests;
 /// Arabic falls back to English mid-sentence; a placeholder missing in one
 /// language drops a BRN or a count; a placeholder added throws at runtime. All
 /// three are caught here rather than on a registrar's screen.
+///
+/// Run alone: one test switches the process to Arabic for a moment, and any
+/// test running beside it that reads a string twice would see both languages.
 /// </summary>
+[Collection(ProcessLanguage.Name)]
 public class LanguageTests
 {
     private static Dictionary<string, string> Read(CultureInfo culture)
@@ -116,4 +120,11 @@ public class LanguageTests
             Strings.Culture = before;
         }
     }
+}
+
+/// <summary>Tests that change the process-wide language run with nothing beside them.</summary>
+[CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class ProcessLanguage
+{
+    public const string Name = "Process language";
 }

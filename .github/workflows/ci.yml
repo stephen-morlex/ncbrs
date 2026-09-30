@@ -43,7 +43,14 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
+      # In the deployment's own time zone (UTC+2), not the runner's UTC. A
+      # date read back from SQLite has no kind, and ToUniversalTime() shifts it
+      # by the server's offset -- which is zero here unless this is set. That
+      # is how certificates came to be signed a day early without a test
+      # noticing (UtcTime). The PostgreSQL job stays on UTC, so both are run.
       - name: Test
+        env:
+          TZ: Africa/Juba
         run: dotnet test --no-build --configuration Release --verbosity normal
 
   # The slow one, and the one that matters for anything touching the schema.

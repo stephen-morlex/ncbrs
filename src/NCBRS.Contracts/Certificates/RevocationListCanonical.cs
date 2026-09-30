@@ -63,12 +63,7 @@ public static class RevocationListCanonical
     /// re-deriving them would reject a genuine list. Everything is written
     /// as UTC, so an unspecified kind is labelled rather than converted.
     /// </summary>
-    public static DateTime AsUtc(DateTime value) => value.Kind switch
-    {
-        DateTimeKind.Utc => value,
-        DateTimeKind.Local => value.ToUniversalTime(),
-        _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
-    };
+    public static DateTime AsUtc(DateTime value) => UtcTime.AsUtc(value);
 
     private static string Stamp(DateTime value)
         => AsUtc(value).ToString("yyyy-MM-ddTHH:mm:ssZ");

@@ -274,5 +274,5 @@ public class OutcomeService(
     /// a few hours' difference in time of day.
     /// </summary>
     private static int DaysAfterBirth(BirthRecord record, DateTime deathDateUtc)
-        => (deathDateUtc.ToUniversalTime().Date - record.DateOfBirth.ToUniversalTime().Date).Days;
+        => (UtcTime.AsUtc(deathDateUtc).Date - UtcTime.AsUtc(record.DateOfBirth).Date).Days;
 }
