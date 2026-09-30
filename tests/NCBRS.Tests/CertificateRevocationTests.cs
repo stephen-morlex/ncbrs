@@ -240,6 +240,30 @@ public class CertificateRevocationTests : IDisposable
     /// A forgery and a withdrawn certificate must stay distinguishable: one
     /// is a crime, the other is a family holding an out-of-date document.
     /// </summary>
+    /// <summary>
+    /// Online, the same as offline: a withdrawn certificate re-printed with its
+    /// signature's ECDSA twin is still withdrawn, and one with a character
+    /// changed is not the Ministry's at all.
+    /// </summary>
+    [Fact]
+    public async Task AWithdrawnCertificateReprinted_IsNeverValid()
+    {
+        var qr = await IssueAsync();
+        await AmendAsync();
+
+        await using var db = NewDb();
+
+        var twin = ReprintedCertificate.WithTwinSignature(qr);
+        Assert.NotNull(_signer.Verify(twin)); // the attack is real: it verifies
+        var byTwin = await Revocations(db).VerifyAsync(twin);
+        Assert.False(byTwin.Valid);
+        Assert.True(byTwin.Revoked);
+
+        var byCharacter = await Revocations(db).VerifyAsync(ReprintedCertificate.WithPaddingBitChanged(qr));
+        Assert.False(byCharacter.Valid);
+        Assert.False(byCharacter.Revoked);
+    }
+
     [Fact]
     public async Task AForgery_IsNotReportedAsMerelyRevoked()
     {
