@@ -139,11 +139,22 @@ public sealed class RegisterPage : FlowPage
             !HasInput() || await DisplayAlertAsync(Strings.Language_Switch, Strings.Register_LanguageClears,
                 Strings.Language_Switch, Strings.Common_Cancel));
 
+        // Leaving the form clears it, so a half-typed birth asks first.
+        var checkCertificate = new Button { Text = Strings.Register_Check, BackgroundColor = Colors.DarkSlateGray };
+        checkCertificate.Clicked += async (_, _) =>
+        {
+            if (!HasInput() || await DisplayAlertAsync(Strings.Check_Title, Strings.Register_LeaveClears,
+                    Strings.Register_Check, Strings.Common_Cancel))
+            {
+                Flow.Show(new CheckCertificatePage(host));
+            }
+        };
+
         Build([
             language,
             Heading(Language.Format(Strings.Register_Unlocked, host.UnlockedAs?.DisplayName)),
             refused,
-            .. form, register, _result, _queue, sync, export, _exported, lockTablet]);
+            .. form, register, _result, _queue, sync, export, _exported, checkCertificate, lockTablet]);
         Refresh();
     }
 

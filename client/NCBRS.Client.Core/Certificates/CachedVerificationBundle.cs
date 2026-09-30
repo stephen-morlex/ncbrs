@@ -98,6 +98,15 @@ public sealed class CachedVerificationBundle : IDisposable
     }
 
     /// <summary>
+    /// Why the held revocation lists can or cannot answer as of
+    /// <paramref name="nowUtc"/>, or null with no bundle at all. The verdict
+    /// says only "Unknown"; this is what lets a checker be told why, and so
+    /// what would fix it.
+    /// </summary>
+    public RevocationCoverage? CoverageAt(DateTime nowUtc)
+        => HasBundle ? RevocationListCache.Load(_lists, Verifier(), nowUtc).Coverage : null;
+
+    /// <summary>
     /// Whether the device should refetch the bundle now. True when it has never
     /// fetched one, when it holds keys but no list to check against, or when the
     /// cache is within <paramref name="lead"/> of expiring — so the refetch

@@ -656,4 +656,115 @@
   <data name="Window_Upload" xml:space="preserve">
     <value>الرفع</value>
   </data>
+  <data name="Check_Title" xml:space="preserve">
+    <value>التحقق من شهادة</value>
+  </data>
+  <data name="Check_Scan" xml:space="preserve">
+    <value>وجّه الكاميرا نحو رمز QR المطبوع على الشهادة.</value>
+  </data>
+  <data name="Check_NoCamera" xml:space="preserve">
+    <value>لا توجد في هذا الجهاز كاميرا يمكن للتطبيق استخدامها. اكتب رمز الشهادة أو الصقه بدلاً من ذلك.</value>
+  </data>
+  <data name="Check_CameraDenied" xml:space="preserve">
+    <value>لم يُسمح للتطبيق باستخدام الكاميرا. اكتب الرمز أو الصقه بدلاً من ذلك، أو اسمح باستخدام الكاميرا من إعدادات الجهاز.</value>
+  </data>
+  <data name="Check_TypeLabel" xml:space="preserve">
+    <value>أو اكتب الرمز أو الصقه</value>
+  </data>
+  <data name="Check_Button" xml:space="preserve">
+    <value>تحقّق</value>
+  </data>
+  <data name="Check_Again" xml:space="preserve">
+    <value>التحقق من شهادة أخرى</value>
+  </data>
+  <data name="Check_Empty" xml:space="preserve">
+    <value>امسح رمز QR أو اكتب الرمز أولاً.</value>
+  </data>
+  <data name="Check_Facts" xml:space="preserve">
+    <value>ما تنص عليه الشهادة</value>
+  </data>
+  <data name="Check_Offline" xml:space="preserve">
+    <value>يجري التحقق على هذا الجهاز دون الحاجة إلى شبكة.</value>
+  </data>
+  <data name="Check_ListDownloaded" xml:space="preserve">
+    <value>نُزّلت قائمة الشهادات المسحوبة في {0:d MMMM yyyy HH:mm}.</value>
+  </data>
+  <data name="Check_Date" xml:space="preserve">
+    <value>{0:d MMMM yyyy}</value>
+  </data>
+  <data name="Check_Brn" xml:space="preserve">
+    <value>رقم التسجيل</value>
+  </data>
+  <data name="Check_Issued" xml:space="preserve">
+    <value>تاريخ الإصدار</value>
+  </data>
+  <data name="Check_ValidHeadline" xml:space="preserve">
+    <value>شهادة أصلية وسارية</value>
+  </data>
+  <data name="Check_Valid" xml:space="preserve">
+    <value>موقّعة من وزارة الصحة ولم تُسحب.</value>
+  </data>
+  <data name="Check_ValidDo" xml:space="preserve">
+    <value>اقبلها إذا طابقت البيانات أدناه الطفل الذي قُدّمت من أجله.</value>
+  </data>
+  <data name="Check_RevokedHeadline" xml:space="preserve">
+    <value>مسحوبة: لا تقبلها</value>
+  </data>
+  <data name="Check_Revoked" xml:space="preserve">
+    <value>هذه الشهادة أصلية، لكنها سُحبت بتاريخ {0:d MMMM yyyy}: {1}.</value>
+  </data>
+  <data name="Check_RevokedDo" xml:space="preserve">
+    <value>يمكن طلب شهادة بديلة من السجل.</value>
+  </data>
+  <data name="Check_AnnulledDo" xml:space="preserve">
+    <value>يعتبر السجل أن هذه الولادة لم تحدث. أحِل حامل الشهادة إلى مكتب التسجيل.</value>
+  </data>
+  <data name="Check_FakeHeadline" xml:space="preserve">
+    <value>غير أصلية: لا تقبلها</value>
+  </data>
+  <data name="Check_Fake" xml:space="preserve">
+    <value>ليست موقّعة من وزارة الصحة، أو غُيّرت بعد توقيعها.</value>
+  </data>
+  <data name="Check_FakeDo" xml:space="preserve">
+    <value>إذا كُتب الرمز يدوياً، فراجع كل حرف وأعد المحاولة: حرف واحد خاطئ يُفشل التحقق.</value>
+  </data>
+  <data name="Check_UnknownHeadline" xml:space="preserve">
+    <value>لا يمكن التحقق منها على هذا الجهاز</value>
+  </data>
+  <data name="Check_NoBundle" xml:space="preserve">
+    <value>لم يُنزّل هذا الجهاز بعد ما يلزمه للتحقق من الشهادات.</value>
+  </data>
+  <data name="Check_UnknownGenuine" xml:space="preserve">
+    <value>التوقيع أصلي، لكن هذا الجهاز لا يستطيع معرفة ما إذا كانت الشهادة قد سُحبت منذ إصدارها. {0}</value>
+  </data>
+  <data name="Check_UnknownDo" xml:space="preserve">
+    <value>لا تعتمد عليها بعد. زامن الجهاز عند توفر الإشارة ليُحدّث قائمته، أو أحِل حامل الشهادة إلى مكتب متصل بالشبكة.</value>
+  </data>
+  <data name="Coverage_Stale" xml:space="preserve">
+    <value>قائمة الشهادات المسحوبة لديه قديمة.</value>
+  </data>
+  <data name="Coverage_Incomplete" xml:space="preserve">
+    <value>قائمة الشهادات المسحوبة لديه غير مكتملة.</value>
+  </data>
+  <data name="Coverage_Untrusted" xml:space="preserve">
+    <value>قائمة الشهادات المسحوبة لديه لم تجتز التحقق من توقيعها.</value>
+  </data>
+  <data name="Coverage_Empty" xml:space="preserve">
+    <value>لا توجد لديه بعد قائمة بالشهادات المسحوبة.</value>
+  </data>
+  <data name="RevocationReason_Amended" xml:space="preserve">
+    <value>صُحّح السجل بعد إصدارها</value>
+  </data>
+  <data name="RevocationReason_SupersededAsDuplicate" xml:space="preserve">
+    <value>تبيّن أن التسجيل مكرر لتسجيل آخر</value>
+  </data>
+  <data name="RevocationReason_RegistrationAnnulled" xml:space="preserve">
+    <value>أُلغي التسجيل</value>
+  </data>
+  <data name="Register_LeaveClears" xml:space="preserve">
+    <value>سيُمسح ما كتبته عن هذه الولادة. هل تريد مغادرة النموذج مع ذلك؟</value>
+  </data>
+  <data name="Register_Check" xml:space="preserve">
+    <value>التحقق من شهادة</value>
+  </data>
 </root>

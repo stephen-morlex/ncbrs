@@ -55,6 +55,15 @@ card). The file names nobody; a district officer uploads it on the web's
 "Upload a transfer file" page. The births stay on the tablet until the
 registry confirms them, and the screen says how many are still unconfirmed.
 
+**Check a certificate** (B8), from the main screen or the unlock screen, with
+no signal and nobody unlocked. It scans the QR code with the camera (Android;
+asked for when the screen opens) or takes the code typed or pasted, and answers
+in four ways: genuine and in force; withdrawn (with why, and what next); not
+genuine (showing nothing the code claims); or cannot be checked on this tablet
+(with why: no bundle yet, or a list of withdrawn certificates that is out of
+date, incomplete or untrusted). Only the first is green. The verdict is the
+registry's own verifier, run against the bundle the tablet holds.
+
 Anything that goes wrong has a way out on the tablet: **Sign in as someone
 else**, or **Wrong facility: hand over again**, which needs the officer and
 revokes the tablet at the registry first.
@@ -127,5 +136,9 @@ refuses cleartext entirely.
   unsynced births. Restored onto a second tablet, it would be two devices
   claiming one identity and one BRN cursor, re-handing numbers already printed
   on slips.
+- **Camera permission, but the camera is not required** (`uses-feature
+  android:required="false"`): a tablet without one still installs, and checks
+  certificates by typed code. The QR reader (ZXing.Net.Maui) is registered on
+  Android only.
 - **Unpackaged Windows build** (`WindowsPackageType=None`): it is a dev loop,
   not a distribution.

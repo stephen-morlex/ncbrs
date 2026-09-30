@@ -40,7 +40,8 @@ public class LanguageTests
         // The one exception is the switch, which names English in English.
         var untranslated = Arabic
             .Where(entry => entry.Key != nameof(Strings.Language_Switch) && entry.Value.Length > 1)
-            .Where(entry => Regex.IsMatch(English[entry.Key], @"\p{L}"))   // a pure template has no words to translate
+            // A pure template ("{0:d MMMM yyyy}") has no words to translate.
+            .Where(entry => Regex.IsMatch(Regex.Replace(English[entry.Key], @"\{[^}]*\}", ""), @"\p{L}"))
             .Where(entry => !Regex.IsMatch(entry.Value, @"\p{IsArabic}"))
             .Select(entry => entry.Key);
 
@@ -66,6 +67,7 @@ public class LanguageTests
     [InlineData(typeof(LateRegistrationEvidenceType))]
     [InlineData(typeof(EducationLevel))]
     [InlineData(typeof(NCBRS.Client.Network.CentralOutcome))]
+    [InlineData(typeof(RevocationReason))]
     public void EveryCodedAnswerHasAName(Type codes)
     {
         var missing = Enum.GetNames(codes).Where(name => !English.ContainsKey($"{codes.Name}_{name}"));
