@@ -14,7 +14,18 @@ namespace NCBRS.Consumer.Services;
 /// every fresh month looks like a collapse in births and every older one
 /// looks like a recovery.
 /// </param>
-public record ReportingPeriod(DateTime FromUtc, DateTime ToUtc, bool StillFilling);
+public record ReportingPeriod(DateTime FromUtc, DateTime ToUtc, bool StillFilling)
+{
+    /// <summary>
+    /// How long after a period closes registrations for it keep arriving:
+    /// the statutory window (90 days) plus room for a post that was offline
+    /// across it. One rule for the dashboard's StillFilling and the DHIS2
+    /// export's refusal, so the two never disagree about a month.
+    /// </summary>
+    public static readonly TimeSpan SettlingPeriod = TimeSpan.FromDays(120);
+
+    public static bool IsStillFilling(DateTime toUtc, DateTime nowUtc) => toUtc + SettlingPeriod > nowUtc;
+}
 
 /// <summary>
 /// Births counted by date of occurrence, which is how vital statistics are

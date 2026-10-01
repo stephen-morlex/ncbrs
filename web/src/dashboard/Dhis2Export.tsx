@@ -22,9 +22,19 @@ import { PageHeader } from '@/shell/PageHeader'
 
 type Export = components['schemas']['Dhis2Export']
 
-function currentMonth(): string {
-  const now = new Date()
-  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`
+/** Days after a month ends before it is exported: the reporting service's settling period. */
+export const SETTLING_DAYS = 120
+
+/**
+ * The most recent month that has settled, as YYYY-MM. A month is exported
+ * once, when late registrations for it have stopped arriving, so that no two
+ * exports of it exist to be subtracted; the service refuses any earlier.
+ */
+export function latestSettledMonth(now: Date = new Date()): string {
+  const cutoff = new Date(now.getTime() - SETTLING_DAYS * 24 * 60 * 60 * 1000)
+  // The month before the cutoff's month is the last one that ended at or before it.
+  const settled = new Date(Date.UTC(cutoff.getUTCFullYear(), cutoff.getUTCMonth() - 1, 1))
+  return `${settled.getUTCFullYear()}-${String(settled.getUTCMonth() + 1).padStart(2, '0')}`
 }
 
 /**
@@ -44,7 +54,7 @@ function currentMonth(): string {
 export function Dhis2Export() {
   const consumer = useConsumerClient()
 
-  const [month, setMonth] = useState(currentMonth())
+  const [month, setMonth] = useState(latestSettledMonth())
   const [result, setResult] = useState<Export | null>(null)
   const [error, setError] = useState<NcbrsError | null>(null)
   const [loading, setLoading] = useState(false)
@@ -101,7 +111,7 @@ export function Dhis2Export() {
     <div className="mx-auto w-full max-w-5xl space-y-6">
       <PageHeader
         title="DHIS2 export"
-        description="A district-month aggregate for DHIS2. It shares no personal data — the unit is a district, never a person."
+        description={`A district-month aggregate for DHIS2. It shares no personal data — the unit is a district, never a person. A month is exported once it has settled, ${SETTLING_DAYS} days after it ends, so late registrations are in and no two exports of it can be compared.`}
       />
 
       <Card>

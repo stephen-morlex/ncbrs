@@ -1090,13 +1090,22 @@ closing a different way of reading a person out of a table:
   enters a total and cannot be recovered from one. A quarterly or yearly
   export *from this registry* would break that: year − Σ published months =
   the withheld months.
-- **Open: revisions.** A month exported while `stillFilling` and again later
-  is two safe tables whose *difference* is not. It describes the handful of
-  registrations, corrections and annulments made in between, and DHIS2 keeps
-  the earlier values in its audit history. A sex split going from 12/12 to
-  13/11 reveals a sex correction in that county-month. This needs a decision
-  before scheduled exports: export a month only once it has stopped filling,
-  or hold back any change too small to publish.
+- **Revisions: settled months only (decided 2026-10-01).** A month exported
+  while still filling and again later is two safe tables whose *difference*
+  is not: it describes the few registrations, corrections and annulments made
+  in between, and DHIS2 keeps the earlier values in its audit history. A sex
+  split going from 12/12 to 13/11 reveals a sex correction in that
+  county-month. So a month is exported once, after it settles: 120 days after
+  it ends (`ReportingPeriod.SettlingPeriod`, the same rule as the dashboard's
+  `stillFilling`, now shared). Earlier is a **409** naming the date it can go
+  (`PeriodNotSettledException`), and the web page defaults to the latest
+  settled month. The cost is that DHIS2 gets each month about four months
+  late. Holding back small changes instead would need a durable ledger of
+  what was sent, which the rebuildable read model cannot be.
+- **The web page showed none of the reporting service's messages.** It answers
+  `{ error }`, and the shared `toNcbrsError` read only the registry API's
+  `errors` list, so every refusal on a reporting page (another county named,
+  a malformed month) became a generic sentence. It now reads both shapes.
 - **Cross-tabulation:** each breakdown is checked against its own total. Two
   breakdowns crossed (sex × timeliness) would need their joint cells checked,
   so a new breakdown must be checked against every existing one, not just the

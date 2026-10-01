@@ -330,10 +330,16 @@ app.MapGet("/api/exports/dhis2", async (
     {
         return Results.BadRequest(new ApiError(invalid.Message));
     }
+    catch (PeriodNotSettledException unsettled)
+    {
+        // Not a bad request: the month is fine, it is not finished yet.
+        return Results.Conflict(new ApiError(unsettled.Message));
+    }
 })
 .WithName("GetDhis2Export")
 .Produces<Dhis2Export>()
 .Produces<ApiError>(StatusCodes.Status400BadRequest)
+.Produces<ApiError>(StatusCodes.Status409Conflict)
 // The Ministry's: a national export to an external system, which the web
 // plan's role table has always placed with the Ministry.
 .RequireAuthorization(ExportPolicy);

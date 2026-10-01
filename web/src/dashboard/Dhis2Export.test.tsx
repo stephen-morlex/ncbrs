@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { Dhis2Export } from './Dhis2Export'
+import { Dhis2Export, latestSettledMonth } from './Dhis2Export'
 
 const get = vi.fn()
 
@@ -106,5 +106,25 @@ describe('Dhis2Export', () => {
     await generate()
 
     expect(await screen.findByText(/real calendar month/i)).toBeInTheDocument()
+  })
+
+  // The reporting service's own error shape, { error }, not the registry API's.
+  // A month still receiving late registrations is refused with the date it
+  // settles, and that sentence is what the Ministry needs to read.
+  // 1 October 2026 less 120 days is 3 June; June has not ended by then, so
+  // May is the latest settled month. Its end (1 June) is the boundary.
+  it('offers the latest settled month by default, not the current one', () => {
+    expect(latestSettledMonth(new Date(Date.UTC(2026, 9, 1)))).toBe('2026-05')
+    expect(latestSettledMonth(new Date(Date.UTC(2027, 0, 29)))).toBe('2026-09')
+    expect(latestSettledMonth(new Date(Date.UTC(2027, 0, 28)))).toBe('2026-08')
+  })
+
+  it('shows why a month that has not settled yet is refused, and when it can go', async () => {
+    respond(fail(409, { error: '202609 is still receiving late registrations and cannot be exported until 2027-01-29.' }))
+    renderScreen()
+    await generate()
+
+    expect(await screen.findByText(/cannot be exported until 2027-01-29/i)).toBeInTheDocument()
+    expect(screen.queryByText(/Use a real calendar month/i)).not.toBeInTheDocument()
   })
 })
