@@ -207,6 +207,60 @@ public class Dhis2ExportTests : IDisposable
     }
 
     /// <summary>
+    /// Sex has a third answer, and the breakdown publishes only two. With the
+    /// total beside them, total − male − female is the count of newborns of
+    /// undetermined sex in a county-month: as rare and as sensitive a figure
+    /// as this export holds, recovered by subtraction from cells that each
+    /// cleared the threshold.
+    /// </summary>
+    [Fact]
+    public async Task ASexBreakdownDoesNotLeaveAnUndeterminedChildRecoverableBySubtraction()
+    {
+        await GivenBirthsAsync(10, sex: "Male");
+        await GivenBirthsAsync(10, sex: "Female", brnPrefix: "2000");
+        await GivenBirthsAsync(1, sex: "Undetermined", brnPrefix: "3000");
+
+        var export = await ExportAsync();
+
+        Assert.Equal("21", ValueOf(export, "UID-LIVE"));
+        Assert.Null(ValueOf(export, "UID-LIVE-M"));
+        Assert.Null(ValueOf(export, "UID-LIVE-F"));
+        Assert.Contains(export.Suppressed, entry => entry.Reason.Contains("live births by sex"));
+    }
+
+    /// <summary>What the published cells leave over is itself a cell; at or above the threshold it is safe.</summary>
+    [Fact]
+    public async Task ASexBreakdownWhoseRemainderClearsTheThresholdIsPublished()
+    {
+        await GivenBirthsAsync(10, sex: "Male");
+        await GivenBirthsAsync(10, sex: "Female", brnPrefix: "2000");
+        await GivenBirthsAsync(5, sex: "Undetermined", brnPrefix: "3000");
+
+        var export = await ExportAsync();
+
+        Assert.Equal("10", ValueOf(export, "UID-LIVE-M"));
+        Assert.Equal("10", ValueOf(export, "UID-LIVE-F"));
+    }
+
+    /// <summary>
+    /// The same gap in timeliness: births whose window decision is unknown
+    /// (events from before it was recorded) were in the total but in no cell
+    /// the check looked at, so "18 on time of 20" published a 2.
+    /// </summary>
+    [Fact]
+    public async Task TimelinessDoesNotLeaveUnjudgedBirthsRecoverableBySubtraction()
+    {
+        await GivenBirthsAsync(18, withinWindow: true);
+        await GivenBirthsAsync(2, withinWindow: null, brnPrefix: "2000");
+
+        var export = await ExportAsync();
+
+        Assert.Equal("20", ValueOf(export, "UID-LIVE"));
+        Assert.Null(ValueOf(export, "UID-ON-TIME"));
+        Assert.Contains(export.Suppressed, entry => entry.Reason.Contains("timeliness"));
+    }
+
+    /// <summary>
     /// Timeliness decomposes live births just as sex does, so the same rule
     /// applies: publishing "18 of 20 on time" states that 2 were late.
     /// </summary>

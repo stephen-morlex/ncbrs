@@ -97,21 +97,22 @@ public class Dhis2ExportService(ReadModelDbContext db, Dhis2ExportOptions option
 
             Add(values, options.LiveBirths, period, orgUnit, live.Count);
 
+            // Sex has a third answer (Undetermined) with no element of its
+            // own: it is what the total leaves over, and AddBreakdown holds
+            // that remainder to the threshold like any published cell.
             AddBreakdown(values, suppressed, period, orgUnit,
-                "live births by sex",
+                "live births by sex", live.Count,
                 (options.LiveBirthsMale, live.Count(fact => fact.Sex == "Male")),
                 (options.LiveBirthsFemale, live.Count(fact => fact.Sex == "Female")));
 
             // Timeliness is a decomposition of live births too: publishing the
             // count inside the window next to the total gives away the count
             // outside it.
-            var withinWindow = live.Count(fact => fact.WithinStatutoryWindow == true);
-            var judged = live.Count(fact => fact.WithinStatutoryWindow.HasValue);
-
+            // The remainder is late births and births whose window decision
+            // is unknown together: total minus on-time publishes both.
             AddBreakdown(values, suppressed, period, orgUnit,
-                "registration timeliness",
-                (options.RegisteredWithinWindow, withinWindow),
-                (DataElement: null, Count: judged - withinWindow));
+                "registration timeliness", live.Count,
+                (options.RegisteredWithinWindow, live.Count(fact => fact.WithinStatutoryWindow == true)));
 
             // Rule 3: rare events stand alone rather than decomposing a
             // published total, so each is withheld on its own when small.
@@ -145,6 +146,13 @@ public class Dhis2ExportService(ReadModelDbContext db, Dhis2ExportOptions option
     /// Rule 2. A breakdown goes out whole or not at all, because a
     /// decomposition with one cell missing and its total published is not
     /// suppressed — it is arithmetic.
+    ///
+    /// <b>What the published cells do not cover is a cell too.</b> It is
+    /// computed from <paramref name="total"/> rather than listed by the
+    /// caller, because the caller is exactly who forgets it: the sex breakdown
+    /// published male and female beside a total that also held Undetermined,
+    /// so the count of undetermined-sex newborns was total − male − female,
+    /// and nothing checked it.
     /// </summary>
     private void AddBreakdown(
         List<Dhis2DataValue> values,
@@ -152,9 +160,11 @@ public class Dhis2ExportService(ReadModelDbContext db, Dhis2ExportOptions option
         string period,
         string orgUnit,
         string description,
+        int total,
         params (string? DataElement, int Count)[] cells)
     {
-        if (cells.Any(cell => cell.Count > 0 && cell.Count < options.MinimumCellSize))
+        var remainder = total - cells.Sum(cell => cell.Count);
+        if (cells.Select(cell => cell.Count).Append(remainder).Any(count => count > 0 && count < options.MinimumCellSize))
         {
             suppressed.Add(new Dhis2Suppression(orgUnit,
                 $"The {description} breakdown has a cell below {options.MinimumCellSize}; "
