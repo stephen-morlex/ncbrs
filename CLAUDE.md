@@ -1049,7 +1049,14 @@ closing a different way of reading a person out of a table:
 2. **A breakdown is published whole or not at all.** Suppressing one cell of
    a decomposition whose total is published is not suppression, it is
    arithmetic: 20 live births and 18 male states that 2 were female.
-   Timeliness is a decomposition too, for the same reason.
+   Timeliness is a decomposition too, for the same reason. **What the
+   published cells leave over is a cell too**, computed from the total rather
+   than listed by the caller, because the caller is who forgets it: the sex
+   breakdown published male and female beside a total that also held
+   Undetermined, so total − male − female was the count of undetermined-sex
+   newborns in a county-month, and nothing checked it. Timeliness had the same
+   gap for births with no recorded window decision. Found by the item-22
+   review; both pinned by tests that failed on the old code.
 3. **Rare-event counts below the threshold are absent, and so are the true
    zeros.** If zeros were published and only small counts suppressed, every
    gap would mean "at least one" — the disclosure the suppression was for.
@@ -1077,10 +1084,23 @@ closing a different way of reading a person out of a table:
 - Annulled registrations are excluded — sending one would report a birth the
   register has withdrawn.
 
-Not closed: differencing across periods (cumulative figures published month
-after month can narrow a suppressed cell) and the cross-tabulation risk if
-more breakdowns are added later. Both need review before the export goes to
-an external recipient on a schedule.
+**Reviewed (plan §17 item 22, 2026-10-01):**
+- **Months are not cumulative, and must stay monthly.** DHIS2 rolls months up
+  into quarters and years from what was published, so a withheld month never
+  enters a total and cannot be recovered from one. A quarterly or yearly
+  export *from this registry* would break that: year − Σ published months =
+  the withheld months.
+- **Open: revisions.** A month exported while `stillFilling` and again later
+  is two safe tables whose *difference* is not. It describes the handful of
+  registrations, corrections and annulments made in between, and DHIS2 keeps
+  the earlier values in its audit history. A sex split going from 12/12 to
+  13/11 reveals a sex correction in that county-month. This needs a decision
+  before scheduled exports: export a month only once it has stopped filling,
+  or hold back any change too small to publish.
+- **Cross-tabulation:** each breakdown is checked against its own total. Two
+  breakdowns crossed (sex × timeliness) would need their joint cells checked,
+  so a new breakdown must be checked against every existing one, not just the
+  total.
 
 ## Device enrolment (WS-B9, draft 6.7, built)
 Before this, `deviceId` was a string the caller asserted. Any account with
