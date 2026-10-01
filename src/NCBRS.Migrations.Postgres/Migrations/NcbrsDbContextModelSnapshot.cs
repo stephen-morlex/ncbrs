@@ -595,6 +595,10 @@ namespace NCBRS.Migrations.Postgres
 
                     b.HasIndex("AdministrativeAreaId");
 
+                    b.HasIndex("BrnBlockStart")
+                        .IsUnique()
+                        .HasFilter("\"BrnBlockEnd\" > 0");
+
                     b.ToTable("Facilities");
                 });
 

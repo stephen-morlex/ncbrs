@@ -56,7 +56,7 @@ public class FacilityDirectoryTests : IDisposable
                 CountyCode = TerekekaDistrict,
                 Tier = FacilityTier.Hospital,
                 ConnectivityProfile = ConnectivityProfile.AlwaysOn,
-                BrnBlockStart = 1, BrnBlockEnd = 1000, BrnBlockNextAvailable = 901,
+                BrnBlockStart = 1001, BrnBlockEnd = 2000, BrnBlockNextAvailable = 1901,
             },
             new Facility
             {
@@ -65,7 +65,7 @@ public class FacilityDirectoryTests : IDisposable
                 CountyCode = JubaDistrict,
                 Tier = FacilityTier.Hospital,
                 ConnectivityProfile = ConnectivityProfile.AlwaysOn,
-                BrnBlockStart = 1, BrnBlockEnd = 1000, BrnBlockNextAvailable = 500,
+                BrnBlockStart = 2001, BrnBlockEnd = 3000, BrnBlockNextAvailable = 2500,
             });
 
         db.Registrars.AddRange(

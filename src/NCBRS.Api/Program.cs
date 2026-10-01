@@ -107,6 +107,9 @@ builder.Services.AddScoped<ReviewQueueScope>();
 // Resolves the district an audited act belongs to. Scoped and memoised: one
 // registration writes three audit rows against the same facility.
 builder.Services.AddScoped<CountyLookup>();
+builder.Services.AddScoped<FacilityOnboardingService>();
+builder.Services.AddSingleton(builder.Configuration.GetSection(FacilityOnboardingOptions.SectionName)
+    .Get<FacilityOnboardingOptions>() ?? new FacilityOnboardingOptions());
 
 // The signing key is loaded once and held for the process: it is the most
 // sensitive secret here, and re-reading it per request would multiply the
@@ -324,6 +327,10 @@ builder.Services.AddAuthorization(authorization =>
     // facility staff holding them.
     authorization.AddPolicy(NcbrsRoles.CanEnrolDevices, policy =>
         policy.RequireRole(NcbrsRoles.DistrictOfficer, NcbrsRoles.MinistryAdmin));
+
+    // Ministry only: a facility comes with a national range of numbers.
+    authorization.AddPolicy(NcbrsRoles.CanManageFacilities, policy =>
+        policy.RequireRole(NcbrsRoles.MinistryAdmin));
 
     // Nothing is reachable anonymously unless it opts out explicitly.
     authorization.FallbackPolicy = new AuthorizationPolicyBuilder()

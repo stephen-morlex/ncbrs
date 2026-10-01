@@ -86,6 +86,17 @@ public class CountyLookup(NcbrsDbContext db)
         => ForFacilityAsync(registrar.FacilityId, cancellationToken);
 
     /// <summary>
+    /// The county an area is in (itself, if it is one), or null when no county
+    /// lies above it -- a state or the country. No fallback: this places a new
+    /// facility, which has no flat county code yet to fall back to.
+    /// </summary>
+    public async ValueTask<string?> ForAreaAsync(Guid areaId, CancellationToken cancellationToken = default)
+    {
+        var county = await ResolveCountyAsync(areaId, null, cancellationToken);
+        return county == AuditLog.Unknown ? null : county;
+    }
+
+    /// <summary>
     /// The county code for an area, walking up its parent chain. Falls back to
     /// the facility's flat <see cref="Facility.CountyCode"/> when there is no
     /// area linked or no county ancestor, so a facility is always stamped —

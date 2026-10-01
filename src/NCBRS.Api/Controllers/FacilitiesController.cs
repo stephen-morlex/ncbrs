@@ -167,6 +167,46 @@ public class FacilitiesController(
         return ToResponse(facility);
     }
 
+    /// <summary>
+    /// Bring a facility into the registry. The Ministry's act: the registry
+    /// places it in its county from the administrative tree and allocates it a
+    /// range of registration numbers overlapping no other facility's. Neither
+    /// is accepted from the caller.
+    /// </summary>
+    [HttpPost(Name = "CreateFacility")]
+    [Authorize(Policy = NcbrsRoles.CanManageFacilities)]
+    [ProducesResponseType(typeof(FacilityResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<FacilityResponse>> Create(
+        ApiRequest<CreateFacilityRequest> envelope,
+        [FromServices] FacilityOnboardingService onboarding)
+    {
+        var caller = await currentRegistrar.GetAsync(HttpContext.RequestAborted);
+
+        if (caller is null)
+        {
+            return NotProvisioned();
+        }
+
+        var outcome = await onboarding.CreateAsync(
+            envelope.Data, caller, TransactionContext.Get(HttpContext)?.TransactionId, HttpContext.RequestAborted);
+
+        return outcome.Result switch
+        {
+            FacilityOnboardingResult.Created => CreatedAtAction(
+                nameof(Get), new { facilityId = outcome.Facility!.FacilityId }, ToResponse(outcome.Facility)),
+
+            FacilityOnboardingResult.NameTaken => ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status409Conflict, "Name already used in this county.", "data.name", outcome.Detail!)),
+
+            _ => ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status400BadRequest, "Not a place for a facility.", "data.administrativeAreaId", outcome.Detail!)),
+        };
+    }
+
     private IQueryable<Facility> InScope(SearchScope scope)
     {
         var query = db.Facilities.AsNoTracking();

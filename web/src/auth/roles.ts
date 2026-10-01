@@ -61,6 +61,13 @@ export const NcbrsPolicies = {
   CanEnrolDevices: Oversight,
 
   /**
+   * Brings a facility into the registry, with a national range of
+   * registration numbers. The Ministry's: two facilities given overlapping
+   * ranges would issue one number to two children.
+   */
+  CanManageFacilities: [NcbrsRoles.MinistryAdmin],
+
+  /**
    * Reading the audit trail. Its own capability rather than borrowed from
    * another oversight policy: the trail records what every other endpoint
    * did, and since W1 it also records the names people searched for, so
