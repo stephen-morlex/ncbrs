@@ -49,10 +49,10 @@ public class ReviewScopeTests : IDisposable
         using var db = NewDb();
 
         db.Facilities.AddRange(
-            Facility(Juba, "Juba Teaching Hospital", "SS0101"),
-            Facility(JubaClinic, "Munuki PHCC", "SS0101"),
-            Facility(Terekeka, "Terekeka County Hospital", "SS0105"),
-            Facility(TerekekaClinic, "Tali PHCU", "SS0105"));
+            Facility(Juba, "Juba Teaching Hospital", "SS0101", 100_000),
+            Facility(JubaClinic, "Munuki PHCC", "SS0101", 200_000),
+            Facility(Terekeka, "Terekeka County Hospital", "SS0105", 300_000),
+            Facility(TerekekaClinic, "Tali PHCU", "SS0105", 400_000));
 
         db.Registrars.AddRange(
             new Registrar
@@ -109,10 +109,11 @@ public class ReviewScopeTests : IDisposable
 
     private NcbrsDbContext NewDb() => new(_database.Options);
 
-    private static Facility Facility(Guid id, string name, string county) => new()
+    // Each its own range: no two facilities may share one (FacilityRangeStartUnique).
+    private static Facility Facility(Guid id, string name, string county, long rangeStart) => new()
     {
         FacilityId = id, Name = name, CountyCode = county,
-        BrnBlockStart = 100_000, BrnBlockEnd = 999_999, BrnBlockNextAvailable = 100_000,
+        BrnBlockStart = rangeStart, BrnBlockEnd = rangeStart + 99_999, BrnBlockNextAvailable = rangeStart,
     };
 
     private BirthRecord Birth(string brn, Guid facility) => new()

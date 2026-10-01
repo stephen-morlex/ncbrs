@@ -56,6 +56,16 @@ public class NcbrsDbContext(DbContextOptions<NcbrsDbContext> options) : DbContex
             .HasForeignKey(f => f.AdministrativeAreaId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // No two facilities may start the same range of numbers. Ranges are
+        // allocated aligned to one size, so a shared start is how two
+        // concurrent onboardings would collide; this turns that race into a
+        // retry instead of two facilities issuing the same BRNs. Limited to
+        // real ranges: a facility not yet given one holds 0-0.
+        modelBuilder.Entity<Facility>()
+            .HasIndex(f => f.BrnBlockStart)
+            .IsUnique()
+            .HasFilter("\"BrnBlockEnd\" > 0");
+
         // BRN must be unique across the whole system -- this is the field
         // the offline block-allocation strategy (Facility.BrnBlockStart/End)
         // exists to protect.

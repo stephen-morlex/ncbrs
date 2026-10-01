@@ -256,6 +256,29 @@ Jonglei) and South Sudanese names throughout.
   columns were added to both the SQLite set (Core) and the Postgres set
   (`NCBRS.Migrations.Postgres`).
 
+## Onboarding facilities and registrars (pilot readiness §1, building)
+Until this, only the Development seed could create a facility or a registrar,
+so a pilot district's first registrar would have been refused everywhere
+(`docs/pilot-readiness.md`). Decided 2026-10-01: the Ministry creates
+facilities; **district officers onboard registrars for their own county** (the
+Ministry anywhere); an account **declares itself on first sign-in** and is
+bound from a pending queue, so nobody copies ids and the registry holds no
+Keycloak admin credential.
+
+- **A facility's county and its BRN range are computed, never typed**
+  (`FacilityOnboardingService`, `POST /api/facilities`, `CanManageFacilities`,
+  Ministry only). The county is where its area sits in the tree, and it must be
+  placed at a county or below. The range is the next one aligned to
+  `FacilityOnboarding:BrnRangeSize` (100,000) above every range given.
+- **No two facilities can hold overlapping ranges.** Aligned allocation stops
+  overlap, and a filtered unique index on `BrnBlockStart` (real ranges only;
+  `BrnBlockEnd > 0`) turns two simultaneous onboardings into a retry. Tests
+  that gave several facilities one shared range were corrected: that is data
+  the registry must never hold.
+- A name is unique within its county, case-insensitively, not nationally.
+- **Still to build:** the pending-accounts queue, binding and withdrawal of
+  registrars, and the runbook's onboarding procedures.
+
 ## Signing key rotation (WS-A3/A4, built)
 The signer holds one **active** key and any number of **retired** ones;
 `CertificatePayloadVerifier` holds a set and selects by the key id printed in

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from 'react-oidc-context'
-import { CircleAlert, Hospital, TriangleAlert } from 'lucide-react'
+import { CircleAlert, CircleCheck, Hospital, Plus, TriangleAlert } from 'lucide-react'
 import { WebChannelDeviceId } from '@/auth/channel'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -40,6 +40,7 @@ import { realmRoles } from '@/auth/claims'
 import { satisfies } from '@/auth/roles'
 import { useApiClient } from '@/api/useApi'
 import { PageHeader } from '@/shell/PageHeader'
+import { CreateFacilityDialog } from './CreateFacilityDialog'
 
 type Facility = components['schemas']['FacilityResponse']
 type BlockStatus = components['schemas']['BrnBlockStatus']
@@ -64,6 +65,12 @@ export function Facilities() {
   // the facility scope — a facility registrar can grant only their own — so a
   // hidden button is a courtesy, not the control.
   const canGrant = satisfies(realmRoles(auth.user), 'CanRegisterBirths')
+
+  // The Ministry's: a facility comes with a national range of numbers. The
+  // server enforces it; hiding the button is a courtesy.
+  const canCreate = satisfies(realmRoles(auth.user), 'CanManageFacilities')
+  const [creating, setCreating] = useState(false)
+  const [created, setCreated] = useState<Facility | null>(null)
 
   const [facilities, setFacilities] = useState<Facility[] | null>(null)
   const [total, setTotal] = useState(0)
@@ -119,6 +126,36 @@ export function Facilities() {
         title="Facilities"
         description="Where births are registered, and how close each is to running out of registration numbers."
       />
+
+      {canCreate ? (
+        <Button onClick={() => setCreating(true)}>
+          <Plus />
+          Add a facility
+        </Button>
+      ) : null}
+
+      {created ? (
+        <Alert>
+          <CircleCheck />
+          <AlertTitle>{created.name} added</AlertTitle>
+          <AlertDescription>
+            In county {created.countyCode}, with registration numbers{' '}
+            {created.brnBlockStart.toLocaleString()}–{created.brnBlockEnd.toLocaleString()}. Its
+            devices draw blocks from this range.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      {creating ? (
+        <CreateFacilityDialog
+          onClose={() => setCreating(false)}
+          onCreated={(facility) => {
+            setCreating(false)
+            setCreated(facility)
+            void load()
+          }}
+        />
+      ) : null}
 
       {loading && facilities === null ? <LoadingFacilities /> : null}
 

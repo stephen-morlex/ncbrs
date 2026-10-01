@@ -65,4 +65,12 @@ public static class NcbrsRoles
     /// precisely the misuse it exists to expose.
     /// </summary>
     public const string CanReadAuditTrail = nameof(CanReadAuditTrail);
+
+    /// <summary>
+    /// Bringing a facility into the registry, which allocates it a range of
+    /// registration numbers. The Ministry's: ranges are national, and two
+    /// facilities given overlapping ones would issue the same number to two
+    /// children.
+    /// </summary>
+    public const string CanManageFacilities = nameof(CanManageFacilities);
 }

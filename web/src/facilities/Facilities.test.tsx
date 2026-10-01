@@ -64,6 +64,21 @@ beforeEach(() => {
   get.mockResolvedValue(ok(page([facility])))
 })
 
+describe('Facilities — adding one', () => {
+  // A facility comes with a national range of numbers: the Ministry's act.
+  it('offers to add a facility to the Ministry only', async () => {
+    roles.value = ['ministry-admin']
+    renderScreen()
+    expect(await screen.findByRole('button', { name: /add a facility/i })).toBeInTheDocument()
+  })
+
+  it('does not offer it to a district officer', async () => {
+    renderScreen()
+    await screen.findByText('Juba Central Clinic')
+    expect(screen.queryByRole('button', { name: /add a facility/i })).not.toBeInTheDocument()
+  })
+})
+
 describe('Facilities — granting a block', () => {
   it('offers a grant to someone permitted to register births', async () => {
     renderScreen()
