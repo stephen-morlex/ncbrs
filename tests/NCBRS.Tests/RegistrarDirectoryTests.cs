@@ -184,7 +184,7 @@ public class RegistrarDirectoryTests : IDisposable
         Assert.DoesNotContain("CredentialHash", published);
         Assert.DoesNotContain("ExternalSubjectId", published);
         Assert.Equal(
-            ["RegistrarId", "DisplayName", "Role", "FacilityId", "FacilityName", "CountyCode"],
+            ["RegistrarId", "DisplayName", "Role", "FacilityId", "FacilityName", "CountyCode", "WithdrawnAtUtc"],
             published);
     }
 

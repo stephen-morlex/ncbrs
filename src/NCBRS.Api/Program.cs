@@ -108,6 +108,7 @@ builder.Services.AddScoped<ReviewQueueScope>();
 // registration writes three audit rows against the same facility.
 builder.Services.AddScoped<CountyLookup>();
 builder.Services.AddScoped<FacilityOnboardingService>();
+builder.Services.AddScoped<RegistrarOnboardingService>();
 builder.Services.AddSingleton(builder.Configuration.GetSection(FacilityOnboardingOptions.SectionName)
     .Get<FacilityOnboardingOptions>() ?? new FacilityOnboardingOptions());
 
@@ -326,6 +327,11 @@ builder.Services.AddAuthorization(authorization =>
     // The district officers who issue and collect the tablets, not the
     // facility staff holding them.
     authorization.AddPolicy(NcbrsRoles.CanEnrolDevices, policy =>
+        policy.RequireRole(NcbrsRoles.DistrictOfficer, NcbrsRoles.MinistryAdmin));
+
+    // District officers for their own county (and facility staff only); the
+    // Ministry anywhere. The service applies both limits.
+    authorization.AddPolicy(NcbrsRoles.CanManageRegistrars, policy =>
         policy.RequireRole(NcbrsRoles.DistrictOfficer, NcbrsRoles.MinistryAdmin));
 
     // Ministry only: a facility comes with a national range of numbers.

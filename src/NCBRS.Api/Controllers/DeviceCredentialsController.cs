@@ -127,7 +127,9 @@ public class DeviceCredentialsController(
         }
 
         var credentials = await db.Registrars
-            .Where(person => person.FacilityId == facilityId && person.CredentialHash != null)
+            // A withdrawn registrar's PIN leaves every tablet at its next sync.
+            .Where(person => person.FacilityId == facilityId && person.CredentialHash != null
+                             && person.WithdrawnAtUtc == null)
             .OrderBy(person => person.DisplayName)
             .Select(person => new DeviceCredentialEntry(
                 person.RegistrarId,

@@ -1,5 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { CircleAlert, Search, TriangleAlert, Users } from 'lucide-react'
+import { useAuth } from 'react-oidc-context'
+import { CircleAlert, Search, TriangleAlert, UserMinus, Users } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -34,6 +35,10 @@ import type { components } from '@/api/generated/api'
 import { type NcbrsError, toNcbrsError, unreachableError } from '@/api/errors'
 import { useApiClient } from '@/api/useApi'
 import { PageHeader } from '@/shell/PageHeader'
+import { realmRoles } from '@/auth/claims'
+import { satisfies } from '@/auth/roles'
+import { PendingAccounts } from './PendingAccounts'
+import { WithdrawRegistrarDialog } from './WithdrawRegistrarDialog'
 
 type Registrar = components['schemas']['RegistrarResponse']
 type RegistrarRole = components['schemas']['RegistrarRole']
@@ -60,6 +65,13 @@ const RoleLabels: Record<RegistrarRole, string> = {
  */
 export function RegistrarDirectory() {
   const api = useApiClient()
+
+  const auth = useAuth()
+  const roles = realmRoles(auth.user)
+  // The server applies the county and role limits; this only decides what to offer.
+  const canManage = satisfies(roles, 'CanManageRegistrars')
+  const ministry = satisfies(roles, 'CanManageFacilities')
+  const [withdrawing, setWithdrawing] = useState<Registrar | null>(null)
 
   const [rows, setRows] = useState<Registrar[] | null>(null)
   const [total, setTotal] = useState(0)
@@ -197,6 +209,25 @@ export function RegistrarDirectory() {
         </CardContent>
       </Card>
 
+      {canManage ? (
+        <PendingAccounts
+          facilities={facilities}
+          ministry={ministry}
+          onBound={() => void load(null, facilityId, name)}
+        />
+      ) : null}
+
+      {withdrawing ? (
+        <WithdrawRegistrarDialog
+          registrar={withdrawing}
+          onClose={() => setWithdrawing(null)}
+          onWithdrawn={() => {
+            setWithdrawing(null)
+            void load(null, facilityId, name)
+          }}
+        />
+      ) : null}
+
       {loading && rows === null ? <LoadingDirectory /> : null}
 
       {error ? <Failure error={error} onRetry={() => void load(null, facilityId, name)} /> : null}
@@ -235,6 +266,7 @@ export function RegistrarDirectory() {
                     <TableHead>Role</TableHead>
                     <TableHead>Facility</TableHead>
                     <TableHead>District</TableHead>
+                    {canManage ? <TableHead className="text-right">Withdraw</TableHead> : null}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -243,9 +275,28 @@ export function RegistrarDirectory() {
                       <TableCell className="font-medium">{registrar.displayName}</TableCell>
                       <TableCell>
                         <Badge variant="secondary">{RoleLabels[registrar.role]}</Badge>
+                        {registrar.withdrawnAtUtc ? (
+                          <Badge variant="outline" className="ml-2">
+                            withdrawn {new Date(registrar.withdrawnAtUtc).toLocaleDateString()}
+                          </Badge>
+                        ) : null}
                       </TableCell>
                       <TableCell>{registrar.facilityName}</TableCell>
                       <TableCell className="text-muted-foreground">{registrar.countyCode}</TableCell>
+                      {canManage ? (
+                        <TableCell className="text-right">
+                          {registrar.withdrawnAtUtc ? null : (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setWithdrawing(registrar)}
+                              aria-label={`Withdraw ${registrar.displayName}`}
+                            >
+                              <UserMinus />
+                            </Button>
+                          )}
+                        </TableCell>
+                      ) : null}
                     </TableRow>
                   ))}
                 </TableBody>

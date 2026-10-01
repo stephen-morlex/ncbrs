@@ -41,8 +41,11 @@ public class CurrentRegistrarService(
             return null;
         }
 
+        // A withdrawn registrar is not one: they resolve as unprovisioned on
+        // every request, which is the whole of what withdrawal does here.
         _cached = await db.Registrars
-            .FirstOrDefaultAsync(registrar => registrar.ExternalSubjectId == subject, cancellationToken);
+            .FirstOrDefaultAsync(registrar => registrar.ExternalSubjectId == subject
+                                              && registrar.WithdrawnAtUtc == null, cancellationToken);
 
         return _cached;
     }

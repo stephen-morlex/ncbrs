@@ -176,6 +176,132 @@ public class RegistrarsController(
         return ToResponse(registrar);
     }
 
+    /// <summary>
+    /// Who the signed-in account is to the registry. Not gated on being
+    /// provisioned: this is how an account that is not yet declares itself.
+    /// It is recorded as pending, from what its own token says, so a district
+    /// officer can find it and bind it (pilot readiness §1).
+    /// </summary>
+    [HttpGet("/api/me", Name = "GetMe")]
+    [ProducesResponseType(typeof(MeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<MeResponse>> Me([FromServices] RegistrarOnboardingService onboarding)
+    {
+        var status = await onboarding.RecordAsync(User, HttpContext.RequestAborted);
+
+        return new MeResponse(
+            Provisioned: status.Registrar is not null && !status.Withdrawn,
+            Withdrawn: status.Withdrawn,
+            Pending: status.Pending is not null,
+            Registrar: status.Registrar is { } registrar ? ToResponse(registrar) : null);
+    }
+
+    /// <summary>
+    /// The accounts waiting to be bound: those in the officer's county group,
+    /// or every one for the Ministry. An account with no county group waits
+    /// for the Ministry.
+    /// </summary>
+    [HttpGet("pending", Name = "GetPendingAccounts")]
+    [Authorize(Policy = NcbrsRoles.CanManageRegistrars)]
+    [ProducesResponseType(typeof(IReadOnlyList<PendingAccountResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<IReadOnlyList<PendingAccountResponse>>> Pending(
+        [FromServices] RegistrarOnboardingService onboarding)
+    {
+        var caller = await currentRegistrar.GetAsync(HttpContext.RequestAborted);
+        if (caller is null)
+        {
+            return NotProvisioned();
+        }
+
+        var accounts = await onboarding.PendingForAsync(caller, User, HttpContext.RequestAborted);
+        if (accounts is null)
+        {
+            return ApiErrors.Result(ApiErrors.Single(StatusCodes.Status403Forbidden,
+                "Your county is not known.", string.Empty,
+                "Your facility cannot be placed in a county, so which accounts are yours cannot be decided."));
+        }
+
+        return accounts.Select(account => new PendingAccountResponse(
+            account.PendingAccountId, account.DisplayName, account.Username, account.Email,
+            [.. account.RealmRoles.Split(',', StringSplitOptions.RemoveEmptyEntries)],
+            account.CountyCode, account.FirstSeenAtUtc, account.LastSeenAtUtc)).ToList();
+    }
+
+    /// <summary>Bind a waiting account to a facility and a role (pilot readiness §1).</summary>
+    [HttpPost(Name = "BindRegistrar")]
+    [Authorize(Policy = NcbrsRoles.CanManageRegistrars)]
+    [ProducesResponseType(typeof(RegistrarResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<RegistrarResponse>> Bind(
+        ApiRequest<BindRegistrarRequest> envelope, [FromServices] RegistrarOnboardingService onboarding)
+    {
+        var caller = await currentRegistrar.GetAsync(HttpContext.RequestAborted);
+        if (caller is null)
+        {
+            return NotProvisioned();
+        }
+
+        var outcome = await onboarding.BindAsync(
+            envelope.Data, caller, User, TransactionContext.Get(HttpContext)?.TransactionId, HttpContext.RequestAborted);
+
+        return outcome.Result == RegistrarOnboardingResult.Done
+            ? CreatedAtAction(nameof(Get), new { registrarId = outcome.Registrar!.RegistrarId }, ToResponse(outcome.Registrar))
+            : Failure(outcome);
+    }
+
+    /// <summary>
+    /// Withdraw a registrar who has stopped working here. The row stays (the
+    /// trail names them); they resolve as unprovisioned from now on, and their
+    /// PIN leaves each tablet at its next sync.
+    /// </summary>
+    [HttpPost("{registrarId:guid}/withdraw", Name = "WithdrawRegistrar")]
+    [Authorize(Policy = NcbrsRoles.CanManageRegistrars)]
+    [ProducesResponseType(typeof(RegistrarResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<RegistrarResponse>> Withdraw(
+        Guid registrarId, ApiRequest<WithdrawRegistrarRequest> envelope, [FromServices] RegistrarOnboardingService onboarding)
+    {
+        var caller = await currentRegistrar.GetAsync(HttpContext.RequestAborted);
+        if (caller is null)
+        {
+            return NotProvisioned();
+        }
+
+        var outcome = await onboarding.WithdrawAsync(
+            registrarId, envelope.Data, caller, User, TransactionContext.Get(HttpContext)?.TransactionId, HttpContext.RequestAborted);
+
+        return outcome.Result == RegistrarOnboardingResult.Done ? ToResponse(outcome.Registrar!) : Failure(outcome);
+    }
+
+    private static ObjectResult Failure(RegistrarOnboardingOutcome outcome)
+        => ApiErrors.Result(ApiErrors.Single(
+            outcome.Result switch
+            {
+                RegistrarOnboardingResult.NotFound => StatusCodes.Status404NotFound,
+                RegistrarOnboardingResult.NotPermitted => StatusCodes.Status403Forbidden,
+                RegistrarOnboardingResult.Conflict => StatusCodes.Status409Conflict,
+                _ => StatusCodes.Status400BadRequest,
+            },
+            outcome.Result switch
+            {
+                RegistrarOnboardingResult.NotFound => "Not found.",
+                RegistrarOnboardingResult.NotPermitted => "Not permitted.",
+                RegistrarOnboardingResult.Conflict => "Already done.",
+                _ => "Not accepted.",
+            },
+            outcome.Field ?? string.Empty,
+            outcome.Detail ?? string.Empty));
+
     private IQueryable<Registrar> InScope(SearchScope scope)
     {
         var query = db.Registrars.AsNoTracking();
@@ -208,7 +334,8 @@ public class RegistrarsController(
         registrar.Role,
         registrar.FacilityId,
         registrar.Facility?.Name ?? string.Empty,
-        registrar.Facility?.CountyCode ?? string.Empty);
+        registrar.Facility?.CountyCode ?? string.Empty,
+        registrar.WithdrawnAtUtc);
 }
 
 public record RegistrarResponse(
@@ -217,4 +344,23 @@ public record RegistrarResponse(
     RegistrarRole Role,
     Guid FacilityId,
     string FacilityName,
-    string CountyCode);
+    string CountyCode,
+
+    /// <summary>
+    /// When they stopped working here, if they have: they stay listed, because
+    /// the trail names them. The reason is not published. Anyone may resolve a
+    /// colleague by id, and why someone left is an HR matter.
+    /// </summary>
+    DateTime? WithdrawnAtUtc = null);
+
+public record MeResponse(bool Provisioned, bool Withdrawn, bool Pending, RegistrarResponse? Registrar);
+
+public record PendingAccountResponse(
+    Guid PendingAccountId,
+    string DisplayName,
+    string? Username,
+    string? Email,
+    IReadOnlyList<string> RealmRoles,
+    string? CountyCode,
+    DateTime FirstSeenAtUtc,
+    DateTime LastSeenAtUtc);

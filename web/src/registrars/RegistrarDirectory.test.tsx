@@ -14,6 +14,18 @@ vi.mock('@/api/useApi', () => ({
   useApiClient: () => client,
 }))
 
+vi.mock('react-oidc-context', () => ({
+  useAuth: () => ({ user: { access_token: 'token' } }),
+}))
+
+// The signed-in roles, swapped per test. None by default, so the directory
+// tests below exercise reading it, not managing it.
+const roles = vi.hoisted(() => ({ value: [] as string[] }))
+
+vi.mock('@/auth/claims', () => ({
+  realmRoles: () => roles.value,
+}))
+
 function ok<T>(data: T, status = 200) {
   return { data: { data }, error: undefined, response: { ok: true, status } }
 }
@@ -65,6 +77,7 @@ function renderDirectory() {
 
 beforeEach(() => {
   get.mockReset()
+  roles.value = []
   respondWith(ok(page([registrar])))
 })
 
@@ -118,5 +131,68 @@ describe('RegistrarDirectory', () => {
     renderDirectory()
 
     expect(await screen.findByRole('button', { name: /try again/i })).toBeInTheDocument()
+  })
+})
+
+describe('RegistrarDirectory — adding and withdrawing', () => {
+  const waiting = {
+    pendingAccountId: 'pending-1',
+    displayName: 'Achol Garang',
+    username: 'achol.garang',
+    email: 'achol@health.gov.ss',
+    realmRoles: ['facility-registrar'],
+    countyCode: 'SS0101',
+    firstSeenAtUtc: '2026-10-01T08:00:00Z',
+    lastSeenAtUtc: '2026-10-01T08:00:00Z',
+  }
+
+  function answering(pending: unknown[], registrars: unknown[]) {
+    get.mockImplementation((url: string) => {
+      if (url === '/api/registrars/pending') return Promise.resolve(ok(pending))
+      if (url === '/api/registrars') return Promise.resolve(ok(page(registrars)))
+      return Promise.resolve(ok(page([])))
+    })
+  }
+
+  it('shows an officer the accounts waiting to be added', async () => {
+    roles.value = ['district-officer']
+    answering([waiting], [registrar])
+    render(
+      <MemoryRouter>
+        <RegistrarDirectory />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText('Achol Garang')).toBeInTheDocument()
+    expect(screen.getByText('achol.garang')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^add$/i })).toBeInTheDocument()
+  })
+
+  it('offers withdrawal to an officer, and marks someone already withdrawn instead', async () => {
+    roles.value = ['district-officer']
+    answering([], [registrar, { ...registrar, registrarId: 'gone', displayName: 'Deng Ayen', withdrawnAtUtc: '2026-09-30T10:00:00Z' }])
+    render(
+      <MemoryRouter>
+        <RegistrarDirectory />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByRole('button', { name: 'Withdraw Nyandeng Lado' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Withdraw Deng Ayen' })).not.toBeInTheDocument()
+    expect(screen.getByText(/^withdrawn [0-9]/)).toBeInTheDocument()
+  })
+
+  it('offers neither to someone who cannot manage registrars', async () => {
+    roles.value = []
+    answering([waiting], [registrar])
+    render(
+      <MemoryRouter>
+        <RegistrarDirectory />
+      </MemoryRouter>,
+    )
+
+    await screen.findByText('Nyandeng Lado')
+    expect(screen.queryByText('Achol Garang')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /withdraw/i })).not.toBeInTheDocument()
   })
 })

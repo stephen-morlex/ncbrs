@@ -852,6 +852,49 @@ namespace NCBRS.Migrations
                     b.ToTable("OutboxMessages");
                 });
 
+            modelBuilder.Entity("NCBRS.Models.PendingAccount", b =>
+                {
+                    b.Property<Guid>("PendingAccountId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CountyCode")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("FirstSeenAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastSeenAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RealmRoles")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Username")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("PendingAccountId");
+
+                    b.HasIndex("CountyCode");
+
+                    b.HasIndex("Subject")
+                        .IsUnique();
+
+                    b.ToTable("PendingAccounts");
+                });
+
             modelBuilder.Entity("NCBRS.Models.Person", b =>
                 {
                     b.Property<Guid>("PersonId")
@@ -936,6 +979,15 @@ namespace NCBRS.Migrations
 
                     b.Property<string>("Role")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("WithdrawnAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("WithdrawnByRegistrarId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WithdrawnReason")
                         .HasColumnType("TEXT");
 
                     b.HasKey("RegistrarId");

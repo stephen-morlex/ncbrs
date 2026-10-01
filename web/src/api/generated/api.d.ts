@@ -621,7 +621,7 @@ export interface paths {
         };
         get: operations["GetRegistrars"];
         put?: never;
-        post?: never;
+        post: operations["BindRegistrar"];
         delete?: never;
         options?: never;
         head?: never;
@@ -638,6 +638,54 @@ export interface paths {
         get: operations["GetRegistrar"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetMe"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/registrars/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetPendingAccounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/registrars/{registrarId}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["WithdrawRegistrar"];
         delete?: never;
         options?: never;
         head?: never;
@@ -821,6 +869,10 @@ export interface components {
             meta?: null | components["schemas"]["RequestMeta"];
             data?: null | components["schemas"]["AnnulRecordRequest"];
         };
+        ApiRequestOfBindRegistrarRequest: {
+            meta?: null | components["schemas"]["RequestMeta"];
+            data?: null | components["schemas"]["BindRegistrarRequest"];
+        };
         ApiRequestOfBrnBlockRequest: {
             meta?: null | components["schemas"]["RequestMeta"];
             data?: null | components["schemas"]["BrnBlockRequest"];
@@ -889,6 +941,10 @@ export interface components {
             meta?: null | components["schemas"]["RequestMeta"];
             data?: null | components["schemas"]["VerifyCertificateRequest"];
         };
+        ApiRequestOfWithdrawRegistrarRequest: {
+            meta?: null | components["schemas"]["RequestMeta"];
+            data?: null | components["schemas"]["WithdrawRegistrarRequest"];
+        };
         AuditEntryResponse: {
             /** Format: uuid */
             auditLogId: string;
@@ -904,6 +960,14 @@ export interface components {
             transactionId: null | string;
             /** Format: date-time */
             timestampUtc: string;
+        };
+        BindRegistrarRequest: {
+            /** Format: uuid */
+            pendingAccountId?: string;
+            /** Format: uuid */
+            facilityId?: string;
+            role?: components["schemas"]["RegistrarRole"];
+            displayName?: null | string;
         };
         /** @enum {string} */
         BirthPlurality: "Singleton" | "Twin" | "Triplet" | "HigherOrderMultiple";
@@ -1213,6 +1277,12 @@ export interface components {
             /** Format: date-time */
             updatedAtUtc: null | string;
         };
+        MeResponse: {
+            provisioned: boolean;
+            withdrawn: boolean;
+            pending: boolean;
+            registrar: null | components["schemas"]["RegistrarResponse"];
+        };
         NeonatalOutcomeResponse: {
             /** Format: uuid */
             birthRecordId: string;
@@ -1303,6 +1373,19 @@ export interface components {
             total: number;
             nextCursor: null | string;
         };
+        PendingAccountResponse: {
+            /** Format: uuid */
+            pendingAccountId: string;
+            displayName: string;
+            username: null | string;
+            email: null | string;
+            realmRoles: string[];
+            countyCode: null | string;
+            /** Format: date-time */
+            firstSeenAtUtc: string;
+            /** Format: date-time */
+            lastSeenAtUtc: string;
+        };
         PendingAmendmentResponse: {
             /** Format: uuid */
             amendmentRequestId: string;
@@ -1391,6 +1474,8 @@ export interface components {
             facilityId: string;
             facilityName: string;
             countyCode: string;
+            /** Format: date-time */
+            withdrawnAtUtc?: null | string;
         };
         /** @enum {string} */
         RegistrarRole: "FacilityRegistrar" | "CommunityHealthWorker" | "DistrictOfficer" | "MinistryAdmin";
@@ -1559,6 +1644,9 @@ export interface components {
             /** Format: date-time */
             lastFailedAtUtc: null | string;
             failingNow: boolean;
+        };
+        WithdrawRegistrarRequest: {
+            reason?: string;
         };
     };
     responses: never;
@@ -5780,6 +5868,142 @@ export interface operations {
             };
         };
     };
+    BindRegistrar: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Caller-supplied transaction id (UUID), echoed back in the response meta. Generated by the server when omitted. */
+                "X-Transaction-Id"?: string;
+                /** @description Calling application or channel, e.g. "MobileApp". */
+                "X-Client-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiRequestOfBindRegistrarRequest"];
+                "text/json": components["schemas"]["ApiRequestOfBindRegistrarRequest"];
+                "application/*+json": components["schemas"]["ApiRequestOfBindRegistrarRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["RegistrarResponse"];
+                    };
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+        };
+    };
     GetRegistrar: {
         parameters: {
             query?: never;
@@ -5855,6 +6079,271 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+        };
+    };
+    GetMe: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Caller-supplied transaction id (UUID), echoed back in the response meta. Generated by the server when omitted. */
+                "X-Transaction-Id"?: string;
+                /** @description Calling application or channel, e.g. "MobileApp". */
+                "X-Client-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["MeResponse"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+        };
+    };
+    GetPendingAccounts: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Caller-supplied transaction id (UUID), echoed back in the response meta. Generated by the server when omitted. */
+                "X-Transaction-Id"?: string;
+                /** @description Calling application or channel, e.g. "MobileApp". */
+                "X-Client-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["PendingAccountResponse"][];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+        };
+    };
+    WithdrawRegistrar: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Caller-supplied transaction id (UUID), echoed back in the response meta. Generated by the server when omitted. */
+                "X-Transaction-Id"?: string;
+                /** @description Calling application or channel, e.g. "MobileApp". */
+                "X-Client-Id"?: string;
+            };
+            path: {
+                registrarId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiRequestOfWithdrawRegistrarRequest"];
+                "text/json": components["schemas"]["ApiRequestOfWithdrawRegistrarRequest"];
+                "application/*+json": components["schemas"]["ApiRequestOfWithdrawRegistrarRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["RegistrarResponse"];
+                    };
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -73,4 +73,21 @@ public static class NcbrsRoles
     /// children.
     /// </summary>
     public const string CanManageFacilities = nameof(CanManageFacilities);
+
+    /// <summary>
+    /// Onboarding and withdrawing registrars. District officers for their own
+    /// county, as with every other write, and only facility staff; the
+    /// Ministry anywhere and any role. A district officer able to create
+    /// another district officer could widen their own oversight.
+    /// </summary>
+    public const string CanManageRegistrars = nameof(CanManageRegistrars);
+
+    /// <summary>The realm role a registry role corresponds to.</summary>
+    public static string RealmRoleFor(NCBRS.Models.RegistrarRole role) => role switch
+    {
+        NCBRS.Models.RegistrarRole.FacilityRegistrar => FacilityRegistrar,
+        NCBRS.Models.RegistrarRole.CommunityHealthWorker => CommunityHealthWorker,
+        NCBRS.Models.RegistrarRole.DistrictOfficer => DistrictOfficer,
+        _ => MinistryAdmin,
+    };
 }

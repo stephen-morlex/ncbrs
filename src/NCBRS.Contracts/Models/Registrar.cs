@@ -43,4 +43,19 @@ public class Registrar
     /// they are.
     /// </summary>
     public string? CredentialHash { get; set; }
+
+    /// <summary>
+    /// Set when this person stopped working for the registry here. A withdrawn
+    /// registrar resolves as unprovisioned on every request, and their PIN is
+    /// left out of the bundle tablets download, so it stops unlocking them at
+    /// each tablet's next sync. The row is kept, not deleted: every record they
+    /// registered and every act in the audit trail still names them.
+    /// </summary>
+    public DateTime? WithdrawnAtUtc { get; set; }
+
+    public string? WithdrawnReason { get; set; }
+
+    public Guid? WithdrawnByRegistrarId { get; set; }
+
+    public bool IsActive => WithdrawnAtUtc is null;
 }

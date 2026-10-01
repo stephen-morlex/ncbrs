@@ -68,6 +68,13 @@ export const NcbrsPolicies = {
   CanManageFacilities: [NcbrsRoles.MinistryAdmin],
 
   /**
+   * Adding and withdrawing registrars. District officers for their own
+   * county, and facility staff only; the Ministry anywhere and any role. The
+   * server applies both limits.
+   */
+  CanManageRegistrars: Oversight,
+
+  /**
    * Reading the audit trail. Its own capability rather than borrowed from
    * another oversight policy: the trail records what every other endpoint
    * did, and since W1 it also records the names people searched for, so
