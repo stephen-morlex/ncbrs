@@ -728,6 +728,24 @@ printer paths are the shell's.
   a reprinted certificate (BRN 100102) and a new birth's slip (100104). The QR
   codes decoded from the print previews are exactly the certificate's code and
   `NCBRS-SLIP1.100104`.
+- **The Bluetooth thermal path is built; proving it needs real hardware.**
+  - The **Printer** screen offers "page printer or PDF", or any printer
+    *already paired* in Android's settings, at 58 or 80 mm.
+  - The app asks only for `BLUETOOTH_CONNECT`, never scan: it finds nothing
+    it was not given, so it needs no location permission.
+  - `ThermalRenderer` draws the document at the paper's width, so Android
+    shapes the Arabic. The drawing is thresholded to dots and sent over the
+    serial profile in 1 KB pieces with pauses, because cheap printers drop
+    lines when their buffer overflows.
+  - **Proven on the emulator:** the exact dots a printer would get, saved
+    through a Debug-only preview, are legible in both languages, and their QR
+    code decodes. Refusing the Bluetooth permission leaves page printing
+    working and says how to allow it.
+  - **Not yet proven: the Bluetooth send itself.** The emulator has no
+    printer. Run "Print a test page" on a real one before B7 is called done.
+  - **Debug builds only:** a "Printer (debug)" button on the unlock screen and
+    the preview, so printing can be tested after a reinstall without a PIN.
+    Release builds compile both out (checked).
 
 **The tablet speaks English and Arabic (Modern Standard, a draft for Ministry
 review).**

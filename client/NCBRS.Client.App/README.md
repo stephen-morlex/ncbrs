@@ -62,8 +62,16 @@ code) and needs signal, because only the registry signs a certificate. The
 tablet issues it, or reprints it if one exists (the registry counts reprints),
 checks it against its own bundle, and prints only what its code proves. The
 page is built in the core (`PrintedDocumentHtml`) and drawn by an off-screen
-web view with scripts off; the dialog defaults to A4. A Bluetooth thermal
-printer for posts is next.
+web view with scripts off; the dialog defaults to A4.
+
+**A Bluetooth thermal printer** for posts: pair it once in Android's Bluetooth
+settings, then choose it on the **Printer** screen with its paper width (58 or
+80 mm) and print a test page. Only paired devices are listed, and only
+`BLUETOOTH_CONNECT` is asked for. The slip is drawn by Android, so Arabic is
+shaped, and sent as dots, which any ESC/POS printer accepts. Debug builds add a
+"Printer (debug)" button on the unlock screen and a "save a thermal preview"
+button that writes the exact dots to `cache/thermal-preview.png` (pull it with
+`adb exec-out run-as ss.gov.ncbrs.client cat cache/thermal-preview.png`).
 
 **Check a certificate** (B8), from the main screen or the unlock screen, with
 no signal and nobody unlocked. It scans the QR code with the camera (Android;

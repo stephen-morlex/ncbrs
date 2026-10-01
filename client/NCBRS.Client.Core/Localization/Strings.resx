@@ -850,4 +850,52 @@ A permanent number is given when the tablet syncs.</value>
   <data name="Print_Unavailable" xml:space="preserve">
     <value>This device cannot print.</value>
   </data>
+  <data name="Printer_Title" xml:space="preserve">
+    <value>Printer</value>
+  </data>
+  <data name="Printer_Current" xml:space="preserve">
+    <value>Printing to: {0}</value>
+  </data>
+  <data name="Printer_Note" xml:space="preserve">
+    <value>A Bluetooth printer must first be paired in the tablet's Bluetooth settings. Page printers and PDFs go through Android's print dialog.</value>
+  </data>
+  <data name="Printer_Page" xml:space="preserve">
+    <value>Page printer or PDF</value>
+  </data>
+  <data name="Printer_Paper" xml:space="preserve">
+    <value>Paper width</value>
+  </data>
+  <data name="Printer_58" xml:space="preserve">
+    <value>58 mm</value>
+  </data>
+  <data name="Printer_80" xml:space="preserve">
+    <value>80 mm</value>
+  </data>
+  <data name="Printer_Save" xml:space="preserve">
+    <value>Use this printer</value>
+  </data>
+  <data name="Printer_Test" xml:space="preserve">
+    <value>Print a test page</value>
+  </data>
+  <data name="Printer_TestTitle" xml:space="preserve">
+    <value>Printer test</value>
+  </data>
+  <data name="Printer_TestNotice" xml:space="preserve">
+    <value>If this text is clear and the code scans, this printer is ready.</value>
+  </data>
+  <data name="Printer_Tablet" xml:space="preserve">
+    <value>Tablet</value>
+  </data>
+  <data name="Printer_NoBluetooth" xml:space="preserve">
+    <value>This tablet has no Bluetooth.</value>
+  </data>
+  <data name="Printer_BluetoothDenied" xml:space="preserve">
+    <value>The app was not allowed to use Bluetooth. Allow it in the tablet's settings to use a Bluetooth printer.</value>
+  </data>
+  <data name="Printer_NoneBonded" xml:space="preserve">
+    <value>No Bluetooth device is paired with this tablet. Pair the printer in the tablet's Bluetooth settings first.</value>
+  </data>
+  <data name="Printer_NotReached" xml:space="preserve">
+    <value>The printer {0} could not be reached ({1}). Is it switched on, charged and nearby?</value>
+  </data>
 </root>
