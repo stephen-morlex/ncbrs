@@ -845,4 +845,52 @@
   <data name="Print_Unavailable" xml:space="preserve">
     <value>لا يستطيع هذا الجهاز الطباعة.</value>
   </data>
+  <data name="Printer_Title" xml:space="preserve">
+    <value>الطابعة</value>
+  </data>
+  <data name="Printer_Current" xml:space="preserve">
+    <value>الطباعة إلى: {0}</value>
+  </data>
+  <data name="Printer_Note" xml:space="preserve">
+    <value>يجب أولاً إقران طابعة البلوتوث من إعدادات البلوتوث في الجهاز. أما الطابعات العادية وملفات PDF فتمر عبر نافذة الطباعة في أندرويد.</value>
+  </data>
+  <data name="Printer_Page" xml:space="preserve">
+    <value>طابعة عادية أو ملف PDF</value>
+  </data>
+  <data name="Printer_Paper" xml:space="preserve">
+    <value>عرض الورق</value>
+  </data>
+  <data name="Printer_58" xml:space="preserve">
+    <value>58 مم</value>
+  </data>
+  <data name="Printer_80" xml:space="preserve">
+    <value>80 مم</value>
+  </data>
+  <data name="Printer_Save" xml:space="preserve">
+    <value>استخدم هذه الطابعة</value>
+  </data>
+  <data name="Printer_Test" xml:space="preserve">
+    <value>اطبع صفحة اختبار</value>
+  </data>
+  <data name="Printer_TestTitle" xml:space="preserve">
+    <value>اختبار الطابعة</value>
+  </data>
+  <data name="Printer_TestNotice" xml:space="preserve">
+    <value>إذا كان هذا النص واضحًا وأمكن مسح الرمز، فالطابعة جاهزة.</value>
+  </data>
+  <data name="Printer_Tablet" xml:space="preserve">
+    <value>الجهاز</value>
+  </data>
+  <data name="Printer_NoBluetooth" xml:space="preserve">
+    <value>لا يحتوي هذا الجهاز على بلوتوث.</value>
+  </data>
+  <data name="Printer_BluetoothDenied" xml:space="preserve">
+    <value>لم يُسمح للتطبيق باستخدام البلوتوث. اسمح بذلك من إعدادات الجهاز لاستخدام طابعة بلوتوث.</value>
+  </data>
+  <data name="Printer_NoneBonded" xml:space="preserve">
+    <value>لا يوجد جهاز بلوتوث مقترن بهذا الجهاز. اقرن الطابعة أولاً من إعدادات البلوتوث في الجهاز.</value>
+  </data>
+  <data name="Printer_NotReached" xml:space="preserve">
+    <value>تعذّر الوصول إلى الطابعة {0} ({1}). هل هي مشغّلة ومشحونة وقريبة؟</value>
+  </data>
 </root>

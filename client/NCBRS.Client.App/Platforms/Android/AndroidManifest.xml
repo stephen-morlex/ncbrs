@@ -13,4 +13,11 @@
 	     not required, because the code can always be typed. -->
 	<uses-permission android:name="android.permission.CAMERA" />
 	<uses-feature android:name="android.hardware.camera" android:required="false" />
+	<!-- A paired Bluetooth thermal printer. CONNECT only, and never SCAN: the
+	     app lists printers paired in Android's settings and finds nothing
+	     else, so it needs no location permission. The two old permissions are
+	     what Android 11 and earlier grant for the same. -->
+	<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+	<uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+	<uses-feature android:name="android.hardware.bluetooth" android:required="false" />
 </manifest>

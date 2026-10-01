@@ -167,11 +167,21 @@ public sealed class RegisterPage : FlowPage
             }
         };
 
+        var printer = new Button { Text = Strings.Printer_Title, BackgroundColor = Colors.Gray, IsVisible = host.Printer is not null };
+        printer.Clicked += async (_, _) =>
+        {
+            if (!HasInput() || await DisplayAlertAsync(Strings.Printer_Title, Strings.Register_LeaveClears,
+                    Strings.Printer_Title, Strings.Common_Cancel))
+            {
+                Flow.Show(new PrinterPage(host));
+            }
+        };
+
         Build([
             language,
             Heading(Language.Format(Strings.Register_Unlocked, host.UnlockedAs?.DisplayName)),
             refused,
-            .. form, register, _result, _printSlip, _queue, sync, export, _exported, checkCertificate, printCertificate, lockTablet]);
+            .. form, register, _result, _printSlip, _queue, sync, export, _exported, checkCertificate, printCertificate, printer, lockTablet]);
         Refresh();
     }
 

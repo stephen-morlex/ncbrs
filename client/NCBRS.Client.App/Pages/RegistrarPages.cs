@@ -226,6 +226,15 @@ public sealed class UnlockPage : FlowPage
         var checkCertificate = new Button { Text = Strings.Register_Check, BackgroundColor = Colors.DarkSlateGray };
         checkCertificate.Clicked += (_, _) => Flow.Show(new CheckCertificatePage(host));
 
+#if DEBUG
+        // Debug builds only: the printer screen without unlocking, so printing
+        // can be tested after a reinstall without a registrar's PIN. Release
+        // builds keep the printer setting behind the unlock.
+        var printer = new Button { Text = "Printer (debug)", BackgroundColor = Colors.Gray };
+        printer.Clicked += (_, _) => Flow.Show(new PrinterPage(host));
+        Build(Flow.LanguageSwitch(host), Heading(Strings.Unlock_Title), person, pin, unlock, changePin, pinForm.View, checkCertificate, printer);
+#else
         Build(Flow.LanguageSwitch(host), Heading(Strings.Unlock_Title), person, pin, unlock, changePin, pinForm.View, checkCertificate);
+#endif
     }
 }

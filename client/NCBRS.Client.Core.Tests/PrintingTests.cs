@@ -330,4 +330,15 @@ public class PrintingTests
         Assert.Contains("M6 5h1v1h-1z", svg);
         Assert.Equal(2, svg.Split("h1v1h-1z").Length - 1);
     }
+
+    /// <summary>A printer test page names the tablet and no birth, and its code is not a slip's.</summary>
+    [Fact]
+    public void APrinterTestPageNamesNoBirth()
+    {
+        var page = PrintedDocuments.Test("Juba Teaching Hospital", "TAB-8C4EC4EB5E47");
+
+        Assert.Equal(Strings.Printer_TestTitle, page.Title);
+        Assert.DoesNotContain(page.Lines, line => line.Label == Strings.Check_Brn || line.Label == Strings.Register_ChildName);
+        Assert.False(SlipCode.TryRead(page.QrText, out _));
+    }
 }

@@ -106,6 +106,22 @@ public static class PrintedDocuments
     }
 
     /// <summary>
+    /// A test page for setting a printer up: it names the tablet, and carries
+    /// a code in the same place a slip does, so whoever holds it can see the
+    /// text is legible and check the code scans. It names no birth.
+    /// </summary>
+    public static PrintedDocument Test(string facilityName, string deviceId)
+        => new(
+            DocumentKind.Slip,
+            Strings.Print_Heading,
+            Strings.Printer_TestTitle,
+            [new PrintedLine(Strings.Print_Facility, facilityName), new PrintedLine(Strings.Printer_Tablet, deviceId)],
+            Strings.Printer_TestNotice,
+            "NCBRS-PRINTER-TEST." + deviceId,
+            Provisional: false,
+            Language.IsArabic);
+
+    /// <summary>
     /// The certificate as the registry signed it. The facts printed are read
     /// from the <em>signed payload</em>, checked against the tablet's own
     /// bundle, never from the response's other fields: what the paper says

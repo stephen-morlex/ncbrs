@@ -28,7 +28,8 @@ public static class PrintedDocumentHtml
             .Append("h1{font-size:18pt;text-align:center;margin:0 0 6mm}")
             .Append(".provisional{border:2px solid #000;padding:2mm;text-align:center;font-weight:bold;margin:0 0 4mm}")
             .Append("table{width:100%;border-collapse:collapse;font-size:12pt}")
-            .Append("th{text-align:start;font-weight:normal;padding:1.5mm 3mm 1.5mm 0;width:40%;vertical-align:top}")
+            // Logical padding: the gap sits between label and value in either direction.
+            .Append("th{text-align:start;font-weight:normal;padding-block:1.5mm;padding-inline:0 3mm;width:40%;vertical-align:top}")
             .Append("td{font-weight:bold;padding:1.5mm 0;vertical-align:top}")
             .Append(".qr{text-align:center;margin:6mm 0 3mm}")
             .Append(".qr svg{width:42mm;height:42mm}")
