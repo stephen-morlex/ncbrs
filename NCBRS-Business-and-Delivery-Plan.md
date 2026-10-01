@@ -325,7 +325,7 @@ Verified against the running codebase. 262 tests passing.
 | Ministry dashboards & reporting replica | 6.4 | **Read models, indicator queries and dashboard UI built** (`web/`); reporting replica (F1) still needed | WS-F |
 | Monitoring, alerting, runbooks | 10 | **Runbook built** (`RUNBOOK.md`); live monitoring/alerting needs infra | WS-G |
 | Remote device de-registration | 9 | **Built** — suspend/reinstate/revoke (API + web); a non-`Enrolled` device is refused at sync | WS-G |
-| District Wi-Fi / USB / SMS fallbacks | 6.3, 7.4 | **Signed USB transfer built** (H2, client-core); sync-point workflow (H1) and SMS (H3) not started | WS-H |
+| District Wi-Fi / USB / SMS fallbacks | 6.3, 7.4 | **USB transfer built end to end** (H2): signed, then sealed to the registry so a lost stick names nobody, exported from the tablet and uploaded on the web (#136, #137); sync-point workflow (H1) and SMS (H3) not started | WS-H |
 | Annulment of a record registered in error | — | **Built** | WS-C |
 
 ## 13. Decisions confirmed in draft v1.3
