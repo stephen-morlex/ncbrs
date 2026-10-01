@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,14 @@ public class Dhis2ExportTests : IDisposable
     private const string OrgUnit = "OU-CENTRAL-07";
 
     private static readonly Guid FacilityId = Guid.Parse("0199a1b2-0001-7000-8000-000000000001");
+
+    /// <summary>September 2026 closes on 1 October and settles 120 days later, on 29 January 2027.</summary>
+    private static readonly DateTime Settled = new(2027, 3, 1, 0, 0, 0, DateTimeKind.Utc);
+
+    private sealed class FixedClock(DateTime utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
+    }
 
     private readonly SqliteConnection _connection;
     private readonly DbContextOptions<ReadModelDbContext> _options;
@@ -65,7 +74,7 @@ public class Dhis2ExportTests : IDisposable
     {
         await using var db = NewDb();
 
-        return await new Dhis2ExportService(db, options ?? Options()).ExportAsync(Period);
+        return await new Dhis2ExportService(db, options ?? Options(), new FixedClock(Settled)).ExportAsync(Period);
     }
 
     private async Task GivenBirthsAsync(
@@ -424,9 +433,52 @@ public class Dhis2ExportTests : IDisposable
     public async Task AMalformedPeriodIsRefused()
     {
         await using var db = NewDb();
-        var service = new Dhis2ExportService(db, Options());
+        var service = new Dhis2ExportService(db, Options(), new FixedClock(Settled));
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.ExportAsync("2026-09"));
         await Assert.ThrowsAsync<ArgumentException>(() => service.ExportAsync("202613"));
+    }
+
+    // --- settled months only (plan §17 item 22, decided 2026-10-01) ------------------
+
+    /// <summary>
+    /// A month still receiving late registrations is refused, and the refusal
+    /// says when it can go. Exported early and again later, its two tables
+    /// could be subtracted to describe the few changes made in between.
+    /// </summary>
+    [Fact]
+    public async Task AMonthStillReceivingLateRegistrationsIsNotExported()
+    {
+        await GivenBirthsAsync(20);
+        await using var db = NewDb();
+        var service = new Dhis2ExportService(db, Options(), new FixedClock(new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc)));
+
+        var refused = await Assert.ThrowsAsync<PeriodNotSettledException>(() => service.ExportAsync(Period));
+
+        Assert.Equal(new DateTime(2027, 1, 29, 0, 0, 0, DateTimeKind.Utc), refused.SettlesAtUtc);
+        Assert.Contains("2027-01-29", refused.Message);
+    }
+
+    /// <summary>The same rule as the dashboard's StillFilling, to the day.</summary>
+    [Theory]
+    [InlineData("2027-01-28T23:59:59Z", false)]
+    [InlineData("2027-01-29T00:00:00Z", true)]
+    public async Task AMonthCanBeExportedFromTheDayItSettles(string now, bool exported)
+    {
+        await GivenBirthsAsync(20);
+        await using var db = NewDb();
+        var at = DateTime.Parse(now, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal);
+        var service = new Dhis2ExportService(db, Options(), new FixedClock(at));
+
+        if (exported)
+        {
+            Assert.Equal("20", ValueOf(await service.ExportAsync(Period), "UID-LIVE"));
+        }
+        else
+        {
+            await Assert.ThrowsAsync<PeriodNotSettledException>(() => service.ExportAsync(Period));
+        }
+
+        Assert.Equal(!exported, ReportingPeriod.IsStillFilling(new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc), at));
     }
 }

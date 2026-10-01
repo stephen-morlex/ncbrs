@@ -25,13 +25,6 @@ namespace NCBRS.Consumer.Services;
 /// </summary>
 public class DashboardQueryService(ReadModelDbContext db, TimeProvider clock)
 {
-    /// <summary>
-    /// How long after a period closes registrations for it keep arriving.
-    /// The statutory window (90 days) plus room for a post that was offline
-    /// across it -- a figure is not settled until the late filings are in.
-    /// </summary>
-    private static readonly TimeSpan SettlingPeriod = TimeSpan.FromDays(120);
-
     private static readonly string[] Unanswerable =
     [
         "Certificate turnaround (§10): certificate issue is not published to the event stream, "
@@ -254,7 +247,7 @@ public class DashboardQueryService(ReadModelDbContext db, TimeProvider clock)
     }
 
     private ReportingPeriod Period(DateTime fromUtc, DateTime toUtc)
-        => new(fromUtc, toUtc, clock.GetUtcNow().UtcDateTime - toUtc < SettlingPeriod);
+        => new(fromUtc, toUtc, ReportingPeriod.IsStillFilling(toUtc, clock.GetUtcNow().UtcDateTime));
 
     private static RegistrationCounts Counts(List<RegistrationFact> births, int annulled)
     {

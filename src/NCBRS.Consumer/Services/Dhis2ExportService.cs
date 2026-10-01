@@ -35,7 +35,7 @@ namespace NCBRS.Consumer.Services;
 ///    not a value. Publishing the zeros and suppressing only the ones would
 ///    make every gap mean "at least one".
 /// </summary>
-public class Dhis2ExportService(ReadModelDbContext db, Dhis2ExportOptions options)
+public class Dhis2ExportService(ReadModelDbContext db, Dhis2ExportOptions options, TimeProvider clock)
 {
     /// <summary>
     /// <paramref name="period"/> is DHIS2 monthly form, "YYYYMM".
@@ -43,6 +43,13 @@ public class Dhis2ExportService(ReadModelDbContext db, Dhis2ExportOptions option
     public async Task<Dhis2Export> ExportAsync(string period, CancellationToken cancellationToken = default)
     {
         var (from, to) = MonthOf(period);
+
+        // Settled months only: exported once, so no two exports of a month
+        // exist to be subtracted. See PeriodNotSettledException.
+        if (ReportingPeriod.IsStillFilling(to, clock.GetUtcNow().UtcDateTime))
+        {
+            throw new PeriodNotSettledException(period, to + ReportingPeriod.SettlingPeriod);
+        }
 
         // Counted by date of occurrence, as vital statistics are (UN P&R
         // Rev. 3) -- a birth belongs to the month it happened in, not the

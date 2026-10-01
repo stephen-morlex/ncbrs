@@ -95,6 +95,14 @@ export function toNcbrsError(body: unknown, status: number | null): NcbrsError {
   ) as Partial<ApiErrorResponse> | undefined
 
   const fields = Array.isArray(candidate?.errors) ? candidate.errors.filter(isFieldError) : []
+
+  // The reporting service answers `{ error: "…" }`, a single message with no
+  // field. Read as nothing, its refusals (another county named, a month not
+  // yet settled) reached the screen as a generic sentence that was wrong.
+  const single = (body as { error?: unknown } | undefined)?.error
+  if (fields.length === 0 && typeof single === 'string' && single.length > 0) {
+    fields.push({ field: '', message: single })
+  }
   const resolved = readStatus(candidate?.status, status)
 
   return {

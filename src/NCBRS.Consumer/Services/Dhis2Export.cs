@@ -62,6 +62,21 @@ public record Dhis2DataValueSet(string Period, IReadOnlyList<Dhis2DataValue> Dat
 /// </summary>
 public record Dhis2Suppression(string OrgUnit, string Reason);
 
+/// <summary>
+/// A month that is still receiving late registrations. Refused rather than
+/// exported early: a month sent now and again once settled is two safe tables
+/// whose difference describes the few registrations, corrections and
+/// annulments made in between, and DHIS2 keeps the earlier values in its
+/// audit history (plan §17 item 22, decided 2026-10-01).
+/// </summary>
+public sealed class PeriodNotSettledException(string period, DateTime settlesAtUtc)
+    : InvalidOperationException(
+        $"{period} is still receiving late registrations and cannot be exported until {settlesAtUtc:yyyy-MM-dd}. "
+        + "A month is exported once, when it has settled, so that no two exports of it can be subtracted.")
+{
+    public DateTime SettlesAtUtc { get; } = settlesAtUtc;
+}
+
 public record Dhis2Export(
     Dhis2DataValueSet DataValueSet,
     IReadOnlyList<Dhis2Suppression> Suppressed,
