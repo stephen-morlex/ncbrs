@@ -826,4 +826,28 @@ A permanent number is given when the tablet syncs.</value>
   <data name="Check_SlipDo" xml:space="preserve">
     <value>Ask for the birth certificate, or look the number up at the registry.</value>
   </data>
+  <data name="Register_PrintSlip" xml:space="preserve">
+    <value>Print the slip</value>
+  </data>
+  <data name="Register_PrintCertificate" xml:space="preserve">
+    <value>Print a certificate</value>
+  </data>
+  <data name="Print_CertNote" xml:space="preserve">
+    <value>Only the registry can sign a certificate, so this needs signal. Type the registration number from the family's slip.</value>
+  </data>
+  <data name="Print_CertFetch" xml:space="preserve">
+    <value>Get the certificate and print it</value>
+  </data>
+  <data name="Print_Reprinted" xml:space="preserve">
+    <value>A certificate was issued for this birth before. Printing it again is counted at the registry.</value>
+  </data>
+  <data name="Print_Sent" xml:space="preserve">
+    <value>Sent to the print dialog.</value>
+  </data>
+  <data name="Print_EnterBrn" xml:space="preserve">
+    <value>Type the registration number first.</value>
+  </data>
+  <data name="Print_Unavailable" xml:space="preserve">
+    <value>This device cannot print.</value>
+  </data>
 </root>

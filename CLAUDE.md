@@ -721,6 +721,13 @@ printer paths are the shell's.
 - Both printers lay out the same `PrintedDocument`, so they cannot say
   different things. The certificate's wording and its language are a draft
   for the Ministry, like the rest of the Arabic.
+- **Android's print system is built** (`AndroidPagePrinter`). The page is HTML
+  from the core (`PrintedDocumentHtml`, every value HTML-encoded), with the QR
+  drawn as one SVG path. It is shown in an off-screen web view with scripts off
+  and handed to the print dialog, which defaults to A4. Proven on the emulator:
+  a reprinted certificate (BRN 100102) and a new birth's slip (100104). The QR
+  codes decoded from the print previews are exactly the certificate's code and
+  `NCBRS-SLIP1.100104`.
 
 **The tablet speaks English and Arabic (Modern Standard, a draft for Ministry
 review).**

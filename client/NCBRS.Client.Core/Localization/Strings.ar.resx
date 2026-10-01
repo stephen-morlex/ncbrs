@@ -821,4 +821,28 @@
   <data name="Check_SlipDo" xml:space="preserve">
     <value>اطلب شهادة الميلاد، أو ابحث عن الرقم لدى السجل.</value>
   </data>
+  <data name="Register_PrintSlip" xml:space="preserve">
+    <value>اطبع الإيصال</value>
+  </data>
+  <data name="Register_PrintCertificate" xml:space="preserve">
+    <value>طباعة شهادة</value>
+  </data>
+  <data name="Print_CertNote" xml:space="preserve">
+    <value>لا يوقّع الشهادة إلا السجل، لذا يلزم توفر الإشارة. اكتب رقم التسجيل من إيصال الأسرة.</value>
+  </data>
+  <data name="Print_CertFetch" xml:space="preserve">
+    <value>احصل على الشهادة واطبعها</value>
+  </data>
+  <data name="Print_Reprinted" xml:space="preserve">
+    <value>صدرت شهادة لهذه الولادة من قبل. تُحتسب إعادة طباعتها لدى السجل.</value>
+  </data>
+  <data name="Print_Sent" xml:space="preserve">
+    <value>أُرسلت إلى نافذة الطباعة.</value>
+  </data>
+  <data name="Print_EnterBrn" xml:space="preserve">
+    <value>اكتب رقم التسجيل أولاً.</value>
+  </data>
+  <data name="Print_Unavailable" xml:space="preserve">
+    <value>لا يستطيع هذا الجهاز الطباعة.</value>
+  </data>
 </root>
