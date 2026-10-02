@@ -74,6 +74,21 @@ public class BirthRecord
 
     public DateTime DateOfBirth { get; set; }
 
+    /// <summary>Where the birth happened. Null on records registered before it was asked.</summary>
+    public PlaceOfBirthKind? PlaceOfBirthKind { get; set; }
+
+    /// <summary>A description of the place, when it was not the registering facility.</summary>
+    public string? PlaceOfBirth { get; set; }
+
+    public DateOnly? ParentsMarriageDate { get; set; }
+
+    public string? MarriageCertificateNumber { get; set; }
+
+    /// <summary>What was shown as proof of address, for example a utility bill.</summary>
+    public string? ProofOfAddressKind { get; set; }
+
+    public string? ProofOfAddressReference { get; set; }
+
     public Sex Sex { get; set; }
 
     public int? BirthWeightGrams { get; set; }

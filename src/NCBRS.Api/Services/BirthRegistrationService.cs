@@ -167,15 +167,20 @@ public class BirthRegistrationService(
                         + "evidence does not apply to it.");
         }
 
+        // The full name is composed from its parts when they were given
+        // (PersonNames.Compose), so the signed certificate, matching and
+        // search read one name however the form was filled in.
         var child = new Person
         {
-            FullName = request.ChildFullName,
+            FullName = request.EffectiveChildFullName,
+            GivenNames = request.UsesStructuredNames ? Clean(request.ChildGivenNames) : null,
+            Surname = request.UsesStructuredNames ? Clean(request.ChildSurname) : null,
             DateOfBirth = DateOnly.FromDateTime(request.DateOfBirth)
         };
         db.People.Add(child);
 
-        var mother = AddPersonIfNamed(request.MotherFullName);
-        var father = AddPersonIfNamed(request.FatherFullName);
+        var mother = AddParent(request.Mother, request.MotherFullName);
+        var father = AddParent(request.Father, request.FatherFullName);
 
         var record = new BirthRecord
         {
@@ -192,6 +197,12 @@ public class BirthRegistrationService(
             GestationalAgeWeeks = request.GestationalAgeWeeks,
             Plurality = request.Plurality,
             BirthOrder = request.BirthOrder,
+            PlaceOfBirthKind = request.PlaceOfBirthKind,
+            PlaceOfBirth = Clean(request.PlaceOfBirth),
+            ParentsMarriageDate = request.Marriage?.Date,
+            MarriageCertificateNumber = Clean(request.Marriage?.CertificateNumber),
+            ProofOfAddressKind = Clean(request.ProofOfAddress?.Kind),
+            ProofOfAddressReference = Clean(request.ProofOfAddress?.Reference),
             Status = RecordStatus.Provisional,
 
             // Kept, not just consulted. This is the timestamp the statutory
@@ -382,6 +393,39 @@ public class BirthRegistrationService(
             LateRegistration: lateSummary,
             BrnReconciliation: reconciliation);
     }
+
+    /// <summary>
+    /// A parent from their details (the fuller form) or from the one-piece
+    /// name the original form sends. The validator has already refused
+    /// details that name nobody, and a parent named both ways.
+    /// </summary>
+    private Person? AddParent(ParentDetails? details, string? fullName)
+    {
+        if (details is not { HasName: true })
+        {
+            return AddPersonIfNamed(fullName);
+        }
+
+        var person = new Person
+        {
+            FullName = PersonNames.Compose(details.GivenNames, details.Surname),
+            GivenNames = Clean(details.GivenNames),
+            Surname = Clean(details.Surname),
+            MaidenSurname = Clean(details.MaidenSurname),
+            DateOfBirth = details.DateOfBirth,
+            PlaceOfBirth = Clean(details.PlaceOfBirth),
+            Occupation = Clean(details.Occupation),
+            Address = Clean(details.Address),
+            IdentityDocumentType = details.DocumentType,
+            IdentityDocumentNumber = Clean(details.DocumentNumber),
+        };
+        db.People.Add(person);
+        return person;
+    }
+
+    // Trimmed, with runs of spaces collapsed, as PersonNames.Compose does, so a stored part matches the full name.
+    private static string? Clean(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : string.Join(' ', value.Split(' ', StringSplitOptions.RemoveEmptyEntries));
 
     private Person? AddPersonIfNamed(string? fullName)
     {

@@ -12565,6 +12565,16 @@
               "string"
             ]
           },
+          "details": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RegistrationDetails"
+              }
+            ]
+          },
           "receivedAtUtc": {
             "type": [
               "null",
@@ -13351,6 +13361,19 @@
         ],
         "type": "string"
       },
+      "IdentityDocumentType": {
+        "enum": [
+          "Passport",
+          "BirthCertificate",
+          "DrivingLicence",
+          "NationalId",
+          null
+        ],
+        "type": [
+          "null",
+          "string"
+        ]
+      },
       "IssueCertificateRequest": {
         "type": "object",
         "properties": {
@@ -13422,6 +13445,24 @@
           },
           "evidenceType": {
             "$ref": "#/components/schemas/LateRegistrationEvidenceType"
+          }
+        }
+      },
+      "MarriageDetails": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "certificateNumber": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -14070,6 +14111,70 @@
           }
         }
       },
+      "ParentDetails": {
+        "type": "object",
+        "properties": {
+          "givenNames": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "surname": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "maidenSurname": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dateOfBirth": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "placeOfBirth": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "occupation": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "address": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "documentType": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IdentityDocumentType"
+              }
+            ]
+          },
+          "documentNumber": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "PendingAccountResponse": {
         "required": [
           "pendingAccountId",
@@ -14255,6 +14360,36 @@
           }
         }
       },
+      "PlaceOfBirthKind": {
+        "enum": [
+          "ThisFacility",
+          "OtherHealthFacility",
+          "Home",
+          "Elsewhere",
+          null
+        ],
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "ProofOfAddressDetails": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reference": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "RecordMaternalOutcomeRequest": {
         "type": "object",
         "properties": {
@@ -14315,6 +14450,74 @@
           },
           "childFullName": {
             "type": "string"
+          },
+          "childGivenNames": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "childSurname": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "placeOfBirthKind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PlaceOfBirthKind"
+              }
+            ]
+          },
+          "placeOfBirth": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "mother": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ParentDetails"
+              }
+            ]
+          },
+          "father": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ParentDetails"
+              }
+            ]
+          },
+          "marriage": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MarriageDetails"
+              }
+            ]
+          },
+          "proofOfAddress": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProofOfAddressDetails"
+              }
+            ]
           },
           "dateOfBirth": {
             "type": "string",
@@ -14439,6 +14642,93 @@
           "MinistryAdmin"
         ],
         "type": "string"
+      },
+      "RegistrationDetails": {
+        "required": [
+          "childGivenNames",
+          "childSurname",
+          "placeOfBirthKind",
+          "placeOfBirth",
+          "mother",
+          "father",
+          "marriage",
+          "proofOfAddress",
+          "restricted"
+        ],
+        "type": "object",
+        "properties": {
+          "childGivenNames": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "childSurname": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "placeOfBirthKind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PlaceOfBirthKind"
+              }
+            ]
+          },
+          "placeOfBirth": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "mother": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ParentDetails"
+              }
+            ]
+          },
+          "father": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ParentDetails"
+              }
+            ]
+          },
+          "marriage": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MarriageDetails"
+              }
+            ]
+          },
+          "proofOfAddress": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProofOfAddressDetails"
+              }
+            ]
+          },
+          "restricted": {
+            "type": "boolean"
+          }
+        }
       },
       "RegistrationRulesResponse": {
         "required": [

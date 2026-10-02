@@ -41,9 +41,82 @@ public class RegisterBirthRequestValidator : AbstractValidator<RegisterBirthRequ
         // No rule for the acting registrar: it is taken from the access
         // token's subject, never from the payload.
 
-        RuleFor(request => request.ChildFullName)
-            .NotEmpty().WithMessage("childFullName is required.")
-            .MaximumLength(200).WithMessage("childFullName must be 200 characters or fewer.");
+        // The child's name: in parts (the fuller form, 2026-10-02) or in one
+        // piece (tablets not yet upgraded). Naming the child in parts is what
+        // makes a request the fuller form, which also asks where the birth was.
+        When(request => request.UsesStructuredNames, () =>
+        {
+            RuleFor(request => request.ChildGivenNames)
+                .NotEmpty().WithMessage("childGivenNames is required.")
+                .MaximumLength(100).WithMessage("childGivenNames must be 100 characters or fewer.");
+
+            RuleFor(request => request.ChildSurname)
+                .NotEmpty().WithMessage("childSurname is required.")
+                .MaximumLength(100).WithMessage("childSurname must be 100 characters or fewer.");
+
+            RuleFor(request => request.ChildFullName)
+                .Empty().WithMessage("childFullName must be left out when the given names and surname are given.");
+
+            RuleFor(request => request.PlaceOfBirthKind)
+                .NotNull().WithMessage("placeOfBirthKind is required.");
+        }).Otherwise(() =>
+        {
+            RuleFor(request => request.ChildFullName)
+                .NotEmpty().WithMessage("childFullName is required.")
+                .MaximumLength(200).WithMessage("childFullName must be 200 characters or fewer.");
+        });
+
+        RuleFor(request => request.PlaceOfBirthKind)
+            .IsInEnum().WithMessage("placeOfBirthKind must be one of: ThisFacility, OtherHealthFacility, Home, Elsewhere.")
+            .When(request => request.PlaceOfBirthKind.HasValue);
+
+        RuleFor(request => request.PlaceOfBirth)
+            .NotEmpty().WithMessage("placeOfBirth is required when the birth was not at this facility.")
+            .When(request => request.PlaceOfBirthKind is { } kind && kind != PlaceOfBirthKind.ThisFacility);
+
+        RuleFor(request => request.PlaceOfBirth)
+            .MaximumLength(200).WithMessage("placeOfBirth must be 200 characters or fewer.");
+
+        RuleFor(request => request.Mother!).SetValidator(new ParentDetailsValidator("mother", isMother: true))
+            .When(request => request.Mother is not null);
+        RuleFor(request => request.Father!).SetValidator(new ParentDetailsValidator("father", isMother: false))
+            .When(request => request.Father is not null);
+
+        // A parent born after their child is a typing slip in one date or the other.
+        RuleFor(request => request.Mother!.DateOfBirth)
+            .Must((request, born) => born < DateOnly.FromDateTime(request.DateOfBirth))
+            .WithMessage("mother.dateOfBirth must be before the child's date of birth.")
+            .When(request => request.Mother?.DateOfBirth is not null);
+        RuleFor(request => request.Father!.DateOfBirth)
+            .Must((request, born) => born < DateOnly.FromDateTime(request.DateOfBirth))
+            .WithMessage("father.dateOfBirth must be before the child's date of birth.")
+            .When(request => request.Father?.DateOfBirth is not null);
+
+        // One name per parent: the parts, or the original one-piece field, never both.
+        RuleFor(request => request.MotherFullName)
+            .Empty().WithMessage("motherFullName must be left out when the mother's given names or surname are given.")
+            .When(request => request.Mother?.HasName == true);
+        RuleFor(request => request.FatherFullName)
+            .Empty().WithMessage("fatherFullName must be left out when the father's given names or surname are given.")
+            .When(request => request.Father?.HasName == true);
+
+        When(request => request.Marriage is not null, () =>
+        {
+            RuleFor(request => request.Marriage!.Date)
+                .Must(date => date!.Value.ToDateTime(TimeOnly.MinValue) <= DateTime.UtcNow.Add(ClockSkewTolerance))
+                .WithMessage("marriage.date cannot be in the future.")
+                .When(request => request.Marriage!.Date is not null);
+            RuleFor(request => request.Marriage!.CertificateNumber)
+                .MaximumLength(50).WithMessage("marriage.certificateNumber must be 50 characters or fewer.");
+        });
+
+        When(request => request.ProofOfAddress is not null, () =>
+        {
+            RuleFor(request => request.ProofOfAddress!.Kind)
+                .MaximumLength(100).WithMessage("proofOfAddress.kind must be 100 characters or fewer.");
+            RuleFor(request => request.ProofOfAddress!.Reference)
+                .MaximumLength(100).WithMessage("proofOfAddress.reference must be 100 characters or fewer.");
+        });
 
         RuleFor(request => request.DateOfBirth)
             .NotEmpty().WithMessage("dateOfBirth is required.")

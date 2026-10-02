@@ -15,7 +15,41 @@ public record RegisterBirthRequest
 
     public Guid FacilityId { get; init; }
 
+    /// <summary>
+    /// The child's name in one piece: the original form, still accepted from
+    /// tablets not yet upgraded. A request that gives
+    /// <see cref="ChildGivenNames"/> and <see cref="ChildSurname"/> leaves it
+    /// out; the full name is then composed from them.
+    /// </summary>
     public string ChildFullName { get; init; } = string.Empty;
+
+    public string? ChildGivenNames { get; init; }
+
+    public string? ChildSurname { get; init; }
+
+    /// <summary>Required with the structured name; optional on the original form.</summary>
+    public PlaceOfBirthKind? PlaceOfBirthKind { get; init; }
+
+    /// <summary>Where, when it was not the registering facility.</summary>
+    public string? PlaceOfBirth { get; init; }
+
+    public ParentDetails? Mother { get; init; }
+
+    public ParentDetails? Father { get; init; }
+
+    public MarriageDetails? Marriage { get; init; }
+
+    public ProofOfAddressDetails? ProofOfAddress { get; init; }
+
+    /// <summary>Whether this request names the child in parts (the fuller form) rather than in one piece.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool UsesStructuredNames
+        => !string.IsNullOrWhiteSpace(ChildGivenNames) || !string.IsNullOrWhiteSpace(ChildSurname);
+
+    /// <summary>The child's full name as it will be stored and signed.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string EffectiveChildFullName
+        => UsesStructuredNames ? PersonNames.Compose(ChildGivenNames, ChildSurname) : ChildFullName;
 
     public DateTime DateOfBirth { get; init; }
 
@@ -133,6 +167,12 @@ public record BirthRecordResponse(
     /// </summary>
     Guid? RegisteredByRegistrarId = null,
     string? RegisteredByRegistrarName = null,
+
+    /// <summary>
+    /// The fuller registration: place of birth, parents' details, marriage,
+    /// documents. Null on a record registered before they were asked.
+    /// </summary>
+    RegistrationDetails? Details = null,
 
     /// <summary>
     /// When the centre received this registration.

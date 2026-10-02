@@ -191,11 +191,29 @@ namespace NCBRS.Migrations
                     b.Property<decimal?>("GestationalAgeWeeks")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("MarriageCertificateNumber")
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid?>("MotherPersonId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly?>("ParentsMarriageDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PlaceOfBirth")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PlaceOfBirthKind")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Plurality")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProofOfAddressKind")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProofOfAddressReference")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ProvisionalIdentifier")
@@ -901,6 +919,9 @@ namespace NCBRS.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Address")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateOnly?>("DateOfBirth")
                         .HasColumnType("TEXT");
 
@@ -908,7 +929,28 @@ namespace NCBRS.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("GivenNames")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("IdentityDocumentNumber")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("IdentityDocumentType")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MaidenSurname")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("NationalIdRef")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Occupation")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PlaceOfBirth")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Surname")
                         .HasColumnType("TEXT");
 
                     b.HasKey("PersonId");
