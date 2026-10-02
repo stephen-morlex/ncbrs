@@ -228,7 +228,60 @@ public class BirthRecordsController(
             FatherFullName: record.FatherPerson?.FullName,
             BirthWeightGrams: record.BirthWeightGrams,
             GestationalAgeWeeks: record.GestationalAgeWeeks,
-            BirthOrder: record.BirthOrder);
+            BirthOrder: record.BirthOrder,
+            Details: await DetailsOfAsync(record));
+    }
+
+    /// <summary>
+    /// The fuller registration, or null on a record registered before it was
+    /// asked. This lookup is open to any signed-in caller -- a family carries
+    /// the number between facilities -- so addresses, document numbers and
+    /// certificate references go only to a caller who may act for the record's
+    /// facility; anyone else is told they were withheld.
+    /// </summary>
+    private async Task<RegistrationDetails?> DetailsOfAsync(BirthRecord record)
+    {
+        var child = record.ChildPerson!;
+        var recorded = record.PlaceOfBirthKind is not null || child.GivenNames is not null
+                       || record.MotherPerson?.GivenNames is not null || record.MotherPerson?.Surname is not null
+                       || record.FatherPerson?.GivenNames is not null || record.FatherPerson?.Surname is not null
+                       || record.ParentsMarriageDate is not null || record.ProofOfAddressKind is not null;
+        if (!recorded)
+        {
+            return null;
+        }
+
+        var caller = await currentRegistrar.GetAsync(HttpContext.RequestAborted);
+        var full = caller is not null
+                   && await currentRegistrar.CanActForFacilityAsync(caller, record.FacilityId, HttpContext.RequestAborted);
+
+        ParentDetails? Parent(Person? person) => person is null ? null : new ParentDetails
+        {
+            GivenNames = person.GivenNames,
+            Surname = person.Surname,
+            MaidenSurname = person.MaidenSurname,
+            DateOfBirth = person.DateOfBirth,
+            PlaceOfBirth = person.PlaceOfBirth,
+            Occupation = person.Occupation,
+            Address = full ? person.Address : null,
+            DocumentType = person.IdentityDocumentType,
+            DocumentNumber = full ? person.IdentityDocumentNumber : null,
+        };
+
+        return new RegistrationDetails(
+            child.GivenNames,
+            child.Surname,
+            record.PlaceOfBirthKind,
+            record.PlaceOfBirth,
+            Parent(record.MotherPerson),
+            Parent(record.FatherPerson),
+            record.ParentsMarriageDate is null && record.MarriageCertificateNumber is null
+                ? null
+                : new MarriageDetails { Date = record.ParentsMarriageDate, CertificateNumber = full ? record.MarriageCertificateNumber : null },
+            record.ProofOfAddressKind is null && record.ProofOfAddressReference is null
+                ? null
+                : new ProofOfAddressDetails { Kind = record.ProofOfAddressKind, Reference = full ? record.ProofOfAddressReference : null },
+            Restricted: !full);
     }
 
     /// <summary>

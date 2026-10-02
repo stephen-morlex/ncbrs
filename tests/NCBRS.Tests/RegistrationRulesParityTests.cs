@@ -33,6 +33,27 @@ public class RegistrationRulesParityTests
         RegisteredAtUtc = Now,
     };
 
+    /// <summary>The fuller form (2026-10-02): the child named in parts, with where, and both parents in detail.</summary>
+    private static RegisterBirthRequest Full() => Valid() with
+    {
+        ChildFullName = "",
+        ChildGivenNames = "Ayen",
+        ChildSurname = "Deng",
+        PlaceOfBirthKind = PlaceOfBirthKind.Home,
+        PlaceOfBirth = "Gumbo, near the borehole",
+        MotherFullName = null,
+        FatherFullName = null,
+        Mother = new ParentDetails
+        {
+            GivenNames = "Achol", Surname = "Deng", MaidenSurname = "Garang",
+            DateOfBirth = DateOnly.FromDateTime(Now.AddYears(-24)), PlaceOfBirth = "Bor",
+            Occupation = "Teacher", Address = "Gumbo, Juba", DocumentType = IdentityDocumentType.NationalId, DocumentNumber = "SS1234567",
+        },
+        Father = new ParentDetails { GivenNames = "Deng", Surname = "Garang", Occupation = "Cattle keeper" },
+        Marriage = new MarriageDetails { Date = DateOnly.FromDateTime(Now.AddYears(-3)), CertificateNumber = "M-22/2023" },
+        ProofOfAddress = new ProofOfAddressDetails { Kind = "Utility bill", Reference = "JEDCO 7781" },
+    };
+
     private static LateRegistrationDetails Evidence() => new()
     {
         EvidenceType = LateRegistrationEvidenceType.ImmunisationRecord,
@@ -67,6 +88,37 @@ public class RegistrationRulesParityTests
         { "late, no relationship", Valid() with { DateOfBirth = Now.Date.AddDays(-200), LateRegistration = Evidence() with { DeclarantRelationship = " " } } },
         { "late, long relationship", Valid() with { DateOfBirth = Now.Date.AddDays(-200), LateRegistration = Evidence() with { DeclarantRelationship = new string('a', 101) } } },
         { "late, long reference", Valid() with { DateOfBirth = Now.Date.AddDays(-200), LateRegistration = Evidence() with { EvidenceReference = new string('a', 201) } } },
+        { "full form, valid", Full() },
+        { "full, no given names", Full() with { ChildGivenNames = " " } },
+        { "full, no surname", Full() with { ChildSurname = null } },
+        { "full, long given names", Full() with { ChildGivenNames = new string('a', 101) } },
+        { "full, full name too", Full() with { ChildFullName = "Ayen Deng" } },
+        { "full, no place kind", Full() with { PlaceOfBirthKind = null } },
+        { "full, undefined place kind", Full() with { PlaceOfBirthKind = (PlaceOfBirthKind)9 } },
+        { "home birth, no place", Full() with { PlaceOfBirth = "" } },
+        { "this facility, no place", Full() with { PlaceOfBirthKind = PlaceOfBirthKind.ThisFacility, PlaceOfBirth = null } },
+        { "long place", Full() with { PlaceOfBirth = new string('a', 201) } },
+        { "original form with a place kind", Valid() with { PlaceOfBirthKind = PlaceOfBirthKind.Home, PlaceOfBirth = "Gumbo" } },
+        { "original form, home birth, no place", Valid() with { PlaceOfBirthKind = PlaceOfBirthKind.Home } },
+        { "mother with no name", Full() with { Mother = new ParentDetails { Address = "Gumbo" } } },
+        { "mother, long surname", Full() with { Mother = Full().Mother! with { Surname = new string('a', 101) } } },
+        { "mother, long maiden surname", Full() with { Mother = Full().Mother! with { MaidenSurname = new string('a', 101) } } },
+        { "father with a maiden surname", Full() with { Father = Full().Father! with { MaidenSurname = "Garang" } } },
+        { "mother, long address", Full() with { Mother = Full().Mother! with { Address = new string('a', 301) } } },
+        { "mother, long occupation", Full() with { Mother = Full().Mother! with { Occupation = new string('a', 201) } } },
+        { "mother, long place of birth", Full() with { Mother = Full().Mother! with { PlaceOfBirth = new string('a', 201) } } },
+        { "document type, no number", Full() with { Mother = Full().Mother! with { DocumentNumber = null } } },
+        { "document number, no type", Full() with { Mother = Full().Mother! with { DocumentType = null } } },
+        { "undefined document type", Full() with { Father = Full().Father! with { DocumentType = (IdentityDocumentType)9, DocumentNumber = "X1" } } },
+        { "long document number", Full() with { Mother = Full().Mother! with { DocumentNumber = new string('9', 51) } } },
+        { "mother born after the child", Full() with { Mother = Full().Mother! with { DateOfBirth = DateOnly.FromDateTime(Now) } } },
+        { "father born after the child", Full() with { Father = Full().Father! with { DateOfBirth = DateOnly.FromDateTime(Now) } } },
+        { "mother named twice", Full() with { MotherFullName = "Achol Deng" } },
+        { "father named twice", Full() with { FatherFullName = "Deng Garang" } },
+        { "married tomorrow", Full() with { Marriage = new MarriageDetails { Date = DateOnly.FromDateTime(Now.AddDays(3)) } } },
+        { "long marriage certificate", Full() with { Marriage = new MarriageDetails { CertificateNumber = new string('a', 51) } } },
+        { "long proof kind", Full() with { ProofOfAddress = new ProofOfAddressDetails { Kind = new string('a', 101) } } },
+        { "long proof reference", Full() with { ProofOfAddress = new ProofOfAddressDetails { Reference = new string('a', 101) } } },
         { "late, undefined evidence", Valid() with { DateOfBirth = Now.Date.AddDays(-200), LateRegistration = Evidence() with { EvidenceType = (LateRegistrationEvidenceType)99 } } },
     };
 
@@ -99,6 +151,22 @@ public class RegistrationRulesParityTests
             .ToHashSet();
 
         Assert.True(centre.SetEquals(tablet), $"{@case}: [{string.Join(" | ", centre)}] vs [{string.Join(" | ", tablet)}]");
+    }
+
+    /// <summary>The cases meant to pass; every other case must be refused, or agreeing proves nothing.</summary>
+    private static readonly HashSet<string> Accepted =
+    [
+        "valid", "weight at floor", "twin with order", "late, well formed",
+        "full form, valid", "this facility, no place", "original form with a place kind",
+    ];
+
+    [Theory]
+    [MemberData(nameof(Cases))]
+    public void EachCaseIsRefusedOrAcceptedAsIntended(string @case, RegisterBirthRequest request)
+    {
+        var refused = new RegisterBirthRequestValidator().Validate(request).Errors.Count > 0;
+
+        Assert.True(refused != Accepted.Contains(@case), $"{@case}: refused = {refused}");
     }
 
     private static string Camel(string path)

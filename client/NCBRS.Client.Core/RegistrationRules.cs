@@ -67,13 +67,92 @@ public static class RegistrationRules
 
         var latest = nowUtc.Add(ClockSkewTolerance);
 
-        if (string.IsNullOrWhiteSpace(birth.ChildFullName))
+        void Required(string field, string? value, int longest)
         {
-            Refuse("childFullName", "childFullName is required.");
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                Refuse(field, $"{field} is required.");
+            }
+            else if (value.Length > longest)
+            {
+                Refuse(field, $"{field} must be {longest} characters or fewer.");
+            }
         }
-        else if (birth.ChildFullName.Length > 200)
+
+        void Longest(string field, string? value, int longest)
         {
-            Refuse("childFullName", "childFullName must be 200 characters or fewer.");
+            if (value?.Length > longest)
+            {
+                Refuse(field, $"{field} must be {longest} characters or fewer.");
+            }
+        }
+
+        if (birth.UsesStructuredNames)
+        {
+            Required("childGivenNames", birth.ChildGivenNames, 100);
+            Required("childSurname", birth.ChildSurname, 100);
+
+            if (!string.IsNullOrWhiteSpace(birth.ChildFullName))
+            {
+                Refuse("childFullName", "childFullName must be left out when the given names and surname are given.");
+            }
+
+            if (birth.PlaceOfBirthKind is null)
+            {
+                Refuse("placeOfBirthKind", "placeOfBirthKind is required.");
+            }
+        }
+        else
+        {
+            Required("childFullName", birth.ChildFullName, 200);
+        }
+
+        if (birth.PlaceOfBirthKind is { } kind && !Enum.IsDefined(kind))
+        {
+            Refuse("placeOfBirthKind", "placeOfBirthKind must be one of: ThisFacility, OtherHealthFacility, Home, Elsewhere.");
+        }
+
+        if (birth.PlaceOfBirthKind is { } where && where != PlaceOfBirthKind.ThisFacility && string.IsNullOrWhiteSpace(birth.PlaceOfBirth))
+        {
+            Refuse("placeOfBirth", "placeOfBirth is required when the birth was not at this facility.");
+        }
+
+        Longest("placeOfBirth", birth.PlaceOfBirth, 200);
+
+        if (birth.Mother is { } mother)
+        {
+            ParentProblems(mother, "mother", isMother: true, birth.DateOfBirth, Refuse);
+        }
+
+        if (birth.Father is { } father)
+        {
+            ParentProblems(father, "father", isMother: false, birth.DateOfBirth, Refuse);
+        }
+
+        if (birth.Mother?.HasName == true && !string.IsNullOrWhiteSpace(birth.MotherFullName))
+        {
+            Refuse("motherFullName", "motherFullName must be left out when the mother's given names or surname are given.");
+        }
+
+        if (birth.Father?.HasName == true && !string.IsNullOrWhiteSpace(birth.FatherFullName))
+        {
+            Refuse("fatherFullName", "fatherFullName must be left out when the father's given names or surname are given.");
+        }
+
+        if (birth.Marriage is { } marriage)
+        {
+            if (marriage.Date is { } married && married.ToDateTime(TimeOnly.MinValue) > latest)
+            {
+                Refuse("marriage.date", "marriage.date cannot be in the future.");
+            }
+
+            Longest("marriage.certificateNumber", marriage.CertificateNumber, 50);
+        }
+
+        if (birth.ProofOfAddress is { } proof)
+        {
+            Longest("proofOfAddress.kind", proof.Kind, 100);
+            Longest("proofOfAddress.reference", proof.Reference, 100);
         }
 
         if (birth.DateOfBirth == default)
@@ -162,6 +241,61 @@ public static class RegistrationRules
         }
 
         return problems;
+    }
+
+    /// <summary>The centre's ParentDetailsValidator, restated: one parent's details, every part optional.</summary>
+    private static void ParentProblems(ParentDetails parent, string who, bool isMother, DateTime childBorn, Action<string, string> refuse)
+    {
+        void Longest(string field, string? value, int longest)
+        {
+            if (value?.Length > longest)
+            {
+                refuse($"{who}.{field}", $"{who}.{field} must be {longest} characters or fewer.");
+            }
+        }
+
+        if (!parent.HasName)
+        {
+            refuse($"{who}.givenNames", $"{who}.givenNames or {who}.surname is required when giving the {who}'s details.");
+        }
+
+        Longest("givenNames", parent.GivenNames, 100);
+        Longest("surname", parent.Surname, 100);
+
+        if (isMother)
+        {
+            Longest("maidenSurname", parent.MaidenSurname, 100);
+        }
+        else if (!string.IsNullOrWhiteSpace(parent.MaidenSurname))
+        {
+            refuse($"{who}.maidenSurname", $"{who}.maidenSurname applies to the mother only.");
+        }
+
+        Longest("placeOfBirth", parent.PlaceOfBirth, 200);
+        Longest("occupation", parent.Occupation, 200);
+        Longest("address", parent.Address, 300);
+
+        if (parent.DocumentType is { } type && !Enum.IsDefined(type))
+        {
+            refuse($"{who}.documentType", $"{who}.documentType must be one of: Passport, BirthCertificate, DrivingLicence, NationalId.");
+        }
+
+        if (parent.DocumentType is not null && string.IsNullOrWhiteSpace(parent.DocumentNumber))
+        {
+            refuse($"{who}.documentNumber", $"{who}.documentNumber is required with the document type.");
+        }
+
+        if (parent.DocumentType is null && !string.IsNullOrWhiteSpace(parent.DocumentNumber))
+        {
+            refuse($"{who}.documentType", $"{who}.documentType is required with the document number.");
+        }
+
+        Longest("documentNumber", parent.DocumentNumber, 50);
+
+        if (parent.DateOfBirth is { } born && born >= DateOnly.FromDateTime(childBorn))
+        {
+            refuse($"{who}.dateOfBirth", $"{who}.dateOfBirth must be before the child's date of birth.");
+        }
     }
 
     /// <summary>

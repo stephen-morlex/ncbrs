@@ -987,6 +987,7 @@ export interface components {
             /** Format: uuid */
             registeredByRegistrarId?: null | string;
             registeredByRegistrarName?: null | string;
+            details?: null | components["schemas"]["RegistrationDetails"];
             /** Format: date-time */
             receivedAtUtc?: null | string;
             /** Format: date-time */
@@ -1206,6 +1207,8 @@ export interface components {
         FacilityTier: "Hospital" | "Clinic" | "VillageHealthPost";
         /** @enum {string} */
         IcdPmTiming: "Antepartum" | "Intrapartum" | "Neonatal";
+        /** @enum {null|string} */
+        IdentityDocumentType: "Passport" | "BirthCertificate" | "DrivingLicence" | "NationalId" | null;
         IssueCertificateRequest: {
             deviceId?: string;
         };
@@ -1226,6 +1229,11 @@ export interface components {
             windowDaysAtFiling: number;
             status: components["schemas"]["LateRegistrationStatus"];
             evidenceType: components["schemas"]["LateRegistrationEvidenceType"];
+        };
+        MarriageDetails: {
+            /** Format: date */
+            date?: null | string;
+            certificateNumber?: null | string;
         };
         MaternalOutcomeResponse: {
             /** Format: uuid */
@@ -1373,6 +1381,18 @@ export interface components {
             total: number;
             nextCursor: null | string;
         };
+        ParentDetails: {
+            givenNames?: null | string;
+            surname?: null | string;
+            maidenSurname?: null | string;
+            /** Format: date */
+            dateOfBirth?: null | string;
+            placeOfBirth?: null | string;
+            occupation?: null | string;
+            address?: null | string;
+            documentType?: null | components["schemas"]["IdentityDocumentType"];
+            documentNumber?: null | string;
+        };
         PendingAccountResponse: {
             /** Format: uuid */
             pendingAccountId: string;
@@ -1426,6 +1446,12 @@ export interface components {
             /** Format: date-time */
             submittedAtUtc: string;
         };
+        /** @enum {null|string} */
+        PlaceOfBirthKind: "ThisFacility" | "OtherHealthFacility" | "Home" | "Elsewhere" | null;
+        ProofOfAddressDetails: {
+            kind?: null | string;
+            reference?: null | string;
+        };
         RecordMaternalOutcomeRequest: {
             /** Format: date-time */
             deathDateUtc?: string;
@@ -1447,6 +1473,14 @@ export interface components {
             /** Format: uuid */
             facilityId?: string;
             childFullName?: string;
+            childGivenNames?: null | string;
+            childSurname?: null | string;
+            placeOfBirthKind?: null | components["schemas"]["PlaceOfBirthKind"];
+            placeOfBirth?: null | string;
+            mother?: null | components["schemas"]["ParentDetails"];
+            father?: null | components["schemas"]["ParentDetails"];
+            marriage?: null | components["schemas"]["MarriageDetails"];
+            proofOfAddress?: null | components["schemas"]["ProofOfAddressDetails"];
             /** Format: date-time */
             dateOfBirth?: string;
             sex?: components["schemas"]["Sex"];
@@ -1479,6 +1513,17 @@ export interface components {
         };
         /** @enum {string} */
         RegistrarRole: "FacilityRegistrar" | "CommunityHealthWorker" | "DistrictOfficer" | "MinistryAdmin";
+        RegistrationDetails: {
+            childGivenNames: null | string;
+            childSurname: null | string;
+            placeOfBirthKind: null | components["schemas"]["PlaceOfBirthKind"];
+            placeOfBirth: null | string;
+            mother: null | components["schemas"]["ParentDetails"];
+            father: null | components["schemas"]["ParentDetails"];
+            marriage: null | components["schemas"]["MarriageDetails"];
+            proofOfAddress: null | components["schemas"]["ProofOfAddressDetails"];
+            restricted: boolean;
+        };
         RegistrationRulesResponse: {
             /** Format: int32 */
             statutoryWindowDays: number;

@@ -303,6 +303,46 @@ Keycloak admin credential.
 - The procedure is in RUNBOOK.md, "Onboarding: a facility, its staff and its
   tablet".
 
+## The fuller registration (2026-10-02, registry built; forms next)
+The registration now records the place of birth, the child's given names and
+surname, both parents in detail (names, the mother's maiden surname, date and
+place of birth, job, address, an identity document), the parents' marriage,
+and proof of address. Decided with the user: **documents as type and number
+only** (no photos: heavy to sync, and ID copies on a lost tablet are an
+exposure), **jobs as free text** (the coded ISCO groups in maternal statistics
+stay what national figures count), and **both forms**.
+
+- **Required:** date of birth, place of birth, the child's given names and
+  surname, and sex. Everything else is optional; a parent's details must name
+  them.
+- **`FullName` is composed from the parts** (`PersonNames.Compose`) and stays
+  what the signed certificate, duplicate matching, search and corrections read.
+  So nothing already signed or matched changes. Stored parts are whitespace-
+  collapsed the same way, so a part always matches the whole.
+- **The original one-piece form is still accepted** (`ChildFullName`, and the
+  parents' `MotherFullName`/`FatherFullName`) until every tablet is upgraded.
+  Naming the child in parts is what makes a request the fuller form, which
+  also requires the place of birth. A parent named both ways is refused.
+- **The tablet's `RegistrationRules` restates every new rule word for word**,
+  held there by `RegistrationRulesParityTests`. That test now also checks each
+  case is refused or accepted as its name says, because two sides agreeing on
+  *nothing* would pass.
+- **The lookup by exact BRN withholds addresses, document numbers and
+  certificate references** from callers who may not act for the facility
+  (`RegistrationDetails.Restricted`). That lookup is deliberately open to any
+  signed-in caller, so it could not simply carry them. Names, dates and places
+  stay visible, as the record header's names always were.
+- **Nothing new reaches the event stream or the certificate.** The registered
+  event carries no names (draft 4.2, minimisation). Adding place of birth to
+  the signed certificate would change its canonical form, which is a separate
+  decision.
+- **A correction to a full name clears its given names and surname**
+  (`AmendmentService.ForgetNameParts`) rather than leave them contradicting
+  it; correcting the parts themselves is a follow-up.
+- South Sudanese law has no civil partnership, so there is only the marriage
+  (statutory, customary or religious).
+- Enum columns are stored as text, like every other enum here.
+
 ## Signing key rotation (WS-A3/A4, built)
 The signer holds one **active** key and any number of **retired** ones;
 `CertificatePayloadVerifier` holds a set and selects by the key id printed in

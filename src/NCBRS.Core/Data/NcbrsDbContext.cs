@@ -406,6 +406,8 @@ public class NcbrsDbContext(DbContextOptions<NcbrsDbContext> options) : DbContex
         modelBuilder.Entity<BirthRecord>().Property(b => b.Plurality).HasConversion<string>();
         modelBuilder.Entity<BirthRecord>().Property(b => b.Status).HasConversion<string>();
         modelBuilder.Entity<Facility>().Property(f => f.Tier).HasConversion<string>();
+        modelBuilder.Entity<BirthRecord>().Property(b => b.PlaceOfBirthKind).HasConversion<string>();
+        modelBuilder.Entity<Person>().Property(p => p.IdentityDocumentType).HasConversion<string>();
         modelBuilder.Entity<Facility>().Property(f => f.ConnectivityProfile).HasConversion<string>();
         modelBuilder.Entity<Registrar>().Property(r => r.Role).HasConversion<string>();
         modelBuilder.Entity<NeonatalOutcome>().Property(n => n.IcdPmTiming).HasConversion<string>();

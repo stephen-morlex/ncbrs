@@ -857,6 +857,7 @@ public class AmendmentService(
             {
                 case nameof(AmendBirthRecordRequest.ChildFullName):
                     record.ChildPerson!.FullName = change.NewValue!;
+                    ForgetNameParts(record.ChildPerson);
                     break;
 
                 case nameof(AmendBirthRecordRequest.MotherFullName):
@@ -926,6 +927,19 @@ public class AmendmentService(
     private static DateTime AsUtc(DateTime value) => UtcTime.AsUtc(value);
 
     /// <summary>
+    /// A correction is to the full name, which is what is signed and matched.
+    /// The given names and surname it was composed from no longer describe it,
+    /// so they are cleared rather than left contradicting it; the previous
+    /// value stays in the amendment history. (Correcting the parts themselves
+    /// comes later.)
+    /// </summary>
+    private static void ForgetNameParts(Person person)
+    {
+        person.GivenNames = null;
+        person.Surname = null;
+    }
+
+    /// <summary>
     /// A parent may not have been recorded at first registration, so naming
     /// one later creates the Person rather than failing.
     /// </summary>
@@ -934,6 +948,7 @@ public class AmendmentService(
         if (existing is not null)
         {
             existing.FullName = fullName;
+            ForgetNameParts(existing);
             return existing;
         }
 
