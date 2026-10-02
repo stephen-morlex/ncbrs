@@ -217,7 +217,7 @@ public class LateRegistrationTests : IDisposable
     {
         var centre = new StatutoryRegistrationOptions();
 
-        Assert.Equal(centre.WindowDays, NCBRS.Client.RegistrationRules.DefaultStatutoryWindowDays);
+        Assert.Equal(NCBRS.Client.RegistrationRules.DefaultStatutoryWindowDays, centre.WindowDays);
         Assert.Equal(centre.ClockSkewTolerance, NCBRS.Client.RegistrationRules.ClockSkewTolerance);
     }
 

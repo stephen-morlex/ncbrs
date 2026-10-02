@@ -256,7 +256,7 @@ Jonglei) and South Sudanese names throughout.
   columns were added to both the SQLite set (Core) and the Postgres set
   (`NCBRS.Migrations.Postgres`).
 
-## Onboarding facilities and registrars (pilot readiness §1, building)
+## Onboarding facilities and registrars (pilot readiness §1, built)
 Until this, only the Development seed could create a facility or a registrar,
 so a pilot district's first registrar would have been refused everywhere
 (`docs/pilot-readiness.md`). Decided 2026-10-01: the Ministry creates
@@ -276,8 +276,32 @@ Keycloak admin credential.
   that gave several facilities one shared range were corrected: that is data
   the registry must never hold.
 - A name is unique within its county, case-insensitively, not nationally.
-- **Still to build:** the pending-accounts queue, binding and withdrawal of
-  registrars, and the runbook's onboarding procedures.
+- **Registrars are onboarded from a queue the accounts fill themselves**
+  (`RegistrarOnboardingService`, `CanManageRegistrars`). `GET /api/me` is
+  called by the web app's `AccountGate` after every sign-in; an account with
+  no registrar is recorded as a `PendingAccount` from what its own token says
+  (name, username, email, realm roles, its one county group). A waiting or
+  withdrawn account is told so instead of meeting a 403 on every screen. If
+  `/api/me` cannot be reached, the pages are shown anyway.
+- **Three limits on a binding**, each closing a different misuse:
+  - the facility must be in the officer's county (`CanActForFacilityAsync`);
+  - officers bind facility staff only, because an officer who could create
+    officers could widen their own oversight;
+  - the role must be one the account **holds in Keycloak**, and the account's
+    county group, if it has one, must be the facility's. A district officer
+    needs a county group, or every dashboard would refuse them.
+- **The queue never publishes the Keycloak subject.** A waiting account is
+  bound by its own `PendingAccountId`, as the directory has always held (the
+  subject identifies an account to Keycloak, and callers start keying on it).
+- **Withdrawal** keeps the row, because the trail names them.
+  `CurrentRegistrarService` resolves a withdrawn registrar as nobody, and the
+  tablets' PIN bundle leaves them out, so their PIN stops unlocking each tablet
+  at its next sync. The directory shows *when* they were withdrawn but not
+  why: anyone may resolve a colleague by id, and the reason is an HR matter.
+  A withdrawn account cannot be bound again, since subjects are unique per
+  registrar; someone returning gets a new account.
+- The procedure is in RUNBOOK.md, "Onboarding: a facility, its staff and its
+  tablet".
 
 ## Signing key rotation (WS-A3/A4, built)
 The signer holds one **active** key and any number of **retired** ones;

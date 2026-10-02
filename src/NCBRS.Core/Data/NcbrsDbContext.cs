@@ -27,6 +27,7 @@ public class NcbrsDbContext(DbContextOptions<NcbrsDbContext> options) : DbContex
     public DbSet<Device> Devices => Set<Device>();
     public DbSet<DeviceAlert> DeviceAlerts => Set<DeviceAlert>();
     public DbSet<AdministrativeArea> AdministrativeAreas => Set<AdministrativeArea>();
+    public DbSet<PendingAccount> PendingAccounts => Set<PendingAccount>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -375,6 +376,10 @@ public class NcbrsDbContext(DbContextOptions<NcbrsDbContext> options) : DbContex
         // index that keeps that off a full-table scan as the outbox grows.
         modelBuilder.Entity<OutboxMessage>()
             .HasIndex(message => new { message.DispatchedAtUtc, message.CreatedAtUtc });
+
+        modelBuilder.Entity<PendingAccount>().HasKey(account => account.PendingAccountId);
+        modelBuilder.Entity<PendingAccount>().HasIndex(account => account.Subject).IsUnique();
+        modelBuilder.Entity<PendingAccount>().HasIndex(account => account.CountyCode);
 
         // One identity-provider account maps to at most one registrar, so a
         // token can never resolve ambiguously to two people.

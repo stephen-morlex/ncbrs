@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react'
 import { Navigate, Route, Routes } from 'react-router'
+import { AccountGate } from '@/auth/AccountGate'
 import { useTranslation } from 'react-i18next'
 import { Construction } from 'lucide-react'
 import {
@@ -143,13 +144,17 @@ export default function App() {
       <Route
         element={
           <RequireAuth>
-            {/* One boundary around the layout covers the pages inside it: on
-                a cold visit both chunks are in flight together, and a nested
-                boundary would flash a second spinner inside a shell that had
-                only just appeared. */}
-            <Suspense fallback={<LoadingPage />}>
-              <AppLayout />
-            </Suspense>
+            {/* Who this account is to the registry, before any page: a new
+                account declares itself here and waits to be added. */}
+            <AccountGate>
+              {/* One boundary around the layout covers the pages inside it: on
+                  a cold visit both chunks are in flight together, and a nested
+                  boundary would flash a second spinner inside a shell that had
+                  only just appeared. */}
+              <Suspense fallback={<LoadingPage />}>
+                <AppLayout />
+              </Suspense>
+            </AccountGate>
           </RequireAuth>
         }
       >

@@ -53,7 +53,12 @@
     "signedInAs": "You are signed in as {{roles}}.",
     "noRoles": "Your account has no roles assigned.",
     "noRole": "no role",
-    "askDistrictOfficer": "If this is wrong, a district officer can correct your roles."
+    "askDistrictOfficer": "If this is wrong, a district officer can correct your roles.",
+    "pendingTitle": "Your account is waiting to be added",
+    "pendingBody": "You are signed in as {{name}}, but not yet linked to a facility. A district officer adds you from the list of accounts waiting in your county; you are on that list now.",
+    "withdrawnTitle": "This account has been withdrawn",
+    "withdrawnBody": "It no longer works in the registry. If that is a mistake, speak to your district officer.",
+    "checkAgain": "Check again"
   },
   "shell": {
     "loading": "Loading…",

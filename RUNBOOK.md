@@ -168,6 +168,45 @@ are never limited, so registrations are unaffected.
 - If it is a single outside address, the limit is doing its job.
 - A monitor polling `/health` well under twice a second never reaches it.
 
+## Onboarding: a facility, its staff and its tablet
+
+What a pilot district does on its first day, in this order. Each step names who
+does it; the registry refuses the step from anyone else.
+
+1. **Create the facility** (Ministry). Facilities → Add a facility: its name,
+   tier, connectivity and where it is (a county, or a payam, boma or village
+   within one). The registry places it in its county from that, and gives it a
+   range of 100,000 registration numbers that no other facility holds. Check
+   the county shown in the confirmation: it decides who oversees the facility.
+2. **Create each person's Keycloak account** (whoever administers the realm).
+   Give it its realm role (`facility-registrar`, `community-health-worker`,
+   `district-officer`) and its county group (`/counties/<p-code>`). The
+   county group is what puts the account on the right district officer's list
+   in step 4, and a district officer cannot be added without one.
+3. **The person signs in to the registry website once.** They are told their
+   account is waiting to be added. That sign-in is what puts them on the list:
+   the account declares itself, so nobody copies an id out of Keycloak.
+4. **Add them** (their county's district officer; the Ministry for an officer
+   or anyone without a county group). Registrars → Waiting to be added → Add:
+   their facility and role. Only roles the account holds in Keycloak are
+   offered. They can work at once.
+5. **They set their PIN** on the website (or on the tablet, with signal). The
+   tablet downloads every PIN for its facility at each sync.
+6. **Hand the tablet over** at the facility (a district officer, on the tablet).
+   The tablet checks its enrolment against the registry before it counts.
+7. **Pair and test the printer.** Pair a Bluetooth printer in Android's
+   Bluetooth settings first, then choose it on the tablet's Printer screen with
+   its paper width, and print a test page. Check the text is clear and the code
+   scans.
+
+**When someone leaves:** Registrars → withdraw them, with a reason (district
+officer for facility staff in their county; the Ministry for an officer). They
+can no longer sign in to the registry. Their PIN stops unlocking each tablet at
+that tablet's **next sync**, not before: a tablet out of signal cannot be told.
+They stay in the directory, because the records they registered name them.
+Also disable their Keycloak account. A withdrawn account cannot be added again;
+someone returning is given a new account.
+
 ## Incident: a tablet is lost or stolen
 
 A tablet holds its registrar's sign-in as a Keycloak **offline token**, valid
