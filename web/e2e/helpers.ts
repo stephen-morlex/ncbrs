@@ -34,9 +34,15 @@ async function choose(page: Page, label: RegExp | string, option: RegExp | strin
 export async function registerBirth(page: Page, childName: string): Promise<string> {
   await page.goto('/records/new')
 
+  // Named in parts, as the form asks. The register composes them back into
+  // the full name, which is what the record page shows.
+  const [givenNames, ...surname] = childName.split(' ')
+
   await choose(page, 'Facility', /Juba Teaching Hospital/)
-  await page.getByLabel('Child’s full name').fill(childName)
-  await page.getByLabel('Date of birth').fill(recentBirthDate())
+  await page.getByLabel('Child’s given names').fill(givenNames)
+  await page.getByLabel('Child’s surname').fill(surname.join(' '))
+  await page.getByLabel('Date of birth', { exact: true }).fill(recentBirthDate())
+  await choose(page, 'Place of birth', 'At this facility')
   await choose(page, 'Sex', 'Female')
   await choose(page, 'Plurality', /Singleton/)
 

@@ -26,11 +26,20 @@ import {
 } from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
 import type { components } from '@/api/generated/api'
-import { type NcbrsError, messagesFor, toNcbrsError, unreachableError } from '@/api/errors'
+import { type NcbrsError, toNcbrsError, unreachableError } from '@/api/errors'
 import { useApiClient } from '@/api/useApi'
 import { PageHeader } from '@/shell/PageHeader'
 import { type BrnDraw, createBrnDraw } from './brnDraw'
 import {
+  MarriageSection,
+  ParentSection,
+  PlaceOfBirthFields,
+  ProofOfAddressSection,
+  ServerErrors,
+  parentForRequest,
+} from './RegistrationSections'
+import {
+  type ParentInput,
   type RegistrationInput,
   daysSinceBirth,
   registrationSchema,
@@ -101,15 +110,20 @@ export function RegisterBirth() {
     // that, and a component switching modes can drop what was chosen.
     defaultValues: {
       facilityId: '',
-      childFullName: '',
+      childGivenNames: '',
+      childSurname: '',
       dateOfBirth: '',
+      placeOfBirthKind: undefined,
+      placeOfBirth: '',
       sex: undefined,
       plurality: undefined,
       birthWeightGrams: '',
       gestationalAgeWeeks: '',
       birthOrder: '',
-      motherFullName: '',
-      fatherFullName: '',
+      mother: blankParent(),
+      father: blankParent(),
+      marriage: { date: '', certificateNumber: '' },
+      proofOfAddress: { kind: '', reference: '' },
     },
     resolver: zodResolver(registrationSchema),
   })
@@ -206,15 +220,29 @@ export function RegisterBirth() {
             data: {
               brn,
               facilityId: values.facilityId,
-              childFullName: values.childFullName,
+              childGivenNames: values.childGivenNames.trim(),
+              childSurname: values.childSurname.trim(),
               dateOfBirth: `${values.dateOfBirth}T00:00:00Z`,
+              placeOfBirthKind: values.placeOfBirthKind,
+              // The description belongs to a birth elsewhere; one typed before
+              // switching back to "this facility" is not sent.
+              placeOfBirth:
+                values.placeOfBirthKind === 'ThisFacility' ? undefined : blankToUndefined(values.placeOfBirth),
               sex: values.sex,
               plurality: values.plurality,
               birthWeightGrams: optional(values.birthWeightGrams),
               gestationalAgeWeeks: optional(values.gestationalAgeWeeks),
               birthOrder: optional(values.birthOrder),
-              motherFullName: blankToUndefined(values.motherFullName),
-              fatherFullName: blankToUndefined(values.fatherFullName),
+              mother: parentForRequest(values.mother),
+              father: parentForRequest(values.father),
+              marriage: partsOrNothing({
+                date: blankToUndefined(values.marriage?.date),
+                certificateNumber: blankToUndefined(values.marriage?.certificateNumber),
+              }),
+              proofOfAddress: partsOrNothing({
+                kind: blankToUndefined(values.proofOfAddress?.kind),
+                reference: blankToUndefined(values.proofOfAddress?.reference),
+              }),
               deviceId: WebChannelDeviceId,
               // Sent only when the birth is outside the window. Supplying it
               // for an on-time birth is refused rather than ignored, because
@@ -344,10 +372,18 @@ export function RegisterBirth() {
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="childFullName">Child’s full name</FieldLabel>
-                <Input id="childFullName" {...form.register('childFullName')} autoComplete="off" />
-                <FieldError errors={[form.formState.errors.childFullName]} />
-                <ServerErrors error={error} field="data.childFullName" />
+                <FieldLabel htmlFor="childGivenNames">Child’s given names</FieldLabel>
+                <Input id="childGivenNames" {...form.register('childGivenNames')} autoComplete="off" />
+                <FieldError errors={[form.formState.errors.childGivenNames]} />
+                <ServerErrors error={error} field="data.childGivenNames" />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="childSurname">Child’s surname</FieldLabel>
+                <Input id="childSurname" {...form.register('childSurname')} autoComplete="off" />
+                <FieldDescription>Usually the father’s name.</FieldDescription>
+                <FieldError errors={[form.formState.errors.childSurname]} />
+                <ServerErrors error={error} field="data.childSurname" />
               </Field>
 
               <Field>
@@ -366,6 +402,8 @@ export function RegisterBirth() {
                 <FieldError errors={[form.formState.errors.dateOfBirth]} />
                 <ServerErrors error={error} field="data.dateOfBirth" />
               </Field>
+
+              <PlaceOfBirthFields form={form} error={error} />
 
               <Field>
                 <FieldLabel htmlFor="sex">Sex</FieldLabel>
@@ -457,22 +495,10 @@ export function RegisterBirth() {
                 </FieldGroup>
               </FieldSet>
 
-              <FieldSet>
-                <FieldLegend>Parents</FieldLegend>
-                <FieldGroup>
-                  <Field>
-                    <FieldLabel htmlFor="motherFullName">Mother’s full name</FieldLabel>
-                    <Input id="motherFullName" {...form.register('motherFullName')} autoComplete="off" />
-                    <FieldError errors={[form.formState.errors.motherFullName]} />
-                  </Field>
-
-                  <Field>
-                    <FieldLabel htmlFor="fatherFullName">Father’s full name</FieldLabel>
-                    <Input id="fatherFullName" {...form.register('fatherFullName')} autoComplete="off" />
-                    <FieldError errors={[form.formState.errors.fatherFullName]} />
-                  </Field>
-                </FieldGroup>
-              </FieldSet>
+              <ParentSection form={form} error={error} who="mother" />
+              <ParentSection form={form} error={error} who="father" />
+              <MarriageSection form={form} error={error} />
+              <ProofOfAddressSection form={form} />
 
               {isLate ? <LateRegistrationFields form={form} error={error} /> : null}
 
@@ -603,23 +629,6 @@ function LateRegistrationFields({
   )
 }
 
-/**
- * What the server said about this field.
- *
- * Kept alongside the client-side message rather than instead of it. The two
- * answer different questions — "this is not a date" versus "this facility has
- * exhausted its range" — and the server's is the one that decided.
- */
-function ServerErrors({ error, field }: { error: NcbrsError | null; field: string }) {
-  const messages = messagesFor(error, field)
-
-  if (messages.length === 0) {
-    return null
-  }
-
-  return <FieldError>{messages.join(' ')}</FieldError>
-}
-
 function Failure({ error }: { error: NcbrsError }) {
   return (
     <Alert variant="destructive">
@@ -684,15 +693,20 @@ function aboutTheNumber(error: NcbrsError): boolean {
 function label(field: string): string {
   const names: Record<string, string> = {
     facilityId: 'facility',
-    childFullName: 'the child’s name',
+    childGivenNames: 'the child’s given names',
+    childSurname: 'the child’s surname',
     dateOfBirth: 'date of birth',
+    placeOfBirthKind: 'place of birth',
+    placeOfBirth: 'where the birth happened',
     sex: 'sex',
     plurality: 'plurality',
     birthWeightGrams: 'birth weight',
     gestationalAgeWeeks: 'gestational age',
     birthOrder: 'birth order',
-    motherFullName: 'mother’s name',
-    fatherFullName: 'father’s name',
+    mother: 'the mother’s details',
+    father: 'the father’s details',
+    marriage: 'the marriage',
+    proofOfAddress: 'the proof of address',
     lateRegistration: 'the late-registration evidence',
   }
 
@@ -700,5 +714,28 @@ function label(field: string): string {
 }
 
 function blankToUndefined(value: string | undefined): string | undefined {
-  return value === undefined || value.trim() === '' ? undefined : value
+  return value === undefined || value.trim() === '' ? undefined : value.trim()
+}
+
+/** An optional group sent only when something in it was given. */
+function partsOrNothing<T extends Record<string, string | undefined>>(parts: T): T | undefined {
+  return Object.values(parts).some((value) => value !== undefined) ? parts : undefined
+}
+
+/**
+ * Every key named, for the same reason as the form's other defaults: a key
+ * absent at first render leaves its input uncontrolled until it is not.
+ */
+function blankParent(): ParentInput {
+  return {
+    givenNames: '',
+    surname: '',
+    maidenSurname: '',
+    dateOfBirth: '',
+    placeOfBirth: '',
+    occupation: '',
+    address: '',
+    documentType: '',
+    documentNumber: '',
+  }
 }
