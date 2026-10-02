@@ -61,7 +61,7 @@ function show() {
 }
 
 async function setDateOfBirth(value: string) {
-  const input = screen.getByLabelText(/date of birth/i)
+  const input = screen.getByLabelText(/^date of birth$/i)
 
   fireEvent.change(input, { target: { value } })
 
@@ -180,9 +180,11 @@ describe('when the form is refused', () => {
     const summary = await screen.findByText(/still needed:/i)
 
     expect(summary.textContent).toMatch(/facility/i)
-    expect(summary.textContent).toMatch(/the child’s name/i)
+    expect(summary.textContent).toMatch(/the child’s given names/i)
+    expect(summary.textContent).toMatch(/the child’s surname/i)
     expect(summary.textContent).toMatch(/date of birth/i)
-    expect(summary.textContent).not.toMatch(/childFullName/)
+    expect(summary.textContent).toMatch(/place of birth/i)
+    expect(summary.textContent).not.toMatch(/childGivenNames|placeOfBirthKind/)
   })
 
   it('sends nothing to the registry when it refuses', async () => {
@@ -212,8 +214,11 @@ describe('when the form is refused', () => {
     fireEvent.click(screen.getByRole('button', { name: /register the birth/i }))
     await screen.findByText(/this birth has not been registered yet/i)
 
-    await typist.type(screen.getByLabelText(/child’s full name/i), 'Ayen Deng')
-    fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: daysAgo(3) } })
+    await typist.type(screen.getByLabelText(/child’s given names/i), 'Ayen')
+    await typist.type(screen.getByLabelText(/child’s surname/i), 'Deng')
+    await typist.click(screen.getByLabelText(/^place of birth$/i))
+    await typist.click(await screen.findByRole('option', { name: /at this facility/i }))
+    fireEvent.change(screen.getByLabelText(/^date of birth$/i), { target: { value: daysAgo(3) } })
 
     await typist.click(screen.getByLabelText(/facility/i))
     await typist.click(await screen.findByRole('option', { name: /terekeka/i }))
@@ -263,8 +268,11 @@ describe('when the registry refuses', () => {
     show()
     await waitFor(() => expect(get).toHaveBeenCalled())
 
-    await typist.type(screen.getByLabelText(/child’s full name/i), 'Ayen Deng')
-    fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: daysAgo(3) } })
+    await typist.type(screen.getByLabelText(/child’s given names/i), 'Ayen')
+    await typist.type(screen.getByLabelText(/child’s surname/i), 'Deng')
+    await typist.click(screen.getByLabelText(/^place of birth$/i))
+    await typist.click(await screen.findByRole('option', { name: /at this facility/i }))
+    fireEvent.change(screen.getByLabelText(/^date of birth$/i), { target: { value: daysAgo(3) } })
     await typist.click(screen.getByLabelText(/facility/i))
     await typist.click(await screen.findByRole('option', { name: /terekeka/i }))
     await typist.click(screen.getByLabelText(/^sex$/i))
@@ -299,8 +307,11 @@ describe('when the registry refuses', () => {
     show()
     await waitFor(() => expect(get).toHaveBeenCalled())
 
-    await typist.type(screen.getByLabelText(/child’s full name/i), 'Ayen Deng')
-    fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: daysAgo(3) } })
+    await typist.type(screen.getByLabelText(/child’s given names/i), 'Ayen')
+    await typist.type(screen.getByLabelText(/child’s surname/i), 'Deng')
+    await typist.click(screen.getByLabelText(/^place of birth$/i))
+    await typist.click(await screen.findByRole('option', { name: /at this facility/i }))
+    fireEvent.change(screen.getByLabelText(/^date of birth$/i), { target: { value: daysAgo(3) } })
     await typist.click(screen.getByLabelText(/facility/i))
     await typist.click(await screen.findByRole('option', { name: /terekeka/i }))
     await typist.click(screen.getByLabelText(/^sex$/i))
@@ -317,8 +328,11 @@ describe('when the registry refuses', () => {
 
 describe('when the registry says the number is already registered', () => {
   async function fillIn(typist: ReturnType<typeof userEvent.setup>) {
-    await typist.type(screen.getByLabelText(/child’s full name/i), 'Ayen Deng')
-    fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: daysAgo(3) } })
+    await typist.type(screen.getByLabelText(/child’s given names/i), 'Ayen')
+    await typist.type(screen.getByLabelText(/child’s surname/i), 'Deng')
+    await typist.click(screen.getByLabelText(/^place of birth$/i))
+    await typist.click(await screen.findByRole('option', { name: /at this facility/i }))
+    fireEvent.change(screen.getByLabelText(/^date of birth$/i), { target: { value: daysAgo(3) } })
     await typist.click(screen.getByLabelText(/facility/i))
     await typist.click(await screen.findByRole('option', { name: /terekeka/i }))
     await typist.click(screen.getByLabelText(/^sex$/i))
@@ -460,5 +474,193 @@ describe('when the registry says the number is already registered', () => {
     await waitFor(() => expect(post.mock.calls.filter((call: unknown[]) => !String(call[0]).includes("request-brn-block"))).toHaveLength(2))
 
     expect(post.mock.calls.filter((call: unknown[]) => String(call[0]).includes("request-brn-block"))).toHaveLength(1)
+  })
+})
+
+describe('the fuller registration', () => {
+  function accepting() {
+    post.mockImplementation((path: string) =>
+      path.includes('request-brn-block')
+        ? Promise.resolve(ok({ blockStart: 100001, blockEnd: 100001 }))
+        : Promise.resolve(ok({ brn: '100001' })),
+    )
+  }
+
+  async function fillRequired(typist: ReturnType<typeof userEvent.setup>, place = /at this facility/i) {
+    await typist.type(screen.getByLabelText(/child’s given names/i), 'Ayen Akol')
+    await typist.type(screen.getByLabelText(/child’s surname/i), 'Deng')
+    fireEvent.change(screen.getByLabelText(/^date of birth$/i), { target: { value: daysAgo(3) } })
+    await typist.click(screen.getByLabelText(/^place of birth$/i))
+    await typist.click(await screen.findByRole('option', { name: place }))
+    await typist.click(screen.getByLabelText(/facility/i))
+    await typist.click(await screen.findByRole('option', { name: /terekeka/i }))
+    await typist.click(screen.getByLabelText(/^sex$/i))
+    await typist.click(await screen.findByRole('option', { name: /female/i }))
+    await typist.click(screen.getByLabelText(/plurality/i))
+    await typist.click(await screen.findByRole('option', { name: /singleton/i }))
+  }
+
+  function registered() {
+    const call = post.mock.calls.find((entry: unknown[]) => String(entry[0]) === '/api/BirthRecords/register')
+    return call?.[1].body.data
+  }
+
+  it('registers with only the required fields, sending none of the optional groups', async () => {
+    accepting()
+    const typist = userEvent.setup({ delay: null })
+
+    show()
+    await waitFor(() => expect(get).toHaveBeenCalled())
+    await fillRequired(typist)
+    await typist.click(screen.getByRole('button', { name: /register the birth/i }))
+
+    await waitFor(() => expect(registered()).toBeDefined())
+    const body = registered()
+
+    expect(body.childGivenNames).toBe('Ayen Akol')
+    expect(body.childSurname).toBe('Deng')
+    expect(body.placeOfBirthKind).toBe('ThisFacility')
+    expect(body.placeOfBirth).toBeUndefined()
+    // The one-piece name is the older tablets' form; sending both is refused.
+    expect(body.childFullName).toBeUndefined()
+    expect(body.mother).toBeUndefined()
+    expect(body.father).toBeUndefined()
+    expect(body.marriage).toBeUndefined()
+    expect(body.proofOfAddress).toBeUndefined()
+  })
+
+  it('keeps the optional sections closed until asked for', async () => {
+    show()
+    await waitFor(() => expect(get).toHaveBeenCalled())
+
+    expect(screen.queryByLabelText(/mother’s given names/i)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/marriage certificate number/i)).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /add the mother/i }))
+
+    expect(await screen.findByLabelText(/mother’s given names/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/mother’s maiden surname/i)).toBeInTheDocument()
+  })
+
+  it('asks the father for no maiden surname', async () => {
+    show()
+    await waitFor(() => expect(get).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole('button', { name: /add the father/i }))
+
+    expect(await screen.findByLabelText(/father’s given names/i)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/maiden surname/i)).not.toBeInTheDocument()
+  })
+
+  it('needs to know where, when the birth was not at this facility', async () => {
+    const typist = userEvent.setup({ delay: null })
+
+    show()
+    await waitFor(() => expect(get).toHaveBeenCalled())
+    await fillRequired(typist, /at home/i)
+    await typist.click(screen.getByRole('button', { name: /register the birth/i }))
+
+    expect(await screen.findByText(/say where: the facility, village or place/i)).toBeInTheDocument()
+    expect(post).not.toHaveBeenCalled()
+
+    await typist.type(screen.getByLabelText(/^where$/i), 'Gumbo, near the borehole')
+    accepting()
+    await typist.click(screen.getByRole('button', { name: /register the birth/i }))
+
+    await waitFor(() => expect(registered()).toBeDefined())
+    expect(registered().placeOfBirthKind).toBe('Home')
+    expect(registered().placeOfBirth).toBe('Gumbo, near the borehole')
+  })
+
+  it('sends a parent with only what was given', async () => {
+    accepting()
+    const typist = userEvent.setup({ delay: null })
+
+    show()
+    await waitFor(() => expect(get).toHaveBeenCalled())
+    await fillRequired(typist)
+
+    await typist.click(screen.getByRole('button', { name: /add the mother/i }))
+    await typist.type(await screen.findByLabelText(/mother’s given names/i), 'Achol')
+    await typist.type(screen.getByLabelText(/mother’s maiden surname/i), 'Garang')
+    await typist.type(screen.getByLabelText(/mother’s job/i), 'Teacher')
+    await typist.click(screen.getByLabelText(/mother’s identity document/i))
+    await typist.click(await screen.findByRole('option', { name: /national id/i }))
+    await typist.type(screen.getByLabelText(/mother’s document number/i), 'SS1234567')
+
+    await typist.click(screen.getByRole('button', { name: /register the birth/i }))
+
+    await waitFor(() => expect(registered()).toBeDefined())
+    expect(registered().mother).toEqual({
+      givenNames: 'Achol',
+      maidenSurname: 'Garang',
+      occupation: 'Teacher',
+      documentType: 'NationalId',
+      documentNumber: 'SS1234567',
+      surname: undefined,
+      dateOfBirth: undefined,
+      placeOfBirth: undefined,
+      address: undefined,
+    })
+    expect(registered().father).toBeUndefined()
+  })
+
+  it('refuses a parent’s details that do not name them, and opens the section to say so', async () => {
+    const typist = userEvent.setup({ delay: null })
+
+    show()
+    await waitFor(() => expect(get).toHaveBeenCalled())
+    await fillRequired(typist)
+
+    await typist.click(screen.getByRole('button', { name: /add the father/i }))
+    await typist.type(await screen.findByLabelText(/father’s job/i), 'Cattle keeper')
+    // Closed again before submitting: what is wrong inside must still show.
+    await typist.click(screen.getByRole('button', { name: /hide the father/i }))
+    expect(screen.queryByLabelText(/father’s job/i)).not.toBeInTheDocument()
+
+    await typist.click(screen.getByRole('button', { name: /register the birth/i }))
+
+    expect(await screen.findByText(/give the father’s given names or surname/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/father’s job/i)).toBeInTheDocument()
+    expect(post).not.toHaveBeenCalled()
+  })
+
+  it('records a document as its type and number together', async () => {
+    const typist = userEvent.setup({ delay: null })
+
+    show()
+    await waitFor(() => expect(get).toHaveBeenCalled())
+    await fillRequired(typist)
+
+    await typist.click(screen.getByRole('button', { name: /add the mother/i }))
+    await typist.type(await screen.findByLabelText(/mother’s given names/i), 'Achol')
+    await typist.type(screen.getByLabelText(/mother’s document number/i), 'SS1234567')
+
+    await typist.click(screen.getByRole('button', { name: /register the birth/i }))
+
+    expect(await screen.findByText(/say which document this is/i)).toBeInTheDocument()
+    expect(post).not.toHaveBeenCalled()
+  })
+
+  it('sends the marriage and proof of address when given', async () => {
+    accepting()
+    const typist = userEvent.setup({ delay: null })
+
+    show()
+    await waitFor(() => expect(get).toHaveBeenCalled())
+    await fillRequired(typist)
+
+    await typist.click(screen.getByRole('button', { name: /add the parents’ marriage/i }))
+    fireEvent.change(await screen.findByLabelText(/date of the parents’ marriage/i), {
+      target: { value: '2023-01-14' },
+    })
+    await typist.click(screen.getByRole('button', { name: /add proof of address/i }))
+    await typist.type(await screen.findByLabelText(/what was shown/i), 'Utility bill')
+
+    await typist.click(screen.getByRole('button', { name: /register the birth/i }))
+
+    await waitFor(() => expect(registered()).toBeDefined())
+    expect(registered().marriage).toEqual({ date: '2023-01-14', certificateNumber: undefined })
+    expect(registered().proofOfAddress).toEqual({ kind: 'Utility bill', reference: undefined })
   })
 })

@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { components } from '@/api/generated/api'
 import { AmendmentHistory } from './AmendmentHistory'
 import { heldDays } from './held'
+import { RecordParticulars } from './RecordParticulars'
 
 type BirthRecord = components['schemas']['BirthRecordResponse']
 
@@ -103,6 +104,7 @@ export function RecordDetail({ record }: { record: BirthRecord }) {
         <Tabs defaultValue="details">
           <TabsList>
             <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="family">Birth and family</TabsTrigger>
             <TabsTrigger value="corrections">Corrections</TabsTrigger>
           </TabsList>
 
@@ -144,6 +146,10 @@ export function RecordDetail({ record }: { record: BirthRecord }) {
                 }
               />
             </ItemGroup>
+          </TabsContent>
+
+          <TabsContent value="family" className="pt-4">
+            <RecordParticulars record={record} />
           </TabsContent>
 
           <TabsContent value="corrections" className="pt-4">

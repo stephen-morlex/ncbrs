@@ -4,8 +4,10 @@ import { daysSinceBirth, registrationSchema, today } from './registrationSchema'
 function valid(overrides: Record<string, unknown> = {}) {
   return {
     facilityId: '0199a1b2-0001-7000-8000-000000000001',
-    childFullName: 'Ayen Deng',
+    childGivenNames: 'Ayen',
+    childSurname: 'Deng',
     dateOfBirth: '2026-06-01',
+    placeOfBirthKind: 'ThisFacility',
     sex: 'Female',
     plurality: 'Singleton',
     ...overrides,
@@ -77,6 +79,49 @@ describe('registrationSchema', () => {
     )
 
     expect(result.success).toBe(true)
+  })
+})
+
+describe('the fuller registration', () => {
+  function problems(overrides: Record<string, unknown>) {
+    const result = registrationSchema.safeParse(valid(overrides))
+    return result.success ? [] : result.error.issues.map((issue) => issue.path.join('.'))
+  }
+
+  it('requires the child’s given names, surname and place of birth', () => {
+    expect(problems({ childGivenNames: '' })).toEqual(['childGivenNames'])
+    expect(problems({ childSurname: ' ' })).toEqual(['childSurname'])
+    expect(problems({ placeOfBirthKind: undefined })).toContain('placeOfBirthKind')
+  })
+
+  it('asks where only when the birth was not at this facility', () => {
+    expect(problems({ placeOfBirthKind: 'Home' })).toEqual(['placeOfBirth'])
+    expect(problems({ placeOfBirthKind: 'Home', placeOfBirth: 'Gumbo' })).toEqual([])
+    expect(problems({ placeOfBirthKind: 'ThisFacility' })).toEqual([])
+  })
+
+  it('leaves every parent field optional, but details must name the parent', () => {
+    expect(problems({ mother: { givenNames: '', occupation: '' } })).toEqual([])
+    expect(problems({ mother: { occupation: 'Teacher' } })).toEqual(['mother.givenNames'])
+    expect(problems({ mother: { surname: 'Deng', occupation: 'Teacher' } })).toEqual([])
+  })
+
+  it('takes a document as its type and number together', () => {
+    expect(problems({ father: { givenNames: 'Deng', documentType: 'Passport' } })).toEqual(['father.documentNumber'])
+    expect(problems({ father: { givenNames: 'Deng', documentNumber: 'P123' } })).toEqual(['father.documentType'])
+    expect(problems({ father: { givenNames: 'Deng', documentType: 'Passport', documentNumber: 'P123' } })).toEqual([])
+  })
+
+  it('refuses a parent born on or after the child', () => {
+    expect(problems({ mother: { givenNames: 'Achol', dateOfBirth: '2026-06-01' } })).toEqual(['mother.dateOfBirth'])
+    expect(problems({ mother: { givenNames: 'Achol', dateOfBirth: '2001-04-02' } })).toEqual([])
+  })
+
+  it('refuses a marriage dated in the future', () => {
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+
+    expect(problems({ marriage: { date: tomorrow } })).toEqual(['marriage.date'])
+    expect(problems({ marriage: { date: '2023-01-14' } })).toEqual([])
   })
 })
 
