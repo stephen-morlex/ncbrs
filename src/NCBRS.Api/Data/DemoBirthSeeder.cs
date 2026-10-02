@@ -79,7 +79,7 @@ public static class DemoBirthSeeder
 
             for (var i = 0; i < count; i++)
             {
-                var request = BuildBirth(facility.FacilityId, firstBrn + i, random);
+                var request = BuildBirth(facility, firstBrn + i, random);
                 await RegisterAsync(registration, request, registrar, facility, cancellationToken);
 
                 if (facility.Tier == FacilityTier.VillageHealthPost && request.LateRegistration is null)
@@ -153,7 +153,8 @@ public static class DemoBirthSeeder
         {
             Brn = brn.ToString(),
             FacilityId = hospital.FacilityId,
-            ChildFullName = Respell(original.ChildFullName),
+            // The surname is the child's last word, which is what is respelt.
+            ChildSurname = Respell(original.ChildSurname!),
             DateOfBirth = recalledBirthDate,
             RegisteredAtUtc = registeredAt > recalledBirthDate ? registeredAt : recalledBirthDate,
         };
@@ -174,7 +175,7 @@ public static class DemoBirthSeeder
         return string.Join(' ', words);
     }
 
-    private static RegisterBirthRequest BuildBirth(Guid facilityId, long brn, Random random)
+    private static RegisterBirthRequest BuildBirth(Facility facility, long brn, Random random)
     {
         var now = DateTime.UtcNow;
 
@@ -208,19 +209,44 @@ public static class DemoBirthSeeder
         var surname = Surnames[random.Next(Surnames.Length)];
         var childGiven = sex == Sex.Female ? FemaleGiven[random.Next(FemaleGiven.Length)] : MaleGiven[random.Next(MaleGiven.Length)];
 
+        // Drawn in the order the one-piece seed drew them, so every name,
+        // weight and date is what it was. DemoSeedTests pins the seed to
+        // exactly one duplicate candidate; moving this sequence would re-deal
+        // every name the matcher compares.
+        var birthWeight = 2500 + random.Next(0, 1700);
+        var gestation = 37 + random.Next(0, 5);
+        var birthOrder = 1 + random.Next(0, 4);
+        var motherGiven = FemaleGiven[random.Next(FemaleGiven.Length)];
+        var fatherGiven = MaleGiven[random.Next(MaleGiven.Length)];
+        var declarantGiven = isLate ? FemaleGiven[random.Next(FemaleGiven.Length)] : null;
+
+        // The fuller registration's details come from a generator of their
+        // own, seeded by the number, so they never disturb the sequence above.
+        var details = new Random(unchecked((int)brn));
+        var (placeKind, place) = PlaceOfBirth(facility.Tier, details);
+
         return new RegisterBirthRequest
         {
             Brn = brn.ToString(),
-            FacilityId = facilityId,
-            ChildFullName = $"{childGiven} {surname}",
+            FacilityId = facility.FacilityId,
+            // In parts. The register composes "{given} {surname}", the same
+            // full name the one-piece seed wrote.
+            ChildGivenNames = childGiven,
+            ChildSurname = surname,
             DateOfBirth = dateOfBirth,
+            PlaceOfBirthKind = placeKind,
+            PlaceOfBirth = place,
             Sex = sex,
-            BirthWeightGrams = 2500 + random.Next(0, 1700),
-            GestationalAgeWeeks = 37 + random.Next(0, 5),
+            BirthWeightGrams = birthWeight,
+            GestationalAgeWeeks = gestation,
             Plurality = BirthPlurality.Singleton,
-            BirthOrder = 1 + random.Next(0, 4),
-            MotherFullName = $"{FemaleGiven[random.Next(FemaleGiven.Length)]} {surname}",
-            FatherFullName = $"{MaleGiven[random.Next(MaleGiven.Length)]} {surname}",
+            BirthOrder = birthOrder,
+            Mother = Mother(motherGiven, surname, dateOfBirth, details),
+            Father = Father(fatherGiven, surname, dateOfBirth, details),
+            Marriage = Marriage(dateOfBirth, brn, details),
+            ProofOfAddress = details.Next(4) == 0
+                ? new ProofOfAddressDetails { Kind = "Utility bill", Reference = $"JEDCO-{details.Next(10_000, 99_999)}" }
+                : null,
             DeviceId = "SEED",
             RegisteredAtUtc = registeredAt,
             LateRegistration = isLate
@@ -228,10 +254,79 @@ public static class DemoBirthSeeder
                 {
                     EvidenceType = LateRegistrationEvidenceType.AntenatalOrDeliveryCard,
                     EvidenceReference = $"ANC-{brn}",
-                    DeclarantName = $"{FemaleGiven[random.Next(FemaleGiven.Length)]} {surname}",
+                    DeclarantName = $"{declarantGiven} {surname}",
                     DeclarantRelationship = "Mother",
                 }
                 : null,
+        };
+    }
+
+    private static readonly string[] Occupations =
+        ["Teacher", "Farmer", "Cattle keeper", "Trader", "Nurse", "Fisher", "Tailor", "Driver", "Soldier", "Homemaker"];
+
+    /// <summary>
+    /// Mostly at the facility, as at a hospital; a village post's births are
+    /// mostly at home, which is why the post exists. Described, not named: the
+    /// seed never invents a place.
+    /// </summary>
+    private static (PlaceOfBirthKind Kind, string? Place) PlaceOfBirth(FacilityTier tier, Random details)
+    {
+        var roll = details.Next(10);
+
+        return tier switch
+        {
+            FacilityTier.VillageHealthPost when roll < 6 => (PlaceOfBirthKind.Home, "The family's home"),
+            FacilityTier.VillageHealthPost when roll < 7 => (PlaceOfBirthKind.Elsewhere, "On the way to the health post"),
+            FacilityTier.Clinic when roll < 2 => (PlaceOfBirthKind.Home, "The family's home"),
+            _ when roll == 9 => (PlaceOfBirthKind.OtherHealthFacility, "Referred from a nearby primary health care unit"),
+            _ => (PlaceOfBirthKind.ThisFacility, null),
+        };
+    }
+
+    /// <summary>About half the mothers show a national ID.</summary>
+    private static ParentDetails Mother(string given, string surname, DateTime childBorn, Random details)
+    {
+        var showsId = details.Next(2) == 0;
+
+        return new ParentDetails
+        {
+            GivenNames = given,
+            Surname = surname,
+            MaidenSurname = Surnames[details.Next(Surnames.Length)],
+            DateOfBirth = DateOnly.FromDateTime(childBorn).AddYears(-details.Next(17, 40)).AddDays(-details.Next(0, 365)),
+            Occupation = Occupations[details.Next(Occupations.Length)],
+            Address = "In the facility's catchment",
+            DocumentType = showsId ? IdentityDocumentType.NationalId : null,
+            DocumentNumber = showsId ? $"SS{details.Next(1_000_000, 9_999_999)}" : null,
+        };
+    }
+
+    /// <summary>Fathers recorded less fully than mothers, as at a real counter: often a name alone.</summary>
+    private static ParentDetails Father(string given, string surname, DateTime childBorn, Random details) =>
+        details.Next(3) == 0
+            ? new ParentDetails { GivenNames = given, Surname = surname }
+            : new ParentDetails
+            {
+                GivenNames = given,
+                Surname = surname,
+                DateOfBirth = DateOnly.FromDateTime(childBorn).AddYears(-details.Next(20, 50)).AddDays(-details.Next(0, 365)),
+                Occupation = Occupations[details.Next(Occupations.Length)],
+            };
+
+    /// <summary>Two in three married before the birth, a few holding a statutory certificate.</summary>
+    private static MarriageDetails? Marriage(DateTime childBorn, long brn, Random details)
+    {
+        if (details.Next(3) == 0)
+        {
+            return null;
+        }
+
+        var married = DateOnly.FromDateTime(childBorn).AddYears(-details.Next(1, 8)).AddDays(-details.Next(0, 365));
+
+        return new MarriageDetails
+        {
+            Date = married,
+            CertificateNumber = details.Next(4) == 0 ? $"M-{brn % 1000}/{married.Year}" : null,
         };
     }
 
