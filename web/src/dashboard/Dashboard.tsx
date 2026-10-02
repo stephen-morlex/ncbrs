@@ -90,9 +90,11 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
-  const [applied, setApplied] = useState<Query>({ countyCode: National, from: '', to: '' })
+  // Opens on today. The dates are filled in rather than left for the service
+  // to default, so what the boxes say is what the figures cover.
+  const [applied, setApplied] = useState<Query>(() => ({ countyCode: National, from: localToday(), to: localToday() }))
   const [live, setLive] = useState(true)
-  const [draft, setDraft] = useState({ from: '', to: '' })
+  const [draft, setDraft] = useState(() => ({ from: localToday(), to: localToday() }))
 
   const load = useCallback(
     async (query: Query, background = false) => {
@@ -109,11 +111,11 @@ export function Dashboard() {
       const scoped: SummaryQuery = {
         districtId: query.countyCode !== National ? query.countyCode : undefined,
         from: query.from || undefined,
-        to: query.to || undefined,
+        to: query.to ? dayAfter(query.to) : undefined,
       }
       const dates = {
         ...(query.from ? { from: query.from } : {}),
-        ...(query.to ? { to: query.to } : {}),
+        ...(query.to ? { to: dayAfter(query.to) } : {}),
       }
 
       try {
@@ -317,7 +319,7 @@ function DashboardBody({
   return (
     <div className="space-y-6">
       <p className="text-muted-foreground text-sm">
-        {formatDate(summary.period.fromUtc)} to {formatDate(summary.period.toUtc)}
+        {formatDate(summary.period.fromUtc)} to {formatDate(dayBefore(summary.period.toUtc))}
         {summary.countyCode ? ` · ${summary.countyCode}` : ' · National'}
       </p>
 
@@ -680,6 +682,36 @@ function monthLabel(iso: string): string {
     return ''
   }
   return `${MonthNames[date.getUTCMonth()]} ${String(date.getUTCFullYear()).slice(2)}`
+}
+
+/**
+ * Today on the reader's own calendar. Births are dated by the calendar day
+ * they happened, so "today" is the day on the wall where the dashboard is
+ * read, not the UTC day, which in Juba turns two hours late.
+ */
+function localToday(now = new Date()): string {
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+}
+
+/**
+ * The service's `to` is exclusive: it counts births before it. The boxes say
+ * "To 2 October" and mean including the 2nd, so the page sends the day after.
+ */
+function dayAfter(date: string): string {
+  const next = new Date(`${date}T00:00:00Z`)
+  next.setUTCDate(next.getUTCDate() + 1)
+  return next.toISOString().slice(0, 10)
+}
+
+/** The last day an exclusive end covers, so the period reads as the boxes do. */
+function dayBefore(iso: string): string {
+  const previous = new Date(iso)
+  if (Number.isNaN(previous.getTime())) {
+    return iso
+  }
+  previous.setUTCDate(previous.getUTCDate() - 1)
+  return previous.toISOString()
 }
 
 function LoadingDashboard() {

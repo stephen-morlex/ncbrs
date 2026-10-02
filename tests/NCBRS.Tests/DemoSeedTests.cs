@@ -91,4 +91,41 @@ public class DemoSeedTests : IDisposable
         Assert.True(await db.BirthRecords.CountAsync() > 0);
         Assert.False(await db.BirthRecords.AnyAsync(record => record.ConfirmedAtUtc == null));
     }
+
+    /// <summary>
+    /// The seed registers the fuller form, so a fresh dev database shows what
+    /// the forms collect: every child named in parts that compose its full
+    /// name, every place of birth recorded, and the optional details present
+    /// on some births and absent on others, as at a real counter.
+    /// </summary>
+    [Fact]
+    public async Task EverySeededBirthIsInTheFullerForm()
+    {
+        await SeedAsync();
+
+        await using var db = new NcbrsDbContext(_database.Options);
+        var records = await db.BirthRecords
+            .Include(record => record.Facility)
+            .Include(record => record.ChildPerson)
+            .Include(record => record.MotherPerson)
+            .Include(record => record.FatherPerson)
+            .ToListAsync();
+
+        Assert.All(records, record =>
+        {
+            Assert.NotNull(record.PlaceOfBirthKind);
+            Assert.Equal(record.ChildPerson!.FullName, $"{record.ChildPerson.GivenNames} {record.ChildPerson.Surname}");
+            Assert.Equal(record.MotherPerson!.FullName, $"{record.MotherPerson.GivenNames} {record.MotherPerson.Surname}");
+            Assert.NotNull(record.MotherPerson.MaidenSurname);
+            Assert.Null(record.FatherPerson!.MaidenSurname);
+        });
+
+        Assert.Contains(records, record => record.PlaceOfBirthKind == PlaceOfBirthKind.Home);
+        Assert.Contains(records, record => record.PlaceOfBirthKind == PlaceOfBirthKind.ThisFacility);
+        Assert.Contains(records, record => record.MotherPerson!.IdentityDocumentNumber is not null);
+        Assert.Contains(records, record => record.MotherPerson!.IdentityDocumentNumber is null);
+        Assert.Contains(records, record => record.ParentsMarriageDate is not null);
+        Assert.Contains(records, record => record.ParentsMarriageDate is null);
+        Assert.Contains(records, record => record.ProofOfAddressReference is not null);
+    }
 }

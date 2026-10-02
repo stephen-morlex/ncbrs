@@ -117,6 +117,34 @@ beforeEach(() => {
 })
 
 describe('Dashboard', () => {
+  /**
+   * The boxes say what the figures cover. "To" includes the day it names,
+   * while the service counts births *before* its `to`, so the page sends the
+   * day after -- or today's births would be left out of "today".
+   */
+  it('opens on today, including today', async () => {
+    const now = new Date()
+    const pad = (value: number) => String(value).padStart(2, '0')
+    const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+    const tomorrow = new Date(`${today}T00:00:00Z`)
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1)
+
+    renderScreen()
+    await screen.findByText('1,200')
+
+    expect(screen.getByLabelText('From')).toHaveValue(today)
+    expect(screen.getByLabelText('To')).toHaveValue(today)
+    expect(lastSummaryQuery?.from).toBe(today)
+    expect(lastSummaryQuery?.to).toBe(tomorrow.toISOString().slice(0, 10))
+  })
+
+  it('reads the period back as the boxes name it, not by its exclusive end', async () => {
+    respond({ summary: okc(summary({ period: { fromUtc: '2026-08-01T00:00:00Z', toUtc: '2026-09-01T00:00:00Z', stillFilling: false } })) })
+    renderScreen()
+
+    expect(await screen.findByText(/2026-08-01 to 2026-08-31/)).toBeInTheDocument()
+  })
+
   it('shows KPI figures, and renders a share as a percentage (not multiplied twice)', async () => {
     renderScreen()
 
