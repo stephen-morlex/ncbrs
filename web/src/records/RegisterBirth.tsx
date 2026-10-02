@@ -312,7 +312,7 @@ export function RegisterBirth() {
   const chosen = facilities?.find((facility) => facility.facilityId === facilityId)
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6">
+    <div className="mx-auto w-full max-w-5xl space-y-6">
       <PageHeader
         title="Register a birth"
         description="For a birth being filed at the centre. A facility device registers its own, from the block it already holds."
@@ -344,111 +344,116 @@ export function RegisterBirth() {
               touching them while rendering. Behaviour is identical. */}
           <form onSubmit={(event) => void form.handleSubmit(submit, refused)(event)} noValidate>
             <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="facilityId">Facility</FieldLabel>
-                <Select
-                  value={facilityId}
-                  onValueChange={(value) =>
-                    form.setValue('facilityId', value, { shouldValidate: true })
-                  }
-                >
-                  <SelectTrigger id="facilityId">
-                    <SelectValue placeholder={facilities === null ? 'Loading…' : 'Choose a facility'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(facilities ?? []).map((facility) => (
-                      <SelectItem key={facility.facilityId} value={facility.facilityId}>
-                        {facility.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FieldDescription>
-                  Only facilities in your district. The birth is registered against this
-                  facility’s range.
-                </FieldDescription>
-                <FieldError errors={[form.formState.errors.facilityId]} />
-                <ServerErrors error={error} field="data.facilityId" />
-              </Field>
+              {/* Two columns where there is room, paired so each row is one
+                  question a registrar asks together: where and when, the
+                  name, sex and plurality, the place. One column on a phone. */}
+              <div className="grid items-start gap-5 md:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="facilityId">Facility</FieldLabel>
+                  <Select
+                    value={facilityId}
+                    onValueChange={(value) =>
+                      form.setValue('facilityId', value, { shouldValidate: true })
+                    }
+                  >
+                    <SelectTrigger id="facilityId">
+                      <SelectValue placeholder={facilities === null ? 'Loading…' : 'Choose a facility'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(facilities ?? []).map((facility) => (
+                        <SelectItem key={facility.facilityId} value={facility.facilityId}>
+                          {facility.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FieldDescription>
+                    Only facilities in your district. The birth is registered against this
+                    facility’s range.
+                  </FieldDescription>
+                  <FieldError errors={[form.formState.errors.facilityId]} />
+                  <ServerErrors error={error} field="data.facilityId" />
+                </Field>
 
-              <Field>
-                <FieldLabel htmlFor="childGivenNames">Child’s given names</FieldLabel>
-                <Input id="childGivenNames" {...form.register('childGivenNames')} autoComplete="off" />
-                <FieldError errors={[form.formState.errors.childGivenNames]} />
-                <ServerErrors error={error} field="data.childGivenNames" />
-              </Field>
+                <Field>
+                  <FieldLabel htmlFor="dateOfBirth">Date of birth</FieldLabel>
+                  <Input
+                    id="dateOfBirth"
+                    type="date"
+                    max={today()}
+                    {...form.register('dateOfBirth')}
+                  />
+                  <FieldDescription>
+                    {windowDays === null
+                      ? 'The statutory window is being read from the registry.'
+                      : `Births registered more than ${windowDays} days after they happened need supporting evidence.`}
+                  </FieldDescription>
+                  <FieldError errors={[form.formState.errors.dateOfBirth]} />
+                  <ServerErrors error={error} field="data.dateOfBirth" />
+                </Field>
 
-              <Field>
-                <FieldLabel htmlFor="childSurname">Child’s surname</FieldLabel>
-                <Input id="childSurname" {...form.register('childSurname')} autoComplete="off" />
-                <FieldDescription>Usually the father’s name.</FieldDescription>
-                <FieldError errors={[form.formState.errors.childSurname]} />
-                <ServerErrors error={error} field="data.childSurname" />
-              </Field>
+                <Field>
+                  <FieldLabel htmlFor="childGivenNames">Child’s given names</FieldLabel>
+                  <Input id="childGivenNames" {...form.register('childGivenNames')} autoComplete="off" />
+                  <FieldError errors={[form.formState.errors.childGivenNames]} />
+                  <ServerErrors error={error} field="data.childGivenNames" />
+                </Field>
 
-              <Field>
-                <FieldLabel htmlFor="dateOfBirth">Date of birth</FieldLabel>
-                <Input
-                  id="dateOfBirth"
-                  type="date"
-                  max={today()}
-                  {...form.register('dateOfBirth')}
-                />
-                <FieldDescription>
-                  {windowDays === null
-                    ? 'The statutory window is being read from the registry.'
-                    : `Births registered more than ${windowDays} days after they happened need supporting evidence.`}
-                </FieldDescription>
-                <FieldError errors={[form.formState.errors.dateOfBirth]} />
-                <ServerErrors error={error} field="data.dateOfBirth" />
-              </Field>
+                <Field>
+                  <FieldLabel htmlFor="childSurname">Child’s surname</FieldLabel>
+                  <Input id="childSurname" {...form.register('childSurname')} autoComplete="off" />
+                  <FieldDescription>Usually the father’s name.</FieldDescription>
+                  <FieldError errors={[form.formState.errors.childSurname]} />
+                  <ServerErrors error={error} field="data.childSurname" />
+                </Field>
 
-              <PlaceOfBirthFields form={form} error={error} />
+                <Field>
+                  <FieldLabel htmlFor="sex">Sex</FieldLabel>
+                  <Select
+                    value={sex ?? ''}
+                    onValueChange={(value) =>
+                      form.setValue('sex', value as RegistrationInput['sex'], {
+                        shouldValidate: true,
+                      })
+                    }
+                  >
+                    <SelectTrigger id="sex">
+                      <SelectValue placeholder="Choose" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Female">Female</SelectItem>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Undetermined">Undetermined</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FieldError errors={[form.formState.errors.sex]} />
+                </Field>
 
-              <Field>
-                <FieldLabel htmlFor="sex">Sex</FieldLabel>
-                <Select
-                  value={sex ?? ''}
-                  onValueChange={(value) =>
-                    form.setValue('sex', value as RegistrationInput['sex'], {
-                      shouldValidate: true,
-                    })
-                  }
-                >
-                  <SelectTrigger id="sex">
-                    <SelectValue placeholder="Choose" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Female">Female</SelectItem>
-                    <SelectItem value="Male">Male</SelectItem>
-                    <SelectItem value="Undetermined">Undetermined</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FieldError errors={[form.formState.errors.sex]} />
-              </Field>
+                <Field>
+                  <FieldLabel htmlFor="plurality">Plurality</FieldLabel>
+                  <Select
+                    value={plurality ?? ''}
+                    onValueChange={(value) =>
+                      form.setValue('plurality', value as RegistrationInput['plurality'], {
+                        shouldValidate: true,
+                      })
+                    }
+                  >
+                    <SelectTrigger id="plurality">
+                      <SelectValue placeholder="Choose" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Singleton">Singleton</SelectItem>
+                      <SelectItem value="Twin">Twin</SelectItem>
+                      <SelectItem value="Triplet">Triplet</SelectItem>
+                      <SelectItem value="HigherOrderMultiple">Higher-order multiple</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FieldError errors={[form.formState.errors.plurality]} />
+                </Field>
 
-              <Field>
-                <FieldLabel htmlFor="plurality">Plurality</FieldLabel>
-                <Select
-                  value={plurality ?? ''}
-                  onValueChange={(value) =>
-                    form.setValue('plurality', value as RegistrationInput['plurality'], {
-                      shouldValidate: true,
-                    })
-                  }
-                >
-                  <SelectTrigger id="plurality">
-                    <SelectValue placeholder="Choose" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Singleton">Singleton</SelectItem>
-                    <SelectItem value="Twin">Twin</SelectItem>
-                    <SelectItem value="Triplet">Triplet</SelectItem>
-                    <SelectItem value="HigherOrderMultiple">Higher-order multiple</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FieldError errors={[form.formState.errors.plurality]} />
-              </Field>
+                <PlaceOfBirthFields form={form} error={error} />
+              </div>
 
               <FieldSet>
                 <FieldLegend>Clinical measurements</FieldLegend>
@@ -456,7 +461,7 @@ export function RegisterBirth() {
                   Leave blank where nothing was measured. A blank is recorded as “not measured”,
                   which is a different fact from zero.
                 </FieldDescription>
-                <FieldGroup>
+                <FieldGroup className="grid items-start gap-5 md:grid-cols-3">
                   <Field>
                     <FieldLabel htmlFor="birthWeightGrams">Birth weight (grams)</FieldLabel>
                     <Input
@@ -557,7 +562,7 @@ function LateRegistrationFields({
           certificate waits until a district registrar other than you has verified this evidence.
         </AlertDescription>
       </Alert>
-      <FieldGroup>
+      <FieldGroup className="grid items-start gap-5 md:grid-cols-2">
         <Field>
           <FieldLabel htmlFor="evidenceType">Supporting evidence</FieldLabel>
           <Select
