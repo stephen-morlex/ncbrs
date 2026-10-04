@@ -26,7 +26,7 @@ public sealed class RefusedPage : FlowPage
                 Spacing = 6,
                 Children =
                 {
-                    new Label { Text = Language.Format(Strings.Refused_Item, record.Birth.Brn, record.Birth.ChildFullName, record.Birth.DateOfBirth), FontAttributes = FontAttributes.Bold },
+                    new Label { Text = Language.Format(Strings.Refused_Item, record.Birth.Brn, BirthNames.Child(record.Birth), record.Birth.DateOfBirth), FontAttributes = FontAttributes.Bold },
                     new Label
                     {
                         FontSize = 13, TextColor = Colors.DarkRed,
