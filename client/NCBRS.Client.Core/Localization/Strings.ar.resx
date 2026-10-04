@@ -893,4 +893,133 @@
   <data name="Printer_NotReached" xml:space="preserve">
     <value>تعذّر الوصول إلى الطابعة {0} ({1}). هل هي مشغّلة ومشحونة وقريبة؟</value>
   </data>
+  <data name="Register_ChildGivenNames" xml:space="preserve">
+    <value>الاسم الشخصي للطفل</value>
+  </data>
+  <data name="Register_ChildSurname" xml:space="preserve">
+    <value>اسم عائلة الطفل (عادةً اسم الأب)</value>
+  </data>
+  <data name="Register_PlaceOfBirth" xml:space="preserve">
+    <value>مكان الولادة</value>
+  </data>
+  <data name="Register_PlaceOfBirthWhere" xml:space="preserve">
+    <value>أين: المرفق أو القرية أو المكان</value>
+  </data>
+  <data name="PlaceOfBirthKind_ThisFacility" xml:space="preserve">
+    <value>في هذا المرفق</value>
+  </data>
+  <data name="PlaceOfBirthKind_OtherHealthFacility" xml:space="preserve">
+    <value>في مرفق صحي آخر</value>
+  </data>
+  <data name="PlaceOfBirthKind_Home" xml:space="preserve">
+    <value>في المنزل</value>
+  </data>
+  <data name="PlaceOfBirthKind_Elsewhere" xml:space="preserve">
+    <value>في مكان آخر (في الطريق أو في المجتمع)</value>
+  </data>
+  <data name="IdentityDocumentType_Passport" xml:space="preserve">
+    <value>جواز سفر</value>
+  </data>
+  <data name="IdentityDocumentType_BirthCertificate" xml:space="preserve">
+    <value>شهادة ميلاد</value>
+  </data>
+  <data name="IdentityDocumentType_DrivingLicence" xml:space="preserve">
+    <value>رخصة قيادة</value>
+  </data>
+  <data name="IdentityDocumentType_NationalId" xml:space="preserve">
+    <value>بطاقة هوية وطنية</value>
+  </data>
+  <data name="Register_MotherSection" xml:space="preserve">
+    <value>الأم</value>
+  </data>
+  <data name="Register_FatherSection" xml:space="preserve">
+    <value>الأب</value>
+  </data>
+  <data name="Register_MarriageSection" xml:space="preserve">
+    <value>زواج الوالدين</value>
+  </data>
+  <data name="Register_ProofSection" xml:space="preserve">
+    <value>إثبات العنوان</value>
+  </data>
+  <data name="Register_AddSection" xml:space="preserve">
+    <value>إضافة: {0}</value>
+  </data>
+  <data name="Register_HideSection" xml:space="preserve">
+    <value>إخفاء: {0}</value>
+  </data>
+  <data name="Register_SectionOptional" xml:space="preserve">
+    <value>اختياري. سجّل ما تستطيع الأسرة تقديمه.</value>
+  </data>
+  <data name="Register_GivenNames" xml:space="preserve">
+    <value>الاسم الشخصي</value>
+  </data>
+  <data name="Register_Surname" xml:space="preserve">
+    <value>اسم العائلة</value>
+  </data>
+  <data name="Register_MaidenSurname" xml:space="preserve">
+    <value>اسم العائلة قبل الزواج</value>
+  </data>
+  <data name="Register_DateOfBirthKnown" xml:space="preserve">
+    <value>تاريخ الميلاد معروف</value>
+  </data>
+  <data name="Register_ParentPlaceOfBirth" xml:space="preserve">
+    <value>مكان الميلاد</value>
+  </data>
+  <data name="Register_Occupation" xml:space="preserve">
+    <value>المهنة</value>
+  </data>
+  <data name="Register_Address" xml:space="preserve">
+    <value>العنوان (القرية، البوما، معلم قريب)</value>
+  </data>
+  <data name="Register_Document" xml:space="preserve">
+    <value>وثيقة الهوية</value>
+  </data>
+  <data name="Register_DocumentNone" xml:space="preserve">
+    <value>لم تُقدَّم وثيقة</value>
+  </data>
+  <data name="Register_DocumentNumber" xml:space="preserve">
+    <value>رقم الوثيقة (تبقى الوثيقة مع الأسرة)</value>
+  </data>
+  <data name="Register_MarriageDateKnown" xml:space="preserve">
+    <value>تاريخ الزواج معروف</value>
+  </data>
+  <data name="Register_MarriageCertificate" xml:space="preserve">
+    <value>رقم شهادة الزواج</value>
+  </data>
+  <data name="Register_MarriageNote" xml:space="preserve">
+    <value>مدني أو عرفي أو ديني.</value>
+  </data>
+  <data name="Register_ProofKind" xml:space="preserve">
+    <value>ما الذي قُدِّم (مثل فاتورة خدمات)</value>
+  </data>
+  <data name="Register_ProofReference" xml:space="preserve">
+    <value>رقمه المرجعي</value>
+  </data>
+  <data name="Field_childGivenNames" xml:space="preserve">
+    <value>الاسم الشخصي للطفل</value>
+  </data>
+  <data name="Field_childSurname" xml:space="preserve">
+    <value>اسم عائلة الطفل</value>
+  </data>
+  <data name="Field_placeOfBirthKind" xml:space="preserve">
+    <value>مكان الولادة</value>
+  </data>
+  <data name="Field_placeOfBirth" xml:space="preserve">
+    <value>مكان حدوث الولادة</value>
+  </data>
+  <data name="Field_mother" xml:space="preserve">
+    <value>بيانات الأم</value>
+  </data>
+  <data name="Field_father" xml:space="preserve">
+    <value>بيانات الأب</value>
+  </data>
+  <data name="Field_marriage" xml:space="preserve">
+    <value>زواج الوالدين</value>
+  </data>
+  <data name="Field_proofOfAddress" xml:space="preserve">
+    <value>إثبات العنوان</value>
+  </data>
+  <data name="Register_ChoosePlace" xml:space="preserve">
+    <value>اختر مكان حدوث الولادة.</value>
+  </data>
 </root>

@@ -72,11 +72,46 @@ public class LanguageTests
     [InlineData(typeof(EducationLevel))]
     [InlineData(typeof(NCBRS.Client.Network.CentralOutcome))]
     [InlineData(typeof(RevocationReason))]
+    [InlineData(typeof(PlaceOfBirthKind))]
+    [InlineData(typeof(IdentityDocumentType))]
     public void EveryCodedAnswerHasAName(Type codes)
     {
         var missing = Enum.GetNames(codes).Where(name => !English.ContainsKey($"{codes.Name}_{name}"));
 
         Assert.Empty(missing);
+    }
+
+    /// <summary>
+    /// Every field the tablet's copy of the registry's rules can name has a name
+    /// a registrar reads, so a refusal never shows a property path. Collected by
+    /// running the rules over a request that breaks each one.
+    /// </summary>
+    [Fact]
+    public void EveryFieldTheRulesNameHasAName()
+    {
+        var broken = new RegisterBirthRequest
+        {
+            ChildGivenNames = new string('x', 101),
+            ChildSurname = new string('x', 101),
+            ChildFullName = "Also given whole",
+            DateOfBirth = DateTime.UtcNow.Date.AddDays(1),
+            PlaceOfBirthKind = PlaceOfBirthKind.Home,
+            Mother = new ParentDetails { Occupation = "Teacher", DocumentNumber = "SS1" },
+            Father = new ParentDetails { GivenNames = "Deng", MaidenSurname = "Garang" },
+            MotherFullName = "Achol Deng",
+            Marriage = new MarriageDetails { CertificateNumber = new string('x', 51) },
+            ProofOfAddress = new ProofOfAddressDetails { Kind = new string('x', 101) },
+            Sex = (Sex)99,
+            Plurality = (BirthPlurality)99,
+        };
+
+        var unnamed = RegistrationRules.ShapeProblems(broken, DateTime.UtcNow)
+            .Select(problem => problem.Field.Split('.')[0])
+            .Distinct()
+            .Where(top => !English.ContainsKey($"Field_{top}"))
+            .ToList();
+
+        Assert.Empty(unnamed);
     }
 
     [Fact]

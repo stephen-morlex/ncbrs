@@ -72,14 +72,23 @@ public static class PrintedDocuments
         var lines = new List<PrintedLine>
         {
             new(draft.IsProvisional ? Strings.Print_ProvisionalNumber : Strings.Check_Brn, draft.Brn),
-            new(Strings.Register_ChildName, birth.ChildFullName),
+            // Composed from the parts in the fuller form, whose one-piece
+            // field is empty: read through BirthNames, never ChildFullName.
+            new(Strings.Register_ChildName, BirthNames.Child(birth)),
             new(Strings.Register_DateOfBirth, Language.Format(Strings.Check_Date, DateOnly.FromDateTime(UtcTime.AsUtc(birth.DateOfBirth)))),
             new(Strings.Register_Sex, Language.Name(birth.Sex)),
         };
 
-        if (!string.IsNullOrWhiteSpace(birth.MotherFullName))
+        if (birth.PlaceOfBirthKind is { } place)
         {
-            lines.Add(new(Strings.Register_Mother, birth.MotherFullName));
+            lines.Add(new(Strings.Register_PlaceOfBirth, string.IsNullOrWhiteSpace(birth.PlaceOfBirth)
+                ? Language.Name(place)
+                : $"{Language.Name(place)}: {birth.PlaceOfBirth}"));
+        }
+
+        if (BirthNames.Mother(birth) is { } mother)
+        {
+            lines.Add(new(Strings.Register_Mother, mother));
         }
 
         lines.Add(new(Strings.Print_Facility, facilityName));

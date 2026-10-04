@@ -103,6 +103,43 @@ public class PrintingTests
         Assert.DoesNotContain(slip.Lines, line => line.Label == Strings.Register_Mother);
     }
 
+    /// <summary>
+    /// The fuller form names people in parts and leaves the one-piece fields
+    /// empty. The slip used to print the one-piece child name, so a birth
+    /// registered in the fuller form got a slip naming nobody.
+    /// </summary>
+    [Fact]
+    public void AFullerFormSlipNamesTheChildAndMother_AndSaysWhereTheBirthWas()
+    {
+        var birth = new RegisterBirthRequest
+        {
+            ChildGivenNames = "Ayen Akol",
+            ChildSurname = "Deng",
+            DateOfBirth = new DateTime(2026, 9, 29, 0, 0, 0, DateTimeKind.Utc),
+            Sex = Sex.Female,
+            PlaceOfBirthKind = PlaceOfBirthKind.Home,
+            PlaceOfBirth = "Gumbo, near the borehole",
+            Mother = new ParentDetails { GivenNames = "Achol", Surname = "Deng", MaidenSurname = "Garang" },
+        };
+
+        var slip = PrintedDocuments.Slip(new RegistrationDraft("100105", false, false), birth, "Rejaf PHCU", null);
+
+        Assert.Contains(slip.Lines, line => line.Label == Strings.Register_ChildName && line.Value == "Ayen Akol Deng");
+        Assert.Contains(slip.Lines, line => line.Label == Strings.Register_Mother && line.Value == "Achol Deng");
+        Assert.Contains(slip.Lines, line => line.Label == Strings.Register_PlaceOfBirth
+                                            && line.Value == $"{Language.Name(PlaceOfBirthKind.Home)}: Gumbo, near the borehole");
+    }
+
+    [Fact]
+    public void ABirthAtTheFacilityNeedsNoDescription()
+    {
+        var birth = Birth() with { ChildFullName = null, ChildGivenNames = "Garang", ChildSurname = "Deng", PlaceOfBirthKind = PlaceOfBirthKind.ThisFacility };
+
+        var slip = PrintedDocuments.Slip(new RegistrationDraft("100106", false, false), birth, "Juba Teaching Hospital", null);
+
+        Assert.Contains(slip.Lines, line => line.Label == Strings.Register_PlaceOfBirth && line.Value == Language.Name(PlaceOfBirthKind.ThisFacility));
+    }
+
     [Theory]
     [InlineData("NCBRS-SLIP1.100104", true, "100104")]
     [InlineData("  NCBRS-SLIP1.PROV-TAB-1-0001 \n", true, "PROV-TAB-1-0001")]

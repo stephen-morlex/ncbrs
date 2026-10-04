@@ -27,15 +27,31 @@ public sealed class RegisterPage : FlowPage
     /// <summary>The last birth's slip, until the next one: a family may need it printed again before leaving.</summary>
     private NCBRS.Client.Printing.PrintedDocument? _lastSlip;
 
-    private readonly Entry _child = Field(Strings.Register_ChildName);
+    private readonly Entry _childGiven = Field(Strings.Register_ChildGivenNames);
+    private readonly Entry _childSurname = Field(Strings.Register_ChildSurname);
     private readonly DatePicker _born = new() { MaximumDate = DateTime.Today, Date = DateTime.Today, Format = "d MMM yyyy" };
+
+    // Required, and never defaulted: "this facility" is the commonest answer
+    // at a hospital and the wrong one at a village post, whose births are
+    // mostly at home.
+    private readonly Picker _placeKind = Choice<PlaceOfBirthKind>(Strings.Register_PlaceOfBirth, Enum.GetValues<PlaceOfBirthKind>());
+    private readonly Entry _placeWhere = Field(Strings.Register_PlaceOfBirthWhere);
     private readonly Picker _sex = Choice<Sex>(Strings.Register_Sex, [Sex.Female, Sex.Male, Sex.Undetermined]);
     private readonly Picker _plurality = Choice<BirthPlurality>(Strings.Register_Plurality, Enum.GetValues<BirthPlurality>());
     private readonly Entry _order = Field(Strings.Register_Order, keyboard: Keyboard.Numeric);
     private readonly Entry _weight = Field(Strings.Register_Weight, keyboard: Keyboard.Numeric);
     private readonly Entry _gestation = Field(Strings.Register_Gestation, keyboard: Keyboard.Numeric);
-    private readonly Entry _mother = Field(Strings.Register_Mother);
-    private readonly Entry _father = Field(Strings.Register_Father);
+
+    private readonly ParentFields _mother = new(Strings.Register_MotherSection, isMother: true);
+    private readonly ParentFields _father = new(Strings.Register_FatherSection, isMother: false);
+
+    private readonly OptionalDate _married = new(Strings.Register_MarriageDateKnown, DateTime.Today.AddYears(-2));
+    private readonly Entry _marriageCertificate = Field(Strings.Register_MarriageCertificate);
+    private readonly Collapsible _marriage;
+
+    private readonly Entry _proofKind = Field(Strings.Register_ProofKind);
+    private readonly Entry _proofReference = Field(Strings.Register_ProofReference);
+    private readonly Collapsible _proof;
 
     private readonly VerticalStackLayout _late;
     private readonly Label _lateNote = new() { FontSize = 13, TextColor = Colors.DarkRed };
@@ -77,6 +93,15 @@ public sealed class RegisterPage : FlowPage
         _order.IsVisible = false;
         _plurality.SelectedIndexChanged += (_, _) => _order.IsVisible = Picked<BirthPlurality>(_plurality) is not BirthPlurality.Singleton;
 
+        // "Where" belongs to a birth away from this facility, and only then.
+        _placeWhere.IsVisible = false;
+        _placeKind.SelectedIndexChanged += (_, _) =>
+            _placeWhere.IsVisible = Picked<PlaceOfBirthKind>(_placeKind) is { } kind && kind != PlaceOfBirthKind.ThisFacility;
+
+        _marriage = new Collapsible(Strings.Register_MarriageSection,
+            new Label { Text = Strings.Register_MarriageNote, FontSize = 12 }, _married.View, _marriageCertificate);
+        _proof = new Collapsible(Strings.Register_ProofSection, _proofKind, _proofReference);
+
         _late = Section(Strings.Register_Late, _lateNote, _evidence, _evidenceReference, _declarant, _relationship);
         _born.DateSelected += (_, _) => ShowLateSection();
         ShowLateSection();
@@ -105,8 +130,13 @@ public sealed class RegisterPage : FlowPage
                 Text = Strings.Register_FirstCut,
                 FontSize = 12, FontAttributes = FontAttributes.Italic,
             },
-            Caption(Strings.Register_Child), _child, Caption(Strings.Register_DateOfBirth), _born, _sex, _plurality, _order, _weight, _gestation,
-            Caption(Strings.Register_Parents), _mother, _father,
+            Caption(Strings.Register_Child), _childGiven, _childSurname, Caption(Strings.Register_DateOfBirth), _born,
+            _placeKind, _placeWhere, _sex, _plurality, _order, _weight, _gestation,
+            Caption(Strings.Register_Parents),
+            _mother.Section.Header, _mother.Section.Content,
+            _father.Section.Header, _father.Section.Content,
+            _marriage.Header, _marriage.Content,
+            _proof.Header, _proof.Content,
             _late,
             new HorizontalStackLayout { Spacing = 8, Children = { _withStatistics, new Label { Text = Strings.Register_AddStatistics, VerticalOptions = LayoutOptions.Center } } },
             _statistics,
@@ -192,15 +222,29 @@ public sealed class RegisterPage : FlowPage
     /// <summary>The form, filled from a birth as it was sent.</summary>
     private void Fill(RegisterBirthRequest birth)
     {
-        _child.Text = birth.ChildFullName;
+        // A birth from before the fuller form is put back in parts, split at
+        // its last word; the registrar sees the split and can change it.
+        var (given, surname) = birth.UsesStructuredNames
+            ? (birth.ChildGivenNames, birth.ChildSurname)
+            : ParentFields.Split(birth.ChildFullName);
+        _childGiven.Text = given;
+        _childSurname.Text = surname;
         _born.Date = birth.DateOfBirth.Date;
+        Choices.Select(_placeKind, birth.PlaceOfBirthKind);
+        _placeWhere.Text = birth.PlaceOfBirth;
         Select(_sex, birth.Sex);
         Select(_plurality, birth.Plurality);
         _order.Text = birth.BirthOrder?.ToString(CultureInfo.InvariantCulture);
         _weight.Text = birth.BirthWeightGrams?.ToString(CultureInfo.InvariantCulture);
         _gestation.Text = birth.GestationalAgeWeeks?.ToString(CultureInfo.InvariantCulture);
-        _mother.Text = birth.MotherFullName;
-        _father.Text = birth.FatherFullName;
+        _mother.Fill(birth.Mother, birth.MotherFullName);
+        _father.Fill(birth.Father, birth.FatherFullName);
+        _married.Set(birth.Marriage?.Date);
+        _marriageCertificate.Text = birth.Marriage?.CertificateNumber;
+        _marriage.Open(birth.Marriage is not null);
+        _proofKind.Text = birth.ProofOfAddress?.Kind;
+        _proofReference.Text = birth.ProofOfAddress?.Reference;
+        _proof.Open(birth.ProofOfAddress is not null);
         ShowLateSection();
 
         if (birth.LateRegistration is { } late)
@@ -224,8 +268,7 @@ public sealed class RegisterPage : FlowPage
         }
     }
 
-    private static void Select<T>(Picker picker, T value) where T : struct, Enum
-        => picker.SelectedIndex = picker.ItemsSource.Cast<Option<T>>().ToList().FindIndex(option => option.Value.Equals(value));
+    private static void Select<T>(Picker picker, T value) where T : struct, Enum => Choices.Select<T>(picker, value);
 
     /// <summary>Shown, and required, exactly when the registry will treat the birth as late.</summary>
     private void ShowLateSection()
@@ -245,6 +288,7 @@ public sealed class RegisterPage : FlowPage
         var problems = Read(capturedAt, out var birth)
             .Concat(RegistrationRules.Problems(birth, capturedAt, _windowDays)
                 .Where(problem => !(problem.Field == "sex" && Picked<Sex>(_sex) is null))
+                .Where(problem => !(problem.Field == "placeOfBirthKind" && Picked<PlaceOfBirthKind>(_placeKind) is null))
                 // The field in the registrar's language; the rule in the registry's
                 // words, which the tablet's copy is held to by parity tests.
                 .Select(problem => $"{Language.Field(problem.Field)}: {problem.Message}"))
@@ -259,7 +303,7 @@ public sealed class RegisterPage : FlowPage
         {
             if (!await DisplayAlertAsync(
                     Strings.Register_ConfirmCorrectionTitle,
-                    Language.Format(Strings.Register_ConfirmCorrectionBody, birth.ChildFullName, birth.DateOfBirth, _correcting.Birth.Brn),
+                    Language.Format(Strings.Register_ConfirmCorrectionBody, BirthNames.Child(birth), birth.DateOfBirth, _correcting.Birth.Brn),
                     Strings.Common_Save, Strings.Common_GoBack))
             {
                 return;
@@ -273,8 +317,8 @@ public sealed class RegisterPage : FlowPage
         // Confirmed before a number is used: once on a slip it cannot be taken back.
         if (!await DisplayAlertAsync(
                 Strings.Register_ConfirmTitle,
-                Language.Format(Strings.Register_ConfirmBody, birth.ChildFullName, Language.Name(birth.Sex), birth.DateOfBirth)
-                + (birth.MotherFullName is { Length: > 0 } mother ? Language.Format(Strings.Register_ConfirmMother, mother) : "")
+                Language.Format(Strings.Register_ConfirmBody, BirthNames.Child(birth), Language.Name(birth.Sex), birth.DateOfBirth)
+                + (BirthNames.Mother(birth) is { } mother ? Language.Format(Strings.Register_ConfirmMother, mother) : "")
                 + (birth.LateRegistration is not null ? Strings.Register_ConfirmLate : Strings.Register_ConfirmEnd),
                 Strings.Register_ConfirmYes, Strings.Common_GoBack))
         {
@@ -350,6 +394,14 @@ public sealed class RegisterPage : FlowPage
             sex = default;
         }
 
+        // Said by the form, in the registrar's language, whatever else is
+        // missing: the registry asks for the place only once the child is
+        // named in parts, so an empty form would otherwise not mention it.
+        if (Picked<PlaceOfBirthKind>(_placeKind) is null)
+        {
+            problems.Add(Strings.Register_ChoosePlace);
+        }
+
         var plurality = Picked<BirthPlurality>(_plurality) ?? BirthPlurality.Singleton;
 
         LateRegistrationDetails? late = null;
@@ -382,17 +434,34 @@ public sealed class RegisterPage : FlowPage
             };
         }
 
+        var placeKind = Picked<PlaceOfBirthKind>(_placeKind);
+        var marriage = _married.Value is null && Text(_marriageCertificate) is null
+            ? null
+            : new MarriageDetails { Date = _married.Value, CertificateNumber = Text(_marriageCertificate) };
+        var proof = Text(_proofKind) is null && Text(_proofReference) is null
+            ? null
+            : new ProofOfAddressDetails { Kind = Text(_proofKind), Reference = Text(_proofReference) };
+
         birth = new RegisterBirthRequest
         {
-            ChildFullName = Text(_child) ?? "",
+            // Always the fuller form: the child in parts, which is what makes
+            // the registry require the place of birth too. A blank name is
+            // sent blank, for the rules to say so in the registry's words.
+            ChildGivenNames = Text(_childGiven) ?? "",
+            ChildSurname = Text(_childSurname) ?? "",
             DateOfBirth = BornOn,
+            PlaceOfBirthKind = placeKind,
+            // A "where" typed before switching back to this facility is not sent.
+            PlaceOfBirth = placeKind is PlaceOfBirthKind.ThisFacility ? null : Text(_placeWhere),
             Sex = sex,
             Plurality = plurality,
             BirthOrder = plurality == BirthPlurality.Singleton ? null : Whole(_order, Strings.Register_WhatOrder),
             BirthWeightGrams = Whole(_weight, Strings.Register_WhatWeight),
             GestationalAgeWeeks = weeks,
-            MotherFullName = Text(_mother),
-            FatherFullName = Text(_father),
+            Mother = _mother.Read(),
+            Father = _father.Read(),
+            Marriage = marriage,
+            ProofOfAddress = proof,
             RegisteredAtUtc = capturedAt,
             LateRegistration = late,
             MaternalStatistics = statistics,
@@ -401,19 +470,30 @@ public sealed class RegisterPage : FlowPage
         return problems;
     }
 
+    private Entry[] Entries =>
+    [
+        _childGiven, _childSurname, _placeWhere, _order, _weight, _gestation, _marriageCertificate, _proofKind, _proofReference,
+        _evidenceReference, _declarant, _relationship, _priorLive, _prenatal,
+    ];
+
     private bool HasInput()
-        => new[] { _child, _order, _weight, _gestation, _mother, _father, _evidenceReference, _declarant, _relationship, _priorLive, _prenatal }
-               .Any(entry => !string.IsNullOrWhiteSpace(entry.Text))
-           || _sex.SelectedIndex >= 0 || _evidence.SelectedIndex >= 0 || _withStatistics.IsChecked;
+        => Entries.Any(entry => !string.IsNullOrWhiteSpace(entry.Text))
+           || _mother.HasInput || _father.HasInput || _married.HasInput
+           || _sex.SelectedIndex >= 0 || _placeKind.SelectedIndex >= 0 || _evidence.SelectedIndex >= 0 || _withStatistics.IsChecked;
 
     private void Clear()
     {
-        foreach (var entry in new[] { _child, _order, _weight, _gestation, _mother, _father, _evidenceReference, _declarant, _relationship, _priorLive, _prenatal })
+        foreach (var entry in Entries)
         {
             entry.Text = "";
         }
 
-        _sex.SelectedIndex = _evidence.SelectedIndex = _education.SelectedIndex = -1;
+        _mother.Clear();
+        _father.Clear();
+        _married.Set(null);
+        _marriage.Open(false);
+        _proof.Open(false);
+        _sex.SelectedIndex = _placeKind.SelectedIndex = _evidence.SelectedIndex = _education.SelectedIndex = -1;
         _plurality.SelectedIndex = 0;
         _born.Date = DateTime.Today;
         _withStatistics.IsChecked = false;
@@ -508,17 +588,9 @@ public sealed class RegisterPage : FlowPage
 
     // --- small helpers ------------------------------------------------------------------------------
 
-    private static Picker Choice<T>(string title, IEnumerable<T> values) where T : struct, Enum
-        => new() { Title = title, ItemsSource = values.Select(value => new Option<T>(value)).ToList(), SelectedIndex = -1 };
+    private static Picker Choice<T>(string title, IEnumerable<T> values) where T : struct, Enum => Choices.Choice(title, values);
 
-    private static T? Picked<T>(Picker picker) where T : struct, Enum
-        => picker.SelectedItem is Option<T> option ? option.Value : null;
-
-    /// <summary>A coded answer, shown in the registrar's language, carrying its code.</summary>
-    private sealed record Option<T>(T Value) where T : struct, Enum
-    {
-        public override string ToString() => Language.Name(Value);
-    }
+    private static T? Picked<T>(Picker picker) where T : struct, Enum => Choices.Picked<T>(picker);
 
     private static string? Text(Entry entry) => string.IsNullOrWhiteSpace(entry.Text) ? null : entry.Text.Trim();
 

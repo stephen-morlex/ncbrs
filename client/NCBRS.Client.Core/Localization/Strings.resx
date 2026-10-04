@@ -898,4 +898,133 @@ A permanent number is given when the tablet syncs.</value>
   <data name="Printer_NotReached" xml:space="preserve">
     <value>The printer {0} could not be reached ({1}). Is it switched on, charged and nearby?</value>
   </data>
+  <data name="Register_ChildGivenNames" xml:space="preserve">
+    <value>Child's given names</value>
+  </data>
+  <data name="Register_ChildSurname" xml:space="preserve">
+    <value>Child's surname (usually the father's name)</value>
+  </data>
+  <data name="Register_PlaceOfBirth" xml:space="preserve">
+    <value>Place of birth</value>
+  </data>
+  <data name="Register_PlaceOfBirthWhere" xml:space="preserve">
+    <value>Where: the facility, village or place</value>
+  </data>
+  <data name="PlaceOfBirthKind_ThisFacility" xml:space="preserve">
+    <value>At this facility</value>
+  </data>
+  <data name="PlaceOfBirthKind_OtherHealthFacility" xml:space="preserve">
+    <value>At another health facility</value>
+  </data>
+  <data name="PlaceOfBirthKind_Home" xml:space="preserve">
+    <value>At home</value>
+  </data>
+  <data name="PlaceOfBirthKind_Elsewhere" xml:space="preserve">
+    <value>Elsewhere (on the way, in the community)</value>
+  </data>
+  <data name="IdentityDocumentType_Passport" xml:space="preserve">
+    <value>Passport</value>
+  </data>
+  <data name="IdentityDocumentType_BirthCertificate" xml:space="preserve">
+    <value>Birth certificate</value>
+  </data>
+  <data name="IdentityDocumentType_DrivingLicence" xml:space="preserve">
+    <value>Driving licence</value>
+  </data>
+  <data name="IdentityDocumentType_NationalId" xml:space="preserve">
+    <value>National ID</value>
+  </data>
+  <data name="Register_MotherSection" xml:space="preserve">
+    <value>The mother</value>
+  </data>
+  <data name="Register_FatherSection" xml:space="preserve">
+    <value>The father</value>
+  </data>
+  <data name="Register_MarriageSection" xml:space="preserve">
+    <value>The parents' marriage</value>
+  </data>
+  <data name="Register_ProofSection" xml:space="preserve">
+    <value>Proof of address</value>
+  </data>
+  <data name="Register_AddSection" xml:space="preserve">
+    <value>Add: {0}</value>
+  </data>
+  <data name="Register_HideSection" xml:space="preserve">
+    <value>Hide: {0}</value>
+  </data>
+  <data name="Register_SectionOptional" xml:space="preserve">
+    <value>Optional. Record what the family can give.</value>
+  </data>
+  <data name="Register_GivenNames" xml:space="preserve">
+    <value>Given names</value>
+  </data>
+  <data name="Register_Surname" xml:space="preserve">
+    <value>Surname</value>
+  </data>
+  <data name="Register_MaidenSurname" xml:space="preserve">
+    <value>Maiden surname</value>
+  </data>
+  <data name="Register_DateOfBirthKnown" xml:space="preserve">
+    <value>Date of birth known</value>
+  </data>
+  <data name="Register_ParentPlaceOfBirth" xml:space="preserve">
+    <value>Place of birth</value>
+  </data>
+  <data name="Register_Occupation" xml:space="preserve">
+    <value>Job</value>
+  </data>
+  <data name="Register_Address" xml:space="preserve">
+    <value>Address (village, boma, landmark)</value>
+  </data>
+  <data name="Register_Document" xml:space="preserve">
+    <value>Identity document</value>
+  </data>
+  <data name="Register_DocumentNone" xml:space="preserve">
+    <value>None shown</value>
+  </data>
+  <data name="Register_DocumentNumber" xml:space="preserve">
+    <value>Document number (the document stays with the family)</value>
+  </data>
+  <data name="Register_MarriageDateKnown" xml:space="preserve">
+    <value>Date of marriage known</value>
+  </data>
+  <data name="Register_MarriageCertificate" xml:space="preserve">
+    <value>Marriage certificate number</value>
+  </data>
+  <data name="Register_MarriageNote" xml:space="preserve">
+    <value>Statutory, customary or religious.</value>
+  </data>
+  <data name="Register_ProofKind" xml:space="preserve">
+    <value>What was shown (for example a utility bill)</value>
+  </data>
+  <data name="Register_ProofReference" xml:space="preserve">
+    <value>Its reference</value>
+  </data>
+  <data name="Field_childGivenNames" xml:space="preserve">
+    <value>Child's given names</value>
+  </data>
+  <data name="Field_childSurname" xml:space="preserve">
+    <value>Child's surname</value>
+  </data>
+  <data name="Field_placeOfBirthKind" xml:space="preserve">
+    <value>Place of birth</value>
+  </data>
+  <data name="Field_placeOfBirth" xml:space="preserve">
+    <value>Where the birth happened</value>
+  </data>
+  <data name="Field_mother" xml:space="preserve">
+    <value>Mother's details</value>
+  </data>
+  <data name="Field_father" xml:space="preserve">
+    <value>Father's details</value>
+  </data>
+  <data name="Field_marriage" xml:space="preserve">
+    <value>The parents' marriage</value>
+  </data>
+  <data name="Field_proofOfAddress" xml:space="preserve">
+    <value>Proof of address</value>
+  </data>
+  <data name="Register_ChoosePlace" xml:space="preserve">
+    <value>Choose where the birth happened.</value>
+  </data>
 </root>
