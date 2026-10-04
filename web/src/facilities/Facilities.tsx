@@ -41,6 +41,7 @@ import { satisfies } from '@/auth/roles'
 import { useApiClient } from '@/api/useApi'
 import { PageHeader } from '@/shell/PageHeader'
 import { CreateFacilityDialog } from './CreateFacilityDialog'
+import { OfficeCodeDialog } from './OfficeCodeDialog'
 
 type Facility = components['schemas']['FacilityResponse']
 type BlockStatus = components['schemas']['BrnBlockStatus']
@@ -77,6 +78,7 @@ export function Facilities() {
   const [error, setError] = useState<NcbrsError | null>(null)
   const [loading, setLoading] = useState(true)
   const [granting, setGranting] = useState<Facility | null>(null)
+  const [coding, setCoding] = useState<Facility | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -139,9 +141,9 @@ export function Facilities() {
           <CircleCheck />
           <AlertTitle>{created.name} added</AlertTitle>
           <AlertDescription>
-            In county {created.countyCode}, with registration numbers{' '}
-            {created.brnBlockStart.toLocaleString()}–{created.brnBlockEnd.toLocaleString()}. Its
-            devices draw blocks from this range.
+            {created.officeCode
+              ? `In county ${created.countyCode}, as office ${created.officeCode}: its registration numbers read SS-${created.officeCode}-${new Date().getFullYear()}-000001 onwards.`
+              : `In county ${created.countyCode}, with registration numbers ${created.brnBlockStart.toLocaleString()}–${created.brnBlockEnd.toLocaleString()} until it is given an office code.`}
           </AlertDescription>
         </Alert>
       ) : null}
@@ -190,6 +192,7 @@ export function Facilities() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Facility</TableHead>
+                    <TableHead>Office</TableHead>
                     <TableHead>Tier</TableHead>
                     <TableHead>Connectivity</TableHead>
                     <TableHead className="text-right">Numbers left</TableHead>
@@ -201,6 +204,19 @@ export function Facilities() {
                   {ordered.map((facility) => (
                     <TableRow key={facility.facilityId}>
                       <TableCell className="font-medium">{facility.name}</TableCell>
+                      <TableCell>
+                        {/* Shown, never edited in place: a code is given once
+                            and then carried by every number the facility issues. */}
+                        {facility.officeCode ? (
+                          <span className="font-mono">{facility.officeCode}</span>
+                        ) : canCreate ? (
+                          <Button variant="outline" size="sm" onClick={() => setCoding(facility)}>
+                            Give a code
+                          </Button>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">not yet given</span>
+                        )}
+                      </TableCell>
                       <TableCell>{spaced(facility.tier)}</TableCell>
                       <TableCell>{spaced(facility.connectivityProfile)}</TableCell>
                       <TableCell className="text-right font-mono">
@@ -232,6 +248,17 @@ export function Facilities() {
         </Card>
       ) : null}
 
+      {coding ? (
+        <OfficeCodeDialog
+          facility={coding}
+          onClose={() => setCoding(null)}
+          onSet={() => {
+            setCoding(null)
+            void load()
+          }}
+        />
+      ) : null}
+
       {granting ? (
         <GrantBlockDialog
           facility={granting}
@@ -249,7 +276,7 @@ export function Facilities() {
 type GrantPhase =
   | { kind: 'form' }
   | { kind: 'submitting' }
-  | { kind: 'granted'; start: number; end: number }
+  | { kind: 'granted'; first: string; last: string }
   | { kind: 'error'; error: NcbrsError }
 
 /**
@@ -294,7 +321,13 @@ function GrantBlockDialog({
       )
 
       if (response.ok && data?.data) {
-        setPhase({ kind: 'granted', start: data.data.blockStart, end: data.data.blockEnd })
+        // As the registry writes them: composed under the facility's office
+        // code, or the numbers themselves for a facility without one.
+        setPhase({
+          kind: 'granted',
+          first: data.data.firstBrn ?? data.data.blockStart.toLocaleString(),
+          last: data.data.lastBrn ?? data.data.blockEnd.toLocaleString(),
+        })
         return
       }
 
@@ -334,8 +367,8 @@ function GrantBlockDialog({
             <Alert>
               <AlertTitle>Block granted</AlertTitle>
               <AlertDescription>
-                Numbers {phase.start.toLocaleString()}–{phase.end.toLocaleString()} are now this
-                facility's to issue.
+                Numbers <span className="font-mono">{phase.first}</span> to{' '}
+                <span className="font-mono">{phase.last}</span> are now this facility's to issue.
               </AlertDescription>
             </Alert>
           ) : (

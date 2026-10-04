@@ -59,7 +59,8 @@ public sealed class DeviceSession : IDisposable
         var signer = DeviceSigner.FromPrivateKey(key);
         var allocator = new DeviceBrnAllocator(
             identity.DeviceId, brn.BlockStart, brn.BlockEnd, brn.NextAvailable,
-            brn.ProvisionalSequence, brn.PendingBlockStart, brn.PendingBlockEnd);
+            brn.ProvisionalSequence, brn.PendingBlockStart, brn.PendingBlockEnd,
+            brn.OfficeCode, brn.Year, brn.PendingOfficeCode, brn.PendingYear);
         var outbox = new SyncOutbox(
             identity.DeviceId, identity.FacilityId, state.Outbox,
             state.Refused.ToDictionary(entry => entry.Key, entry => (IReadOnlyList<NCBRS.Models.ApiError>)entry.Value));
@@ -87,7 +88,8 @@ public sealed class DeviceSession : IDisposable
         state.DevicePrivateKeyPem = Signer.ExportPrivateKeyPem();
         state.Brn = new BrnState(
             _brn.BlockStart, _brn.BlockEnd, _brn.NextAvailable, _brn.ProvisionalSequence,
-            _brn.PendingBlockStart, _brn.PendingBlockEnd);
+            _brn.PendingBlockStart, _brn.PendingBlockEnd,
+            _brn.OfficeCode, _brn.Year, _brn.PendingOfficeCode, _brn.PendingYear);
         state.Outbox = [.. _outbox.Pending];
         state.Refused = _outbox.Refused.ToDictionary(entry => entry.Key, entry => entry.Value.ToList());
         state.InFlight = Sync.InFlight;

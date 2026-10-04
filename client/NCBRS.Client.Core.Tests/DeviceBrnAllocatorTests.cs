@@ -145,4 +145,70 @@ public class DeviceBrnAllocatorTests
         allocator.GrantNextBlock(300, 400);
         Assert.Throws<InvalidOperationException>(() => allocator.GrantNextBlock(500, 600)); // already staged
     }
+
+    // --- composed numbers ---------------------------------------------------------------------------
+
+    /// <summary>A block granted under an office code is running numbers, handed out composed.</summary>
+    [Fact]
+    public void AComposedBlockHandsOutComposedNumbers()
+    {
+        var allocator = new DeviceBrnAllocator("TABLET-1", 1, 3, officeCode: "JTH", year: 2026);
+
+        Assert.Equal(new BrnAllocation(BrnFormat.Compose("JTH", 2026, 1), false), allocator.Allocate());
+        Assert.Equal(BrnFormat.Compose("JTH", 2026, 2), allocator.Allocate().Value);
+        Assert.Equal(1, allocator.Remaining);
+    }
+
+    /// <summary>
+    /// Running numbers start again at 1 each year, so a block granted for the
+    /// new year starts below the current one's end. It is not an overlap: the
+    /// numbers carry different years.
+    /// </summary>
+    [Fact]
+    public void ANewYearsBlockIsStaged_AndRolledOverTo()
+    {
+        var allocator = new DeviceBrnAllocator("TABLET-1", 990, 991, officeCode: "JTH", year: 2026);
+
+        allocator.GrantNextBlock(1, 5, "JTH", 2027);
+
+        Assert.Equal(BrnFormat.Compose("JTH", 2026, 990), allocator.Allocate().Value);
+        Assert.Equal(BrnFormat.Compose("JTH", 2026, 991), allocator.Allocate().Value);
+        Assert.Equal(BrnFormat.Compose("JTH", 2027, 1), allocator.Allocate().Value);
+        Assert.Equal(("JTH", 2027), (allocator.OfficeCode, allocator.Year));
+    }
+
+    /// <summary>A block granted in December carries on after New Year: its numbers keep the year it was granted.</summary>
+    [Fact]
+    public void ABlockKeepsTheYearItWasGrantedIn()
+    {
+        var allocator = new DeviceBrnAllocator("TABLET-1", 41, 50, officeCode: "JTH", year: 2026);
+
+        Assert.Equal(BrnFormat.Compose("JTH", 2026, 41), allocator.Allocate().Value);
+    }
+
+    [Fact]
+    public void WithinOneYearAnOverlappingBlockIsStillRefused()
+    {
+        var allocator = new DeviceBrnAllocator("TABLET-1", 1, 200, officeCode: "JTH", year: 2026);
+
+        Assert.Throws<ArgumentException>(() => allocator.GrantNextBlock(150, 300, "JTH", 2026));
+    }
+
+    /// <summary>The day a facility is given its office code, a tablet holding a numeric block moves to composed numbers.</summary>
+    [Fact]
+    public void ANumericBlockRollsOverToAComposedOne()
+    {
+        var allocator = new DeviceBrnAllocator("TABLET-1", 100_000, 100_000);
+        allocator.GrantNextBlock(1, 10, "JTH", 2026);
+
+        Assert.Equal("100000", allocator.Allocate().Value);
+        Assert.Equal(BrnFormat.Compose("JTH", 2026, 1), allocator.Allocate().Value);
+    }
+
+    [Fact]
+    public void AnOfficeCodeComesWithAYear()
+    {
+        Assert.Throws<ArgumentException>(() => new DeviceBrnAllocator("TABLET-1", 1, 5, officeCode: "JTH"));
+        Assert.Throws<ArgumentException>(() => new DeviceBrnAllocator("TABLET-1", 1, 5, officeCode: "jth", year: 2026));
+    }
 }

@@ -31,17 +31,22 @@ public static class DevelopmentDataSeeder
     /// 100 000-wide BRN block (blocks never overlap). Connectivity follows the
     /// tier — hospitals on the grid, village posts offline-first — as it does in
     /// the field.
+    ///
+    /// Last, the office code its composed BRNs carry. Makuach is deliberately
+    /// left without one, so a development registry shows both: composed
+    /// numbers, and a facility still issuing from its legacy numeric range
+    /// while it waits for the Ministry to give it a code.
     /// </summary>
     private static readonly FleetMember[] Fleet =
     [
-        new(Fac(1), "Juba Teaching Hospital",             FacilityTier.Hospital,         ConnectivityProfile.AlwaysOn,     "SS010105", "SS0101", 100_000),
-        new(Fac(2), "Munuki Primary Health Care Centre",  FacilityTier.Clinic,           ConnectivityProfile.Intermittent, "SS010111", "SS0101", 200_000),
-        new(Fac(3), "Terekeka County Hospital",           FacilityTier.Hospital,         ConnectivityProfile.Intermittent, "SS010507", "SS0105", 300_000),
-        new(Fac(4), "Tali Primary Health Care Unit",      FacilityTier.VillageHealthPost, ConnectivityProfile.OfflineFirst, "SS010506", "SS0105", 400_000),
-        new(Fac(5), "Torit State Hospital",               FacilityTier.Hospital,         ConnectivityProfile.AlwaysOn,     "SS020807", "SS0208", 500_000),
-        new(Fac(6), "Imurok Primary Health Care Unit",    FacilityTier.VillageHealthPost, ConnectivityProfile.OfflineFirst, "SS020805", "SS0208", 600_000),
-        new(Fac(7), "Bor Civil Hospital",                 FacilityTier.Hospital,         ConnectivityProfile.Intermittent, "SS030303", "SS0303", 700_000),
-        new(Fac(8), "Makuach Primary Health Care Unit",   FacilityTier.VillageHealthPost, ConnectivityProfile.OfflineFirst, "SS030306", "SS0303", 800_000),
+        new(Fac(1), "Juba Teaching Hospital",             FacilityTier.Hospital,         ConnectivityProfile.AlwaysOn,     "SS010105", "SS0101", 100_000, "JTH"),
+        new(Fac(2), "Munuki Primary Health Care Centre",  FacilityTier.Clinic,           ConnectivityProfile.Intermittent, "SS010111", "SS0101", 200_000, "MPHCC"),
+        new(Fac(3), "Terekeka County Hospital",           FacilityTier.Hospital,         ConnectivityProfile.Intermittent, "SS010507", "SS0105", 300_000, "TKCH"),
+        new(Fac(4), "Tali Primary Health Care Unit",      FacilityTier.VillageHealthPost, ConnectivityProfile.OfflineFirst, "SS010506", "SS0105", 400_000, "TALI"),
+        new(Fac(5), "Torit State Hospital",               FacilityTier.Hospital,         ConnectivityProfile.AlwaysOn,     "SS020807", "SS0208", 500_000, "TSH"),
+        new(Fac(6), "Imurok Primary Health Care Unit",    FacilityTier.VillageHealthPost, ConnectivityProfile.OfflineFirst, "SS020805", "SS0208", 600_000, "IMRK"),
+        new(Fac(7), "Bor Civil Hospital",                 FacilityTier.Hospital,         ConnectivityProfile.Intermittent, "SS030303", "SS0303", 700_000, "BCH"),
+        new(Fac(8), "Makuach Primary Health Care Unit",   FacilityTier.VillageHealthPost, ConnectivityProfile.OfflineFirst, "SS030306", "SS0303", 800_000, null),
     ];
 
     /// <summary>
@@ -84,8 +89,12 @@ public static class DevelopmentDataSeeder
 
         foreach (var member in Fleet)
         {
-            if (await db.Facilities.AnyAsync(f => f.FacilityId == member.FacilityId, cancellationToken))
+            var existing = await db.Facilities.FindAsync([member.FacilityId], cancellationToken);
+            if (existing is not null)
             {
+                // A code is set once and never changed, but a registry seeded
+                // before codes existed has none to change: give it one.
+                existing.OfficeCode ??= member.OfficeCode;
                 continue;
             }
 
@@ -100,6 +109,7 @@ public static class DevelopmentDataSeeder
                 BrnBlockStart = member.BlockStart,
                 BrnBlockEnd = member.BlockStart + 99_999,
                 BrnBlockNextAvailable = member.BlockStart,
+                OfficeCode = member.OfficeCode,
             });
         }
 
@@ -184,5 +194,5 @@ public static class DevelopmentDataSeeder
 
     private sealed record FleetMember(
         Guid FacilityId, string Name, FacilityTier Tier, ConnectivityProfile Connectivity,
-        string PayamCode, string CountyCode, int BlockStart);
+        string PayamCode, string CountyCode, int BlockStart, string? OfficeCode);
 }

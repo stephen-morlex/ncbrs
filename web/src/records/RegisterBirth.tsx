@@ -299,7 +299,16 @@ export function RegisterBirth() {
       return null
     }
 
-    const start = data?.data?.blockStart
+    // The number as the registry writes it. For a facility with an office
+    // code that is composed (SS-JTH-2026-000123-K), and composing it here
+    // would be a second copy of the format to drift from the registry's.
+    // blockStart is the number itself only from a registry older than that.
+    const granted = data?.data
+    if (granted?.firstBrn) {
+      return granted.firstBrn
+    }
+
+    const start = granted?.blockStart
 
     return start === undefined || start === null ? null : String(start)
   }

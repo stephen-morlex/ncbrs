@@ -96,8 +96,15 @@ public static class BrnBlockHealth
     /// off by one here would report a facility as having a number it cannot
     /// actually give out.
     /// </summary>
-    public static long Remaining(Facility facility)
+    public static long Remaining(Facility facility, long? nextRunningThisYear = null)
     {
+        // A facility with an office code issues this year's running numbers,
+        // whatever is left of the numeric range it was first given.
+        if (facility.OfficeCode is not null)
+        {
+            return BrnFormat.MaxRunning - (nextRunningThisYear ?? 1) + 1;
+        }
+
         var remaining = facility.BrnBlockEnd - facility.BrnBlockNextAvailable + 1;
 
         // A facility that has never been granted a block has all three fields
@@ -111,9 +118,9 @@ public static class BrnBlockHealth
         return remaining > 0 ? remaining : 0;
     }
 
-    public static BrnBlockStatus StatusOf(Facility facility, BrnBlockOptions options)
+    public static BrnBlockStatus StatusOf(Facility facility, BrnBlockOptions options, long? nextRunningThisYear = null)
     {
-        var remaining = Remaining(facility);
+        var remaining = Remaining(facility, nextRunningThisYear);
 
         if (remaining <= options.ExhaustedRemaining)
         {

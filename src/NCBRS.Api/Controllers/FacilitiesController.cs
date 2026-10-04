@@ -109,7 +109,8 @@ public class FacilitiesController(
             page.EffectiveLimit,
             facility => new PageCursor(facility.Name, facility.FacilityId));
 
-        var items = result.Items.Select(ToResponse).ToList();
+        var running = await NextRunningThisYearAsync(result.Items, HttpContext.RequestAborted);
+        var items = result.Items.Select(facility => ToResponse(facility, running)).ToList();
 
         // Filtered here rather than in SQL because the threshold depends on
         // the facility's connectivity profile, which makes it a comparison
@@ -164,7 +165,7 @@ public class FacilitiesController(
                 "No facility with that id in your district."));
         }
 
-        return ToResponse(facility);
+        return ToResponse(facility, await NextRunningThisYearAsync([facility], HttpContext.RequestAborted));
     }
 
     /// <summary>
@@ -197,14 +198,79 @@ public class FacilitiesController(
         return outcome.Result switch
         {
             FacilityOnboardingResult.Created => CreatedAtAction(
-                nameof(Get), new { facilityId = outcome.Facility!.FacilityId }, ToResponse(outcome.Facility)),
+                nameof(Get), new { facilityId = outcome.Facility!.FacilityId },
+                ToResponse(outcome.Facility, new Dictionary<Guid, long>())),
 
             FacilityOnboardingResult.NameTaken => ApiErrors.Result(ApiErrors.Single(
                 StatusCodes.Status409Conflict, "Name already used in this county.", "data.name", outcome.Detail!)),
 
+            FacilityOnboardingResult.OfficeCodeTaken => ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status409Conflict, "Office code already used.", "data.officeCode", outcome.Detail!)),
+
             _ => ApiErrors.Result(ApiErrors.Single(
                 StatusCodes.Status400BadRequest, "Not a place for a facility.", "data.administrativeAreaId", outcome.Detail!)),
         };
+    }
+
+    /// <summary>
+    /// Gives a facility its office code (Ministry only, like adding one).
+    /// Once: every BRN it issues afterwards carries the code, so a facility
+    /// that has one keeps it, and the request is refused rather than quietly
+    /// changing what numbers already in families' hands say.
+    /// </summary>
+    [HttpPut("{facilityId:guid}/office-code", Name = "SetFacilityOfficeCode")]
+    [Authorize(Policy = NcbrsRoles.CanManageFacilities)]
+    [ProducesResponseType(typeof(FacilityResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<FacilityResponse>> SetOfficeCode(
+        Guid facilityId,
+        ApiRequest<SetOfficeCodeRequest> envelope,
+        [FromServices] FacilityOnboardingService onboarding)
+    {
+        var caller = await currentRegistrar.GetAsync(HttpContext.RequestAborted);
+
+        if (caller is null)
+        {
+            return NotProvisioned();
+        }
+
+        var outcome = await onboarding.SetOfficeCodeAsync(
+            facilityId, envelope.Data.OfficeCode, caller, TransactionContext.Get(HttpContext)?.TransactionId, HttpContext.RequestAborted);
+
+        return outcome.Result switch
+        {
+            FacilityOnboardingResult.Created => ToResponse(
+                outcome.Facility!, await NextRunningThisYearAsync([outcome.Facility!], HttpContext.RequestAborted)),
+
+            FacilityOnboardingResult.NotFound => ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status404NotFound, "No such facility.", "facilityId", outcome.Detail!)),
+
+            FacilityOnboardingResult.AlreadyHasOfficeCode => ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status409Conflict, "This facility already has an office code.", "data.officeCode", outcome.Detail!)),
+
+            _ => ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status409Conflict, "Office code already used.", "data.officeCode", outcome.Detail!)),
+        };
+    }
+
+    /// <summary>This year's next running number for each facility with an office code.</summary>
+    private async Task<Dictionary<Guid, long>> NextRunningThisYearAsync(
+        IReadOnlyCollection<Facility> facilities, CancellationToken cancellationToken)
+    {
+        var coded = facilities.Where(facility => facility.OfficeCode is not null).Select(facility => facility.FacilityId).ToList();
+        if (coded.Count == 0)
+        {
+            return [];
+        }
+
+        var year = DateTime.UtcNow.Year;
+        return await db.FacilityBrnSequences.AsNoTracking()
+            .Where(sequence => sequence.Year == year && coded.Contains(sequence.FacilityId))
+            .ToDictionaryAsync(sequence => sequence.FacilityId, sequence => sequence.NextAvailable, cancellationToken);
     }
 
     private IQueryable<Facility> InScope(SearchScope scope)
@@ -229,7 +295,7 @@ public class FacilitiesController(
     /// range the facility was given, and that is a question only the numbers
     /// answer.
     /// </summary>
-    private FacilityResponse ToResponse(Facility facility) => new(
+    private FacilityResponse ToResponse(Facility facility, IReadOnlyDictionary<Guid, long> nextRunning) => new(
         facility.FacilityId,
         facility.Name,
         facility.Tier,
@@ -238,9 +304,10 @@ public class FacilitiesController(
         facility.BrnBlockStart,
         facility.BrnBlockEnd,
         facility.BrnBlockNextAvailable,
-        BrnBlockHealth.Remaining(facility),
-        BrnBlockHealth.StatusOf(facility, blockOptions),
-        blockOptions.WarnBelow(facility.ConnectivityProfile));
+        BrnBlockHealth.Remaining(facility, nextRunning.GetValueOrDefault(facility.FacilityId, 1)),
+        BrnBlockHealth.StatusOf(facility, blockOptions, nextRunning.GetValueOrDefault(facility.FacilityId, 1)),
+        blockOptions.WarnBelow(facility.ConnectivityProfile),
+        facility.OfficeCode);
 }
 
 public record FacilityResponse(
@@ -263,4 +330,10 @@ public record FacilityResponse(
     /// can see *why* a post with 400 numbers left is flagged while a hospital
     /// with 60 is not. A status without its threshold looks arbitrary.
     /// </summary>
-    int BrnWarnBelow);
+    int BrnWarnBelow,
+
+    /// <summary>
+    /// The office its composed BRNs carry, or null while it issues numbers
+    /// from its legacy numeric range. Set once by the Ministry, never changed.
+    /// </summary>
+    string? OfficeCode = null);

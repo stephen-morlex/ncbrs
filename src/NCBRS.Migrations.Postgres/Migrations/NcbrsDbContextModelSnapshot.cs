@@ -605,6 +605,10 @@ namespace NCBRS.Migrations.Postgres
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("OfficeCode")
+                        .HasMaxLength(6)
+                        .HasColumnType("character varying(6)");
+
                     b.Property<string>("Tier")
                         .IsRequired()
                         .HasColumnType("text");
@@ -617,7 +621,27 @@ namespace NCBRS.Migrations.Postgres
                         .IsUnique()
                         .HasFilter("\"BrnBlockEnd\" > 0");
 
+                    b.HasIndex("OfficeCode")
+                        .IsUnique();
+
                     b.ToTable("Facilities");
+                });
+
+            modelBuilder.Entity("NCBRS.Models.FacilityBrnSequence", b =>
+                {
+                    b.Property<Guid>("FacilityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("NextAvailable")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("FacilityId", "Year");
+
+                    b.ToTable("FacilityBrnSequences");
                 });
 
             modelBuilder.Entity("NCBRS.Models.IdempotencyRecord", b =>
@@ -1291,6 +1315,15 @@ namespace NCBRS.Migrations.Postgres
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("AdministrativeArea");
+                });
+
+            modelBuilder.Entity("NCBRS.Models.FacilityBrnSequence", b =>
+                {
+                    b.HasOne("NCBRS.Models.Facility", null)
+                        .WithMany()
+                        .HasForeignKey("FacilityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("NCBRS.Models.LateRegistration", b =>

@@ -86,6 +86,27 @@ public sealed class DeviceSessionTests : IDisposable
         session.Dispose();
     }
 
+    /// <summary>
+    /// A composed block's office and year survive a restart with its cursor.
+    /// Lost, the tablet would carry on handing out the running numbers bare,
+    /// as numbers the registry never granted.
+    /// </summary>
+    [Fact]
+    public async Task AComposedBlockSurvivesARestart()
+    {
+        var state = Provisioned(blockStart: 1, blockEnd: 10);
+        state.Brn = new BrnState(1, 10, 1, 0, null, null, "JTH", 2026);
+        var session = DeviceSession.Restore(state);
+        var first = session.Facility.RegisterBirth(Birth()).Brn;
+
+        (session, state) = await RestartAsync(session, state);
+
+        Assert.Equal(BrnFormat.Compose("JTH", 2026, 1), first);
+        Assert.Equal(new BrnState(1, 10, 2, 0, null, null, "JTH", 2026), state.Brn);
+        Assert.Equal(BrnFormat.Compose("JTH", 2026, 2), session.Facility.RegisterBirth(Birth()).Brn);
+        session.Dispose();
+    }
+
     [Fact]
     public async Task TheDeviceKeySurvivesSoTheTabletStaysTheEnrolledDevice()
     {

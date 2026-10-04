@@ -258,7 +258,7 @@ public sealed class DeviceHost(ISignInBrowser browser, IDocumentPrinter? printer
                 identity.FacilityId, identity.DeviceId, DeviceSigner.FromPrivateKey(State.DevicePrivateKeyPem!));
             if (block is { Succeeded: true, Value: { } range })
             {
-                State.Brn = new BrnState(range.BlockStart, range.BlockEnd, range.BlockStart, 0, null, null);
+                State.Brn = new BrnState(range.BlockStart, range.BlockEnd, range.BlockStart, 0, null, null, range.OfficeCode, range.Year);
                 await SaveAsync();
                 RestoreSession();
             }

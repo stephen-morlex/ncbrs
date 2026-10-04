@@ -18,7 +18,8 @@ test('a registrar registers a birth and it is on the register', async ({ browser
 
   const brn = await registerBirth(page, name)
 
-  expect(brn).toMatch(/^\d+$/)
+  // Juba Teaching Hospital is office JTH in the seed: its numbers are composed.
+  expect(brn).toMatch(/^SS-JTH-\d{4}-\d{6}-[0-9A-Z]$/)
   await expect(page.getByText(name, { exact: true })).toBeVisible()
 })
 

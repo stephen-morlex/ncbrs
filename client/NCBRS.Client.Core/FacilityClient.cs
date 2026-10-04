@@ -113,7 +113,8 @@ public sealed class FacilityClient
     /// over to when the current one runs dry, so registration keeps issuing real
     /// BRNs instead of falling back to provisional identifiers.
     /// </summary>
-    public void GrantNextBlock(long blockStart, long blockEnd) => _brn.GrantNextBlock(blockStart, blockEnd);
+    public void GrantNextBlock(long blockStart, long blockEnd, string? officeCode = null, int? year = null)
+        => _brn.GrantNextBlock(blockStart, blockEnd, officeCode, year);
 
     /// <summary>
     /// Register a birth offline: draw its number, stamp the facility and device
