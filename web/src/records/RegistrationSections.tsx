@@ -130,7 +130,7 @@ function Section({
           </CollapsibleTrigger>
         </div>
         <CollapsibleContent>
-          <FieldGroup>{children}</FieldGroup>
+          <FieldGroup className="grid items-start gap-5 md:grid-cols-2">{children}</FieldGroup>
         </CollapsibleContent>
       </FieldSet>
     </Collapsible>
@@ -171,7 +171,7 @@ export function ParentSection({
       </Field>
 
       {who === 'mother' ? (
-        <Field>
+        <Field className="md:col-span-2">
           <FieldLabel htmlFor="mother.maidenSurname">Mother’s maiden surname</FieldLabel>
           <Input id="mother.maidenSurname" {...form.register('mother.maidenSurname')} autoComplete="off" />
           <FieldError errors={[errors?.maidenSurname]} />
