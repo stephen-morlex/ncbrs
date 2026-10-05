@@ -29,9 +29,12 @@ test('an identity correction waits for a second registrar, then takes effect', a
   const corrected = uniqueChildName()
   const brn = await registerBirth(registrar, original)
 
-  // The registrar asks for the child's name to be corrected.
+  // The registrar asks for the child's name to be corrected. It was
+  // registered in parts, so it is corrected in parts: both names share the
+  // given name, so the surname is the one change, and the registry recomposes
+  // the full name from it.
   await registrar.goto(`/records/correct?brn=${brn}`)
-  await registrar.getByLabel('Child’s full name').fill(corrected)
+  await registrar.getByLabel('Child’s surname').fill(corrected.split(' ').slice(1).join(' '))
   await registrar.getByLabel('Why is this being corrected?').fill('Name misspelled on the original form.')
   await registrar.getByRole('button', { name: 'Submit the correction' }).click()
 
