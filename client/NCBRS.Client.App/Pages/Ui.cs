@@ -202,11 +202,16 @@ public static class Ui
         Text = text, FontSize = 14, FontFamily = SemiBold, TextColor = Text,
     };
 
-    /// <summary>A registration number, as it is written: left to right whatever the language.</summary>
+    /// <summary>
+    /// A registration number, as it is written: left to right whatever the
+    /// language, but on the side the page reads from, so in Arabic it lines
+    /// up with the words around it rather than sitting at the far edge.
+    /// </summary>
     public static Label Number(string text, double size = 15, Color? color = null) => new()
     {
         Text = text, FontSize = size, FontFamily = Mono, TextColor = color ?? Text,
         FlowDirection = FlowDirection.LeftToRight,
+        HorizontalTextAlignment = Language.IsArabic ? TextAlignment.End : TextAlignment.Start,
     };
 
     // --- buttons -----------------------------------------------------------------------------------
