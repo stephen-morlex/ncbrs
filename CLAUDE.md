@@ -907,6 +907,46 @@ review).**
     corrupting every other non-ASCII character in it. Edit such files with the
     Edit tool.
 
+**The tablet's layout: a home screen, a bottom bar, a status strip (2026-10-05).**
+Before this, every task was a button stacked under the registration form.
+- **After unlock, every screen sits in one frame** (`FlowPage.BuildInside`):
+  - a green top bar with the title and the language switch;
+  - the content;
+  - a status strip: the facility, births waiting and numbers left;
+  - a bottom bar: Home, Register, Sync, Check, More.
+- **Home** (`HomePage`) is the landing screen. It shows:
+  - what needs attention, as tappable notices: refused births, running out of
+    numbers, a USB export not yet confirmed;
+  - two figures;
+  - a tile per task.
+- **Sync** (`SyncPage`) holds sending births and the USB export.
+- **More** (`MorePage`) lists every task, plus the language and the lock.
+- **Before unlock, pages use `Build`:** a branded header and a footer
+  (Ministry · version), with no bottom bar, because nothing behind the unlock
+  is reachable. Check, Print, Printer and Refused open from both sides, so
+  they use `BuildFor`, which picks the frame from `host.UnlockedAs`.
+- **The design kit is `Pages/Ui.cs`** (palette, buttons, cards, tiles,
+  notices). The implicit styles in `Resources/Styles` mirror it, so a control
+  built plainly still matches. Use Ui rather than styling a control inline.
+- **Accessibility rules:**
+  - touch targets are at least 52 dp;
+  - text is 17 sp in inputs;
+  - colours pass WCAG AA;
+  - a state is said in words, never by colour alone.
+- **A field's label sits above it** (`Ui.Labeled`), not as a placeholder.
+  A placeholder disappears as soon as someone types, which leaves a
+  half-filled form unreadable.
+- **Icons are Material path data drawn as shapes**, not an icon font. A font
+  would have to be downloaded and shipped. Paths mirror correctly in Arabic.
+- **Leaving a half-filled registration asks first** (`CanLeaveAsync`). The
+  bottom bar is one tap from losing a birth typed in a hurry.
+- **Traps found building it:**
+  - A view can't have two parents. `Body` adds Busy/Status only when a page
+    hasn't already placed them, or the page crashes after unlock.
+  - Helpers named `Frame` or `Navigation` silently hide `ContentPage`
+    members.
+  - `SemanticProperties` is static (`SetDescription(view, …)`).
+
 **A birth the centre refuses is held and corrected, never resent unchanged.**
 Before this, a refused record stayed in the outbox as it was: it was sent every
 window and refused every window, forever, and the registrar was never told why.

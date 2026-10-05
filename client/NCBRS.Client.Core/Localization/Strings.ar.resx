@@ -1022,4 +1022,106 @@
   <data name="Register_ChoosePlace" xml:space="preserve">
     <value>اختر مكان حدوث الولادة.</value>
   </data>
+  <data name="Nav_Home" xml:space="preserve">
+    <value>الرئيسية</value>
+  </data>
+  <data name="Nav_Register" xml:space="preserve">
+    <value>تسجيل</value>
+  </data>
+  <data name="Nav_Sync" xml:space="preserve">
+    <value>مزامنة</value>
+  </data>
+  <data name="Nav_Check" xml:space="preserve">
+    <value>تحقق</value>
+  </data>
+  <data name="Nav_More" xml:space="preserve">
+    <value>المزيد</value>
+  </data>
+  <data name="Brand_Name" xml:space="preserve">
+    <value>تسجيل المواليد</value>
+  </data>
+  <data name="Brand_Ministry" xml:space="preserve">
+    <value>جمهورية جنوب السودان · وزارة الصحة</value>
+  </data>
+  <data name="Footer_Status" xml:space="preserve">
+    <value>{0} بانتظار المزامنة · {1} رقمًا متبقيًا</value>
+  </data>
+  <data name="Footer_Version" xml:space="preserve">
+    <value>الإصدار {0}</value>
+  </data>
+  <data name="Home_Title" xml:space="preserve">
+    <value>الرئيسية</value>
+  </data>
+  <data name="Home_Greeting" xml:space="preserve">
+    <value>مرحبًا، {0}</value>
+  </data>
+  <data name="Home_Tasks" xml:space="preserve">
+    <value>ماذا تريد أن تفعل؟</value>
+  </data>
+  <data name="Home_Waiting" xml:space="preserve">
+    <value>بانتظار المزامنة</value>
+  </data>
+  <data name="Home_NumbersLeft" xml:space="preserve">
+    <value>الأرقام المتبقية</value>
+  </data>
+  <data name="Home_NeedNumbers" xml:space="preserve">
+    <value>أرقام التسجيل توشك على النفاد. قم بالمزامنة عند توفر الإشارة للحصول على المزيد.</value>
+  </data>
+  <data name="Home_AllSent" xml:space="preserve">
+    <value>وصلت جميع الولادات المسجلة على هذا الجهاز إلى السجل.</value>
+  </data>
+  <data name="Tile_Register" xml:space="preserve">
+    <value>سجّل ولادة جديدة</value>
+  </data>
+  <data name="Tile_Sync" xml:space="preserve">
+    <value>أرسل الولادات إلى السجل</value>
+  </data>
+  <data name="Tile_Check" xml:space="preserve">
+    <value>امسح رمز الشهادة أو اكتبه</value>
+  </data>
+  <data name="Tile_Print" xml:space="preserve">
+    <value>اطبع شهادة وقّعها السجل</value>
+  </data>
+  <data name="Tile_UsbTitle" xml:space="preserve">
+    <value>حفظ على ذاكرة USB</value>
+  </data>
+  <data name="Tile_Usb" xml:space="preserve">
+    <value>لا توجد إشارة؟ احفظ الولادات على ذاكرة أو بطاقة</value>
+  </data>
+  <data name="Tile_Printer" xml:space="preserve">
+    <value>اختر الطابعة واختبرها</value>
+  </data>
+  <data name="Tile_Lock" xml:space="preserve">
+    <value>اقفل الجهاز قبل تسليمه لشخص آخر</value>
+  </data>
+  <data name="Sync_Heading" xml:space="preserve">
+    <value>المزامنة مع السجل</value>
+  </data>
+  <data name="Sync_Intro" xml:space="preserve">
+    <value>تبقى الولادات على هذا الجهاز حتى يؤكدها السجل. قم بالمزامنة كلما توفرت الإشارة.</value>
+  </data>
+  <data name="Sync_NoSignal" xml:space="preserve">
+    <value>لا توجد إشارة؟</value>
+  </data>
+  <data name="Sync_NoSignalBody" xml:space="preserve">
+    <value>احفظ الولادات المنتظرة في ملف مختوم على ذاكرة USB أو بطاقة. لا يستطيع فتحه إلا السجل، وتبقى الولادات هنا حتى يؤكدها.</value>
+  </data>
+  <data name="More_Title" xml:space="preserve">
+    <value>المزيد</value>
+  </data>
+  <data name="More_Language" xml:space="preserve">
+    <value>اللغة</value>
+  </data>
+  <data name="More_SignedIn" xml:space="preserve">
+    <value>{0} في {1}</value>
+  </data>
+  <data name="More_Tablet" xml:space="preserve">
+    <value>هذا الجهاز</value>
+  </data>
+  <data name="More_Tasks" xml:space="preserve">
+    <value>المهام</value>
+  </data>
+  <data name="Common_Leave" xml:space="preserve">
+    <value>مغادرة</value>
+  </data>
 </root>

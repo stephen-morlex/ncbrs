@@ -56,14 +56,15 @@ internal sealed class Collapsible
     public Collapsible(string title, params View[] views)
     {
         _title = title;
-        Header = new Button { BackgroundColor = Colors.SlateGray, HorizontalOptions = LayoutOptions.Fill };
+        Header = Ui.SecondaryButton(string.Empty);
+        Header.HorizontalOptions = LayoutOptions.Fill;
         Header.Clicked += (_, _) => Open(!_open);
 
         Content = new VerticalStackLayout { Spacing = 10, IsVisible = false };
         Content.Add(new Label { Text = Strings.Register_SectionOptional, FontSize = 12, FontAttributes = FontAttributes.Italic });
         foreach (var view in views)
         {
-            Content.Add(view);
+            Content.Add(view is Entry or Picker ? Ui.Labeled(view) : view);
         }
 
         Open(false);
@@ -151,7 +152,7 @@ internal sealed class ParentFields
         }
 
         views.AddRange([_born.View, _place, _occupation, _address, _document, _documentNumber]);
-        Section = new Collapsible(title, [.. views]);
+        Section = new Collapsible(title, [.. views.Select(view => view is Entry or Picker ? Ui.Labeled(view) : view)]);
     }
 
     public Collapsible Section { get; }

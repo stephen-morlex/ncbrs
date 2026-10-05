@@ -1027,4 +1027,106 @@ A permanent number is given when the tablet syncs.</value>
   <data name="Register_ChoosePlace" xml:space="preserve">
     <value>Choose where the birth happened.</value>
   </data>
+  <data name="Nav_Home" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="Nav_Register" xml:space="preserve">
+    <value>Register</value>
+  </data>
+  <data name="Nav_Sync" xml:space="preserve">
+    <value>Sync</value>
+  </data>
+  <data name="Nav_Check" xml:space="preserve">
+    <value>Check</value>
+  </data>
+  <data name="Nav_More" xml:space="preserve">
+    <value>More</value>
+  </data>
+  <data name="Brand_Name" xml:space="preserve">
+    <value>Birth Registration</value>
+  </data>
+  <data name="Brand_Ministry" xml:space="preserve">
+    <value>Republic of South Sudan · Ministry of Health</value>
+  </data>
+  <data name="Footer_Status" xml:space="preserve">
+    <value>{0} waiting to sync · {1} numbers left</value>
+  </data>
+  <data name="Footer_Version" xml:space="preserve">
+    <value>Version {0}</value>
+  </data>
+  <data name="Home_Title" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="Home_Greeting" xml:space="preserve">
+    <value>Hello, {0}</value>
+  </data>
+  <data name="Home_Tasks" xml:space="preserve">
+    <value>What would you like to do?</value>
+  </data>
+  <data name="Home_Waiting" xml:space="preserve">
+    <value>Waiting to sync</value>
+  </data>
+  <data name="Home_NumbersLeft" xml:space="preserve">
+    <value>Numbers left</value>
+  </data>
+  <data name="Home_NeedNumbers" xml:space="preserve">
+    <value>Registration numbers are running low. Sync when there is signal to get more.</value>
+  </data>
+  <data name="Home_AllSent" xml:space="preserve">
+    <value>Every birth on this tablet has reached the registry.</value>
+  </data>
+  <data name="Tile_Register" xml:space="preserve">
+    <value>Record a new birth</value>
+  </data>
+  <data name="Tile_Sync" xml:space="preserve">
+    <value>Send births to the registry</value>
+  </data>
+  <data name="Tile_Check" xml:space="preserve">
+    <value>Scan or type a certificate's code</value>
+  </data>
+  <data name="Tile_Print" xml:space="preserve">
+    <value>Print a certificate the registry signed</value>
+  </data>
+  <data name="Tile_UsbTitle" xml:space="preserve">
+    <value>Save for a USB stick</value>
+  </data>
+  <data name="Tile_Usb" xml:space="preserve">
+    <value>No signal? Save births to a stick or card</value>
+  </data>
+  <data name="Tile_Printer" xml:space="preserve">
+    <value>Choose and test the printer</value>
+  </data>
+  <data name="Tile_Lock" xml:space="preserve">
+    <value>Lock before handing the tablet to someone else</value>
+  </data>
+  <data name="Sync_Heading" xml:space="preserve">
+    <value>Sync with the registry</value>
+  </data>
+  <data name="Sync_Intro" xml:space="preserve">
+    <value>Births stay on this tablet until the registry confirms them. Sync whenever there is signal.</value>
+  </data>
+  <data name="Sync_NoSignal" xml:space="preserve">
+    <value>No signal?</value>
+  </data>
+  <data name="Sync_NoSignalBody" xml:space="preserve">
+    <value>Save the waiting births in a sealed file for a USB stick or card. Only the registry can open it, and the births stay here until it confirms them.</value>
+  </data>
+  <data name="More_Title" xml:space="preserve">
+    <value>More</value>
+  </data>
+  <data name="More_Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="More_SignedIn" xml:space="preserve">
+    <value>{0} at {1}</value>
+  </data>
+  <data name="More_Tablet" xml:space="preserve">
+    <value>This tablet</value>
+  </data>
+  <data name="More_Tasks" xml:space="preserve">
+    <value>Tasks</value>
+  </data>
+  <data name="Common_Leave" xml:space="preserve">
+    <value>Leave</value>
+  </data>
 </root>

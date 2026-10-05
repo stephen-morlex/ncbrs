@@ -10,7 +10,7 @@ public sealed class RegistrarSignInPage : FlowPage
 {
     public RegistrarSignInPage(DeviceHost host) : base(Strings.SignIn_Title)
     {
-        var signIn = new Button { Text = Strings.SignIn_Button };
+        var signIn = Ui.PrimaryButton(Strings.SignIn_Button);
         signIn.Clicked += async (_, _) => await RunAsync(async () =>
         {
             if (await host.RegistrarSignInAsync() is { } problem)
@@ -40,8 +40,9 @@ public sealed class Recovery
 {
     public Recovery(DeviceHost host, Func<Func<Task>, Task> run, Label status)
     {
-        var someoneElse = new Button { Text = Strings.Recovery_SomeoneElse, BackgroundColor = Colors.Gray, IsVisible = host.State.OfflineToken is not null };
-        var again = new Button { Text = Strings.Recovery_HandOverAgain, BackgroundColor = Colors.Gray };
+        var someoneElse = Ui.GhostButton(Strings.Recovery_SomeoneElse);
+        someoneElse.IsVisible = host.State.OfflineToken is not null;
+        var again = Ui.GhostButton(Strings.Recovery_HandOverAgain);
 
         someoneElse.Clicked += async (_, _) => await run(async () =>
         {
@@ -95,7 +96,7 @@ public sealed class ProvisionPage : FlowPage
     {
         _host = host;
         _pin = new PinForm(host, askCurrent: false, onSet: () => Flow.Advance(host), run: RunAsync, status: Status);
-        var retry = new Button { Text = Strings.Provision_Retry };
+        var retry = Ui.PrimaryButton(Strings.Provision_Retry);
         retry.Clicked += async (_, _) => await RunAsync(ProvisionAsync);
         Build(
             Heading(Strings.Provision_Heading),
@@ -135,7 +136,7 @@ public sealed class PinForm
         var current = new Entry { Placeholder = Strings.Pin_Current, IsPassword = true, Keyboard = Keyboard.Numeric, IsVisible = askCurrent };
         var pin = new Entry { Placeholder = Strings.Pin_New, IsPassword = true, Keyboard = Keyboard.Numeric };
         var again = new Entry { Placeholder = Strings.Pin_Again, IsPassword = true, Keyboard = Keyboard.Numeric };
-        var set = new Button { Text = Strings.Pin_Set };
+        var set = Ui.PrimaryButton(Strings.Pin_Set);
         set.Clicked += async (_, _) => await run(async () =>
         {
             // Checked here first, against the registry's own rules
@@ -194,9 +195,9 @@ public sealed class UnlockPage : FlowPage
             ItemDisplayBinding = new Binding(nameof(StaffCredential.DisplayName)),
         };
         var pin = new Entry { Placeholder = Strings.Unlock_Pin, IsPassword = true, Keyboard = Keyboard.Numeric };
-        var unlock = new Button { Text = Strings.Unlock_Button };
+        var unlock = Ui.PrimaryButton(Strings.Unlock_Button);
         var pinForm = new PinForm(host, askCurrent: true, onSet: () => Flow.Advance(host), run: RunAsync, status: Status);
-        var changePin = new Button { Text = Strings.Unlock_ChangePin, BackgroundColor = Colors.Gray };
+        var changePin = Ui.GhostButton(Strings.Unlock_ChangePin);
         changePin.Clicked += (_, _) => pinForm.View.IsVisible = !pinForm.View.IsVisible;
 
         unlock.Clicked += async (_, _) => await RunAsync(async () =>
@@ -223,18 +224,18 @@ public sealed class UnlockPage : FlowPage
         // Checking a certificate needs no one unlocked: it shows only what the
         // paper itself says, verified against public keys, and nothing the
         // tablet holds. A teacher or a clinic clerk at the post can use it.
-        var checkCertificate = new Button { Text = Strings.Register_Check, BackgroundColor = Colors.DarkSlateGray };
+        var checkCertificate = Ui.SecondaryButton(Strings.Register_Check);
         checkCertificate.Clicked += (_, _) => Flow.Show(new CheckCertificatePage(host));
 
 #if DEBUG
         // Debug builds only: the printer screen without unlocking, so printing
         // can be tested after a reinstall without a registrar's PIN. Release
         // builds keep the printer setting behind the unlock.
-        var printer = new Button { Text = "Printer (debug)", BackgroundColor = Colors.Gray };
+        var printer = Ui.GhostButton("Printer (debug)");
         printer.Clicked += (_, _) => Flow.Show(new PrinterPage(host));
-        Build(Flow.LanguageSwitch(host), Heading(Strings.Unlock_Title), person, pin, unlock, changePin, pinForm.View, checkCertificate, printer);
+        Build(Flow.LanguageSwitch(host), Heading(Strings.Unlock_Title), Ui.Card(Ui.Caption(Strings.Unlock_Who), person, Ui.Caption(Strings.Unlock_Pin), pin, unlock), changePin, pinForm.View, checkCertificate, printer);
 #else
-        Build(Flow.LanguageSwitch(host), Heading(Strings.Unlock_Title), person, pin, unlock, changePin, pinForm.View, checkCertificate);
+        Build(Flow.LanguageSwitch(host), Heading(Strings.Unlock_Title), Ui.Card(Ui.Caption(Strings.Unlock_Who), person, Ui.Caption(Strings.Unlock_Pin), pin, unlock), changePin, pinForm.View, checkCertificate);
 #endif
     }
 }
