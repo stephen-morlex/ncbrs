@@ -233,7 +233,7 @@ public class BirthRegistrationService(
                 BrnReconciliation.NotYetAllocated,
                 $"'{request.Brn}' is a provisional identifier issued after the device exhausted its "
                 + "BRN block. A permanent BRN is assigned when the record is reconciled.")
-            : BrnReconciler.Reconcile(request.Brn, facility);
+            : BrnReconciler.Reconcile(request.Brn, facility, await SequenceForAsync(request.Brn, facility, cancellationToken));
 
         if (reconciliation.Confirmed)
         {
@@ -424,6 +424,16 @@ public class BirthRegistrationService(
     }
 
     // Trimmed, with runs of spaces collapsed, as PersonNames.Compose does, so a stored part matches the full name.
+    /// <summary>
+    /// The facility's running-number counter for the year a composed BRN
+    /// names, or null for any other number -- what BRN confirmation checks a
+    /// composed number against.
+    /// </summary>
+    private async Task<FacilityBrnSequence?> SequenceForAsync(string brn, Facility facility, CancellationToken cancellationToken)
+        => BrnFormat.Read(brn, out var parts) == BrnReading.Composed
+            ? await db.FacilityBrnSequences.FindAsync([facility.FacilityId, parts!.Year], cancellationToken)
+            : null;
+
     private static string? Clean(string? value)
         => string.IsNullOrWhiteSpace(value) ? null : string.Join(' ', value.Split(' ', StringSplitOptions.RemoveEmptyEntries));
 

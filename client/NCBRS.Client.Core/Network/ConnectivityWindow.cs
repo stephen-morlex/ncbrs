@@ -84,7 +84,7 @@ public sealed class ConnectivityWindow(
 
             if (block is { Succeeded: true, Value: { } range })
             {
-                facility.GrantNextBlock(range.BlockStart, range.BlockEnd);
+                facility.GrantNextBlock(range.BlockStart, range.BlockEnd, range.OfficeCode, range.Year);
                 granted = range;
                 await persist(state, cancellationToken);
             }

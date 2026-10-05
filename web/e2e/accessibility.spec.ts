@@ -31,10 +31,12 @@ const Widths = [
 ] as const
 
 /**
- * A seeded Juba Teaching Hospital birth: the record pages need a real record
- * to render their content, not the not-found state.
+ * A seeded birth: the record pages need a real record to render their
+ * content, not the not-found state. Makuach PHCU's first, because the seed
+ * leaves Makuach without an office code: its numbers stay numeric and fixed,
+ * where a composed number carries the year the seed ran in.
  */
-const SeededBrn = '100000'
+const SeededBrn = '800000'
 
 /** Every page, and a role entitled to see it. */
 const Pages: { path: string; role: Role; ready: RegExp | string }[] = [

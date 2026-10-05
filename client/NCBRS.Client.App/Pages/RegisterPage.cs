@@ -582,7 +582,11 @@ public sealed class RegisterPage : FlowPage
         };
 
         return upload + (report.BlockGranted is { } block
-            ? "\n" + Language.Format(Strings.Sync_NewNumbers, block.BlockStart, block.BlockEnd)
+            // As they will be written, composed by the registry; a numeric
+            // block (or a registry from before the format) has the numbers.
+            ? "\n" + Language.Format(Strings.Sync_NewNumbers,
+                block.FirstBrn ?? block.BlockStart.ToString(CultureInfo.InvariantCulture),
+                block.LastBrn ?? block.BlockEnd.ToString(CultureInfo.InvariantCulture))
             : "");
     }
 

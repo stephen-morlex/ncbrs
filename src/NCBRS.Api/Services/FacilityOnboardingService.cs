@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using NCBRS.Data;
 using NCBRS.Models;
+using NCBRS.Validation;
 
 namespace NCBRS.Services;
 
@@ -23,6 +24,9 @@ public enum FacilityOnboardingResult
     AreaNotFound,
     NotInACounty,
     NameTaken,
+    OfficeCodeTaken,
+    AlreadyHasOfficeCode,
+    NotFound,
 }
 
 public sealed record FacilityOnboardingOutcome(FacilityOnboardingResult Result, Facility? Facility = null, string? Detail = null);
@@ -90,6 +94,12 @@ public class FacilityOnboardingService(NcbrsDbContext db, CountyLookup counties,
                 Detail: $"{county} already has a facility called '{name}'. Two with one name would be told apart by nobody.");
         }
 
+        var officeCode = string.IsNullOrWhiteSpace(request.OfficeCode) ? null : OfficeCodes.Normalise(request.OfficeCode);
+        if (officeCode is not null && await OfficeCodeTakenAsync(officeCode, cancellationToken) is { } holder)
+        {
+            return new(FacilityOnboardingResult.OfficeCodeTaken, Detail: TakenDetail(officeCode, holder));
+        }
+
         for (var attempt = 1; ; attempt++)
         {
             var start = await NextRangeStartAsync(cancellationToken);
@@ -103,6 +113,7 @@ public class FacilityOnboardingService(NcbrsDbContext db, CountyLookup counties,
                 BrnBlockStart = start,
                 BrnBlockEnd = start + options.BrnRangeSize - 1,
                 BrnBlockNextAvailable = start,
+                OfficeCode = officeCode,
             };
 
             db.Facilities.Add(facility);
@@ -110,7 +121,9 @@ public class FacilityOnboardingService(NcbrsDbContext db, CountyLookup counties,
             {
                 EntityType = nameof(Facility),
                 EntityId = facility.FacilityId.ToString(),
-                Action = $"FacilityCreated:{facility.BrnBlockStart}-{facility.BrnBlockEnd}",
+                Action = officeCode is null
+                    ? $"FacilityCreated:{facility.BrnBlockStart}-{facility.BrnBlockEnd}"
+                    : $"FacilityCreated:{facility.BrnBlockStart}-{facility.BrnBlockEnd}:office={officeCode}",
                 CountyCode = county,
                 UserId = actor.RegistrarId,
                 DeviceId = "web",
@@ -129,6 +142,72 @@ public class FacilityOnboardingService(NcbrsDbContext db, CountyLookup counties,
             }
         }
     }
+
+    /// <summary>
+    /// Gives a facility its office code, once. Every number it issues from
+    /// then on carries the code, so a facility that has one keeps it: a
+    /// change would leave issued numbers naming an office the register no
+    /// longer knows. Giving it the code it already has is not a change, and
+    /// answers as done.
+    /// </summary>
+    public async Task<FacilityOnboardingOutcome> SetOfficeCodeAsync(
+        Guid facilityId, string requested, Registrar actor, Guid? transactionId, CancellationToken cancellationToken = default)
+    {
+        var facility = await db.Facilities.FindAsync([facilityId], cancellationToken);
+        if (facility is null)
+        {
+            return new(FacilityOnboardingResult.NotFound, Detail: "No such facility.");
+        }
+
+        var code = OfficeCodes.Normalise(requested);
+        if (facility.OfficeCode == code)
+        {
+            return new(FacilityOnboardingResult.Created, facility);
+        }
+
+        if (facility.OfficeCode is not null)
+        {
+            return new(FacilityOnboardingResult.AlreadyHasOfficeCode, facility,
+                $"{facility.Name} is office '{facility.OfficeCode}', and every number it has issued carries that code. "
+                + "An office code is never changed.");
+        }
+
+        if (await OfficeCodeTakenAsync(code, cancellationToken) is { } holder)
+        {
+            return new(FacilityOnboardingResult.OfficeCodeTaken, Detail: TakenDetail(code, holder));
+        }
+
+        facility.OfficeCode = code;
+        db.AuditLogs.Add(new AuditLog
+        {
+            EntityType = nameof(Facility),
+            EntityId = facility.FacilityId.ToString(),
+            Action = $"OfficeCodeSet:{code}",
+            CountyCode = facility.CountyCode,
+            UserId = actor.RegistrarId,
+            DeviceId = "web",
+            TransactionId = transactionId,
+        });
+
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            // The unique index: another facility took the code at the same moment.
+            db.ChangeTracker.Clear();
+            return new(FacilityOnboardingResult.OfficeCodeTaken, Detail: $"Office code '{code}' was just given to another facility.");
+        }
+
+        return new(FacilityOnboardingResult.Created, facility);
+    }
+
+    private Task<string?> OfficeCodeTakenAsync(string code, CancellationToken cancellationToken)
+        => db.Facilities.Where(other => other.OfficeCode == code).Select(other => other.Name).FirstOrDefaultAsync(cancellationToken);
+
+    private static string TakenDetail(string code, string holder)
+        => $"Office code '{code}' is {holder}'s. Every BRN names its office, so no two facilities may share one.";
 
     /// <summary>The first aligned range above every range already given.</summary>
     private async Task<long> NextRangeStartAsync(CancellationToken cancellationToken)

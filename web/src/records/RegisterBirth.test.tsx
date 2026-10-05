@@ -505,6 +505,28 @@ describe('the fuller registration', () => {
     return call?.[1].body.data
   }
 
+  /**
+   * The composed number comes from the registry, written as the registry
+   * writes it. Composing it here would be a second copy of the format, and
+   * blockStart is only a running number for a facility with an office code.
+   */
+  it('registers under the number the registry composed', async () => {
+    post.mockImplementation((path: string) =>
+      path.includes('request-brn-block')
+        ? Promise.resolve(ok({ blockStart: 7, blockEnd: 7, officeCode: 'JTH', year: 2026, firstBrn: 'SS-JTH-2026-000007-B' }))
+        : Promise.resolve(ok({ brn: 'SS-JTH-2026-000007-B' })),
+    )
+    const typist = userEvent.setup({ delay: null })
+
+    show()
+    await waitFor(() => expect(get).toHaveBeenCalled())
+    await fillRequired(typist)
+    await typist.click(screen.getByRole('button', { name: /register the birth/i }))
+
+    await waitFor(() => expect(registered()).toBeDefined())
+    expect(registered().brn).toBe('SS-JTH-2026-000007-B')
+  })
+
   it('registers with only the required fields, sending none of the optional groups', async () => {
     accepting()
     const typist = userEvent.setup({ delay: null })

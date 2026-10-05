@@ -109,7 +109,13 @@ public sealed record BrnState(
     long NextAvailable,
     long ProvisionalSequence,
     long? PendingBlockStart,
-    long? PendingBlockEnd);
+    long? PendingBlockEnd,
+    // Composed blocks only. Defaulted so a state saved before the composed
+    // format loads as the numeric block it was.
+    string? OfficeCode = null,
+    int? Year = null,
+    string? PendingOfficeCode = null,
+    int? PendingYear = null);
 
 /// <summary>The held verification bundle: public keys and signed lists, nothing secret.</summary>
 public sealed record BundleState(

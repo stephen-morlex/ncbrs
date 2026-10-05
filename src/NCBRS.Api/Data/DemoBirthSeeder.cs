@@ -69,17 +69,16 @@ public static class DemoBirthSeeder
                 _ => VillagePostBirths,
             };
 
-            // Reserve the numbers up front so each drawn BRN falls below
-            // BrnBlockNextAvailable and reconciles to Confirmed — the same
-            // arithmetic BrnReconciler applies. Without this the block looks
-            // ungranted and every demo record would sit Provisional.
-            var firstBrn = facility.BrnBlockNextAvailable;
-            facility.BrnBlockNextAvailable = firstBrn + count;
-            await db.SaveChangesAsync(cancellationToken);
+            // Granted up front, through the same issuer a device block is
+            // drawn from, so each number is one the registry handed out and
+            // reconciles to Confirmed. Composed under the facility's office
+            // code where it has one; from its numeric range where it has not.
+            var grant = await Draw(db, facility, count, cancellationToken);
 
             for (var i = 0; i < count; i++)
             {
-                var request = BuildBirth(facility, firstBrn + i, random);
+                var running = grant.Start + i;
+                var request = BuildBirth(facility, grant.BrnAt(running), running, random);
                 await RegisterAsync(registration, request, registrar, facility, cancellationToken);
 
                 if (facility.Tier == FacilityTier.VillageHealthPost && request.LateRegistration is null)
@@ -136,9 +135,7 @@ public static class DemoBirthSeeder
             return;
         }
 
-        var brn = hospital.BrnBlockNextAvailable;
-        hospital.BrnBlockNextAvailable = brn + 1;
-        await db.SaveChangesAsync(cancellationToken);
+        var brn = (await Draw(db, hospital, 1, cancellationToken)).FirstBrn;
 
         var registrar = await EnsureRegistrarAsync(db, hospital, displayName: "Hospital registrar", cancellationToken);
         var recalledBirthDate = original.DateOfBirth.AddDays(1);
@@ -151,7 +148,7 @@ public static class DemoBirthSeeder
 
         var again = original with
         {
-            Brn = brn.ToString(),
+            Brn = brn,
             FacilityId = hospital.FacilityId,
             // The surname is the child's last word, which is what is respelt.
             ChildSurname = Respell(original.ChildSurname!),
@@ -175,7 +172,20 @@ public static class DemoBirthSeeder
         return string.Join(' ', words);
     }
 
-    private static RegisterBirthRequest BuildBirth(Facility facility, long brn, Random random)
+    /// <summary>Exactly <paramref name="count"/> numbers, saved, or the seed is wrong.</summary>
+    private static async Task<BrnGrant> Draw(NcbrsDbContext db, Facility facility, int count, CancellationToken cancellationToken)
+    {
+        var grant = await new BrnIssuer(db).StageAsync(facility, count, cancellationToken);
+        if (grant is null || grant.End - grant.Start + 1 != count)
+        {
+            throw new InvalidOperationException($"The demo seed could not draw {count} numbers for {facility.Name}.");
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        return grant;
+    }
+
+    private static RegisterBirthRequest BuildBirth(Facility facility, string brn, long running, Random random)
     {
         var now = DateTime.UtcNow;
 
@@ -222,12 +232,14 @@ public static class DemoBirthSeeder
 
         // The fuller registration's details come from a generator of their
         // own, seeded by the number, so they never disturb the sequence above.
-        var details = new Random(unchecked((int)brn));
+        // Seeded by the facility and the running number, which composed
+        // numbers restart at 1 in every facility.
+        var details = new Random(unchecked((int)running * 31 + facility.FacilityId.GetHashCode()));
         var (placeKind, place) = PlaceOfBirth(facility.Tier, details);
 
         return new RegisterBirthRequest
         {
-            Brn = brn.ToString(),
+            Brn = brn,
             FacilityId = facility.FacilityId,
             // In parts. The register composes "{given} {surname}", the same
             // full name the one-piece seed wrote.
@@ -243,7 +255,7 @@ public static class DemoBirthSeeder
             BirthOrder = birthOrder,
             Mother = Mother(motherGiven, surname, dateOfBirth, details),
             Father = Father(fatherGiven, surname, dateOfBirth, details),
-            Marriage = Marriage(dateOfBirth, brn, details),
+            Marriage = Marriage(dateOfBirth, running, details),
             ProofOfAddress = details.Next(4) == 0
                 ? new ProofOfAddressDetails { Kind = "Utility bill", Reference = $"JEDCO-{details.Next(10_000, 99_999)}" }
                 : null,
@@ -314,7 +326,7 @@ public static class DemoBirthSeeder
             };
 
     /// <summary>Two in three married before the birth, a few holding a statutory certificate.</summary>
-    private static MarriageDetails? Marriage(DateTime childBorn, long brn, Random details)
+    private static MarriageDetails? Marriage(DateTime childBorn, long running, Random details)
     {
         if (details.Next(3) == 0)
         {
@@ -326,7 +338,7 @@ public static class DemoBirthSeeder
         return new MarriageDetails
         {
             Date = married,
-            CertificateNumber = details.Next(4) == 0 ? $"M-{brn % 1000}/{married.Year}" : null,
+            CertificateNumber = details.Next(4) == 0 ? $"M-{running % 1000}/{married.Year}" : null,
         };
     }
 

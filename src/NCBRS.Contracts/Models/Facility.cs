@@ -65,4 +65,35 @@ public class Facility
     /// </summary>
     [ConcurrencyCheck]
     public long BrnBlockNextAvailable { get; set; }
+
+    /// <summary>
+    /// The registration office in the composed BRN (<see cref="BrnFormat"/>):
+    /// two to six capitals or digits, typed by the Ministry, unique.
+    ///
+    /// **Set once and never changed.** Every number the facility issues
+    /// carries it, so changing it would leave issued numbers naming an office
+    /// the register no longer knows. Null until the Ministry gives one; until
+    /// then the facility is granted numbers from its legacy numeric range
+    /// (<see cref="BrnBlockStart"/>–<see cref="BrnBlockEnd"/>), so a pilot is
+    /// not held up while codes are assigned.
+    /// </summary>
+    [MaxLength(6)]
+    public string? OfficeCode { get; set; }
+}
+
+/// <summary>
+/// The running numbers a facility has issued in one year, for composed BRNs.
+/// The same guarantee as <see cref="Facility.BrnBlockNextAvailable"/>, per
+/// year: <see cref="NextAvailable"/> is the first running number not yet
+/// granted to any device, and it is concurrency-checked so two grants can
+/// never hand out the same numbers.
+/// </summary>
+public class FacilityBrnSequence
+{
+    public Guid FacilityId { get; set; }
+
+    public int Year { get; set; }
+
+    [ConcurrencyCheck]
+    public long NextAvailable { get; set; } = 1;
 }

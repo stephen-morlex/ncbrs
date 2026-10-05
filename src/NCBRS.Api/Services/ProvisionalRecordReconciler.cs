@@ -77,31 +77,25 @@ public class ProvisionalRecordReconciler(NcbrsDbContext db, CountyLookup distric
                     Detail: $"Facility '{record.FacilityId}' no longer exists.");
             }
 
-            if (facility.BrnBlockNextAvailable > facility.BrnBlockEnd)
+            // Drawn through the issuer, from the same counter that grants
+            // device blocks, so a reconciled record can never be given a number
+            // a device is already holding -- composed under the facility's
+            // office code when it has one, and never one already on a record.
+            var grant = await new BrnIssuer(db).StageAsync(facility, 1, cancellationToken);
+
+            if (grant is null)
             {
                 return new ProvisionalReconciliationResult(
                     ProvisionalReconciliation.FacilityRangeExhausted,
-                    Detail: $"Facility '{facility.FacilityId}' has exhausted its pre-approved BRN range "
-                            + $"(ceiling {facility.BrnBlockEnd}). Record '{record.ProvisionalIdentifier}' keeps its "
-                            + "provisional identifier until the central registry assigns a new range.");
+                    Detail: (facility.OfficeCode is null
+                                ? $"Facility '{facility.FacilityId}' has exhausted its pre-approved BRN range "
+                                  + $"(ceiling {facility.BrnBlockEnd}). "
+                                : $"Facility '{facility.FacilityId}' has issued every running number for this year. ")
+                            + $"Record '{record.ProvisionalIdentifier}' keeps its provisional identifier until the "
+                            + "central registry assigns a new range.");
             }
 
-            var assigned = facility.BrnBlockNextAvailable;
-
-            // Taken from the same counter that grants device blocks, so a
-            // reconciled record can never be given a number a device is
-            // already holding.
-            facility.BrnBlockNextAvailable = assigned + 1;
-
-            var brn = assigned.ToString(System.Globalization.CultureInfo.InvariantCulture);
-
-            if (await db.BirthRecords.AnyAsync(other => other.Brn == brn, cancellationToken))
-            {
-                // Something already holds this number despite the counter --
-                // skip it rather than collide, and let the loop try the next.
-                await db.SaveChangesAsync(cancellationToken);
-                continue;
-            }
+            var brn = grant.FirstBrn;
 
             record.Brn = brn;
             record.ReconciledAtUtc = DateTime.UtcNow;
@@ -131,9 +125,10 @@ public class ProvisionalRecordReconciler(NcbrsDbContext db, CountyLookup distric
 
                 return new ProvisionalReconciliationResult(ProvisionalReconciliation.Assigned, brn);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateException)
             {
-                // Another grant advanced BrnBlockNextAvailable underneath us.
+                // Another grant advanced the counter underneath us, or created
+                // this year's counter at the same moment.
                 // Drop what this attempt staged and read fresh.
                 foreach (var entry in db.ChangeTracker.Entries().ToList())
                 {

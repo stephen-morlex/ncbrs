@@ -28,6 +28,7 @@ public class NcbrsDbContext(DbContextOptions<NcbrsDbContext> options) : DbContex
     public DbSet<DeviceAlert> DeviceAlerts => Set<DeviceAlert>();
     public DbSet<AdministrativeArea> AdministrativeAreas => Set<AdministrativeArea>();
     public DbSet<PendingAccount> PendingAccounts => Set<PendingAccount>();
+    public DbSet<FacilityBrnSequence> FacilityBrnSequences => Set<FacilityBrnSequence>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -66,6 +67,23 @@ public class NcbrsDbContext(DbContextOptions<NcbrsDbContext> options) : DbContex
             .HasIndex(f => f.BrnBlockStart)
             .IsUnique()
             .HasFilter("\"BrnBlockEnd\" > 0");
+
+        // An office code names one registration office in every composed BRN,
+        // so no two facilities may share one. Facilities without a code yet
+        // (null) are not constrained: both providers treat nulls as distinct.
+        modelBuilder.Entity<Facility>()
+            .HasIndex(f => f.OfficeCode)
+            .IsUnique();
+
+        // One running-number counter per facility per year.
+        modelBuilder.Entity<FacilityBrnSequence>()
+            .HasKey(s => new { s.FacilityId, s.Year });
+
+        modelBuilder.Entity<FacilityBrnSequence>()
+            .HasOne<Facility>()
+            .WithMany()
+            .HasForeignKey(s => s.FacilityId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // BRN must be unique across the whole system -- this is the field
         // the offline block-allocation strategy (Facility.BrnBlockStart/End)

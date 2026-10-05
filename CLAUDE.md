@@ -43,7 +43,10 @@ just what it does:
    `POST /api/birthrecords/{facilityId}/request-brn-block` endpoint). This
    is what prevents duplicate IDs across weeks of offline use without
    renumbering later. Do not replace this with server-generated
-   auto-increment IDs.
+   auto-increment IDs. A facility with an office code is granted **running
+   numbers for a year** instead (`FacilityBrnSequence`), and the device
+   composes each BRN as `SS-<OFFICE>-<YEAR>-<RUNNING>-<CHECK>` — see "The
+   composed BRN" below. The device still generates it; only its shape changed.
 
 3. **Data model follows WHO/UN vital statistics standards, not an ad hoc
    field list.** Specifically:
@@ -303,7 +306,7 @@ Keycloak admin credential.
 - The procedure is in RUNBOOK.md, "Onboarding: a facility, its staff and its
   tablet".
 
-## The fuller registration (2026-10-02, registry built; forms next)
+## The fuller registration (2026-10-02, built: registry, web and tablet)
 The registration now records the place of birth, the child's given names and
 surname, both parents in detail (names, the mother's maiden surname, date and
 place of birth, job, address, an identity document), the parents' marriage,
@@ -676,6 +679,49 @@ Two rules not to "tidy away":
   and somebody should be able to see that. Provisional identifiers are never
   treated as used: a `PROV-` value was never drawn from a block and cannot
   collide with one.
+
+## The composed BRN (2026-10-04, built)
+Decided with the user: `SS-<OFFICE>-<YEAR>-<RUNNING>-<CHECK>`, for example
+`SS-JTH-2026-000123-K`. **The office is the facility**, by a code the
+Ministry types (`Facility.OfficeCode`, 2–6 capitals or digits, unique); **the
+year is the year the number was issued**, from the block, not the birth year;
+the running number counts from 1 per facility per year, six digits.
+
+- **One copy of the format, in Contracts** (`BrnFormat`): the tablet composes
+  offline and the registry confirms with the same code. The web never
+  composes: a grant returns `FirstBrn`/`LastBrn` as the registry writes them.
+- **The check character is ISO 7064 MOD 37,36**, not the Luhn mod 36 first
+  proposed: Luhn misses a swap of 0 and Z. `BrnFormatTests` checks every
+  single-character change and every neighbour swap, exhaustively, never
+  reads as a valid number.
+- **An office code is set once and never changed** (409): issued numbers carry
+  it. Given at "Add a facility" or once afterwards
+  (`PUT /api/facilities/{id}/office-code`, Ministry only), audited.
+- **Without a code a facility keeps its legacy numeric range**, so a pilot is
+  not held up while codes are assigned. **Numbers issued before the format are
+  never renumbered** and are still confirmed against that range, even after
+  the facility gets a code.
+- **`BrnIssuer` is the only thing that hands out numbers**: a device block, a
+  provisional record's real number, and the dev seed all draw through it, and
+  it skips numbers already on a record for both kinds. Counters are
+  concurrency-checked; the first grant of a year races on the sequence's key,
+  so callers retry on any `DbUpdateException`.
+- **Confirmation** (`BrnReconciler`): a composed number is confirmed only as
+  the registry writes it, at this facility's office, below that year's
+  `NextAvailable`. A bad check character is `Mistyped`, another office
+  `WrongOffice` — **unconfirmed and audited, never refused**, as for any BRN.
+- **The tablet** carries a block's office and year (`BrnState`, defaulted so a
+  stored state from before loads as numeric). A block keeps the year it was
+  granted in, so December's block carries on after New Year. Staged blocks
+  are checked for overlap only within one office and year: a new year's
+  running numbers start again at 1.
+- **The lookup reads a number as typed at a counter** (lower case, spaces),
+  and a mistyped one answers "This number is mistyped", not "not found": a
+  family told their registration does not exist goes home believing it.
+- **Dev seed:** every facility has a code except Makuach PHCU, deliberately,
+  so a dev registry shows both paths. The e2e scan's seeded record is
+  Makuach's first (`800000`), because composed numbers carry the year the
+  seed ran in.
 
 ## Late registration (WS-C1/C2, built)
 A birth registered outside the statutory window (`StatutoryRegistration:WindowDays`,

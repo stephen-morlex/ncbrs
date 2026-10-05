@@ -265,12 +265,32 @@ public record BirthRecordResponse(
 /// The BRN range granted to a facility device by request-brn-block. BlockEnd
 /// may be smaller than requested if it was clamped to the facility's
 /// pre-approved BrnBlockEnd ceiling.
+///
+/// For a facility with an office code, <see cref="BlockStart"/> and
+/// <see cref="BlockEnd"/> are **running numbers** in <see cref="Year"/>, and a
+/// device composes each BRN with <see cref="BrnFormat.Compose"/>. Without
+/// one, they are the legacy numeric BRNs themselves and the two are null.
 /// </summary>
 public record BrnBlockResponse(
     Guid FacilityId,
     long BlockStart,
     long BlockEnd
-);
+)
+{
+    public string? OfficeCode { get; init; }
+
+    /// <summary>The year the numbers were issued, which every one of them carries.</summary>
+    public int? Year { get; init; }
+
+    /// <summary>
+    /// The first and last numbers as they are written, composed by the
+    /// registry. A caller drawing one number (the web form) uses this rather
+    /// than composing its own, so the format lives in one place.
+    /// </summary>
+    public string? FirstBrn { get; init; }
+
+    public string? LastBrn { get; init; }
+}
 
 /// <summary>
 /// Body for request-brn-block. Carried as a body rather than query string

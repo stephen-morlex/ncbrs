@@ -18,7 +18,16 @@ public enum BrnReconciliation
     /// Inside the facility's range but at or beyond the point the registry
     /// has handed out. Nobody was given this number.
     /// </summary>
-    NotYetAllocated
+    NotYetAllocated,
+
+    /// <summary>
+    /// Shaped like a composed BRN but its check character disagrees: a
+    /// character was misread or mistyped, or two were swapped, on the way in.
+    /// </summary>
+    Mistyped,
+
+    /// <summary>A composed BRN naming an office other than this facility's.</summary>
+    WrongOffice
 }
 
 public record BrnReconciliationResult(BrnReconciliation Outcome, string? Detail = null)
@@ -47,8 +56,27 @@ public record BrnReconciliationResult(BrnReconciliation Outcome, string? Detail 
 /// </summary>
 public static class BrnReconciler
 {
-    public static BrnReconciliationResult Reconcile(string brn, Facility facility)
+    /// <summary>
+    /// <paramref name="sequenceForItsYear"/> is the facility's running-number
+    /// counter for the year a composed BRN names, or null if it has none --
+    /// in which case nothing was ever issued in that year. Legacy numeric
+    /// BRNs are checked against the facility's numeric range, as they always
+    /// were, whether or not the facility has since been given an office code:
+    /// a number already issued is never renumbered.
+    /// </summary>
+    public static BrnReconciliationResult Reconcile(string brn, Facility facility, FacilityBrnSequence? sequenceForItsYear = null)
     {
+        switch (BrnFormat.Read(brn, out var parts))
+        {
+            case BrnReading.Mistyped:
+                return new BrnReconciliationResult(
+                    BrnReconciliation.Mistyped,
+                    $"BRN '{brn}' has a check character that does not match the rest of the number.");
+
+            case BrnReading.Composed:
+                return ReconcileComposed(brn, parts!, facility, sequenceForItsYear);
+        }
+
         if (!long.TryParse(brn, NumberStyles.None, CultureInfo.InvariantCulture, out var number))
         {
             return new BrnReconciliationResult(
@@ -74,6 +102,40 @@ public static class BrnReconciler
                 $"BRN {number} has not been allocated to any device for facility "
                 + $"'{facility.FacilityId}'; the registry has issued up to "
                 + $"{facility.BrnBlockNextAvailable - 1}.");
+        }
+
+        return new BrnReconciliationResult(BrnReconciliation.Confirmed);
+    }
+
+    private static BrnReconciliationResult ReconcileComposed(
+        string brn, BrnParts parts, Facility facility, FacilityBrnSequence? sequence)
+    {
+        // Confirmed only as the registry writes it. A device composes the
+        // number with the same code, so anything else was retyped on the way.
+        if (brn != parts.Composed)
+        {
+            return new BrnReconciliationResult(
+                BrnReconciliation.Unparseable,
+                $"BRN '{brn}' is not written as the registry writes it ('{parts.Composed}').");
+        }
+
+        if (facility.OfficeCode is null || parts.OfficeCode != facility.OfficeCode)
+        {
+            return new BrnReconciliationResult(
+                BrnReconciliation.WrongOffice,
+                $"BRN {brn} names office '{parts.OfficeCode}', but facility '{facility.FacilityId}' is "
+                + (facility.OfficeCode is null ? "not yet given an office code." : $"office '{facility.OfficeCode}'."));
+        }
+
+        // NextAvailable is the first running number not yet handed to any
+        // device that year, so anything at or above it was never granted.
+        if (sequence is null || sequence.FacilityId != facility.FacilityId || sequence.Year != parts.Year
+            || parts.Running >= sequence.NextAvailable)
+        {
+            return new BrnReconciliationResult(
+                BrnReconciliation.NotYetAllocated,
+                $"BRN {brn} has not been allocated to any device for facility '{facility.FacilityId}'; "
+                + $"in {parts.Year} the registry has issued running numbers up to {(sequence?.Year == parts.Year ? sequence.NextAvailable - 1 : 0)}.");
         }
 
         return new BrnReconciliationResult(BrnReconciliation.Confirmed);

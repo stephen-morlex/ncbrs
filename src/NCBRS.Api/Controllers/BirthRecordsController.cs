@@ -162,6 +162,16 @@ public class BirthRecordsController(
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<BirthRecordResponse>> GetByBrn(string brn)
     {
+        // A composed number is read as typed at a counter -- lower case, a
+        // space where the paper broke the line -- and looked up as the
+        // registry writes it. Anything else is looked up as given: a
+        // provisional identifier carries the device's id, case and all.
+        var reading = BrnFormat.Read(brn, out _);
+        if (reading is BrnReading.Composed or BrnReading.Mistyped)
+        {
+            brn = BrnFormat.Normalise(brn);
+        }
+
         // Resolves on the provisional identifier too: a family may be holding
         // the slip a device printed before the record had a real BRN, and a
         // clerk handed it months later must still find the record.
@@ -183,6 +193,17 @@ public class BirthRecordsController(
             .Include(b => b.MotherPerson)
             .Include(b => b.FatherPerson)
             .FirstOrDefaultAsync(b => b.Brn == brn || b.ProvisionalIdentifier == brn);
+
+        // Said as mistyped, not as "not found": the check character exists so
+        // that a misread number is caught as a misreading, and "no such
+        // birth" would send a family away believing their registration lost.
+        if (record is null && reading is BrnReading.Mistyped)
+        {
+            return ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status404NotFound, "This number is mistyped.",
+                "brn", $"'{brn}' does not check: a character was probably misread or mistyped, or two "
+                       + "were swapped. Read it again from the slip or certificate."));
+        }
 
         if (record is null || record.ChildPerson is null)
         {
@@ -443,77 +464,6 @@ public class BirthRecordsController(
     private const int MaxBrnBlockConcurrencyRetries = 5;
 
     /// <summary>
-    /// How many windows of candidate numbers a grant will look past before it
-    /// gives up. Each pass skips at least one used number, so a facility whose
-    /// counter is behind by less than this catches up in one request.
-    /// </summary>
-    private const int MaxUsedNumberProbes = 8;
-
-    /// <summary>
-    /// Moves <c>BrnBlockNextAvailable</c> past any number already carried by a
-    /// record, and answers how many it skipped.
-    ///
-    /// **Checked at grant time rather than maintained on write, deliberately.**
-    /// The alternative — advancing the counter whenever a record arrives with a
-    /// BRN above it — would make a device's own number move a facility's
-    /// counter, and one device with a bad clock or a bad build could burn a
-    /// whole range by sending a single high value. Decision #2 and the BRN
-    /// confirmation rules both turn on the centre never trusting a
-    /// device-supplied number; this keeps that intact by asking the register
-    /// what it actually holds.
-    ///
-    /// Bounded work: it looks only at the window it is about to hand out, and
-    /// only at numeric BRNs — a provisional identifier was never drawn from a
-    /// block and cannot collide with one.
-    /// </summary>
-    private async Task<int> AdvancePastUsedAsync(
-        Facility facility, int blockSize, CancellationToken cancellationToken)
-    {
-        var skipped = 0;
-
-        for (var probe = 0; probe < MaxUsedNumberProbes; probe++)
-        {
-            var start = facility.BrnBlockNextAvailable;
-
-            if (start > facility.BrnBlockEnd)
-            {
-                return skipped;
-            }
-
-            var end = Math.Min(start + blockSize - 1, facility.BrnBlockEnd);
-
-            var candidates = new List<string>();
-            for (var number = start; number <= end; number++)
-            {
-                candidates.Add(number.ToString(CultureInfo.InvariantCulture));
-            }
-
-            var taken = await db.BirthRecords
-                .Where(record => candidates.Contains(record.Brn))
-                .Select(record => record.Brn)
-                .ToListAsync(cancellationToken);
-
-            if (taken.Count == 0)
-            {
-                return skipped;
-            }
-
-            skipped += taken.Count;
-
-            // Past the highest one found, not merely past the first. The gap
-            // between is free, but re-probing it costs a round trip to
-            // rediscover numbers this pass already knows about.
-            var highest = taken
-                .Select(value => long.TryParse(value, CultureInfo.InvariantCulture, out var parsed) ? parsed : 0)
-                .Max();
-
-            facility.BrnBlockNextAvailable = highest + 1;
-        }
-
-        return skipped;
-    }
-
-    /// <summary>
     /// Hands out the next block of BRNs to a facility device so it can keep
     /// registering births while offline. Section 6.3/6.6 of the NCBRS draft.
     ///
@@ -578,39 +528,24 @@ public class BirthRecordsController(
                     "facilityId", $"No facility exists with id '{facilityId}'."));
             }
 
-            // Numbers already on a record are not available to grant, whatever
-            // the counter says.
-            //
-            // BrnBlockNextAvailable tracks what has been *handed out*, not what
-            // has been *used*, and those diverge: a record can enter carrying a
-            // BRN from this facility's range without a grant ever happening --
-            // a sync from a device provisioned elsewhere, a restored dump, a
-            // seeded environment. The counter never learns, and the next grant
-            // hands out numbers that are already registered.
-            //
-            // For the online form that surfaces as a refusal the registrar can
-            // retry past. For a device it is far worse: it takes the block
-            // offline, registers a fortnight of births against numbers that
-            // every one of them will be refused on, and nobody finds out until
-            // it syncs. That is the collision decision #2 exists to prevent.
-            var skipped = await AdvancePastUsedAsync(facility, blockSize, HttpContext.RequestAborted);
+            // Drawn through the issuer, which skips numbers already on a record
+            // and composes them under the facility's office code when it has one.
+            var grant = await new BrnIssuer(db).StageAsync(facility, blockSize, HttpContext.RequestAborted);
 
-            var start = facility.BrnBlockNextAvailable;
-
-            if (start > facility.BrnBlockEnd)
+            if (grant is null)
             {
                 return ApiErrors.Result(ApiErrors.Single(
                     StatusCodes.Status409Conflict, "BRN range exhausted.",
                     "facilityId",
-                    $"Facility '{facilityId}' has exhausted its pre-approved BRN range (ceiling {facility.BrnBlockEnd}) "
-                    + "once numbers already on a record are excluded. A new range must be assigned by the central "
-                    + "registry before more BRNs can be issued."));
+                    facility.OfficeCode is null
+                        ? $"Facility '{facilityId}' has exhausted its pre-approved BRN range (ceiling {facility.BrnBlockEnd}) "
+                          + "once numbers already on a record are excluded. A new range must be assigned by the central "
+                          + "registry before more BRNs can be issued."
+                        : $"Facility '{facilityId}' has issued every running number for this year "
+                          + $"({BrnFormat.MaxRunning:N0}) once numbers already on a record are excluded."));
             }
 
-            // Clamp to the facility's ceiling rather than fail outright when
-            // only a partial block remains.
-            var end = Math.Min(start + blockSize - 1, facility.BrnBlockEnd);
-            facility.BrnBlockNextAvailable = end + 1;
+            var skipped = grant.Skipped;
 
             db.AuditLogs.Add(new AuditLog
             {
@@ -634,13 +569,20 @@ public class BirthRecordsController(
             try
             {
                 await db.SaveChangesAsync();
-                return new BrnBlockResponse(facilityId, start, end);
+                return new BrnBlockResponse(facilityId, grant.Start, grant.End)
+                {
+                    OfficeCode = grant.OfficeCode,
+                    Year = grant.Year,
+                    FirstBrn = grant.FirstBrn,
+                    LastBrn = grant.LastBrn,
+                };
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateException)
             {
-                // Another request already advanced BrnBlockNextAvailable for
-                // this facility since we read it. Drop everything we staged
-                // this attempt and retry against fresh data.
+                // Another grant advanced the counter since we read it -- or,
+                // for the first grant of a year, created that year's counter at
+                // the same moment. Drop everything staged this attempt and
+                // retry against fresh data.
                 db.ChangeTracker.Clear();
             }
         }

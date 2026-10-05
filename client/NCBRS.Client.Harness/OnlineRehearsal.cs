@@ -105,7 +105,8 @@ internal static class OnlineRehearsal
 
         var facility = new FacilityClient(
             deviceId, facilityId,
-            new DeviceBrnAllocator(deviceId, block.Value!.BlockStart, block.Value.BlockEnd),
+            new DeviceBrnAllocator(deviceId, block.Value!.BlockStart, block.Value.BlockEnd,
+                officeCode: block.Value.OfficeCode, year: block.Value.Year),
             new SyncOutbox(deviceId, facilityId),
             signer,
             lowBlockThreshold: 5);

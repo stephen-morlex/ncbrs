@@ -48,7 +48,7 @@ const Profiles: { value: Connectivity; label: string }[] = [
   { value: 'OfflineFirst', label: 'Offline first (weeks without signal)' },
 ]
 
-const Shown = ['data.name', 'data.administrativeAreaId'] as const
+const Shown = ['data.name', 'data.administrativeAreaId', 'data.officeCode'] as const
 
 /**
  * Bring a facility into the registry. The Ministry's act.
@@ -71,6 +71,7 @@ export function CreateFacilityDialog({
   const [tier, setTier] = useState<Tier | ''>('')
   const [profile, setProfile] = useState<Connectivity | ''>('')
   const [area, setArea] = useState<Area | null>(null)
+  const [officeCode, setOfficeCode] = useState('')
   const [error, setError] = useState<NcbrsError | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -91,6 +92,7 @@ export function CreateFacilityDialog({
             tier,
             connectivityProfile: profile,
             administrativeAreaId: area.administrativeAreaId,
+            officeCode: officeCode.trim() === '' ? undefined : officeCode.trim().toUpperCase(),
           },
         },
       })
@@ -110,6 +112,7 @@ export function CreateFacilityDialog({
 
   const nameMessages = messagesFor(error, 'data.name')
   const areaMessages = messagesFor(error, 'data.administrativeAreaId')
+  const codeMessages = messagesFor(error, 'data.officeCode')
   const otherMessages = unattachedMessages(error, Shown)
   const canSubmit = name.trim().length > 0 && tier !== '' && profile !== '' && area !== null
 
@@ -188,6 +191,27 @@ export function CreateFacilityDialog({
             <AreaPicker onSelect={setArea} />
             {areaMessages.length > 0 ? (
               <p className="text-destructive text-sm">{areaMessages.join(' ')}</p>
+            ) : null}
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="facility-office-code">Office code (optional)</Label>
+            <Input
+              id="facility-office-code"
+              value={officeCode}
+              onChange={(event) => setOfficeCode(event.target.value.toUpperCase())}
+              maxLength={6}
+              className="w-40 font-mono uppercase"
+              placeholder="JTH01"
+              aria-invalid={codeMessages.length > 0 || undefined}
+              aria-describedby="facility-office-code-help"
+            />
+            <p id="facility-office-code-help" className="text-muted-foreground text-xs">
+              Two to six letters or digits, carried in every registration number it issues, so it
+              is never changed. Without one it issues plain numbers until it is given one.
+            </p>
+            {codeMessages.length > 0 ? (
+              <p className="text-destructive text-sm">{codeMessages.join(' ')}</p>
             ) : null}
           </div>
 
