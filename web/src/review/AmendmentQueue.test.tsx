@@ -97,7 +97,8 @@ describe('AmendmentQueue', () => {
     expect(screen.getByText('Nyandeng Lado')).toBeInTheDocument()
 
     // The diff, previous → new.
-    expect(screen.getByText('ChildFullName')).toBeInTheDocument()
+    // Named as a reviewer reads it, not as the registry stores it.
+    expect(screen.getByText('Child’s full name')).toBeInTheDocument()
     expect(screen.getByText('Ayen Deng Lado')).toBeInTheDocument()
   })
 

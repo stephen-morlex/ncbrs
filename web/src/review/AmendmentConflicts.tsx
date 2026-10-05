@@ -39,6 +39,7 @@ import { Textarea } from '@/components/ui/textarea'
 import type { components } from '@/api/generated/api'
 import { type NcbrsError, toNcbrsError, unreachableError } from '@/api/errors'
 import { useApiClient } from '@/api/useApi'
+import { fieldLabel } from '@/records/correction'
 import { formatDate } from '@/records/RecordDetail'
 import { ageInWords, QueueFailure, QueueSkeleton } from './queueParts'
 
@@ -226,7 +227,7 @@ export function AmendmentConflicts() {
                         <div className="font-medium">{row.childFullName}</div>
                         <div className="text-muted-foreground font-mono text-xs">{row.brn}</div>
                       </TableCell>
-                      <TableCell className="align-top font-medium">{row.field}</TableCell>
+                      <TableCell className="align-top font-medium">{fieldLabel(row.field)}</TableCell>
                       {/* What the offline device believed the field said when it
                           composed the correction. */}
                       <TableCell className="text-muted-foreground align-top">
@@ -396,7 +397,7 @@ function ReviewConflictDialog({
         <DialogHeader>
           <DialogTitle>Review this conflict</DialogTitle>
           <DialogDescription>
-            {row.childFullName} · <span className="font-mono">{row.brn}</span> · {row.field}
+            {row.childFullName} · <span className="font-mono">{row.brn}</span> · {fieldLabel(row.field)}
           </DialogDescription>
         </DialogHeader>
 

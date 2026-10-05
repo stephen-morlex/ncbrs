@@ -22,12 +22,37 @@ export const ImmediateFields = [
   'birthOrder',
 ] as const
 
+/** A parent's details, as the form names them: `mother.address`. */
+const ParentParts = [
+  'givenNames',
+  'surname',
+  'maidenSurname',
+  'dateOfBirth',
+  'placeOfBirth',
+  'occupation',
+  'address',
+  'documentType',
+  'documentNumber',
+] as const
+
 export const ApprovalFields = [
   'childFullName',
   'dateOfBirth',
   'sex',
   'motherFullName',
   'fatherFullName',
+  // The fuller registration's fields all wait too: only the clinical
+  // measurements above take effect at once.
+  'childGivenNames',
+  'childSurname',
+  'placeOfBirthKind',
+  'placeOfBirth',
+  ...ParentParts.map((part) => `mother.${part}` as const),
+  ...ParentParts.filter((part) => part !== 'maidenSurname').map((part) => `father.${part}` as const),
+  'marriage.date',
+  'marriage.certificateNumber',
+  'proofOfAddress.kind',
+  'proofOfAddress.reference',
 ] as const
 
 /**
@@ -39,7 +64,59 @@ export const ApprovalFields = [
  * either warn about withdrawal that will not happen, or fail to warn about one
  * that will.
  */
-export const CertificateFields = ['childFullName', 'dateOfBirth', 'sex'] as const
+export const CertificateFields = [
+  'childFullName',
+  // The parts recompose the full name the certificate signs.
+  'childGivenNames',
+  'childSurname',
+  'dateOfBirth',
+  'sex',
+] as const
+
+/**
+ * A field as the registry names it in a correction (`ChildFullName`,
+ * `Mother.Address`), as a registrar reads it. A history or a queue that says
+ * "Mother.DocumentNumber" asks the reader to translate first.
+ */
+export function fieldLabel(field: string): string {
+  const whole: Record<string, string> = {
+    ChildFullName: 'Child’s full name',
+    ChildGivenNames: 'Child’s given names',
+    ChildSurname: 'Child’s surname',
+    DateOfBirth: 'Date of birth',
+    Sex: 'Sex',
+    BirthWeightGrams: 'Birth weight',
+    GestationalAgeWeeks: 'Gestational age',
+    BirthOrder: 'Birth order',
+    MotherFullName: 'Mother’s full name',
+    FatherFullName: 'Father’s full name',
+    PlaceOfBirthKind: 'Place of birth',
+    PlaceOfBirth: 'Where the birth happened',
+    'Marriage.Date': 'Date of the parents’ marriage',
+    'Marriage.CertificateNumber': 'Marriage certificate number',
+    'ProofOfAddress.Kind': 'Proof of address',
+    'ProofOfAddress.Reference': 'Proof of address reference',
+  }
+  const who: Record<string, string> = { Mother: 'Mother’s', Father: 'Father’s' }
+  const parts: Record<string, string> = {
+    GivenNames: 'given names',
+    Surname: 'surname',
+    MaidenSurname: 'maiden surname',
+    DateOfBirth: 'date of birth',
+    PlaceOfBirth: 'place of birth',
+    Occupation: 'job',
+    Address: 'address',
+    DocumentType: 'identity document',
+    DocumentNumber: 'document number',
+  }
+
+  if (whole[field]) {
+    return whole[field]
+  }
+
+  const [head, part] = field.split('.')
+  return part && who[head] && parts[part] ? `${who[head]} ${parts[part]}` : field
+}
 
 export type CorrectableField =
   | (typeof ImmediateFields)[number]

@@ -20,6 +20,30 @@ public record AmendBirthRecordRequest
     public string? MotherFullName { get; init; }
     public string? FatherFullName { get; init; }
 
+    // The fuller registration's fields. Every one waits for a second
+    // registrar: only the clinical measurements above apply at once. A text
+    // value given as "" clears it; null, as everywhere here, leaves it alone.
+
+    /// <summary>The child's given names, corrected; the full name is recomposed from the parts.</summary>
+    public string? ChildGivenNames { get; init; }
+
+    /// <summary>The child's surname, corrected; the full name is recomposed from the parts.</summary>
+    public string? ChildSurname { get; init; }
+
+    public PlaceOfBirthKind? PlaceOfBirthKind { get; init; }
+
+    public string? PlaceOfBirth { get; init; }
+
+    /// <summary>The mother's details to correct: only the parts given are changed.</summary>
+    public ParentDetails? Mother { get; init; }
+
+    /// <summary>The father's details to correct: only the parts given are changed.</summary>
+    public ParentDetails? Father { get; init; }
+
+    public MarriageDetails? Marriage { get; init; }
+
+    public ProofOfAddressDetails? ProofOfAddress { get; init; }
+
     /// <summary>Why the correction is being made. Required.</summary>
     public string Reason { get; init; } = string.Empty;
 
@@ -131,7 +155,15 @@ public record AmendmentHistoryEntry(
     string? ReviewedByRegistrarName,
     DateTime? ReviewedAtUtc,
     string? ReviewNote,
-    Guid? TransactionId
+    Guid? TransactionId,
+
+    /// <summary>
+    /// True when the values were withheld from this caller: an address, an
+    /// identity document number or a certificate reference, shown only to
+    /// those who may act for the record's facility. The history is open to any
+    /// signed-in caller, like the lookup by number, so it cannot carry them.
+    /// </summary>
+    bool Withheld = false
 );
 
 /// <summary>

@@ -83,7 +83,7 @@ describe('AmendmentConflicts', () => {
     renderQueue()
 
     expect(await screen.findByText('100001')).toBeInTheDocument()
-    expect(screen.getByText('BirthWeightGrams')).toBeInTheDocument()
+    expect(screen.getByText('Birth weight')).toBeInTheDocument()
     // The disagreement itself: device's belief vs the register's value, and
     // the value now standing under last-writer-wins.
     expect(screen.getByText('3200')).toBeInTheDocument()

@@ -11771,6 +11771,74 @@
               "string"
             ]
           },
+          "childGivenNames": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "childSurname": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "placeOfBirthKind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PlaceOfBirthKind"
+              }
+            ]
+          },
+          "placeOfBirth": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "mother": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ParentDetails"
+              }
+            ]
+          },
+          "father": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ParentDetails"
+              }
+            ]
+          },
+          "marriage": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MarriageDetails"
+              }
+            ]
+          },
+          "proofOfAddress": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProofOfAddressDetails"
+              }
+            ]
+          },
           "reason": {
             "type": "string"
           },
@@ -12033,6 +12101,10 @@
               "string"
             ],
             "format": "uuid"
+          },
+          "withheld": {
+            "type": "boolean",
+            "default": false
           }
         }
       },

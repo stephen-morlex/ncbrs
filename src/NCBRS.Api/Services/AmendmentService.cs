@@ -20,7 +20,14 @@ public enum AmendmentResult
     RecordSuperseded,
 
     /// <summary>The registration was voided; there is nothing left to correct.</summary>
-    RecordAnnulled
+    RecordAnnulled,
+
+    /// <summary>
+    /// The correction, as given, would leave the record describing someone it
+    /// did not mean to: one part of a name registered whole, details for a
+    /// parent with no name, a birth away from the facility with no place.
+    /// </summary>
+    Incomplete
 }
 
 public record AmendmentOutcome(
@@ -71,7 +78,7 @@ public record AmendmentReviewOutcome(
 /// who is not the author, because those are the fields that decide which
 /// person the register is describing.
 /// </summary>
-public class AmendmentService(
+public partial class AmendmentService(
     NcbrsDbContext db,
     IEventPublisher eventPublisher,
     CertificateRevocationRecorder revocations,
@@ -84,6 +91,9 @@ public class AmendmentService(
     /// </summary>
     private static readonly string[] CertificateFields =
         [nameof(AmendBirthRecordRequest.ChildFullName),
+         // The parts recompose the signed full name.
+         AmendmentFields.ChildGivenNames,
+         AmendmentFields.ChildSurname,
          nameof(AmendBirthRecordRequest.DateOfBirth),
          nameof(AmendBirthRecordRequest.Sex)];
 
@@ -155,6 +165,11 @@ public class AmendmentService(
         {
             return new AmendmentOutcome(AmendmentResult.NothingToChange,
                 Detail: "Nothing supplied differs from the current record.");
+        }
+
+        if (Incomplete(record, changes) is { } problem)
+        {
+            return new AmendmentOutcome(AmendmentResult.Incomplete, Detail: problem);
         }
 
         var requestId = Guid.CreateVersion7();
@@ -626,7 +641,7 @@ public class AmendmentService(
     // --- internals --------------------------------------------------------
 
     private static bool RequiresApproval(string field)
-        => ApprovalRequiredFields.Contains(field);
+        => ApprovalRequiredFields.Contains(field) || AmendmentFields.All.Contains(field);
 
     private record StaleField(string Field, string? Expected, string? Actual);
 
@@ -715,7 +730,9 @@ public class AmendmentService(
                 brn,
                 record.BirthRecordId,
                 record.FacilityId,
-                [.. changes.Select(change => new AmendedField(change.Field, change.PreviousValue, change.NewValue))],
+                [.. changes.Select(change => AmendmentFields.All.Contains(change.Field)
+                    ? new AmendedField(change.Field, null, null)
+                    : new AmendedField(change.Field, change.PreviousValue, change.NewValue))],
                 reason,
                 authorId,
                 certificateInvalidated,
@@ -820,6 +837,8 @@ public class AmendmentService(
                 Number(record.BirthOrder), Number(order)));
         }
 
+        CollectFuller(record, request, changes);
+
         return changes;
     }
 
@@ -838,7 +857,7 @@ public class AmendmentService(
         nameof(AmendBirthRecordRequest.BirthWeightGrams) => Number(record.BirthWeightGrams),
         nameof(AmendBirthRecordRequest.GestationalAgeWeeks) => Number(record.GestationalAgeWeeks),
         nameof(AmendBirthRecordRequest.BirthOrder) => Number(record.BirthOrder),
-        _ => null
+        _ => ReadFuller(record, field)
     };
 
     /// <summary>
@@ -890,8 +909,14 @@ public class AmendmentService(
                 case nameof(AmendBirthRecordRequest.BirthOrder):
                     record.BirthOrder = int.Parse(change.NewValue!, CultureInfo.InvariantCulture);
                     break;
+
+                default:
+                    ApplyFuller(record, change);
+                    break;
             }
         }
+
+        RecomposeNames(record, changes);
     }
 
     private static void Compare(List<FieldChange> changes, string field, string? current, string? proposed)
@@ -930,8 +955,8 @@ public class AmendmentService(
     /// A correction is to the full name, which is what is signed and matched.
     /// The given names and surname it was composed from no longer describe it,
     /// so they are cleared rather than left contradicting it; the previous
-    /// value stays in the amendment history. (Correcting the parts themselves
-    /// comes later.)
+    /// value stays in the amendment history. Correcting the parts instead
+    /// recomposes the full name from them (<see cref="RecomposeNames"/>).
     /// </summary>
     private static void ForgetNameParts(Person person)
     {

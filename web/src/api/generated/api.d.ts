@@ -771,6 +771,14 @@ export interface components {
             birthOrder?: null | number;
             motherFullName?: null | string;
             fatherFullName?: null | string;
+            childGivenNames?: null | string;
+            childSurname?: null | string;
+            placeOfBirthKind?: null | components["schemas"]["PlaceOfBirthKind"];
+            placeOfBirth?: null | string;
+            mother?: null | components["schemas"]["ParentDetails"];
+            father?: null | components["schemas"]["ParentDetails"];
+            marriage?: null | components["schemas"]["MarriageDetails"];
+            proofOfAddress?: null | components["schemas"]["ProofOfAddressDetails"];
             reason?: string;
             deviceId?: string;
             observedValues?: null | components["schemas"]["ObservedValue"][];
@@ -837,6 +845,8 @@ export interface components {
             reviewNote: null | string;
             /** Format: uuid */
             transactionId: null | string;
+            /** @default false */
+            withheld: boolean;
         };
         /** @enum {string} */
         AmendmentStatus: "Applied" | "PendingApproval" | "Rejected";
