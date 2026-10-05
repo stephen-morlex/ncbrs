@@ -20,9 +20,8 @@ namespace NCBRS.Client.App.Pages;
 public sealed class RegisterPage : FlowPage
 {
     private readonly DeviceHost _host;
-    private readonly Label _queue = new() { FontSize = 13 };
-    private readonly Label _result = new() { FontSize = 16 };
-    private readonly Button _printSlip = new() { Text = Strings.Register_PrintSlip, IsVisible = false };
+    private readonly Label _result = Ui.HideWhenEmpty(Ui.Body(""));
+    private readonly Button _printSlip = Ui.SecondaryButton(Strings.Register_PrintSlip);
 
     /// <summary>The last birth's slip, until the next one: a family may need it printed again before leaving.</summary>
     private NCBRS.Client.Printing.PrintedDocument? _lastSlip;
@@ -54,7 +53,7 @@ public sealed class RegisterPage : FlowPage
     private readonly Collapsible _proof;
 
     private readonly VerticalStackLayout _late;
-    private readonly Label _lateNote = new() { FontSize = 13, TextColor = Colors.DarkRed };
+    private readonly Label _lateNote = Ui.Body("", Ui.Warning);
     private readonly Picker _evidence = Choice<LateRegistrationEvidenceType>(Strings.Register_Evidence, Enum.GetValues<LateRegistrationEvidenceType>());
     private readonly Entry _evidenceReference = Field(Strings.Register_EvidenceReference);
     private readonly Entry _declarant = Field(Strings.Register_Declarant);
@@ -110,36 +109,34 @@ public sealed class RegisterPage : FlowPage
         _statistics.IsVisible = false;
         _withStatistics.CheckedChanged += (_, args) => _statistics.IsVisible = args.Value;
 
-        var register = new Button { Text = Strings.Register_Submit };
+        var register = Ui.PrimaryButton(Strings.Register_Submit);
         register.Clicked += async (_, _) => await RunAsync(RegisterAsync);
-        var sync = new Button { Text = Strings.Register_Sync };
-        sync.Clicked += async (_, _) => await RunAsync(SyncAsync);
-        var export = new Button { Text = Strings.Register_Export, BackgroundColor = Colors.DarkSlateGray };
-        export.Clicked += async (_, _) => await RunAsync(ExportAsync);
-        var lockTablet = new Button { Text = Strings.Register_Lock, BackgroundColor = Colors.Gray };
-        lockTablet.Clicked += (_, _) =>
-        {
-            host.Lock();
-            Flow.Advance(host);
-        };
+        _printSlip.IsVisible = false;
+        _printSlip.Clicked += async (_, _) => await RunAsync(PrintSlipAsync);
 
+        // In cards, by what they describe, every field labelled above it: a
+        // placeholder vanishes once something is typed, and three name fields
+        // for a mother with no labels are three guesses.
         var form = new View[]
         {
-            new Label
-            {
-                Text = Strings.Register_FirstCut,
-                FontSize = 12, FontAttributes = FontAttributes.Italic,
-            },
-            Caption(Strings.Register_Child), _childGiven, _childSurname, Caption(Strings.Register_DateOfBirth), _born,
-            _placeKind, _placeWhere, _sex, _plurality, _order, _weight, _gestation,
-            Caption(Strings.Register_Parents),
-            _mother.Section.Header, _mother.Section.Content,
-            _father.Section.Header, _father.Section.Content,
-            _marriage.Header, _marriage.Content,
-            _proof.Header, _proof.Content,
-            _late,
-            new HorizontalStackLayout { Spacing = 8, Children = { _withStatistics, new Label { Text = Strings.Register_AddStatistics, VerticalOptions = LayoutOptions.Center } } },
-            _statistics,
+            Ui.Caption(Strings.Register_FirstCut),
+            Ui.Card(
+                Ui.Heading(Strings.Register_Child),
+                Labeled(_childGiven), Labeled(_childSurname),
+                Labeled(Strings.Register_DateOfBirth, _born),
+                Labeled(_placeKind), Labeled(_placeWhere),
+                Labeled(_sex), Labeled(_plurality), Labeled(_order),
+                Labeled(_weight), Labeled(_gestation)),
+            Ui.Card(
+                Ui.Heading(Strings.Register_Parents),
+                _mother.Section.Header, _mother.Section.Content,
+                _father.Section.Header, _father.Section.Content,
+                _marriage.Header, _marriage.Content,
+                _proof.Header, _proof.Content),
+            ShownWith(Ui.Card(_late), _late),
+            Ui.Card(
+                new HorizontalStackLayout { Spacing = 8, Children = { _withStatistics, new Label { Text = Strings.Register_AddStatistics, FontSize = 16, TextColor = Ui.Text, VerticalOptions = LayoutOptions.Center } } },
+                _statistics),
             Status, Busy,
         };
 
@@ -148,76 +145,33 @@ public sealed class RegisterPage : FlowPage
             // The registry's reasons first, then the birth as it was sent, to put right.
             Fill(correcting.Birth);
             register.Text = Strings.Register_SaveCorrection;
-            var back = new Button { Text = Strings.Register_BackNoSave, BackgroundColor = Colors.Gray };
+            var back = Ui.GhostButton(Strings.Register_BackNoSave);
             back.Clicked += (_, _) => Flow.Show(new RefusedPage(host));
-            Build([
+            BuildInside(host, Pages.Section.Register, [
                 Heading(Language.Format(Strings.Register_CorrectHeading, correcting.Birth.Brn)),
-                new Label
-                {
-                    FontSize = 14, TextColor = Colors.DarkRed,
-                    // The field in the registrar's language; the reason in the registry's words.
-                    Text = Strings.Register_RefusedBecause + "\n"
-                           + string.Join("\n", (reasons ?? []).Select(reason => $"• {Language.Field(reason.Field)}: {reason.Message}")),
-                },
+                // The field in the registrar's language; the reason in the registry's words.
+                Ui.Notice(Icons.Error,
+                    Strings.Register_RefusedBecause + "\n"
+                    + string.Join("\n", (reasons ?? []).Select(reason => $"• {Language.Field(reason.Field)}: {reason.Message}")),
+                    Ui.Danger, Ui.DangerSoft),
                 Note(Language.Format(Strings.Register_CorrectNote, correcting.Birth.Brn)),
                 .. form, register, back]);
             return;
         }
 
-        var refused = new Button { BackgroundColor = Colors.DarkRed, IsVisible = false };
-        refused.Clicked += (_, _) => Flow.Show(new RefusedPage(host));
-        _refusedBanner = refused;
-
-        // Switching rebuilds the page, so a half-typed birth would be lost: ask first.
-        var language = Flow.LanguageSwitch(host, async () =>
-            !HasInput() || await DisplayAlertAsync(Strings.Language_Switch, Strings.Register_LanguageClears,
-                Strings.Language_Switch, Strings.Common_Cancel));
-
-        // Leaving the form clears it, so a half-typed birth asks first.
-        var checkCertificate = new Button { Text = Strings.Register_Check, BackgroundColor = Colors.DarkSlateGray };
-        checkCertificate.Clicked += async (_, _) =>
-        {
-            if (!HasInput() || await DisplayAlertAsync(Strings.Check_Title, Strings.Register_LeaveClears,
-                    Strings.Register_Check, Strings.Common_Cancel))
-            {
-                Flow.Show(new CheckCertificatePage(host));
-            }
-        };
-
-        _printSlip.Clicked += async (_, _) => await RunAsync(PrintSlipAsync);
-
-        // Needs signal, and leaves the form the same way checking does.
-        var printCertificate = new Button { Text = Strings.Register_PrintCertificate, BackgroundColor = Colors.DarkSlateGray, IsVisible = host.Printer is not null };
-        printCertificate.Clicked += async (_, _) =>
-        {
-            if (!HasInput() || await DisplayAlertAsync(Strings.Register_PrintCertificate, Strings.Register_LeaveClears,
-                    Strings.Register_PrintCertificate, Strings.Common_Cancel))
-            {
-                Flow.Show(new PrintCertificatePage(host));
-            }
-        };
-
-        var printer = new Button { Text = Strings.Printer_Title, BackgroundColor = Colors.Gray, IsVisible = host.Printer is not null };
-        printer.Clicked += async (_, _) =>
-        {
-            if (!HasInput() || await DisplayAlertAsync(Strings.Printer_Title, Strings.Register_LeaveClears,
-                    Strings.Printer_Title, Strings.Common_Cancel))
-            {
-                Flow.Show(new PrinterPage(host));
-            }
-        };
-
-        Build([
-            language,
-            Heading(Language.Format(Strings.Register_Unlocked, host.UnlockedAs?.DisplayName)),
-            refused,
-            .. form, register, _result, _printSlip, _queue, sync, export, _exported, checkCertificate, printCertificate, printer, lockTablet]);
-        Refresh();
+        BuildInside(host, Pages.Section.Register, [.. form, register, _result, _printSlip]);
     }
 
-    private Button? _refusedBanner;
+    /// <summary>Leaving the form drops what is typed in it, so a half-typed birth asks first.</summary>
+    public override async Task<bool> CanLeaveAsync()
+        => !HasInput() || await DisplayAlertAsync(Strings.Register_Title, Strings.Register_LeaveClears,
+            Strings.Common_Leave, Strings.Common_Cancel);
 
-    private readonly Label _exported = new() { FontSize = 13 };
+    private static View Labeled(View input) => Ui.Labeled(input);
+
+    private static View Labeled(string label, View input) => Ui.Labeled(label, input);
+
+    private static View ShownWith(View wrapper, View inner) => Ui.ShownWith(wrapper, inner);
 
     /// <summary>The form, filled from a birth as it was sent.</summary>
     private void Fill(RegisterBirthRequest birth)
@@ -337,7 +291,7 @@ public sealed class RegisterPage : FlowPage
         _lastSlip = _host.SlipFor(draft, birth);
         _printSlip.IsVisible = _host.Printer is not null;
         Clear();
-        Refresh();
+        RefreshStatus();
     }
 
     private async Task PrintSlipAsync()
@@ -500,96 +454,6 @@ public sealed class RegisterPage : FlowPage
         Status.Text = "";
     }
 
-    /// <summary>
-    /// Seal what is waiting to sync and hand it to the share sheet, from where
-    /// the registrar saves it to a USB stick or card. Sealed to the registry:
-    /// whoever carries or finds the stick reads nobody's details.
-    /// </summary>
-    private async Task ExportAsync()
-    {
-        var (path, count, problem) = await _host.ExportAsync();
-        if (problem is not null)
-        {
-            await ShowProblemAsync(problem);
-            return;
-        }
-
-        await Share.Default.RequestAsync(new ShareFileRequest
-        {
-            Title = Language.Format(Strings.Export_ShareTitle, count),
-            File = new ShareFile(path!, "application/json"),
-        });
-
-        _result.Text = Language.Format(Strings.Export_Done, count);
-        Refresh();
-    }
-
-    private async Task SyncAsync()
-    {
-        var (report, staff) = await _host.SyncAsync();
-        _result.Text = Describe(report);
-        Status.Text = string.Join("\n", report.Problems.Concat(staff));
-        Refresh();
-    }
-
-    private void Refresh()
-    {
-        var facility = _host.Session?.Facility;
-        _queue.Text = Language.Format(Strings.Register_Queue, facility?.SendableCount, facility?.BlockRemaining);
-
-        // A stick is not a confirmation: say how many on the last one the
-        // registry has not yet confirmed, so nobody takes it for registered.
-        var unconfirmed = _host.ExportedAndUnconfirmed;
-        _exported.IsVisible = unconfirmed > 0;
-        _exported.Text = Language.Format(Strings.Register_ExportedUnconfirmed, unconfirmed, _host.State.LastExport?.AtUtc.ToLocalTime());
-
-        // Never out of sight: a refused birth is one the registry does not have.
-        var refused = facility?.Refused.Count ?? 0;
-        if (_refusedBanner is not null)
-        {
-            _refusedBanner.IsVisible = refused > 0;
-            _refusedBanner.Text = refused == 1
-                ? Strings.Register_RefusedOne
-                : Language.Format(Strings.Register_RefusedMany, refused);
-        }
-    }
-
-    /// <summary>
-    /// Held is never shown as confirmed: a District node has the births, the
-    /// registry has not seen them, and a family must not be told otherwise.
-    /// </summary>
-    private static string Describe(WindowReport report)
-    {
-        var settled = report.Settlements.SelectMany(settlement => settlement.Settled).ToList();
-        var rejected = report.Settlements.SelectMany(settlement => settlement.Rejected).ToList();
-        var assigned = string.Concat(settled
-            .Where(outcome => outcome.AssignedBrn is not null)
-            .Select(outcome => "\n" + Language.Format(Strings.Sync_Assigned, outcome.Brn, outcome.AssignedBrn)));
-        var refusals = string.Concat(rejected.Select(outcome =>
-            "\n" + Language.Format(Strings.Sync_Refused, outcome.Brn,
-                string.Join("; ", outcome.Errors?.Select(error => error.Message) ?? []))));
-
-        var upload = report.Upload switch
-        {
-            null => Strings.Sync_Nothing,
-            CentralOutcome.Succeeded => Language.Format(Strings.Sync_Sent, settled.Count)
-                                        + (rejected.Count > 0 ? Language.Format(Strings.Sync_SentRefused, rejected.Count) : "")
-                                        + assigned + refusals,
-            CentralOutcome.Held => Strings.Sync_Held,
-            CentralOutcome.Unauthorized => Strings.Sync_Unauthorized,
-            CentralOutcome.Unreachable => Strings.Sync_Unreachable,
-            _ => Language.Format(Strings.Sync_Other, Language.Name(report.Upload.Value)),
-        };
-
-        return upload + (report.BlockGranted is { } block
-            // As they will be written, composed by the registry; a numeric
-            // block (or a registry from before the format) has the numbers.
-            ? "\n" + Language.Format(Strings.Sync_NewNumbers,
-                block.FirstBrn ?? block.BlockStart.ToString(CultureInfo.InvariantCulture),
-                block.LastBrn ?? block.BlockEnd.ToString(CultureInfo.InvariantCulture))
-            : "");
-    }
-
     // --- small helpers ------------------------------------------------------------------------------
 
     private static Picker Choice<T>(string title, IEnumerable<T> values) where T : struct, Enum => Choices.Choice(title, values);
@@ -598,15 +462,14 @@ public sealed class RegisterPage : FlowPage
 
     private static string? Text(Entry entry) => string.IsNullOrWhiteSpace(entry.Text) ? null : entry.Text.Trim();
 
-    private static Label Caption(string text) => new() { Text = text, FontAttributes = FontAttributes.Bold, Margin = new Thickness(0, 8, 0, 0) };
 
     private static VerticalStackLayout Section(string title, params View[] views)
     {
         var section = new VerticalStackLayout { Spacing = 10 };
-        section.Add(Caption(title));
+        section.Add(Ui.Heading(title));
         foreach (var view in views)
         {
-            section.Add(view);
+            section.Add(view is Entry or Picker ? Labeled(view) : view);
         }
 
         return section;

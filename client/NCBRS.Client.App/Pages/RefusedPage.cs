@@ -19,7 +19,7 @@ public sealed class RefusedPage : FlowPage
 
         foreach (var (record, reasons) in refused)
         {
-            var correct = new Button { Text = Language.Format(Strings.Refused_Correct, record.Birth.Brn) };
+            var correct = Ui.PrimaryButton(Language.Format(Strings.Refused_Correct, record.Birth.Brn));
             correct.Clicked += (_, _) => Flow.Show(new RegisterPage(host, record, reasons));
             list.Add(new VerticalStackLayout
             {
@@ -37,10 +37,12 @@ public sealed class RefusedPage : FlowPage
             });
         }
 
-        var back = new Button { Text = Strings.Refused_Back, BackgroundColor = Colors.Gray };
+        var back = Ui.GhostButton(Strings.Refused_Back);
+        // Unlocked, the bottom bar is the way back; before, this is the only one.
+        back.IsVisible = host.UnlockedAs is null;
         back.Clicked += (_, _) => Flow.Advance(host);
 
-        Build(
+        BuildFor(host, Pages.Section.Sync, 
             Heading(refused.Count == 0 ? Strings.Refused_HeadingNone : Strings.Refused_Heading),
             Note(refused.Count == 0
                 ? Strings.Refused_NoneNote

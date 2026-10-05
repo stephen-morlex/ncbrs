@@ -25,12 +25,14 @@ public sealed class PrintCertificatePage : FlowPage
     {
         _host = host;
 
-        var print = new Button { Text = Strings.Print_CertFetch };
+        var print = Ui.PrimaryButton(Strings.Print_CertFetch);
         print.Clicked += async (_, _) => await RunAsync(PrintAsync);
-        var back = new Button { Text = Strings.Common_GoBack, BackgroundColor = Colors.Gray };
+        var back = Ui.GhostButton(Strings.Common_GoBack);
+        // Unlocked, the bottom bar is the way back; before, this is the only one.
+        back.IsVisible = host.UnlockedAs is null;
         back.Clicked += (_, _) => Flow.Advance(host);
 
-        Build(Heading(Strings.Register_PrintCertificate), Note(Strings.Print_CertNote), _brn, print, Status, Busy, _done, back);
+        BuildFor(host, Pages.Section.More, Heading(Strings.Register_PrintCertificate), Note(Strings.Print_CertNote), _brn, print, Status, Busy, _done, back);
     }
 
     private async Task PrintAsync()

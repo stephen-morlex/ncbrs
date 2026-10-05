@@ -24,11 +24,13 @@ public sealed class PrinterPage : FlowPage
         _width.ItemsSource = new[] { Strings.Printer_58, Strings.Printer_80 };
         _width.SelectedIndex = PrinterChoice.Load().WidthDots == PrinterChoice.Dots80 ? 1 : 0;
 
-        var save = new Button { Text = Strings.Printer_Save };
+        var save = Ui.PrimaryButton(Strings.Printer_Save);
         save.Clicked += (_, _) => Save();
-        var test = new Button { Text = Strings.Printer_Test, BackgroundColor = Colors.DarkSlateGray };
+        var test = Ui.SecondaryButton(Strings.Printer_Test);
         test.Clicked += async (_, _) => await RunAsync(TestAsync);
-        var back = new Button { Text = Strings.Common_GoBack, BackgroundColor = Colors.Gray };
+        var back = Ui.GhostButton(Strings.Common_GoBack);
+        // Unlocked, the bottom bar is the way back; before, this is the only one.
+        back.IsVisible = host.UnlockedAs is null;
         back.Clicked += (_, _) => Flow.Advance(host);
 
         var views = new List<View> { Heading(Strings.Printer_Title), _current, Note(Strings.Printer_Note), _printer, _width, save, test };
@@ -36,13 +38,13 @@ public sealed class PrinterPage : FlowPage
 #if DEBUG
         // For checking the thermal layout where no printer is in reach: the
         // exact image a printer would get, saved for adb to pull. Debug builds only.
-        var preview = new Button { Text = "Save a thermal preview (debug)", BackgroundColor = Colors.Gray };
+        var preview = Ui.GhostButton("Save a thermal preview (debug)");
         preview.Clicked += async (_, _) => await RunAsync(PreviewAsync);
         views.Add(preview);
 #endif
 
         views.AddRange([Status, Busy, back]);
-        Build([.. views]);
+        BuildFor(host, Pages.Section.More, [.. views]);
         ShowCurrent();
     }
 

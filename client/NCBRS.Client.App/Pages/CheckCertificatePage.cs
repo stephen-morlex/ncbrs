@@ -45,12 +45,14 @@ public sealed class CheckCertificatePage : FlowPage
         _host = host;
         _result = new Border { Padding = 16, StrokeThickness = 2, IsVisible = false, Content = _answer };
 
-        var check = new Button { Text = Strings.Check_Button };
+        var check = Ui.PrimaryButton(Strings.Check_Button);
         check.Clicked += (_, _) => Check(_code.Text);
         _code.Completed += (_, _) => Check(_code.Text);
         _again.Clicked += (_, _) => Reset();
 
-        var back = new Button { Text = Strings.Common_GoBack, BackgroundColor = Colors.Gray };
+        var back = Ui.GhostButton(Strings.Common_GoBack);
+        // Unlocked, the bottom bar is the way back; before, this is the only one.
+        back.IsVisible = host.UnlockedAs is null;
         back.Clicked += (_, _) => Flow.Advance(host);
 
         var views = new List<View>
@@ -92,7 +94,7 @@ public sealed class CheckCertificatePage : FlowPage
         views.AddRange([
             new Label { Text = Strings.Check_TypeLabel, FontAttributes = FontAttributes.Bold },
             _code, check, Status, _result, _again, back]);
-        Build([.. views]);
+        BuildFor(host, Pages.Section.Check, [.. views]);
     }
 
     protected override async void OnAppearing()
