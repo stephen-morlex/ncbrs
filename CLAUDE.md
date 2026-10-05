@@ -341,7 +341,26 @@ stay what national figures count), and **both forms**.
   decision.
 - **A correction to a full name clears its given names and surname**
   (`AmendmentService.ForgetNameParts`) rather than leave them contradicting
-  it; correcting the parts themselves is a follow-up.
+  it. **Correcting the parts recomposes the full name** instead.
+- **Corrections to the new fields (2026-10-05, registry and web):**
+  - **All of them wait for a second registrar.** Only the clinical
+    measurements apply at once, as settled. The child's given names and
+    surname are also certificate fields, since they recompose the signed name.
+  - Named as `ChildSurname`, `PlaceOfBirthKind`, `Mother.Address`,
+    `Marriage.Date`... (`AmendmentFields`, Contracts). Text given as `""`
+    clears it; dates and the document type can be corrected, not cleared.
+  - **Refused before anything is stored** (`AmendmentResult.Incomplete`,
+    400): one part of a name registered whole (it would drop the rest),
+    details for a parent not recorded without naming them, a parent's name
+    removed, a birth moved away from the facility with no place. A name is
+    corrected the way it was recorded; the web never splits one.
+  - **The `.amended` event names these fields but carries none of their
+    values.** The consumer reads only Sex and DateOfBirth from it.
+  - **The correction history withholds addresses, document numbers and
+    certificate references** (`AmendmentFields.Withheld`, the same set the
+    lookup restricts) from a caller who may not act for the facility,
+    marking the entry `withheld`. It was open to any signed-in caller.
+  - The tablet still corrects only its own refused births, as decided.
 - South Sudanese law has no civil partnership, so there is only the marriage
   (statutory, customary or religious).
 - Enum columns are stored as text, like every other enum here.

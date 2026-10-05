@@ -11,8 +11,6 @@ import {
   FieldError,
   FieldGroup,
   FieldLabel,
-  FieldLegend,
-  FieldSet,
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import {
@@ -29,21 +27,17 @@ import type { components } from '@/api/generated/api'
 import { type NcbrsError, messagesFor, toNcbrsError, unreachableError } from '@/api/errors'
 import { useApiClient } from '@/api/useApi'
 import { PageHeader } from '@/shell/PageHeader'
-import { changedFields, withdrawsCertificate } from './correction'
+import { changedFields, fieldLabel, withdrawsCertificate } from './correction'
+import { type CorrectionDraft, CorrectionDetails } from './CorrectionDetails'
 
 type BirthRecord = components['schemas']['BirthRecordResponse']
 type AmendResponse = components['schemas']['AmendBirthRecordResponse']
 
-interface Draft extends Record<string, unknown> {
-  childFullName: string
-  dateOfBirth: string
-  sex: string
-  motherFullName: string
-  fatherFullName: string
-  birthWeightGrams: string
-  gestationalAgeWeeks: string
-  birthOrder: string
-}
+/**
+ * The form's values by the request's own names, flattened: `mother.address`.
+ * Flat so one comparison (`changedFields`) finds what changed across them all.
+ */
+type Draft = CorrectionDraft
 
 /**
  * Requesting a correction to a registered birth.
@@ -264,16 +258,44 @@ export function RequestCorrection() {
               </CardHeader>
               <CardContent>
                 <FieldGroup>
-                  <Field>
-                    <FieldLabel htmlFor="childFullName">Child’s full name</FieldLabel>
-                    <Input
-                      id="childFullName"
-                      value={draft.childFullName}
-                      onChange={(event) => set(setDraft, 'childFullName', event.target.value)}
-                    />
-                    <CertificateWarning record={record} field="childFullName" changes={changes} />
-                    <ServerErrors error={error} field="data.childFullName" />
-                  </Field>
+                  {/* Corrected the way it was recorded. A name registered in
+                      parts is corrected in parts, and the registry recomposes
+                      the full name from them; one registered whole stays whole. */}
+                  {record?.details?.childGivenNames || record?.details?.childSurname ? (
+                    <div className="grid items-start gap-5 md:grid-cols-2">
+                      <Field>
+                        <FieldLabel htmlFor="childGivenNames">Child’s given names</FieldLabel>
+                        <Input
+                          id="childGivenNames"
+                          value={draft.childGivenNames}
+                          onChange={(event) => set(setDraft, 'childGivenNames', event.target.value)}
+                        />
+                        <CertificateWarning record={record} field="childGivenNames" changes={changes} />
+                        <ServerErrors error={error} field="data.childGivenNames" />
+                      </Field>
+                      <Field>
+                        <FieldLabel htmlFor="childSurname">Child’s surname</FieldLabel>
+                        <Input
+                          id="childSurname"
+                          value={draft.childSurname}
+                          onChange={(event) => set(setDraft, 'childSurname', event.target.value)}
+                        />
+                        <CertificateWarning record={record} field="childSurname" changes={changes} />
+                        <ServerErrors error={error} field="data.childSurname" />
+                      </Field>
+                    </div>
+                  ) : (
+                    <Field>
+                      <FieldLabel htmlFor="childFullName">Child’s full name</FieldLabel>
+                      <Input
+                        id="childFullName"
+                        value={draft.childFullName}
+                        onChange={(event) => set(setDraft, 'childFullName', event.target.value)}
+                      />
+                      <CertificateWarning record={record} field="childFullName" changes={changes} />
+                      <ServerErrors error={error} field="data.childFullName" />
+                    </Field>
+                  )}
 
                   <Field>
                     <FieldLabel htmlFor="dateOfBirth">Date of birth</FieldLabel>
@@ -305,32 +327,15 @@ export function RequestCorrection() {
                     <CertificateWarning record={record} field="sex" changes={changes} />
                   </Field>
 
-                  <FieldSet>
-                    <FieldLegend>Parents</FieldLegend>
-                    <FieldDescription>
-                      No certificate is withdrawn by correcting these, but filiation changes — which
-                      is why they still wait for a reviewer.
-                    </FieldDescription>
-                    <FieldGroup>
-                      <Field>
-                        <FieldLabel htmlFor="motherFullName">Mother’s full name</FieldLabel>
-                        <Input
-                          id="motherFullName"
-                          value={draft.motherFullName}
-                          onChange={(event) => set(setDraft, 'motherFullName', event.target.value)}
-                        />
-                      </Field>
-
-                      <Field>
-                        <FieldLabel htmlFor="fatherFullName">Father’s full name</FieldLabel>
-                        <Input
-                          id="fatherFullName"
-                          value={draft.fatherFullName}
-                          onChange={(event) => set(setDraft, 'fatherFullName', event.target.value)}
-                        />
-                      </Field>
-                    </FieldGroup>
-                  </FieldSet>
+                  <CorrectionDetails
+                    draft={draft}
+                    edit={(field, value) => set(setDraft, field, value)}
+                    parentNamesInParts={{
+                      mother: hasParts(record?.details?.mother) || (!record?.motherFullName && !!record?.details),
+                      father: hasParts(record?.details?.father) || (!record?.fatherFullName && !!record?.details),
+                    }}
+                    restricted={record?.details?.restricted ?? false}
+                  />
                 </FieldGroup>
               </CardContent>
             </Card>
@@ -457,7 +462,7 @@ function ChangeList({ changes }: { changes: components['schemas']['AmendedFieldR
     <ul className="mt-1 space-y-1">
       {changes.map((change) => (
         <li key={change.field} className="text-sm">
-          <span className="font-medium">{change.field}</span>
+          <span className="font-medium">{fieldLabel(change.field)}</span>
           {': '}
           {/* The real previous value, from the register rather than the form --
               an audit trail asserting a transition that never happened is worse
@@ -529,7 +534,7 @@ function Failure({ error }: { error: NcbrsError }) {
 
 function set(
   setDraft: React.Dispatch<React.SetStateAction<Draft | null>>,
-  field: keyof Draft,
+  field: string,
   value: string,
 ) {
   setDraft((current) => (current ? { ...current, [field]: value } : current))
@@ -543,7 +548,8 @@ function set(
  * might leave in place and thereby assert.
  */
 function toDraft(record: BirthRecord | null): Draft {
-  return {
+  const details = record?.details
+  const draft: Draft = {
     childFullName: record?.childFullName ?? '',
     dateOfBirth: (record?.dateOfBirth ?? '').split('T')[0] ?? '',
     sex: record?.sex ?? '',
@@ -552,7 +558,40 @@ function toDraft(record: BirthRecord | null): Draft {
     birthWeightGrams: asText(record?.birthWeightGrams),
     gestationalAgeWeeks: asText(record?.gestationalAgeWeeks),
     birthOrder: asText(record?.birthOrder),
+    childGivenNames: details?.childGivenNames ?? '',
+    childSurname: details?.childSurname ?? '',
+    placeOfBirthKind: details?.placeOfBirthKind ?? '',
+    placeOfBirth: details?.placeOfBirth ?? '',
+    'marriage.date': details?.marriage?.date ?? '',
+    'marriage.certificateNumber': details?.marriage?.certificateNumber ?? '',
+    'proofOfAddress.kind': details?.proofOfAddress?.kind ?? '',
+    'proofOfAddress.reference': details?.proofOfAddress?.reference ?? '',
   }
+
+  for (const who of ['mother', 'father'] as const) {
+    const parent = details?.[who]
+    for (const part of ParentParts) {
+      draft[`${who}.${part}`] = (parent?.[part] as string | null | undefined) ?? ''
+    }
+  }
+
+  return draft
+}
+
+const ParentParts = [
+  'givenNames',
+  'surname',
+  'maidenSurname',
+  'dateOfBirth',
+  'placeOfBirth',
+  'occupation',
+  'address',
+  'documentType',
+  'documentNumber',
+] as const
+
+function hasParts(parent: { givenNames?: string | null; surname?: string | null } | null | undefined): boolean {
+  return !!parent?.givenNames || !!parent?.surname
 }
 
 function asText(value: number | null | undefined): string {
@@ -569,6 +608,26 @@ function toRequest(changes: Partial<Draft>): Record<string, unknown> {
   const request: Record<string, unknown> = {}
 
   for (const [field, value] of Object.entries(changes)) {
+    // A parent's part, the marriage, the proof of address: nested as the
+    // request has them. A date or a document type emptied is not sent --
+    // those can be corrected but not removed -- and an emptied text is sent
+    // empty, which the registry reads as "remove what it says".
+    const dot = field.indexOf('.')
+    if (dot > 0) {
+      const group = field.slice(0, dot)
+      const part = field.slice(dot + 1)
+      if (value === '' && (part === 'date' || part === 'dateOfBirth' || part === 'documentType')) {
+        continue
+      }
+
+      request[group] = { ...(request[group] as Record<string, unknown> | undefined), [part]: value }
+      continue
+    }
+
+    if (field === 'placeOfBirthKind' && value === '') {
+      continue
+    }
+
     if (field === 'dateOfBirth') {
       request[field] = value === '' ? undefined : `${value}T00:00:00Z`
     } else if (

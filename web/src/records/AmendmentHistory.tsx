@@ -21,6 +21,7 @@ import {
 import type { components } from '@/api/generated/api'
 import { type NcbrsError, toNcbrsError, unreachableError } from '@/api/errors'
 import { useApiClient } from '@/api/useApi'
+import { fieldLabel } from './correction'
 import { formatDate } from './RecordDetail'
 
 type Amendment = components['schemas']['AmendmentHistoryEntry']
@@ -135,14 +136,23 @@ export function AmendmentHistory({ brn }: { brn: string }) {
       <TableBody>
         {amendments.map((amendment) => (
           <TableRow key={amendment.amendmentId}>
-            <TableCell className="font-medium">{amendment.field}</TableCell>
+            <TableCell className="font-medium">{fieldLabel(amendment.field)}</TableCell>
             {/* The real previous value, not what anyone believed it was. An
                 audit trail asserting a transition that never happened is worse
-                than no trail. */}
-            <TableCell className="text-muted-foreground">
-              {amendment.previousValue ?? '—'}
-            </TableCell>
-            <TableCell>{amendment.newValue ?? '—'}</TableCell>
+                than no trail. A withheld value says so: a dash would read as
+                "nothing was recorded", which is a different fact. */}
+            {amendment.withheld ? (
+              <TableCell colSpan={2} className="text-muted-foreground italic">
+                held by the registering facility
+              </TableCell>
+            ) : (
+              <>
+                <TableCell className="text-muted-foreground">
+                  {amendment.previousValue ?? '—'}
+                </TableCell>
+                <TableCell>{amendment.newValue ?? '—'}</TableCell>
+              </>
+            )}
             <TableCell className="max-w-56 truncate" title={amendment.reason}>
               {amendment.reason}
             </TableCell>

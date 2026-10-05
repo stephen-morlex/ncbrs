@@ -83,7 +83,7 @@ describe('RequestCorrection', () => {
     await loaded()
 
     expect(screen.getByLabelText(/birth weight/i)).toHaveValue(3200)
-    expect(screen.getByLabelText(/mother/i)).toHaveValue('Nyandeng Deng')
+    expect(screen.getByLabelText(/mother’s full name/i)).toHaveValue('Nyandeng Deng')
     expect(screen.getByLabelText(/child’s full name/i)).toHaveValue('Ayen Deng')
   })
 
@@ -200,5 +200,116 @@ describe('RequestCorrection', () => {
 
     expect(await screen.findByText(/certificate has been withdrawn/i)).toBeInTheDocument()
     expect(screen.getByText(/will fail verification/i)).toBeInTheDocument()
+  })
+})
+
+describe('RequestCorrection — the fuller registration', () => {
+  const fuller = {
+    ...record,
+    childFullName: 'Ayen Akol Deng',
+    motherFullName: 'Achol Deng',
+    details: {
+      childGivenNames: 'Ayen Akol',
+      childSurname: 'Deng',
+      placeOfBirthKind: 'Home',
+      placeOfBirth: 'Gumbo',
+      mother: { givenNames: 'Achol', surname: 'Deng', occupation: 'Teacher', address: 'Gumbo, Juba' },
+      father: null,
+      marriage: null,
+      proofOfAddress: null,
+      restricted: false,
+    },
+  }
+
+  beforeEach(() => {
+    get.mockResolvedValue(ok(fuller))
+    patch.mockResolvedValue(accepted({ brn: '100001', applied: [], pendingApproval: [] }))
+  })
+
+  async function submit(typist: ReturnType<typeof user>) {
+    await typist.type(screen.getByLabelText(/why is this/i), 'Corrected from the antenatal card.')
+    await typist.click(screen.getByRole('button', { name: /submit the correction/i }))
+    await waitFor(() => expect(patch).toHaveBeenCalled())
+    return patch.mock.calls[0][1].body.data
+  }
+
+  /** Corrected the way it was recorded: a name registered in parts is corrected in parts. */
+  it('shows a name recorded in parts as its parts, and the details as recorded', async () => {
+    await loaded()
+
+    expect(screen.getByLabelText(/child’s given names/i)).toHaveValue('Ayen Akol')
+    expect(screen.getByLabelText(/child’s surname/i)).toHaveValue('Deng')
+    expect(screen.queryByLabelText(/child’s full name/i)).not.toBeInTheDocument()
+    expect(screen.getByLabelText(/mother’s given names/i)).toHaveValue('Achol')
+    expect(screen.getByLabelText(/mother’s job/i)).toHaveValue('Teacher')
+    expect(screen.getByLabelText(/^where$/i)).toHaveValue('Gumbo')
+  })
+
+  it('sends a parent’s changed part alone, nested as the request has it', async () => {
+    const typist = user()
+    await loaded()
+
+    const job = screen.getByLabelText(/mother’s job/i)
+    await typist.clear(job)
+    await typist.type(job, 'Nurse')
+
+    const data = await submit(typist)
+    expect(data.mother).toEqual({ occupation: 'Nurse' })
+    expect(data.childFullName).toBeUndefined()
+    expect(data.childGivenNames).toBeUndefined()
+  })
+
+  /** An emptied box removes what it said; the registry reads "" as that. */
+  it('sends an emptied box as empty, to remove what it said', async () => {
+    const typist = user()
+    await loaded()
+
+    await typist.clear(screen.getByLabelText(/mother’s address/i))
+
+    const data = await submit(typist)
+    expect(data.mother).toEqual({ address: '' })
+  })
+
+  it('sends the child’s corrected surname, not a full name', async () => {
+    const typist = user()
+    await loaded()
+
+    const surname = screen.getByLabelText(/child’s surname/i)
+    await typist.clear(surname)
+    await typist.type(surname, 'Deeng')
+
+    const data = await submit(typist)
+    expect(data.childSurname).toBe('Deeng')
+    expect(data.childFullName).toBeUndefined()
+  })
+
+  it('says the details are corrected after review, like the names', async () => {
+    const typist = user()
+    patch.mockResolvedValue(
+      accepted({
+        brn: '100001',
+        applied: [],
+        pendingApproval: [{ field: 'Mother.Occupation', previousValue: 'Teacher', newValue: 'Nurse' }],
+      }),
+    )
+    await loaded()
+
+    const job = screen.getByLabelText(/mother’s job/i)
+    await typist.clear(job)
+    await typist.type(job, 'Nurse')
+    await submit(typist)
+
+    expect(await screen.findByText(/waiting for a\s+reviewer/i)).toBeInTheDocument()
+    // Named as a registrar reads it, not as the registry stores it.
+    expect(screen.getByText('Mother’s job')).toBeInTheDocument()
+  })
+
+  /** Shown to those who may act for the facility only; another sees that they were withheld. */
+  it('does not offer a withheld address for editing', async () => {
+    get.mockResolvedValue(ok({ ...fuller, details: { ...fuller.details, restricted: true, mother: { ...fuller.details.mother, address: null } } }))
+    await loaded()
+
+    expect(screen.getByLabelText(/mother’s address/i)).toBeDisabled()
+    expect(screen.getByLabelText(/mother’s document number/i)).toBeDisabled()
   })
 })

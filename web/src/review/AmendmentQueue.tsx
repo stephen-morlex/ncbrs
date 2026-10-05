@@ -39,6 +39,7 @@ import { Textarea } from '@/components/ui/textarea'
 import type { components } from '@/api/generated/api'
 import { type NcbrsError, toNcbrsError, unreachableError } from '@/api/errors'
 import { useApiClient } from '@/api/useApi'
+import { fieldLabel } from '@/records/correction'
 import { formatDate } from '@/records/RecordDetail'
 import { ageInWords, QueueFailure, QueueSkeleton } from './queueParts'
 
@@ -296,7 +297,7 @@ function ChangeList({ changes }: { changes: AmendedField[] }) {
     <ul className="space-y-1 text-sm">
       {changes.map((change) => (
         <li key={change.field}>
-          <span className="font-medium">{change.field}</span>{' '}
+          <span className="font-medium">{fieldLabel(change.field)}</span>{' '}
           <span className="text-muted-foreground">{change.previousValue ?? '—'}</span>
           {' → '}
           <span>{change.newValue ?? '—'}</span>

@@ -404,6 +404,9 @@ public class BirthRecordsController(
             AmendmentResult.RecordAnnulled => ApiErrors.Result(ApiErrors.Single(
                 StatusCodes.Status409Conflict, "Registration annulled.", "brn", result.Detail!)),
 
+            AmendmentResult.Incomplete => ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status400BadRequest, "This correction is incomplete.", "data", result.Detail!)),
+
             // Nothing differing from what is on file is a no-op, not a
             // failure of the caller's -- but it must not report an amendment
             // that did not happen.
@@ -437,7 +440,14 @@ public class BirthRecordsController(
                 "brn", $"No birth record exists with BRN '{brn}'."));
         }
 
-        return await db.BirthRecordAmendments
+        // The history is open to any signed-in caller, like the lookup by
+        // number; a corrected address or document number is not, any more
+        // than the record's own is (RegistrationDetails.Restricted).
+        var caller = await currentRegistrar.GetAsync(HttpContext.RequestAborted);
+        var full = caller is not null
+                   && await currentRegistrar.CanActForFacilityAsync(caller, record.FacilityId, HttpContext.RequestAborted);
+
+        var history = await db.BirthRecordAmendments
             .Where(amendment => amendment.BirthRecordId == record.BirthRecordId)
             .OrderBy(amendment => amendment.AmendedAtUtc)
             .Select(amendment => new AmendmentHistoryEntry(
@@ -456,8 +466,15 @@ public class BirthRecordsController(
                 amendment.ReviewedByRegistrar != null ? amendment.ReviewedByRegistrar.DisplayName : null,
                 amendment.ReviewedAtUtc,
                 amendment.ReviewNote,
-                amendment.TransactionId))
+                amendment.TransactionId,
+                false))
             .ToListAsync(HttpContext.RequestAborted);
+
+        return full
+            ? history
+            : history.Select(entry => AmendmentFields.Withheld.Contains(entry.Field)
+                ? entry with { PreviousValue = null, NewValue = null, Withheld = true }
+                : entry).ToList();
     }
 
     private const int MaxBrnBlockRequestSize = 10_000;
