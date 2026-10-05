@@ -5,7 +5,7 @@ namespace NCBRS.Client.App.Pages;
 
 /// <summary>
 /// The home screen after unlock: who is working, where the births stand, and
-/// every task as one large tile.
+/// every task as one tile.
 ///
 /// **What needs attention comes first.** A refused birth is one the registry
 /// does not have; running out of numbers is the road to provisional slips. Both
@@ -21,82 +21,99 @@ public sealed class HomePage : FlowPage
         var left = facility?.BlockRemaining ?? 0;
         var refused = facility?.Refused.Count ?? 0;
         var unconfirmed = host.ExportedAndUnconfirmed;
+        var name = host.UnlockedAs?.DisplayName ?? "";
 
-        var views = new List<View>
-        {
-            Ui.Title(Language.Format(Strings.Home_Greeting, host.UnlockedAs?.DisplayName)),
-            Ui.Caption(host.EnrolledTo),
-        };
+        var views = new List<View> { Header(host, name) };
 
         if (refused > 0)
         {
             views.Add(Ui.Notice(Icons.Error,
                 refused == 1 ? Strings.Register_RefusedOne : Language.Format(Strings.Register_RefusedMany, refused),
-                Ui.Danger, Ui.DangerSoft, () => _ = Go(new RefusedPage(host))));
+                Tone.Danger, () => _ = Go(new RefusedPage(host))));
         }
 
         if (facility?.NeedsMoreNumbers == true)
         {
-            views.Add(Ui.Notice(Icons.Warning, Strings.Home_NeedNumbers, Ui.Warning, Ui.WarningSoft, () => _ = Go(new SyncPage(host))));
+            views.Add(Ui.Notice(Icons.Warning, Strings.Home_NeedNumbers, Tone.Pending, () => _ = Go(new SyncPage(host))));
         }
 
         if (unconfirmed > 0)
         {
             views.Add(Ui.Notice(Icons.Usb,
                 Language.Format(Strings.Register_ExportedUnconfirmed, unconfirmed, host.State.LastExport?.AtUtc.ToLocalTime()),
-                Ui.Info, Ui.InfoSoft, () => _ = Go(new SyncPage(host))));
+                Tone.Primary, () => _ = Go(new SyncPage(host))));
         }
 
         // The two figures a registrar is asked about, side by side.
-        var stats = new Grid { ColumnDefinitions = [new ColumnDefinition(GridLength.Star), new ColumnDefinition(GridLength.Star)], ColumnSpacing = 12 };
-        stats.Add(Ui.Stat(waiting.ToString(Language.Current), Strings.Home_Waiting, waiting > 0 ? Ui.Warning : Ui.Primary, () => _ = Go(new SyncPage(host))), 0);
-        stats.Add(Ui.Stat(left.ToString("N0", Language.Current), Strings.Home_NumbersLeft, facility?.NeedsMoreNumbers == true ? Ui.Warning : Ui.Primary), 1);
-        views.Add(stats);
-
+        var figures = new VerticalStackLayout
+        {
+            Spacing = Space.Sm,
+            Children =
+            {
+                Ui.Columns(2,
+                    Ui.Stat(waiting.ToString(Language.Current), Strings.Home_Waiting,
+                        waiting > 0 ? Ui.Theme.PendingForeground : Ui.Primary, () => _ = Go(new SyncPage(host))),
+                    Ui.Stat(left.ToString("N0", Language.Current), Strings.Home_NumbersLeft,
+                        facility?.NeedsMoreNumbers == true ? Ui.Theme.PendingForeground : Ui.Primary)),
+            },
+        };
         if (waiting == 0 && refused == 0)
         {
-            views.Add(Ui.Caption(Strings.Home_AllSent, Ui.Primary));
+            figures.Add(Ui.Caption(Strings.Home_AllSent));
         }
 
-        views.Add(Ui.Overline(Strings.Home_Tasks));
-        views.Add(Tiles(
-            Ui.Tile(Icons.Add, Strings.Register_Title, Strings.Tile_Register, () => _ = Go(new RegisterPage(host))),
-            Ui.Tile(Icons.Sync, Strings.Register_Sync, Strings.Tile_Sync, () => _ = Go(new SyncPage(host)),
+        views.Add(figures);
+
+        views.Add(Ui.Group(Strings.Home_Tasks, Ui.Columns(Columns(),
+            Ui.Tile(Icons.Add, Strings.Register_Title, null, () => _ = Go(new RegisterPage(host))),
+            Ui.Tile(Icons.Sync, Strings.Register_Sync, null, () => _ = Go(new SyncPage(host)),
                 badge: waiting > 0 ? waiting.ToString(Language.Current) : null),
-            Ui.Tile(Icons.Verified, Strings.Register_Check, Strings.Tile_Check, () => _ = Go(new CheckCertificatePage(host))),
-            Ui.Tile(Icons.Print, Strings.Register_PrintCertificate, Strings.Tile_Print, () => _ = Go(new PrintCertificatePage(host))),
-            Ui.Tile(Icons.Usb, Strings.Tile_UsbTitle, Strings.Tile_Usb, () => _ = Go(new SyncPage(host)), Ui.Info),
-            Ui.Tile(Icons.Lock, Strings.Register_Lock, Strings.Tile_Lock, () =>
+            Ui.Tile(Icons.ScanLine, Strings.Register_Check, null, () => _ = Go(new CheckCertificatePage(host))),
+            Ui.Tile(Icons.Print, Strings.Register_PrintCertificate, null, () => _ = Go(new PrintCertificatePage(host))),
+            Ui.Tile(Icons.Export, Strings.Tile_UsbTitle, null, () => _ = Go(new SyncPage(host))),
+            Ui.Tile(Icons.Lock, Strings.Register_Lock, null, () =>
             {
                 host.Lock();
                 Flow.Advance(host);
-            }, Ui.TextMuted)));
+            }, Ui.TextMuted))));
 
         BuildInside(host, Section.Home, [.. views]);
     }
 
-    /// <summary>Two tiles a row on a phone, three on a tablet held sideways.</summary>
-    private static View Tiles(params View[] tiles)
+    /// <summary>The greeting and the facility, with the language switch and who is signed in.</summary>
+    private static View Header(DeviceHost host, string name)
     {
-        var columns = DeviceDisplay.Current.MainDisplayInfo is { Width: > 0 } display
-                      && display.Width / display.Density >= 720 ? 3 : 2;
-
-        var grid = new Grid { ColumnSpacing = 12, RowSpacing = 12 };
-        for (var c = 0; c < columns; c++)
+        var place = new HorizontalStackLayout
         {
-            grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
-        }
+            Spacing = Space.Xs,
+            Children = { Ui.Icon(Icons.MapPin, Ui.TextMuted, 14), Ui.Subtitle(host.EnrolledTo) },
+        };
 
-        for (var i = 0; i < tiles.Length; i++)
+        var row = new Grid
         {
-            if (i % columns == 0)
-            {
-                grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-            }
-
-            grid.Add(tiles[i], i % columns, i / columns);
-        }
-
-        return grid;
+            ColumnDefinitions = [new ColumnDefinition(GridLength.Star), new ColumnDefinition(GridLength.Auto), new ColumnDefinition(GridLength.Auto)],
+            ColumnSpacing = Space.Md,
+        };
+        row.Add(new VerticalStackLayout
+        {
+            Spacing = Space.Xs,
+            VerticalOptions = LayoutOptions.Center,
+            Children = { Ui.Title(Language.Format(Strings.Home_Greeting, FirstName(name))), place },
+        }, 0);
+        row.Add(Flow.LanguageSwitch(host), 1);
+        var avatar = Ui.Avatar(name, strong: true);
+        avatar.VerticalOptions = LayoutOptions.Center;
+        SemanticProperties.SetDescription(avatar, name);
+        row.Add(avatar, 2);
+        return row;
     }
+
+    /// <summary>"Hello, Alice", not "Hello, Alice Lado": a greeting, not a register entry.</summary>
+    private static string FirstName(string name)
+        => name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? name;
+
+    /// <summary>Two tiles a row on a phone, three on a tablet held sideways.</summary>
+    private static int Columns()
+        => DeviceDisplay.Current.MainDisplayInfo is { Width: > 0 } display
+           && display.Width / display.Density >= 720 ? 3 : 2;
 }

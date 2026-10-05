@@ -15,9 +15,26 @@ public static class MauiProgram
             .UseMauiApp<App>()
             .ConfigureFonts(fonts =>
             {
-                fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-                fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+                // Geist for Latin text, Geist Mono for registration numbers,
+                // Noto Sans Arabic for Arabic (all SIL OFL; see Resources/Fonts/Licenses).
+                fonts.AddFont("Geist-Regular.ttf", "GeistRegular");
+                fonts.AddFont("Geist-SemiBold.ttf", "GeistSemiBold");
+                fonts.AddFont("GeistMono-Regular.ttf", "GeistMonoRegular");
+                fonts.AddFont("GeistMono-SemiBold.ttf", "GeistMonoSemiBold");
+                fonts.AddFont("NotoSansArabic-Regular.ttf", "NotoSansArabicRegular");
+                fonts.AddFont("NotoSansArabic-SemiBold.ttf", "NotoSansArabicSemiBold");
             });
+
+#if ANDROID
+        // Inputs are drawn in their own bordered box (Ui.Input), so Android's
+        // underline beneath each one is removed rather than doubled.
+        Microsoft.Maui.Handlers.EntryHandler.Mapper.AppendToMapping("NoUnderline", (handler, _) =>
+            handler.PlatformView.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Android.Graphics.Color.Transparent));
+        Microsoft.Maui.Handlers.PickerHandler.Mapper.AppendToMapping("NoUnderline", (handler, _) =>
+            handler.PlatformView.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Android.Graphics.Color.Transparent));
+        Microsoft.Maui.Handlers.DatePickerHandler.Mapper.AppendToMapping("NoUnderline", (handler, _) =>
+            handler.PlatformView.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Android.Graphics.Color.Transparent));
+#endif
 
 #if DEBUG
         builder.Logging.AddDebug();

@@ -15,26 +15,21 @@ public sealed class RefusedPage : FlowPage
     public RefusedPage(DeviceHost host) : base(Strings.Refused_Title)
     {
         var refused = host.Session?.Facility.Refused ?? [];
-        var list = new VerticalStackLayout { Spacing = 16 };
+        var list = new VerticalStackLayout { Spacing = Space.Md };
 
         foreach (var (record, reasons) in refused)
         {
             var correct = Ui.PrimaryButton(Language.Format(Strings.Refused_Correct, record.Birth.Brn));
             correct.Clicked += (_, _) => Flow.Show(new RegisterPage(host, record, reasons));
-            list.Add(new VerticalStackLayout
-            {
-                Spacing = 6,
-                Children =
+            list.Add(Ui.Card(
+                Ui.Heading(Language.Format(Strings.Refused_Item, record.Birth.Brn, BirthNames.Child(record.Birth), record.Birth.DateOfBirth)),
+                Ui.Badge(Strings.Badge_Refused, Tone.Danger),
+                new Label
                 {
-                    new Label { Text = Language.Format(Strings.Refused_Item, record.Birth.Brn, BirthNames.Child(record.Birth), record.Birth.DateOfBirth), FontAttributes = FontAttributes.Bold },
-                    new Label
-                    {
-                        FontSize = 13, TextColor = Colors.DarkRed,
-                        Text = string.Join("\n", reasons.Select(reason => $"• {reason.Message}")),
-                    },
-                    correct,
+                    FontSize = 15, FontFamily = Ui.Regular, TextColor = Ui.Danger,
+                    Text = string.Join("\n", reasons.Select(reason => $"• {reason.Message}")),
                 },
-            });
+                correct));
         }
 
         var back = Ui.GhostButton(Strings.Refused_Back);
@@ -42,7 +37,7 @@ public sealed class RefusedPage : FlowPage
         back.IsVisible = host.UnlockedAs is null;
         back.Clicked += (_, _) => Flow.Advance(host);
 
-        BuildFor(host, Pages.Section.Sync, 
+        BuildFor(host, Pages.Section.Records,
             Heading(refused.Count == 0 ? Strings.Refused_HeadingNone : Strings.Refused_Heading),
             Note(refused.Count == 0
                 ? Strings.Refused_NoneNote

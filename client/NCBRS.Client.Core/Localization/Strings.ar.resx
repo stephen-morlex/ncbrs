@@ -412,9 +412,6 @@
   <data name="Register_Father" xml:space="preserve">
     <value>الاسم الكامل للأب</value>
   </data>
-  <data name="Register_FirstCut" xml:space="preserve">
-    <value>نسخة أولى من هذا النموذج، ستُعاد صياغتها مع القابلات وعاملي الصحة المجتمعية.</value>
-  </data>
   <data name="Register_Gestation" xml:space="preserve">
     <value>عمر الحمل بالأسابيع (اختياري)</value>
   </data>
@@ -1031,9 +1028,6 @@
   <data name="Nav_Sync" xml:space="preserve">
     <value>مزامنة</value>
   </data>
-  <data name="Nav_Check" xml:space="preserve">
-    <value>تحقق</value>
-  </data>
   <data name="Nav_More" xml:space="preserve">
     <value>المزيد</value>
   </data>
@@ -1042,9 +1036,6 @@
   </data>
   <data name="Brand_Ministry" xml:space="preserve">
     <value>جمهورية جنوب السودان · وزارة الصحة</value>
-  </data>
-  <data name="Footer_Status" xml:space="preserve">
-    <value>{0} بانتظار المزامنة · {1} رقمًا متبقيًا</value>
   </data>
   <data name="Footer_Version" xml:space="preserve">
     <value>الإصدار {0}</value>
@@ -1123,5 +1114,35 @@
   </data>
   <data name="Common_Leave" xml:space="preserve">
     <value>مغادرة</value>
+  </data>
+  <data name="Nav_Records" xml:space="preserve">
+    <value>السجلات</value>
+  </data>
+  <data name="Records_Title" xml:space="preserve">
+    <value>السجلات</value>
+  </data>
+  <data name="Records_Subtitle" xml:space="preserve">
+    <value>الولادات المسجلة على هذا الجهاز</value>
+  </data>
+  <data name="Records_Empty" xml:space="preserve">
+    <value>لا توجد ولادات بانتظار المزامنة على هذا الجهاز. تختفي الولادة من هذه القائمة بعد أن يؤكدها السجل.</value>
+  </data>
+  <data name="Records_Today" xml:space="preserve">
+    <value>اليوم</value>
+  </data>
+  <data name="Records_Yesterday" xml:space="preserve">
+    <value>أمس</value>
+  </data>
+  <data name="Records_Born" xml:space="preserve">
+    <value>تاريخ الولادة {0:d MMM yyyy} · {1}</value>
+  </data>
+  <data name="Badge_Waiting" xml:space="preserve">
+    <value>بانتظار المزامنة</value>
+  </data>
+  <data name="Badge_Refused" xml:space="preserve">
+    <value>مرفوضة</value>
+  </data>
+  <data name="Common_Choose" xml:space="preserve">
+    <value>اختر…</value>
   </data>
 </root>

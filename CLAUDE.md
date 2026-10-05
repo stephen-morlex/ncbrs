@@ -926,45 +926,72 @@ review).**
     corrupting every other non-ASCII character in it. Edit such files with the
     Edit tool.
 
-**The tablet's layout: a home screen, a bottom bar, a status strip (2026-10-05).**
-Before this, every task was a button stacked under the registration form.
-- **After unlock, every screen sits in one frame** (`FlowPage.BuildInside`):
-  - a green top bar with the title and the language switch;
-  - the content;
-  - a status strip: the facility, births waiting and numbers left;
-  - a bottom bar: Home, Register, Sync, Check, More.
-- **Home** (`HomePage`) is the landing screen. It shows:
-  - what needs attention, as tappable notices: refused births, running out of
-    numbers, a USB export not yet confirmed;
-  - two figures;
-  - a tile per task.
-- **Sync** (`SyncPage`) holds sending births and the USB export.
-- **More** (`MorePage`) lists every task, plus the language and the lock.
-- **Before unlock, pages use `Build`:** a branded header and a footer
-  (Ministry · version), with no bottom bar, because nothing behind the unlock
-  is reachable. Check, Print, Printer and Refused open from both sides, so
-  they use `BuildFor`, which picks the frame from `host.UnlockedAs`.
-- **The design kit is `Pages/Ui.cs`** (palette, buttons, cards, tiles,
-  notices). The implicit styles in `Resources/Styles` mirror it, so a control
-  built plainly still matches. Use Ui rather than styling a control inline.
-- **Accessibility rules:**
-  - touch targets are at least 52 dp;
-  - text is 17 sp in inputs;
-  - colours pass WCAG AA;
-  - a state is said in words, never by colour alone.
-- **A field's label sits above it** (`Ui.Labeled`), not as a placeholder.
-  A placeholder disappears as soon as someone types, which leaves a
-  half-filled form unreadable.
-- **Icons are Material path data drawn as shapes**, not an icon font. A font
-  would have to be downloaded and shipped. Paths mirror correctly in Arabic.
-- **Leaving a half-filled registration asks first** (`CanLeaveAsync`). The
-  bottom bar is one tap from losing a birth typed in a hurry.
-- **Traps found building it:**
-  - A view can't have two parents. `Body` adds Busy/Status only when a page
-    hasn't already placed them, or the page crashes after unlock.
-  - Helpers named `Frame` or `Navigation` silently hide `ContentPage`
-    members.
-  - `SemanticProperties` is static (`SetDescription(view, …)`).
+**The tablet's design: the handoff in `design-handoff/` (2026-10-05).** The
+user's design reference: one HTML mockup per screen and `DESIGN_HANDOFF.md`,
+built in this order: the kit and navigation (done), unlock, home with
+Records, the five-step form, then an officer PIN reset. Its rules: change the
+UI only; theme tokens first; mirror everything in Arabic; 48 dp targets; body
+text 16, helper text 13 at least.
+- **Decided with the user:** the mother's step asks only what the registry
+  already holds (no age, nationality or phone, though the mockups show them);
+  the tablet keeps **30 days** of registered births for Records (minimal
+  fields, encrypted, then deleted); the fonts were downloaded; "Forgot PIN?"
+  waits for an officer reset on the registry and web.
+- **Decided against the mockups, to keep behaviour:** the PIN keypad's dots
+  grow with the PIN (6 to 12 digits, not 4) and there is an Unlock key,
+  because every try counts toward the lockout; the full composed BRN is
+  shown, check character included; the stat is "numbers left", not
+  "certificate numbers" (a BRN is not a certificate); place of birth keeps the
+  registry's four kinds; sex keeps Undetermined and is never preselected.
+- **The kit:**
+  - `Pages/Ui.cs` holds the tokens: `Palette` (every colour is read
+    from it, so dark mode is one more instance), `Space` (4, 8, 12, 16, 20
+    and nothing else), `Radius`, the type scale, cards, list rows, badges,
+    notices, inputs.
+  - `Pages/Controls.cs` holds `ChoiceChips<T>`, `Tabs<T>` and
+    `WrapLayout`. FlexLayout has no gap, and chips spaced by margins were
+    the one-offs the spacing rule forbids. Positions there are set by hand,
+    so `WrapLayout` mirrors itself in Arabic.
+  - `Resources/Styles` mirrors the kit, so a control built plainly still
+    matches.
+- **The frame:**
+  - After unlock, a page is its content above a 4-item bottom bar: Home,
+    Register, Records, More.
+  - The status strip is gone; its figures belong to Home's sync card.
+  - Before unlock, a page has the brand with the language switch, and the
+    version at its foot.
+  - Check, Print, Printer and Refused open from both sides (`BuildFor`).
+- **Fonts follow the language:**
+  - Geist for Latin, Noto Sans Arabic for Arabic (Geist has no Arabic), and
+    Geist Mono for registration numbers. All are SIL OFL, with their
+    licences in `Resources/Fonts/Licenses`.
+  - Implicit styles read `{DynamicResource FontRegular}`, which
+    `AppLanguage` sets.
+  - Only Regular and SemiBold are bundled, so use `Ui.SemiBold`, never
+    `FontAttributes.Bold`: that asks Android to fake the weight.
+  - Letter-spacing is never applied to Arabic, whose letters join.
+- **Icons are Lucide, generated** (`Pages/Icons.generate.mjs` writes
+  `Icons.cs` from the web's lucide-react). **MAUI on Android silently draws
+  nothing for some valid SVG paths.** Lucide's shield, with its small corner
+  arcs, was blank, while 26 other icons with arcs drew. So the generator
+  rewrites every icon as absolute M/L/C/Z, with arcs as cubic curves.
+  It converts each element on its own: joined first, a later element opening
+  with a relative `m` started where the last one ended, and Close lost a
+  stroke. **Look at a new icon on the emulator before relying on it.**
+  Directional icons (chevrons) flip in Arabic (`directional: true`).
+- **Inputs:**
+  - Each input sits in its own bordered box (`Ui.Input`), and Android's
+    underline is removed by handler mappings in `MauiProgram`.
+  - Focus draws a primary border and a 3-unit ring.
+  - The label sits above the box. An untouched picker says "Choose…" rather
+    than repeating its label.
+- **Traps:**
+  - A view can't have two parents: `Body` adds Busy/Status only when a
+    page hasn't placed them.
+  - Members named `Frame`, `Navigation` or `Width` hide
+    `ContentPage`/`VisualElement` ones.
+  - `SemanticProperties` is static.
+  - `Shadow = null` clears a shadow.
 
 **A birth the centre refuses is held and corrected, never resent unchanged.**
 Before this, a refused record stayed in the outbox as it was: it was sent every

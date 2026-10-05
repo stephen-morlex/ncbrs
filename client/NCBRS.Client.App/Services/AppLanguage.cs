@@ -14,10 +14,13 @@ public static class AppLanguage
 {
     private const string Key = "ncbrs-language";
 
-    public static void Apply()
-        => Language.Use(Preferences.Default.Get<string?>(Key, null) is { } saved
+    public static void Apply(Application app)
+    {
+        Language.Use(Preferences.Default.Get<string?>(Key, null) is { } saved
             ? Language.FromCode(saved)
             : Language.FromDevice(CultureInfo.CurrentUICulture));
+        UseFonts(app);
+    }
 
     /// <summary>Switch to the other language and remember it.</summary>
     public static void Toggle()
@@ -25,6 +28,21 @@ public static class AppLanguage
         var next = Language.IsArabic ? Language.English : Language.Arabic;
         Preferences.Default.Set(Key, Language.CodeOf(next));
         Language.Use(next);
+        if (Application.Current is { } app)
+        {
+            UseFonts(app);
+        }
+    }
+
+    /// <summary>
+    /// The faces the implicit styles read: Geist for English, Noto Sans Arabic
+    /// for Arabic, which Geist does not draw. Set as resources so every control
+    /// built from a style follows the language without being rebuilt by hand.
+    /// </summary>
+    private static void UseFonts(Application app)
+    {
+        app.Resources["FontRegular"] = Pages.Ui.Regular;
+        app.Resources["FontSemiBold"] = Pages.Ui.SemiBold;
     }
 
     /// <summary>Right to left in Arabic: the whole page mirrors, not just the text.</summary>
