@@ -172,7 +172,7 @@ public sealed class PinForm
             {
                 new Label { Text = Strings.Pin_Title, FontAttributes = FontAttributes.Bold },
                 new Label { Text = Strings.Pin_Intro, FontSize = 13 },
-                current, pin, again, set,
+                Ui.Labeled(current), Ui.Labeled(pin), Ui.Labeled(again), set,
             },
         };
     }
@@ -233,9 +233,9 @@ public sealed class UnlockPage : FlowPage
         // builds keep the printer setting behind the unlock.
         var printer = Ui.GhostButton("Printer (debug)");
         printer.Clicked += (_, _) => Flow.Show(new PrinterPage(host));
-        Build(Flow.LanguageSwitch(host), Heading(Strings.Unlock_Title), Ui.Card(Ui.Caption(Strings.Unlock_Who), person, Ui.Caption(Strings.Unlock_Pin), pin, unlock), changePin, pinForm.View, checkCertificate, printer);
+        Build(Flow.LanguageSwitch(host), Heading(Strings.Unlock_Title), Ui.Card(Ui.Labeled(person), Ui.Labeled(pin), unlock), changePin, pinForm.View, checkCertificate, printer);
 #else
-        Build(Flow.LanguageSwitch(host), Heading(Strings.Unlock_Title), Ui.Card(Ui.Caption(Strings.Unlock_Who), person, Ui.Caption(Strings.Unlock_Pin), pin, unlock), changePin, pinForm.View, checkCertificate);
+        Build(Flow.LanguageSwitch(host), Heading(Strings.Unlock_Title), Ui.Card(Ui.Labeled(person), Ui.Labeled(pin), unlock), changePin, pinForm.View, checkCertificate);
 #endif
     }
 }
