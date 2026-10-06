@@ -334,12 +334,6 @@
   <data name="Refused_Title" xml:space="preserve">
     <value>الولادات المرفوضة</value>
   </data>
-  <data name="Register_AddStatistics" xml:space="preserve">
-    <value>إضافة إحصاءات الأمومة</value>
-  </data>
-  <data name="Register_BackNoSave" xml:space="preserve">
-    <value>رجوع دون حفظ</value>
-  </data>
   <data name="Register_BlockLow" xml:space="preserve">
     <value>الأرقام توشك على النفاد: زامِن عند توفّر الإشارة.</value>
   </data>
@@ -355,32 +349,11 @@
   <data name="Register_ChooseSex" xml:space="preserve">
     <value>اختر جنس الطفل (اختر «غير محدد» إن تعذّر تحديده).</value>
   </data>
-  <data name="Register_ConfirmBody" xml:space="preserve">
-    <value>{0}، {1}، تاريخ الولادة {2:d MMM yyyy}</value>
-  </data>
   <data name="Register_ConfirmCorrectionBody" xml:space="preserve">
     <value>{0}، تاريخ الولادة {1:d MMM yyyy}، يبقى برقم {2}، وسيُرسَل مجددًا في المزامنة التالية.</value>
   </data>
   <data name="Register_ConfirmCorrectionTitle" xml:space="preserve">
     <value>حفظ هذا التصحيح؟</value>
-  </data>
-  <data name="Register_ConfirmEnd" xml:space="preserve">
-    <value>.</value>
-  </data>
-  <data name="Register_ConfirmLate" xml:space="preserve">
-    <value>. تسجيل متأخر، مع دليل.</value>
-  </data>
-  <data name="Register_ConfirmMother" xml:space="preserve">
-    <value>، الأم {0}</value>
-  </data>
-  <data name="Register_ConfirmTitle" xml:space="preserve">
-    <value>تسجيل هذه الولادة؟</value>
-  </data>
-  <data name="Register_ConfirmYes" xml:space="preserve">
-    <value>تسجيل</value>
-  </data>
-  <data name="Register_CorrectHeading" xml:space="preserve">
-    <value>تصحيح {0}</value>
   </data>
   <data name="Register_CorrectNote" xml:space="preserve">
     <value>يبقى رقمها {0} ووقت إدخالها الأول كما هما. صحّح ما رفضه السجل، وستُرسَل مجددًا في المزامنة التالية.</value>
@@ -403,23 +376,11 @@
   <data name="Register_EvidenceReference" xml:space="preserve">
     <value>مرجع الدليل، مثل رقم البطاقة (اختياري)</value>
   </data>
-  <data name="Register_Export" xml:space="preserve">
-    <value>لا توجد إشارة؟ احفظ الولادات على ذاكرة USB أو بطاقة</value>
-  </data>
   <data name="Register_ExportedUnconfirmed" xml:space="preserve">
     <value>لم يؤكد السجل بعدُ {0} من الولادات المحفوظة على ذاكرة USB بتاريخ {1:d MMM}.</value>
   </data>
-  <data name="Register_Father" xml:space="preserve">
-    <value>الاسم الكامل للأب</value>
-  </data>
-  <data name="Register_Gestation" xml:space="preserve">
-    <value>عمر الحمل بالأسابيع (اختياري)</value>
-  </data>
   <data name="Register_GestationNumber" xml:space="preserve">
     <value>يجب أن يكون عمر الحمل عددًا من الأسابيع.</value>
-  </data>
-  <data name="Register_LanguageClears" xml:space="preserve">
-    <value>يؤدي تغيير اللغة إلى مسح ما كُتب في النموذج. هل تريد التغيير؟</value>
   </data>
   <data name="Register_Late" xml:space="preserve">
     <value>تسجيل متأخر</value>
@@ -436,12 +397,6 @@
   <data name="Register_Order" xml:space="preserve">
     <value>ترتيب الولادة بين التوائم (1، 2، 3…)</value>
   </data>
-  <data name="Register_Parents" xml:space="preserve">
-    <value>الوالدان</value>
-  </data>
-  <data name="Register_Plurality" xml:space="preserve">
-    <value>ولادة مفردة أو متعددة</value>
-  </data>
   <data name="Register_Prenatal" xml:space="preserve">
     <value>زيارات رعاية الحمل (اختياري)</value>
   </data>
@@ -452,9 +407,6 @@
     <value>إيصال مؤقت: {0}
 يُمنح رقم دائم عند مزامنة الجهاز.</value>
   </data>
-  <data name="Register_Queue" xml:space="preserve">
-    <value>بانتظار المزامنة: {0}   ·   الأرقام المتبقية: {1}</value>
-  </data>
   <data name="Register_RefusedBecause" xml:space="preserve">
     <value>رفض السجل هذه الولادة:</value>
   </data>
@@ -463,9 +415,6 @@
   </data>
   <data name="Register_RefusedOne" xml:space="preserve">
     <value>رفض السجل ولادة واحدة. اضغط لتصحيحها.</value>
-  </data>
-  <data name="Register_Registered" xml:space="preserve">
-    <value>سُجِّلت — رقم تسجيل الولادة {0}</value>
   </data>
   <data name="Register_Relationship" xml:space="preserve">
     <value>صلة المُقِرّ بالطفل، مثل: الأم</value>
@@ -476,9 +425,6 @@
   <data name="Register_Sex" xml:space="preserve">
     <value>الجنس</value>
   </data>
-  <data name="Register_Statistics" xml:space="preserve">
-    <value>إحصاءات (اختيارية، ولا تؤخّر التسجيل أبدًا)</value>
-  </data>
   <data name="Register_Submit" xml:space="preserve">
     <value>تسجيل هذه الولادة</value>
   </data>
@@ -487,12 +433,6 @@
   </data>
   <data name="Register_Title" xml:space="preserve">
     <value>تسجيل ولادة</value>
-  </data>
-  <data name="Register_Unlocked" xml:space="preserve">
-    <value>مفتوح بواسطة: {0}</value>
-  </data>
-  <data name="Register_Weight" xml:space="preserve">
-    <value>الوزن عند الولادة بالغرام (اختياري)</value>
   </data>
   <data name="Register_WhatOrder" xml:space="preserve">
     <value>ترتيب الولادة</value>
@@ -932,12 +872,6 @@
   <data name="Register_ProofSection" xml:space="preserve">
     <value>إثبات العنوان</value>
   </data>
-  <data name="Register_AddSection" xml:space="preserve">
-    <value>إضافة: {0}</value>
-  </data>
-  <data name="Register_HideSection" xml:space="preserve">
-    <value>إخفاء: {0}</value>
-  </data>
   <data name="Register_SectionOptional" xml:space="preserve">
     <value>اختياري. سجّل ما تستطيع الأسرة تقديمه.</value>
   </data>
@@ -1046,9 +980,6 @@
   <data name="Home_NumbersLeft" xml:space="preserve">
     <value>الأرقام المتبقية</value>
   </data>
-  <data name="Tile_Register" xml:space="preserve">
-    <value>سجّل ولادة جديدة</value>
-  </data>
   <data name="Tile_Sync" xml:space="preserve">
     <value>أرسل الولادات إلى السجل</value>
   </data>
@@ -1087,9 +1018,6 @@
   </data>
   <data name="More_Language" xml:space="preserve">
     <value>اللغة</value>
-  </data>
-  <data name="More_SignedIn" xml:space="preserve">
-    <value>{0} في {1}</value>
   </data>
   <data name="More_Tablet" xml:space="preserve">
     <value>هذا الجهاز</value>
@@ -1201,5 +1129,128 @@
   </data>
   <data name="Unlock_Digits" xml:space="preserve">
     <value>عدد الأرقام المدخلة: {0}</value>
+  </data>
+  <data name="Common_Close" xml:space="preserve">
+    <value>إغلاق</value>
+  </data>
+  <data name="Badge_Draft" xml:space="preserve">
+    <value>مسودة · الخطوة {0} من {1}</value>
+  </data>
+  <data name="Records_Drafts" xml:space="preserve">
+    <value>المسودات</value>
+  </data>
+  <data name="Records_Continue" xml:space="preserve">
+    <value>متابعة</value>
+  </data>
+  <data name="Records_BabyOf" xml:space="preserve">
+    <value>مولود {0}</value>
+  </data>
+  <data name="Records_UnnamedDraft" xml:space="preserve">
+    <value>ولادة لم تُسمَّ بعد</value>
+  </data>
+  <data name="Register_StepOf" xml:space="preserve">
+    <value>الخطوة {0} من {1} · {2}</value>
+  </data>
+  <data name="Register_StepFamily" xml:space="preserve">
+    <value>الزواج والعنوان</value>
+  </data>
+  <data name="Register_StepReview" xml:space="preserve">
+    <value>المراجعة</value>
+  </data>
+  <data name="Register_AboutChild" xml:space="preserve">
+    <value>عن الطفل</value>
+  </data>
+  <data name="Register_AboutMother" xml:space="preserve">
+    <value>عن الأم</value>
+  </data>
+  <data name="Register_AboutFather" xml:space="preserve">
+    <value>عن الأب</value>
+  </data>
+  <data name="Register_AboutFamily" xml:space="preserve">
+    <value>زواج الوالدين وإثبات العنوان</value>
+  </data>
+  <data name="Register_ReviewTitle" xml:space="preserve">
+    <value>تحقّق قبل التسجيل</value>
+  </data>
+  <data name="Register_ReviewNote" xml:space="preserve">
+    <value>اقرأ هذا على الأسرة. لا تحصل الولادة على رقمها إلا عند تسجيلها.</value>
+  </data>
+  <data name="Register_ReviewProblems" xml:space="preserve">
+    <value>قبل التسجيل، صحّح ما يلي:</value>
+  </data>
+  <data name="Register_NotGiven" xml:space="preserve">
+    <value>غير مذكور</value>
+  </data>
+  <data name="Register_Next" xml:space="preserve">
+    <value>التالي</value>
+  </data>
+  <data name="Register_Back" xml:space="preserve">
+    <value>رجوع</value>
+  </data>
+  <data name="Register_DraftSaved" xml:space="preserve">
+    <value>حُفظت المسودة</value>
+  </data>
+  <data name="Register_HowMany" xml:space="preserve">
+    <value>كم عدد المواليد؟</value>
+  </data>
+  <data name="Register_AtBirth" xml:space="preserve">
+    <value>عند الولادة (اختياري)</value>
+  </data>
+  <data name="Register_GestationShort" xml:space="preserve">
+    <value>مدة الحمل</value>
+  </data>
+  <data name="Register_StatisticsTitle" xml:space="preserve">
+    <value>إحصاءات الأم</value>
+  </data>
+  <data name="Register_Optional" xml:space="preserve">
+    <value>اختياري</value>
+  </data>
+  <data name="Register_Edit" xml:space="preserve">
+    <value>تعديل</value>
+  </data>
+  <data name="Register_Discard" xml:space="preserve">
+    <value>تجاهل هذه المسودة</value>
+  </data>
+  <data name="Register_DiscardConfirm" xml:space="preserve">
+    <value>تجاهل هذه المسودة؟ يُحذف ما كُتب عن هذه الولادة من الجهاز.</value>
+  </data>
+  <data name="Registered_Title" xml:space="preserve">
+    <value>تم تسجيل الولادة</value>
+  </data>
+  <data name="Registered_Body" xml:space="preserve">
+    <value>حُفظت على هذا الجهاز وتُرسل إلى السجل عند المزامنة التالية.</value>
+  </data>
+  <data name="Registered_Number" xml:space="preserve">
+    <value>رقم التسجيل</value>
+  </data>
+  <data name="Registered_WriteIt" xml:space="preserve">
+    <value>اكتب هذا الرقم على بطاقة الأم</value>
+  </data>
+  <data name="Registered_Child" xml:space="preserve">
+    <value>الطفل</value>
+  </data>
+  <data name="Registered_Born" xml:space="preserve">
+    <value>الولادة</value>
+  </data>
+  <data name="Registered_Saved" xml:space="preserve">
+    <value>حُفظت على هذا الجهاز</value>
+  </data>
+  <data name="Registered_Reaches" xml:space="preserve">
+    <value>تصل إلى السجل · عند المزامنة التالية</value>
+  </data>
+  <data name="Registered_Certificate" xml:space="preserve">
+    <value>الشهادة جاهزة للطباعة بعد أن يوقّعها السجل</value>
+  </data>
+  <data name="Registered_Another" xml:space="preserve">
+    <value>تسجيل ولادة أخرى</value>
+  </data>
+  <data name="Review_Name" xml:space="preserve">
+    <value>الاسم</value>
+  </data>
+  <data name="Unit_Grams" xml:space="preserve">
+    <value>غ</value>
+  </data>
+  <data name="Unit_Weeks" xml:space="preserve">
+    <value>أسابيع</value>
   </data>
 </root>

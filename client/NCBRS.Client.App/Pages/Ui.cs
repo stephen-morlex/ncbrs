@@ -779,6 +779,14 @@ public static class Ui
 
     public static View Labeled(string label, View input, string? helper = null, string? suffix = null)
     {
+        // Named above the box, so not again inside it: the weight and
+        // pregnancy-length boxes showed their names twice, the second time
+        // squeezed in beside the unit.
+        if (input is Entry entry && entry.Placeholder == label)
+        {
+            entry.Placeholder = string.Empty;
+        }
+
         var boxed = input switch
         {
             Picker => Input(input, trailingIcon: Icons.ChevronDown),

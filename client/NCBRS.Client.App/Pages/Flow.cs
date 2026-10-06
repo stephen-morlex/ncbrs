@@ -146,6 +146,33 @@ public abstract class FlowPage : ContentPage
         Content = grid;
     }
 
+    /// <summary>
+    /// Lays out a task that has the screen to itself, such as registering a
+    /// birth: its own header, the content, and a footer that stays put with
+    /// the action in it. No bottom bar: a birth half-typed is one tap from
+    /// being left, and the header's way back is the way out.
+    /// </summary>
+    protected void BuildFocused(View header, View footer, params View[] views)
+    {
+        var grid = new Grid
+        {
+            RowDefinitions = [new RowDefinition(GridLength.Auto), new RowDefinition(GridLength.Star), new RowDefinition(GridLength.Auto)],
+            BackgroundColor = Ui.Background,
+        };
+        grid.Add(new VerticalStackLayout { Children = { header, Ui.Divider() } }, 0, 0);
+        grid.Add(Body(views), 0, 1);
+        grid.Add(new VerticalStackLayout
+        {
+            BackgroundColor = Ui.Surface,
+            Children =
+            {
+                Ui.Divider(),
+                new ContentView { Padding = new Thickness(Space.Xl, Space.Lg, Space.Xl, Space.Xl), Content = footer },
+            },
+        }, 0, 2);
+        Content = grid;
+    }
+
     private ScrollView Body(IEnumerable<View> views, View? end = null)
     {
         var stack = new VerticalStackLayout
@@ -291,10 +318,29 @@ public abstract class FlowPage : ContentPage
     protected async Task ShowProblemAsync(string text)
     {
         Status.Text = text;
-        if (Scroller is not null)
+
+        // Scrolled to only when it is in the scrolling content. A page that
+        // keeps it in a fixed footer, beside the button (the registration
+        // form), already has it on screen, and ScrollToAsync throws for an
+        // element outside the ScrollView: the app closed on the first
+        // problem the form found.
+        if (Scroller is not null && IsInside(Status, Scroller))
         {
             await Scroller.ScrollToAsync(Status, ScrollToPosition.Center, animated: true);
         }
+    }
+
+    private static bool IsInside(Element element, Element container)
+    {
+        for (var parent = element.Parent; parent is not null; parent = parent.Parent)
+        {
+            if (ReferenceEquals(parent, container))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>Run an act with the page busy, showing a failure rather than crashing the app.</summary>

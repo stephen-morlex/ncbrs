@@ -929,7 +929,7 @@ review).**
 **The tablet's design: the handoff in `design-handoff/` (2026-10-05).** The
 user's design reference: one HTML mockup per screen and `DESIGN_HANDOFF.md`,
 built in this order: the kit and navigation (done), unlock (done), home
-with Records (done), the five-step form, then an officer PIN reset. Its rules: change the
+with Records (done), the five-step form (done), then an officer PIN reset. Its rules: change the
 UI only; theme tokens first; mirror everything in Arabic; 48 dp targets; body
 text 16, helper text 13 at least.
 - **Decided with the user:** the mother's step asks only what the registry
@@ -987,6 +987,30 @@ text 16, helper text 13 at least.
 - **Chevrons turn round by drawing the other chevron,** not with `ScaleX`.
   A flipped path drew in a list row but not on the blue register card in
   Arabic.
+- **The registration form is five steps** (`RegisterPage`): the child, the
+  mother, the father, marriage and address, and a review. It has its own
+  header and a sticky footer (`FlowPage.BuildFocused`), and no bottom bar.
+  - **Splitting it changed no rule.** Every problem comes from the form's
+    own checks and `RegistrationRules`, tagged with the step its field
+    belongs to (`mother.*` is step 2, and so on). Next shows that step's
+    problems. Registering checks everything again, then opens the first
+    step with a problem.
+  - **The review is the read-back.** It replaces the old "Register this
+    birth?" dialog for new births. A correction keeps its confirmation.
+  - **Drafts** (`DeviceState.Drafts`, `FormDraft`) are saved after every
+    step and when leaving, and are listed in Records with Continue.
+    - Their sex is stored as "chosen or not" (`SexChosen`), because the
+      request's default is Male.
+    - **They are never dropped on a timer,** only when registered or
+      discarded: a draft may be the only record of a birth someone meant to
+      register.
+  - **"Birth registered"** (`RegisteredPage`) shows the number to write on
+    the mother's card. Its tracker says what the number is not yet: in the
+    registry, or a certificate.
+  - **`ShowProblemAsync` scrolls only to what is inside the scrolling
+    content.** The form keeps its problems in the footer, beside the button.
+    `ScrollToAsync` throws for an element outside the ScrollView, and the
+    app closed on the first problem the form found.
 - **The kit:**
   - `Pages/Ui.cs` holds the tokens: `Palette` (every colour is read
     from it, so dark mode is one more instance), `Space` (4, 8, 12, 16, 20

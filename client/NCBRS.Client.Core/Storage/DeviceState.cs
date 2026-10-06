@@ -43,6 +43,16 @@ public sealed class DeviceState
     public DateTime? LastSyncedAtUtc { get; set; }
 
     /// <summary>
+    /// Registrations started and not yet finished, saved after every step so
+    /// a birth half-typed when the family has to leave, or the battery dies,
+    /// is not typed again. A draft has no number: nothing is registered until
+    /// the registrar finishes it. Kept until finished or discarded, never
+    /// dropped on a timer, because a draft may be the only record of a birth
+    /// someone meant to register.
+    /// </summary>
+    public List<FormDraft> Drafts { get; set; } = [];
+
+    /// <summary>
     /// The births in <see cref="Outbox"/> the centre refused, by BRN, with its
     /// reasons. Held until corrected; lost, a restarted tablet would resend them
     /// unchanged and have them refused again, every window.
@@ -142,3 +152,21 @@ public sealed record PinAttempts(int FailedAttempts, DateTime? LockedUntilUtc);
 
 /// <summary>A sealed transfer file written for removable media, and the births on it.</summary>
 public sealed record ExportRecord(DateTime AtUtc, List<string> Brns);
+
+/// <summary>
+/// A registration in progress: the form as far as it was filled, and the step
+/// it reached.
+/// </summary>
+/// <param name="SexChosen">
+/// Whether a sex was chosen. The request's own field cannot say "not yet":
+/// its default is Male, so a draft restored without this would quietly
+/// register every unanswered child as a boy.
+/// </param>
+/// <param name="WithStatistics">Whether the maternal statistics were opened, so the form shows them again.</param>
+public sealed record FormDraft(
+    Guid Id,
+    int Step,
+    DateTime UpdatedAtUtc,
+    RegisterBirthRequest Birth,
+    bool SexChosen,
+    bool WithStatistics);
