@@ -48,7 +48,8 @@ public sealed class DeviceSession : IDisposable
     public static bool CanRestore(DeviceState state)
         => state.Identity is not null && state.DevicePrivateKeyPem is not null && state.Brn is not null;
 
-    public static DeviceSession Restore(DeviceState state, long lowBlockThreshold = 50)
+    /// <param name="nowUtc">The time births in the short history are forgotten against; the clock if not given.</param>
+    public static DeviceSession Restore(DeviceState state, long lowBlockThreshold = 50, DateTime? nowUtc = null)
     {
         if (state.Identity is not { } identity || state.DevicePrivateKeyPem is not { } key || state.Brn is not { } brn)
         {
@@ -64,7 +65,9 @@ public sealed class DeviceSession : IDisposable
         var outbox = new SyncOutbox(
             identity.DeviceId, identity.FacilityId, state.Outbox,
             state.Refused.ToDictionary(entry => entry.Key, entry => (IReadOnlyList<NCBRS.Models.ApiError>)entry.Value));
-        var facility = new FacilityClient(identity.DeviceId, identity.FacilityId, allocator, outbox, signer, lowBlockThreshold);
+        var recent = new RecentBirths(state.Recent);
+        recent.Forget(nowUtc ?? DateTime.UtcNow);
+        var facility = new FacilityClient(identity.DeviceId, identity.FacilityId, allocator, outbox, signer, lowBlockThreshold, recent);
 
         var sync = new ClientSyncState
         {
@@ -92,6 +95,7 @@ public sealed class DeviceSession : IDisposable
             _brn.OfficeCode, _brn.Year, _brn.PendingOfficeCode, _brn.PendingYear);
         state.Outbox = [.. _outbox.Pending];
         state.Refused = _outbox.Refused.ToDictionary(entry => entry.Key, entry => entry.Value.ToList());
+        state.Recent = [.. Facility.Recent.All];
         state.InFlight = Sync.InFlight;
         state.TransferKey = Sync.TransferKey;
         state.Bundle = Sync.Bundle is { HasBundle: true, FetchedAtUtc: { } fetchedAt } bundle

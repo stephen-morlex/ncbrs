@@ -1,5 +1,6 @@
 using NCBRS.Certificates;
 using NCBRS.Client.Auth;
+using NCBRS.Client.Sync;
 using NCBRS.Models;
 
 namespace NCBRS.Client.Storage;
@@ -30,6 +31,16 @@ public sealed class DeviceState
 
     /// <summary>Births registered and not yet settled with the centre.</summary>
     public List<SyncBirthRecord> Outbox { get; set; } = [];
+
+    /// <summary>
+    /// Births the registry has confirmed, kept 30 days for the Records list and
+    /// then forgotten (<see cref="RecentBirths"/>). Empty in a state saved
+    /// before it existed.
+    /// </summary>
+    public List<RecentBirth> Recent { get; set; } = [];
+
+    /// <summary>When a sync last reached the registry, for "last sync" on the home screen. Null until one has.</summary>
+    public DateTime? LastSyncedAtUtc { get; set; }
 
     /// <summary>
     /// The births in <see cref="Outbox"/> the centre refused, by BRN, with its

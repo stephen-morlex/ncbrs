@@ -119,7 +119,7 @@ public sealed class SyncPage : FlowPage
     /// Held is never shown as confirmed: a District node has the births, the
     /// registry has not seen them, and a family must not be told otherwise.
     /// </summary>
-    private static string Describe(WindowReport report)
+    internal static string Describe(WindowReport report)
     {
         var settled = report.Settlements.SelectMany(settlement => settlement.Settled).ToList();
         var rejected = report.Settlements.SelectMany(settlement => settlement.Rejected).ToList();

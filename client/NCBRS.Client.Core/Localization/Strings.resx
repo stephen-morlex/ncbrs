@@ -1045,20 +1045,11 @@ A permanent number is given when the tablet syncs.</value>
   <data name="Home_Greeting" xml:space="preserve">
     <value>Hello, {0}</value>
   </data>
-  <data name="Home_Tasks" xml:space="preserve">
-    <value>What would you like to do?</value>
-  </data>
   <data name="Home_Waiting" xml:space="preserve">
     <value>Waiting to sync</value>
   </data>
   <data name="Home_NumbersLeft" xml:space="preserve">
     <value>Numbers left</value>
-  </data>
-  <data name="Home_NeedNumbers" xml:space="preserve">
-    <value>Registration numbers are running low. Sync when there is signal to get more.</value>
-  </data>
-  <data name="Home_AllSent" xml:space="preserve">
-    <value>Every birth on this tablet has reached the registry.</value>
   </data>
   <data name="Tile_Register" xml:space="preserve">
     <value>Record a new birth</value>
@@ -1124,7 +1115,7 @@ A permanent number is given when the tablet syncs.</value>
     <value>Births registered on this tablet</value>
   </data>
   <data name="Records_Empty" xml:space="preserve">
-    <value>No births are waiting on this tablet. A birth leaves this list once the registry confirms it.</value>
+    <value>No births on this tablet yet. A registered birth stays here for 30 days.</value>
   </data>
   <data name="Records_Today" xml:space="preserve">
     <value>Today</value>
@@ -1143,6 +1134,54 @@ A permanent number is given when the tablet syncs.</value>
   </data>
   <data name="Common_Choose" xml:space="preserve">
     <value>Choose…</value>
+  </data>
+  <data name="Home_Synced" xml:space="preserve">
+    <value>Everything is in the registry</value>
+  </data>
+  <data name="Home_WaitingTitle" xml:space="preserve">
+    <value>{0} waiting to sync</value>
+  </data>
+  <data name="Home_Offline" xml:space="preserve">
+    <value>No signal</value>
+  </data>
+  <data name="Home_OfflineBody" xml:space="preserve">
+    <value>Births are safe on this tablet and go at the next sync.</value>
+  </data>
+  <data name="Home_LowNumbers" xml:space="preserve">
+    <value>Running low on numbers</value>
+  </data>
+  <data name="Home_LastSync" xml:space="preserve">
+    <value>Last sync {0:d MMM, HH:mm}</value>
+  </data>
+  <data name="Home_NeverSynced" xml:space="preserve">
+    <value>Not synced yet</value>
+  </data>
+  <data name="Home_RegisterHint" xml:space="preserve">
+    <value>Works without signal</value>
+  </data>
+  <data name="Home_OtherTasks" xml:space="preserve">
+    <value>Other tasks</value>
+  </data>
+  <data name="Home_RecentBirths" xml:space="preserve">
+    <value>Recent births</value>
+  </data>
+  <data name="Home_SeeAll" xml:space="preserve">
+    <value>See all</value>
+  </data>
+  <data name="Records_Search" xml:space="preserve">
+    <value>Search by name or number</value>
+  </data>
+  <data name="Records_All" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="Records_None" xml:space="preserve">
+    <value>No births match.</value>
+  </data>
+  <data name="Badge_Registered" xml:space="preserve">
+    <value>Registered</value>
+  </data>
+  <data name="Badge_Printed" xml:space="preserve">
+    <value>Certificate printed</value>
   </data>
   <data name="Unlock_Welcome" xml:space="preserve">
     <value>Welcome back</value>

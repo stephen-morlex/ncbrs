@@ -61,7 +61,8 @@ public sealed class FacilityClient
         DeviceBrnAllocator brn,
         SyncOutbox outbox,
         DeviceSigner signer,
-        long lowBlockThreshold = 50)
+        long lowBlockThreshold = 50,
+        RecentBirths? recent = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
         ArgumentNullException.ThrowIfNull(brn);
@@ -74,7 +75,11 @@ public sealed class FacilityClient
         _outbox = outbox;
         _signer = signer;
         _lowBlockThreshold = lowBlockThreshold;
+        Recent = recent ?? new RecentBirths();
     }
+
+    /// <summary>The births registered here that the registry has confirmed, kept for 30 days.</summary>
+    public RecentBirths Recent { get; }
 
     public string DeviceId => _deviceId;
 
@@ -174,7 +179,18 @@ public sealed class FacilityClient
     }
 
     /// <summary>Apply the centre's response, settling accepted records and leaving rejected ones queued.</summary>
-    public OutboxSettlement Settle(SyncBatchResponse response) => _outbox.Settle(response);
+    public OutboxSettlement Settle(SyncBatchResponse response) => Settle(response, DateTime.UtcNow);
+
+    /// <summary>
+    /// Apply the centre's answer to the outbox (<see cref="SyncOutbox.Settle"/>),
+    /// and keep what it settled in the tablet's short history.
+    /// </summary>
+    public OutboxSettlement Settle(SyncBatchResponse response, DateTime nowUtc)
+    {
+        var settlement = _outbox.Settle(response);
+        Recent.Record(settlement, nowUtc);
+        return settlement;
+    }
 
     /// <summary>
     /// The batch in the <c>{ meta, data }</c> envelope every centre endpoint

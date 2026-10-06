@@ -317,6 +317,9 @@ public sealed class DeviceHost(ISignInBrowser browser, IDocumentPrinter? printer
         return await RefreshStaffAsync(centre);
     }
 
+    /// <summary>Whether the last staff refresh reached the registry.</summary>
+    private bool _staffRefreshed;
+
     private async Task<IReadOnlyList<string>> RefreshStaffAsync(CentralClient centre)
     {
         var staff = await centre.FetchStaffCredentialsAsync(State.Identity!.FacilityId, State.Identity.DeviceId);
@@ -326,6 +329,7 @@ public sealed class DeviceHost(ISignInBrowser browser, IDocumentPrinter? printer
         }
 
         var skipped = StaffUnlock.Provision(State, bundle);
+        _staffRefreshed = true;
         await SaveAsync();
         return skipped.Select(name => Language.Format(Strings.Host_StaffSkipped, name)).ToList();
     }
@@ -427,13 +431,38 @@ public sealed class DeviceHost(ISignInBrowser browser, IDocumentPrinter? printer
     public async Task<(WindowReport Report, IReadOnlyList<string> StaffProblems)> SyncAsync()
     {
         var centre = Centre();
+        _staffRefreshed = false;
         var report = await new ConnectivityWindow(Session!.Facility, centre, Session.Signer, (_, _) => SaveAsync())
             .RunAsync(Session.Sync, DateTime.UtcNow);
         await SaveAsync();
         var staff = report.Upload is CentralOutcome.Unauthorized or CentralOutcome.Unreachable
             ? []
             : await RefreshStaffAsync(centre);
+
+        // "Last sync" is when the registry was last actually reached: an
+        // upload it accepted, numbers or a bundle it handed over, or, with
+        // nothing to send, the staff list it answered with. A District node
+        // holding the births is not the registry, so it does not count.
+        if (report.Upload is CentralOutcome.Succeeded || report.BlockGranted is not null || report.BundleRefreshed
+            || (report.Upload is null && _staffRefreshed))
+        {
+            State.LastSyncedAtUtc = DateTime.UtcNow;
+            await SaveAsync();
+        }
+
         return (report, staff);
+    }
+
+    /// <summary>Note that a birth's certificate was printed here, for its badge in Records.</summary>
+    public async Task MarkPrintedAsync(string brn)
+    {
+        if (Session is null)
+        {
+            return;
+        }
+
+        Session.Facility.Recent.MarkPrinted(brn);
+        await SaveAsync();
     }
 
     private void RestoreSession()

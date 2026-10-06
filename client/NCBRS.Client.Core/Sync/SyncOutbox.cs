@@ -7,10 +7,12 @@ namespace NCBRS.Client.Sync;
 /// outbox: which entries were settled and removed, which were rejected and kept
 /// for attention, and how many remain queued.
 /// </summary>
+/// <param name="SettledBirths">The births the settled entries removed from the outbox, as they were sent, for the tablet's short history (<see cref="RecentBirths"/>).</param>
 public sealed record OutboxSettlement(
     IReadOnlyList<SyncRecordOutcome> Settled,
     IReadOnlyList<SyncRecordOutcome> Rejected,
-    int RemainingCount);
+    int RemainingCount,
+    IReadOnlyList<SyncBirthRecord>? SettledBirths = null);
 
 /// <summary>
 /// WS-B6. The device's local outbox: births registered while offline, staged
@@ -146,6 +148,7 @@ public sealed class SyncOutbox
     {
         var settled = new List<SyncRecordOutcome>();
         var rejected = new List<SyncRecordOutcome>();
+        var births = new List<SyncBirthRecord>();
 
         foreach (var outcome in response.Records)
         {
@@ -153,6 +156,7 @@ public sealed class SyncOutbox
             {
                 case SyncRecordStatus.Registered:
                 case SyncRecordStatus.Duplicate:
+                    births.AddRange(_pending.Where(entry => entry.Birth.Brn == outcome.Brn));
                     if (_pending.RemoveAll(entry => entry.Birth.Brn == outcome.Brn) > 0)
                     {
                         settled.Add(outcome);
@@ -173,6 +177,6 @@ public sealed class SyncOutbox
             }
         }
 
-        return new OutboxSettlement(settled, rejected, _pending.Count);
+        return new OutboxSettlement(settled, rejected, _pending.Count, births);
     }
 }
