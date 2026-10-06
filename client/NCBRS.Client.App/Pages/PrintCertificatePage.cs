@@ -16,14 +16,20 @@ public sealed class PrintCertificatePage : FlowPage
     private readonly Entry _brn = new()
     {
         Placeholder = Strings.Check_Brn,
-        Keyboard = Keyboard.Numeric,
+        // Letters too: a composed number reads SS-JTH-2026-000014-0, which a
+        // numeric keypad cannot type. Capitals, as the number is printed.
+        Keyboard = Keyboard.Create(KeyboardFlags.CapitalizeCharacter),
+        IsSpellCheckEnabled = false,
+        IsTextPredictionEnabled = false,
         FlowDirection = FlowDirection.LeftToRight,
     };
     private readonly Label _done = Ui.Body("");
 
-    public PrintCertificatePage(DeviceHost host) : base(Strings.Register_PrintCertificate)
+    /// <param name="brn">The number to print, when opened from a birth in Records.</param>
+    public PrintCertificatePage(DeviceHost host, string? brn = null) : base(Strings.Register_PrintCertificate)
     {
         _host = host;
+        _brn.Text = brn;
 
         var print = Ui.PrimaryButton(Strings.Print_CertFetch);
         print.Clicked += async (_, _) => await RunAsync(PrintAsync);
@@ -67,5 +73,6 @@ public sealed class PrintCertificatePage : FlowPage
         }
 
         _done.Text = certificate.Reprint ? Strings.Print_Sent + "\n" + Strings.Print_Reprinted : Strings.Print_Sent;
+        await _host.MarkPrintedAsync(brn);
     }
 }

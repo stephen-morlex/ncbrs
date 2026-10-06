@@ -622,6 +622,23 @@ public static class Ui
     /// </summary>
     public static View Icon(string pathData, Color color, double size = 24, bool directional = false)
     {
+        // A chevron is turned round by drawing its twin, not by flipping it:
+        // a path flipped with ScaleX was not drawn at all on the blue
+        // register card in Arabic, while the same flip drew in a list row.
+        if (directional && Language.IsArabic)
+        {
+            if (pathData == Icons.ChevronForward)
+            {
+                pathData = Icons.ChevronBack;
+                directional = false;
+            }
+            else if (pathData == Icons.ChevronBack)
+            {
+                pathData = Icons.ChevronForward;
+                directional = false;
+            }
+        }
+
         var scale = size / 24;
         var path = new MauiPath
         {

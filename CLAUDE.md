@@ -929,7 +929,7 @@ review).**
 **The tablet's design: the handoff in `design-handoff/` (2026-10-05).** The
 user's design reference: one HTML mockup per screen and `DESIGN_HANDOFF.md`,
 built in this order: the kit and navigation (done), unlock (done), home
-with Records, the five-step form, then an officer PIN reset. Its rules: change the
+with Records (done), the five-step form, then an officer PIN reset. Its rules: change the
 UI only; theme tokens first; mirror everything in Arabic; 48 dp targets; body
 text 16, helper text 13 at least.
 - **Decided with the user:** the mother's step asks only what the registry
@@ -956,6 +956,37 @@ text 16, helper text 13 at least.
     syncs with, because that is what the existing sign-in does.
   - **No "Forgot PIN?" yet.** No PIN can be reset today, so the link waits
     for the officer reset.
+- **The 30-day history (`RecentBirths`, core, tested).** The outbox still
+  lets a birth go the moment the registry has it, and that is right for the
+  outbox. The history is a separate, short list:
+  - It is filled at settlement (`FacilityClient.Settle(response, nowUtc)`,
+    from the births `OutboxSettlement.SettledBirths` names). A birth given a
+    real number in place of a `PROV-` one is kept under the real number, with
+    the provisional one beside it.
+  - It holds only what Records shows, in the encrypted store.
+  - **Every birth is forgotten 30 days after it was registered,** not after
+    the registry confirmed it: a birth that sat three weeks offline has had
+    most of its month. So a lost tablet holds at most a month of names. The
+    forgetting runs at settlement and on restore, against a time passed in
+    (`DeviceSession.Restore(nowUtc:)`), so tests never depend on the clock.
+- **Home** is the sync card and the main action.
+  - The card's state, in order: no signal (the births are safe here), births
+    waiting, numbers running low, or everything in the registry.
+  - **"Last sync" (`DeviceState.LastSyncedAtUtc`) is when the registry itself
+    was reached:** an upload accepted, numbers or a bundle granted, or, with
+    nothing to send, the staff list fetched. A District node holding the
+    births is not the registry.
+  - Recent births and Records draw the same rows from one list
+    (`TabletRecords`), so they cannot disagree about a birth.
+- **Records:** search by name, or by number as typed at a counter; filter
+  chips for where a birth stands. A refused birth opens to be corrected. A
+  registered one opens printing with its number filled in, and a printed
+  certificate is noted against it.
+- **The certificate's number field takes letters.** It was a numeric keypad,
+  which cannot type `SS-JTH-…`.
+- **Chevrons turn round by drawing the other chevron,** not with `ScaleX`.
+  A flipped path drew in a list row but not on the blue register card in
+  Arabic.
 - **The kit:**
   - `Pages/Ui.cs` holds the tokens: `Palette` (every colour is read
     from it, so dark mode is one more instance), `Space` (4, 8, 12, 16, 20

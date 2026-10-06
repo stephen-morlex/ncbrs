@@ -74,7 +74,7 @@ public sealed class ConnectivityWindow(
         var settlements = new List<OutboxSettlement>();
         var problems = new List<string>();
 
-        var upload = await SyncAsync(state, settlements, problems, cancellationToken);
+        var upload = await SyncAsync(state, nowUtc, settlements, problems, cancellationToken);
 
         BrnBlockResponse? granted = null;
         if (facility.NeedsMoreNumbers)
@@ -129,7 +129,7 @@ public sealed class ConnectivityWindow(
     }
 
     private async Task<CentralOutcome?> SyncAsync(
-        ClientSyncState state, List<OutboxSettlement> settlements, List<string> problems, CancellationToken cancellationToken)
+        ClientSyncState state, DateTime nowUtc, List<OutboxSettlement> settlements, List<string> problems, CancellationToken cancellationToken)
     {
         CentralOutcome? last = null;
 
@@ -155,7 +155,7 @@ public sealed class ConnectivityWindow(
             switch (result.Outcome)
             {
                 case CentralOutcome.Succeeded when result.Value is { } response:
-                    settlements.Add(facility.Settle(response));
+                    settlements.Add(facility.Settle(response, nowUtc));
                     state.InFlight = null;
                     await persist(state, cancellationToken);
                     continue;

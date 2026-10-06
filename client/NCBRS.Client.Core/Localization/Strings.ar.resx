@@ -1040,20 +1040,11 @@
   <data name="Home_Greeting" xml:space="preserve">
     <value>مرحبًا، {0}</value>
   </data>
-  <data name="Home_Tasks" xml:space="preserve">
-    <value>ماذا تريد أن تفعل؟</value>
-  </data>
   <data name="Home_Waiting" xml:space="preserve">
     <value>بانتظار المزامنة</value>
   </data>
   <data name="Home_NumbersLeft" xml:space="preserve">
     <value>الأرقام المتبقية</value>
-  </data>
-  <data name="Home_NeedNumbers" xml:space="preserve">
-    <value>أرقام التسجيل توشك على النفاد. قم بالمزامنة عند توفر الإشارة للحصول على المزيد.</value>
-  </data>
-  <data name="Home_AllSent" xml:space="preserve">
-    <value>وصلت جميع الولادات المسجلة على هذا الجهاز إلى السجل.</value>
   </data>
   <data name="Tile_Register" xml:space="preserve">
     <value>سجّل ولادة جديدة</value>
@@ -1119,7 +1110,7 @@
     <value>الولادات المسجلة على هذا الجهاز</value>
   </data>
   <data name="Records_Empty" xml:space="preserve">
-    <value>لا توجد ولادات بانتظار المزامنة على هذا الجهاز. تختفي الولادة من هذه القائمة بعد أن يؤكدها السجل.</value>
+    <value>لا توجد ولادات على هذا الجهاز بعد. تبقى الولادة المسجلة هنا لمدة 30 يومًا.</value>
   </data>
   <data name="Records_Today" xml:space="preserve">
     <value>اليوم</value>
@@ -1138,6 +1129,54 @@
   </data>
   <data name="Common_Choose" xml:space="preserve">
     <value>اختر…</value>
+  </data>
+  <data name="Home_Synced" xml:space="preserve">
+    <value>كل الولادات وصلت إلى السجل</value>
+  </data>
+  <data name="Home_WaitingTitle" xml:space="preserve">
+    <value>{0} بانتظار المزامنة</value>
+  </data>
+  <data name="Home_Offline" xml:space="preserve">
+    <value>لا توجد إشارة</value>
+  </data>
+  <data name="Home_OfflineBody" xml:space="preserve">
+    <value>الولادات محفوظة على هذا الجهاز وتُرسل عند المزامنة التالية.</value>
+  </data>
+  <data name="Home_LowNumbers" xml:space="preserve">
+    <value>الأرقام على وشك النفاد</value>
+  </data>
+  <data name="Home_LastSync" xml:space="preserve">
+    <value>آخر مزامنة {0:d MMM، HH:mm}</value>
+  </data>
+  <data name="Home_NeverSynced" xml:space="preserve">
+    <value>لم تتم المزامنة بعد</value>
+  </data>
+  <data name="Home_RegisterHint" xml:space="preserve">
+    <value>يعمل دون إشارة</value>
+  </data>
+  <data name="Home_OtherTasks" xml:space="preserve">
+    <value>مهام أخرى</value>
+  </data>
+  <data name="Home_RecentBirths" xml:space="preserve">
+    <value>الولادات الأخيرة</value>
+  </data>
+  <data name="Home_SeeAll" xml:space="preserve">
+    <value>عرض الكل</value>
+  </data>
+  <data name="Records_Search" xml:space="preserve">
+    <value>ابحث بالاسم أو الرقم</value>
+  </data>
+  <data name="Records_All" xml:space="preserve">
+    <value>الكل</value>
+  </data>
+  <data name="Records_None" xml:space="preserve">
+    <value>لا توجد ولادات مطابقة.</value>
+  </data>
+  <data name="Badge_Registered" xml:space="preserve">
+    <value>مسجلة</value>
+  </data>
+  <data name="Badge_Printed" xml:space="preserve">
+    <value>طُبعت الشهادة</value>
   </data>
   <data name="Unlock_Welcome" xml:space="preserve">
     <value>مرحبًا بعودتك</value>
