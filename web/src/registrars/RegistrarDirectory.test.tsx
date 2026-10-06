@@ -5,10 +5,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { RegistrarDirectory } from './RegistrarDirectory'
 
 const get = vi.fn()
+const post = vi.fn()
 
 // One stable client object — the real useApiClient memoises, and a fresh mock
 // per render re-runs the load effect and resets the list.
-const client = { GET: get }
+const client = { GET: get, POST: post }
 
 vi.mock('@/api/useApi', () => ({
   useApiClient: () => client,
@@ -77,6 +78,7 @@ function renderDirectory() {
 
 beforeEach(() => {
   get.mockReset()
+  post.mockReset()
   roles.value = []
   respondWith(ok(page([registrar])))
 })
@@ -182,6 +184,52 @@ describe('RegistrarDirectory — adding and withdrawing', () => {
     expect(screen.getByText(/^withdrawn [0-9]/)).toBeInTheDocument()
   })
 
+  it('offers a PIN reset only to someone with a PIN, and marks who has none', async () => {
+    roles.value = ['district-officer']
+    answering([], [
+      { ...registrar, hasDevicePin: true },
+      { ...registrar, registrarId: 'new', displayName: 'Deng Ayen', hasDevicePin: false },
+    ])
+    render(
+      <MemoryRouter>
+        <RegistrarDirectory />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByRole('button', { name: 'Reset the PIN of Nyandeng Lado' })).toBeInTheDocument()
+    // Nothing to reset: they cannot unlock a tablet until they set one, and the directory says so.
+    expect(screen.queryByRole('button', { name: 'Reset the PIN of Deng Ayen' })).not.toBeInTheDocument()
+    expect(screen.getByText('no PIN')).toBeInTheDocument()
+  })
+
+  it('resets a PIN after saying what it does, and reloads the directory', async () => {
+    roles.value = ['district-officer']
+    answering([], [{ ...registrar, hasDevicePin: true }])
+    post.mockResolvedValue(ok({ ...registrar, hasDevicePin: false }))
+    const clicker = user()
+    render(
+      <MemoryRouter>
+        <RegistrarDirectory />
+      </MemoryRouter>,
+    )
+
+    await clicker.click(await screen.findByRole('button', { name: 'Reset the PIN of Nyandeng Lado' }))
+    // The officer is told they do not choose the new PIN.
+    expect(screen.getByText(/You do not choose the new one/)).toBeInTheDocument()
+
+    const loadsBefore = get.mock.calls.filter(([url]) => url === '/api/registrars').length
+    await clicker.click(screen.getByRole('button', { name: 'Reset PIN' }))
+
+    await waitFor(() =>
+      expect(post).toHaveBeenCalledWith('/api/registrars/{registrarId}/reset-device-pin', {
+        params: { path: { registrarId: registrar.registrarId } },
+      }),
+    )
+    await waitFor(() =>
+      expect(get.mock.calls.filter(([url]) => url === '/api/registrars').length).toBeGreaterThan(loadsBefore),
+    )
+  })
+
   it('offers neither to someone who cannot manage registrars', async () => {
     roles.value = []
     answering([waiting], [registrar])
@@ -194,5 +242,6 @@ describe('RegistrarDirectory — adding and withdrawing', () => {
     await screen.findByText('Nyandeng Lado')
     expect(screen.queryByText('Achol Garang')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /withdraw/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /reset the pin/i })).not.toBeInTheDocument()
   })
 })

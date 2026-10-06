@@ -1253,4 +1253,10 @@
   <data name="Unit_Weeks" xml:space="preserve">
     <value>أسابيع</value>
   </data>
+  <data name="Unlock_Forgot" xml:space="preserve">
+    <value>نسيت الرمز؟</value>
+  </data>
+  <data name="Unlock_ForgotBody" xml:space="preserve">
+    <value>اطلب من مسؤول المقاطعة إعادة تعيين رمز PIN. ثم عيّن رمزًا جديدًا هنا أثناء توفر الإشارة: من خلال "تعيين رمزي أو تغييره" إذا كان هذا الجهاز مسجلًا بحسابك، أو من خلال "شخص آخر" إذا لم يكن كذلك.</value>
+  </data>
 </root>

@@ -283,6 +283,36 @@ public class RegistrarsController(
         return outcome.Result == RegistrarOnboardingResult.Done ? ToResponse(outcome.Registrar!) : Failure(outcome);
     }
 
+    /// <summary>
+    /// Clear the offline PIN of a registrar who has forgotten it. The officer
+    /// never sets the new one: the registrar does, signed in with their own
+    /// account, and the old PIN stops unlocking each tablet at that tablet's
+    /// next sync. Within the officer's county; facility staff only for a
+    /// district officer; never one's own.
+    /// </summary>
+    [HttpPost("{registrarId:guid}/reset-device-pin", Name = "ResetRegistrarDevicePin")]
+    [Authorize(Policy = NcbrsRoles.CanManageRegistrars)]
+    [ProducesResponseType(typeof(RegistrarResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<RegistrarResponse>> ResetDevicePin(
+        Guid registrarId, [FromServices] RegistrarOnboardingService onboarding)
+    {
+        var caller = await currentRegistrar.GetAsync(HttpContext.RequestAborted);
+        if (caller is null)
+        {
+            return NotProvisioned();
+        }
+
+        var outcome = await onboarding.ResetPinAsync(
+            registrarId, caller, User, TransactionContext.Get(HttpContext)?.TransactionId, HttpContext.RequestAborted);
+
+        return outcome.Result == RegistrarOnboardingResult.Done ? ToResponse(outcome.Registrar!) : Failure(outcome);
+    }
+
     private static ObjectResult Failure(RegistrarOnboardingOutcome outcome)
         => ApiErrors.Result(ApiErrors.Single(
             outcome.Result switch
@@ -323,7 +353,8 @@ public class RegistrarsController(
     ///
     /// Not <c>CredentialHash</c>, which is the offline PIN and has one
     /// legitimate destination — the credential bundle a device caches — and
-    /// no business in a directory. Not <c>ExternalSubjectId</c> either: that
+    /// no business in a directory. Only whether there is one, which is what an
+    /// officer needs to know before resetting it. Not <c>ExternalSubjectId</c> either: that
     /// is the Keycloak subject, an identifier for the identity provider
     /// rather than for anyone here, and publishing it invites callers to key
     /// their own records on it.
@@ -335,7 +366,8 @@ public class RegistrarsController(
         registrar.FacilityId,
         registrar.Facility?.Name ?? string.Empty,
         registrar.Facility?.CountyCode ?? string.Empty,
-        registrar.WithdrawnAtUtc);
+        registrar.WithdrawnAtUtc,
+        registrar.CredentialHash is not null);
 }
 
 public record RegistrarResponse(
@@ -351,7 +383,10 @@ public record RegistrarResponse(
     /// the trail names them. The reason is not published. Anyone may resolve a
     /// colleague by id, and why someone left is an HR matter.
     /// </summary>
-    DateTime? WithdrawnAtUtc = null);
+    DateTime? WithdrawnAtUtc = null,
+
+    /// <summary>Whether they have an offline PIN set: whether there is anything to reset.</summary>
+    bool HasDevicePin = false);
 
 public record MeResponse(bool Provisioned, bool Withdrawn, bool Pending, RegistrarResponse? Registrar);
 

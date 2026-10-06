@@ -302,10 +302,130 @@ public class RegistrarOnboardingTests : IDisposable
         Assert.DoesNotContain("Subject", typeof(BindRegistrarRequest).GetProperties().Select(property => property.Name));
     }
 
+    // --- resetting a forgotten PIN --------------------------------------------------------
+
+    /// <summary>
+    /// The officer clears it and never learns or sets the new one: the
+    /// registrar sets it with their own account, needing no current PIN once
+    /// there is none. The old one leaves the tablets' bundle at once.
+    /// </summary>
+    [Fact]
+    public async Task AResetPinLeavesTheTablets_AndTheRegistrarSetsANewOneThemselves()
+    {
+        var nurseId = await BoundNurseWithPinAsync();
+        Assert.Contains(nurseId, await PinBundleAsync());
+
+        await using (var db = NewDb())
+        {
+            var (service, current) = For(db, Officer);
+            var outcome = await service.ResetPinAsync(nurseId, (await current.GetAsync())!, Officer, null);
+            Assert.Equal(RegistrarOnboardingResult.Done, outcome.Result);
+        }
+
+        Assert.DoesNotContain(nurseId, await PinBundleAsync());
+
+        await using (var check = NewDb())
+        {
+            var row = await check.Registrars.SingleAsync(entry => entry.RegistrarId == nurseId);
+            Assert.Null(row.CredentialHash);
+            Assert.True(row.IsActive);
+            var audit = Assert.Single(await check.AuditLogs.Where(entry => entry.Action == "DevicePinReset").ToListAsync());
+            Assert.Equal(nurseId.ToString(), audit.EntityId);
+            Assert.Equal(OfficerId, audit.UserId);
+            Assert.Equal("SS0101", audit.CountyCode);
+        }
+
+        // The nurse, signed in as themselves, sets a new PIN with no current one.
+        await using (var db = NewDb())
+        {
+            var nurse = Account(NewNurse, [NcbrsRoles.FacilityRegistrar]);
+            var controller = new DeviceCredentialsController(db, new DevicePinHasher(), For(db, nurse).Current, new CountyLookup(db))
+            {
+                ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = nurse } },
+            };
+            var set = await controller.SetPin(new ApiRequest<SetDevicePinRequest> { Data = new SetDevicePinRequest { Pin = "583917" } });
+            Assert.NotNull(set.Value);
+        }
+
+        Assert.Contains(nurseId, await PinBundleAsync());
+    }
+
+    [Fact]
+    public async Task NobodyResetsTheirOwnPin_AndAnOfficerDoesNotResetAnOfficers()
+    {
+        await using var db = NewDb();
+        var (service, current) = For(db, Officer);
+        var officer = (await current.GetAsync())!;
+
+        Assert.Equal(RegistrarOnboardingResult.Refused, (await service.ResetPinAsync(OfficerId, officer, Officer, null)).Result);
+        Assert.Equal(RegistrarOnboardingResult.NotPermitted, (await service.ResetPinAsync(MinistryId, officer, Officer, null)).Result);
+    }
+
+    /// <summary>As the directory answers: another county's registrar is not confirmed to exist.</summary>
+    [Fact]
+    public async Task AnOfficerCannotResetAPinInAnotherCounty_TheMinistryCan()
+    {
+        var talinurse = Guid.CreateVersion7();
+        await using (var seed = NewDb())
+        {
+            seed.Registrars.Add(new Registrar
+            {
+                RegistrarId = talinurse, FacilityId = TerekekaPost, ExternalSubjectId = "tali-nurse", DisplayName = "Tali Nurse",
+                Role = RegistrarRole.FacilityRegistrar, CredentialHash = new DevicePinHasher().Hash("246813", iterations: 1_000),
+            });
+            await seed.SaveChangesAsync();
+        }
+
+        await using (var db = NewDb())
+        {
+            var (service, current) = For(db, Officer);
+            Assert.Equal(RegistrarOnboardingResult.NotFound, (await service.ResetPinAsync(talinurse, (await current.GetAsync())!, Officer, null)).Result);
+        }
+
+        await using (var db = NewDb())
+        {
+            var (service, current) = For(db, Ministry);
+            Assert.Equal(RegistrarOnboardingResult.Done, (await service.ResetPinAsync(talinurse, (await current.GetAsync())!, Ministry, null)).Result);
+        }
+    }
+
+    /// <summary>Nothing to reset is said, not done: no PIN, or someone already withdrawn.</summary>
+    [Fact]
+    public async Task ThereIsNothingToResetWithoutAPin_OrForSomeoneWithdrawn()
+    {
+        var nurseId = await BoundNurseWithPinAsync();
+
+        await using (var db = NewDb())
+        {
+            var (service, current) = For(db, Officer);
+            var officer = (await current.GetAsync())!;
+            Assert.Equal(RegistrarOnboardingResult.Done, (await service.ResetPinAsync(nurseId, officer, Officer, null)).Result);
+            Assert.Equal(RegistrarOnboardingResult.Conflict, (await service.ResetPinAsync(nurseId, officer, Officer, null)).Result);
+        }
+
+        await using (var db = NewDb())
+        {
+            var row = await db.Registrars.SingleAsync(entry => entry.RegistrarId == nurseId);
+            row.CredentialHash = new DevicePinHasher().Hash("246813", iterations: 1_000);
+            row.WithdrawnAtUtc = DateTime.UtcNow;
+            await db.SaveChangesAsync();
+        }
+
+        await using (var db = NewDb())
+        {
+            var (service, current) = For(db, Officer);
+            Assert.Equal(RegistrarOnboardingResult.Conflict, (await service.ResetPinAsync(nurseId, (await current.GetAsync())!, Officer, null)).Result);
+        }
+
+        await using var check = NewDb();
+        Assert.Single(await check.AuditLogs.Where(entry => entry.Action == "DevicePinReset").ToListAsync());
+    }
+
     [Theory]
     [InlineData(nameof(RegistrarsController.Pending))]
     [InlineData(nameof(RegistrarsController.Bind))]
     [InlineData(nameof(RegistrarsController.Withdraw))]
+    [InlineData(nameof(RegistrarsController.ResetDevicePin))]
     public void OnboardingIsAnOversightAct(string action)
     {
         var method = typeof(RegistrarsController).GetMethod(action)!;

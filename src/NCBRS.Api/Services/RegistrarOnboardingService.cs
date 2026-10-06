@@ -249,6 +249,73 @@ public class RegistrarOnboardingService(NcbrsDbContext db, CurrentRegistrarServi
         return new(RegistrarOnboardingResult.Done, registrar);
     }
 
+    /// <summary>
+    /// Clear a registrar's offline PIN, for someone who has forgotten theirs.
+    ///
+    /// Clearing is all it does. The officer never learns or chooses the new
+    /// PIN: the registrar sets it themselves, signed in with their own
+    /// account, which needs no current PIN once there is none. The old PIN
+    /// leaves each tablet at that tablet's next sync, since the staff bundle
+    /// leaves out anyone without a PIN; a tablet out of signal cannot be told
+    /// sooner.
+    ///
+    /// The same limits as withdrawal: within the officer's county, facility
+    /// staff only for a district officer, and never one's own (change it
+    /// with the current PIN, or ask another officer).
+    /// </summary>
+    public async Task<RegistrarOnboardingOutcome> ResetPinAsync(
+        Guid registrarId, Registrar caller, ClaimsPrincipal user, Guid? transactionId,
+        CancellationToken cancellationToken = default)
+    {
+        var registrar = await db.Registrars.Include(entry => entry.Facility)
+            .FirstOrDefaultAsync(entry => entry.RegistrarId == registrarId, cancellationToken);
+
+        if (registrar is null || !await current.CanActForFacilityAsync(caller, registrar.FacilityId, cancellationToken))
+        {
+            return new(RegistrarOnboardingResult.NotFound, Field: "registrarId", Detail: "No registrar with that id in your county.");
+        }
+
+        if (registrar.RegistrarId == caller.RegistrarId)
+        {
+            return new(RegistrarOnboardingResult.Refused, Field: "registrarId",
+                Detail: "You cannot reset your own PIN; change it with your current one, or ask another officer.");
+        }
+
+        if (!user.IsInRole(NcbrsRoles.MinistryAdmin) && !FacilityStaff.Contains(registrar.Role))
+        {
+            return new(RegistrarOnboardingResult.NotPermitted, Field: "registrarId",
+                Detail: "A district officer resets facility staff's PINs. Resetting an officer's is the Ministry's.");
+        }
+
+        if (!registrar.IsActive)
+        {
+            return new(RegistrarOnboardingResult.Conflict, Field: "registrarId",
+                Detail: $"Withdrawn on {registrar.WithdrawnAtUtc:yyyy-MM-dd}; a withdrawn registrar's PIN unlocks nothing.");
+        }
+
+        if (registrar.CredentialHash is null)
+        {
+            return new(RegistrarOnboardingResult.Conflict, Field: "registrarId",
+                Detail: "They have no PIN to reset. They can set one now, signed in with their own account.");
+        }
+
+        registrar.CredentialHash = null;
+
+        db.AuditLogs.Add(new AuditLog
+        {
+            EntityType = nameof(Registrar),
+            EntityId = registrar.RegistrarId.ToString(),
+            Action = "DevicePinReset",
+            CountyCode = await counties.ForFacilityAsync(registrar.FacilityId, cancellationToken),
+            UserId = caller.RegistrarId,
+            DeviceId = "web",
+            TransactionId = transactionId,
+        });
+
+        await db.SaveChangesAsync(cancellationToken);
+        return new(RegistrarOnboardingResult.Done, registrar);
+    }
+
     private static string NameOf(ClaimsPrincipal user, string subject)
     {
         var name = user.FindFirstValue("name")

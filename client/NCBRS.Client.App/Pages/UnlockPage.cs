@@ -26,6 +26,10 @@ public sealed class UnlockPage : FlowPage
     private readonly HorizontalStackLayout _dots = new() { Spacing = Space.Md, HorizontalOptions = LayoutOptions.Center };
     private readonly Button _unlock = Ui.PrimaryButton(Strings.Unlock_Button);
     private readonly VerticalStackLayout _someoneElse;
+
+    // What to do about a forgotten PIN, shown when asked: a district officer
+    // resets it at the registry, and the registrar sets a new one here.
+    private readonly Border _forgot = Ui.Notice(Icons.Key, Strings.Unlock_ForgotBody, Tone.Primary);
     private StaffCredential? _who;
     private string _pin = "";
 
@@ -66,7 +70,7 @@ public sealed class UnlockPage : FlowPage
         {
             Ui.PageHeader(Strings.Unlock_Welcome, host.EnrolledTo),
             Ui.Group(Strings.Unlock_WhoUsing, Ui.Columns(2, [.. staff]), _someoneElse),
-            new VerticalStackLayout { Spacing = Space.Md, Children = { pinLabel, _dots, Keypad(), Status } },
+            new VerticalStackLayout { Spacing = Space.Md, Children = { pinLabel, _dots, _forgot, Keypad(), Status } },
             _unlock,
             checkCertificate,
             Ui.Link(Strings.Unlock_ChangePin, () => pinForm.View.IsVisible = !pinForm.View.IsVisible),
@@ -220,7 +224,8 @@ public sealed class UnlockPage : FlowPage
             ColumnDefinitions = [new ColumnDefinition(GridLength.Star), new ColumnDefinition(GridLength.Star), new ColumnDefinition(GridLength.Star)],
         };
 
-        string[] keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"];
+        _forgot.IsVisible = false;
+        string[] keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "?", "0", "⌫"];
         for (var i = 0; i < keys.Length; i++)
         {
             if (i % 3 == 0)
@@ -229,8 +234,9 @@ public sealed class UnlockPage : FlowPage
             }
 
             var key = keys[i];
-            if (key.Length == 0)
+            if (key == "?")
             {
+                grid.Add(ForgotKey(), i % 3, i / 3);
                 continue;
             }
 
@@ -240,6 +246,28 @@ public sealed class UnlockPage : FlowPage
         }
 
         return grid;
+    }
+
+    /// <summary>
+    /// "Forgot PIN?" where the keypad has no key, as on a phone. It says what
+    /// to do rather than doing anything: a PIN is reset at the registry by a
+    /// district officer, never on the tablet, so the tablet cannot be talked
+    /// into clearing one.
+    /// </summary>
+    private View ForgotKey()
+    {
+        var label = new Label
+        {
+            Text = Strings.Unlock_Forgot,
+            FontSize = 14,
+            FontFamily = Ui.SemiBold,
+            TextColor = Ui.Primary,
+            HorizontalTextAlignment = TextAlignment.Center,
+            VerticalTextAlignment = TextAlignment.Center,
+            // Read in the page's language, inside a keypad held left to right.
+            FlowDirection = AppLanguage.Direction,
+        };
+        return Key(label, Strings.Unlock_Forgot, () => _forgot.IsVisible = !_forgot.IsVisible, outlined: false);
     }
 
     private static Border Key(View face, string name, Action onTap, bool outlined = true)
