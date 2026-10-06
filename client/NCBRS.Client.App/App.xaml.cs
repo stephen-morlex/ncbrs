@@ -13,7 +13,7 @@ public partial class App : Application
         _host = host;
 
         // Before the first page is built, so it is built in the right language.
-        AppLanguage.Apply();
+        AppLanguage.Apply(this);
     }
 
     protected override Window CreateWindow(IActivationState? activationState)

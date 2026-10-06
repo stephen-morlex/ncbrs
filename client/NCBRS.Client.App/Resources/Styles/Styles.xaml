@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!-- Implicit styles: the floor every control stands on, so a page that builds
      its own controls still reads as the rest of the app does. The particular
-     pieces (cards, tiles, the bars) are in Pages/Ui.cs. -->
+     pieces (cards, chips, tabs, the bottom bar) are in Pages/Ui.cs and
+     Pages/Controls.cs.
+
+     Fonts are dynamic resources (FontRegular, FontSemiBold), set by
+     AppLanguage: Geist for English, Noto Sans Arabic for Arabic, which Geist
+     does not draw. -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
 
-    <!-- White on the primary green: black on it fails contrast, and the bar
-         is read in full sun as often as not. -->
     <Style TargetType="NavigationPage">
-        <Setter Property="BarBackgroundColor" Value="{StaticResource PrimaryDark}" />
+        <Setter Property="BarBackgroundColor" Value="{StaticResource Primary}" />
         <Setter Property="BarTextColor" Value="{StaticResource White}" />
     </Style>
 
@@ -17,45 +20,48 @@
     </Style>
 
     <Style TargetType="Label">
-        <Setter Property="TextColor" Value="{StaticResource Text}" />
-        <Setter Property="FontFamily" Value="OpenSansRegular" />
+        <Setter Property="TextColor" Value="{StaticResource Foreground}" />
+        <Setter Property="FontFamily" Value="{DynamicResource FontRegular}" />
     </Style>
 
-    <!-- Touch targets of at least 52: the tablet is used one-handed, in a hurry. -->
+    <!-- The main action: 56 tall, the tablet is used one-handed and in a hurry. -->
     <Style TargetType="Button">
         <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-        <Setter Property="TextColor" Value="{StaticResource White}" />
-        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="TextColor" Value="{StaticResource PrimaryForeground}" />
+        <Setter Property="FontFamily" Value="{DynamicResource FontSemiBold}" />
         <Setter Property="FontSize" Value="16" />
-        <Setter Property="CornerRadius" Value="12" />
-        <Setter Property="MinimumHeightRequest" Value="52" />
-        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="HeightRequest" Value="56" />
+        <Setter Property="Padding" Value="16,0" />
     </Style>
 
     <Style TargetType="Entry">
-        <Setter Property="FontSize" Value="17" />
-        <Setter Property="TextColor" Value="{StaticResource Text}" />
-        <Setter Property="PlaceholderColor" Value="{StaticResource TextMuted}" />
-        <Setter Property="MinimumHeightRequest" Value="52" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontFamily" Value="{DynamicResource FontRegular}" />
+        <Setter Property="TextColor" Value="{StaticResource Foreground}" />
+        <Setter Property="PlaceholderColor" Value="{StaticResource MutedForeground}" />
+        <Setter Property="MinimumHeightRequest" Value="48" />
     </Style>
 
     <Style TargetType="Picker">
-        <Setter Property="FontSize" Value="17" />
-        <Setter Property="TextColor" Value="{StaticResource Text}" />
-        <Setter Property="TitleColor" Value="{StaticResource TextMuted}" />
-        <Setter Property="MinimumHeightRequest" Value="52" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontFamily" Value="{DynamicResource FontRegular}" />
+        <Setter Property="TextColor" Value="{StaticResource Foreground}" />
+        <Setter Property="TitleColor" Value="{StaticResource MutedForeground}" />
+        <Setter Property="MinimumHeightRequest" Value="48" />
     </Style>
 
     <Style TargetType="DatePicker">
-        <Setter Property="FontSize" Value="17" />
-        <Setter Property="TextColor" Value="{StaticResource Text}" />
-        <Setter Property="MinimumHeightRequest" Value="52" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontFamily" Value="{DynamicResource FontRegular}" />
+        <Setter Property="TextColor" Value="{StaticResource Foreground}" />
+        <Setter Property="MinimumHeightRequest" Value="48" />
     </Style>
 
     <Style TargetType="CheckBox">
         <Setter Property="Color" Value="{StaticResource Primary}" />
-        <Setter Property="MinimumHeightRequest" Value="44" />
-        <Setter Property="MinimumWidthRequest" Value="44" />
+        <Setter Property="MinimumHeightRequest" Value="48" />
+        <Setter Property="MinimumWidthRequest" Value="48" />
     </Style>
 
     <Style TargetType="ActivityIndicator">

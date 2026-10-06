@@ -25,20 +25,20 @@ public sealed class HandoverPage : FlowPage
     private readonly Entry _district = Field(Strings.Handover_District, keyboard: Keyboard.Url);
     private readonly Entry _label = Field(Strings.Handover_Label);
     private readonly Picker _facility = new() { Title = Strings.Handover_Facility, IsVisible = false, ItemDisplayBinding = new Binding(nameof(FacilitySummary.Name)) };
-    private readonly Button _signIn = new() { Text = Strings.Handover_OfficerSignIn };
-    private readonly Button _enrol = new() { Text = Strings.Handover_Enrol, IsVisible = false };
+    private readonly Button _signIn = Ui.PrimaryButton(Strings.Handover_OfficerSignIn);
+    private readonly Button _enrol = Ui.PrimaryButton(Strings.Handover_Enrol);
     private InteractiveSignIn? _officer;
 
     public HandoverPage(DeviceHost host) : base(Strings.Handover_Title)
     {
         _host = host;
+        _enrol.IsVisible = false;
         _signIn.Clicked += async (_, _) => await RunAsync(SignInAsync);
         _enrol.Clicked += async (_, _) => await RunAsync(EnrolAsync);
-        Build(
-            Flow.LanguageSwitch(host),
-            Heading(Strings.Handover_Title),
-            Note(Strings.Handover_Intro),
-            _centre, _realm, _district, _label, _signIn, _facility, _enrol);
+        Build(host,
+            Ui.PageHeader(Strings.Handover_Title, Strings.Handover_Intro),
+            Ui.Labeled(_centre), Ui.Labeled(_realm), Ui.Labeled(_district), Ui.Labeled(_label),
+            _signIn, Ui.Labeled(_facility), _enrol);
     }
 
     private static Uri? AddressOf(string? text)

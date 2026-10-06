@@ -31,10 +31,10 @@ public sealed class CheckCertificatePage : FlowPage
         // A certificate code is Latin letters whatever the tablet's language.
         FlowDirection = FlowDirection.LeftToRight,
     };
-    private readonly Label _camera = new() { FontSize = 14 };
-    private readonly VerticalStackLayout _answer = new() { Spacing = 8 };
+    private readonly Label _camera = Ui.Caption("");
+    private readonly VerticalStackLayout _answer = new() { Spacing = Space.Sm };
     private readonly Border _result;
-    private readonly Button _again = new() { Text = Strings.Check_Again, IsVisible = false };
+    private readonly Button _again = Ui.GhostButton(Strings.Check_Again);
 
 #if ANDROID
     private CameraBarcodeReaderView? _reader;
@@ -43,7 +43,15 @@ public sealed class CheckCertificatePage : FlowPage
     public CheckCertificatePage(DeviceHost host) : base(Strings.Check_Title)
     {
         _host = host;
-        _result = new Border { Padding = 16, StrokeThickness = 2, IsVisible = false, Content = _answer };
+        _again.IsVisible = false;
+        _result = new Border
+        {
+            Padding = Space.Lg,
+            StrokeThickness = 1,
+            StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = Radius.Card },
+            IsVisible = false,
+            Content = _answer,
+        };
 
         var check = Ui.PrimaryButton(Strings.Check_Button);
         check.Clicked += (_, _) => Check(_code.Text);
@@ -92,9 +100,9 @@ public sealed class CheckCertificatePage : FlowPage
 #endif
 
         views.AddRange([
-            new Label { Text = Strings.Check_TypeLabel, FontAttributes = FontAttributes.Bold },
-            _code, check, Status, _result, _again, back]);
-        BuildFor(host, Pages.Section.Check, [.. views]);
+            new VerticalStackLayout { Spacing = Space.Sm, Children = { Ui.FieldLabel(Strings.Check_TypeLabel), Ui.Input(_code) } },
+            check, Status, _result, _again, back]);
+        BuildFor(host, Pages.Section.Home, [.. views]);
     }
 
     protected override async void OnAppearing()
@@ -157,31 +165,32 @@ public sealed class CheckCertificatePage : FlowPage
     {
         var (ink, paper) = reading.Verdict switch
         {
-            OfflineVerdict.Valid => (Color.FromArgb("#1B5E20"), Color.FromArgb("#E8F5E9")),
-            OfflineVerdict.Unknown => (Color.FromArgb("#8A4B00"), Color.FromArgb("#FFF3E0")),
-            _ => (Color.FromArgb("#B71C1C"), Color.FromArgb("#FFEBEE")),
+            OfflineVerdict.Valid => (Ui.PrimaryStrong, Ui.PrimaryTint),
+            OfflineVerdict.Unknown => (Ui.Theme.PendingForeground, Ui.Theme.PendingBackground),
+            _ => (Ui.Danger, Ui.Danger.WithAlpha(0.06f)),
         };
 
         _answer.Clear();
-        _answer.Add(new Label { Text = reading.Headline, FontSize = 22, FontAttributes = FontAttributes.Bold, TextColor = ink });
-        _answer.Add(new Label { Text = reading.Explanation, FontSize = 15, TextColor = Colors.Black });
-        _answer.Add(new Label { Text = reading.WhatToDo, FontSize = 15, FontAttributes = FontAttributes.Bold, TextColor = Colors.Black });
+        _answer.Add(new Label { Text = reading.Headline, FontSize = 22, FontFamily = Ui.SemiBold, TextColor = ink });
+        _answer.Add(Ui.Body(reading.Explanation));
+        _answer.Add(new Label { Text = reading.WhatToDo, FontSize = 16, FontFamily = Ui.SemiBold, TextColor = Ui.Text });
 
         if (reading.Facts.Count > 0)
         {
-            _answer.Add(new Label { Text = Strings.Check_Facts, FontSize = 14, FontAttributes = FontAttributes.Bold, TextColor = ink, Margin = new Thickness(0, 8, 0, 0) });
+            _answer.Add(new Label { Text = Strings.Check_Facts, FontSize = 14, FontFamily = Ui.SemiBold, TextColor = ink });
             foreach (var fact in reading.Facts)
             {
                 _answer.Add(new Label
                 {
                     FontSize = 15,
-                    TextColor = Colors.Black,
+                    FontFamily = Ui.Regular,
+                    TextColor = Ui.Text,
                     FormattedText = new FormattedString
                     {
                         Spans =
                         {
                             new Span { Text = fact.Label + ": " },
-                            new Span { Text = fact.Value, FontAttributes = FontAttributes.Bold },
+                            new Span { Text = fact.Value, FontFamily = Ui.SemiBold },
                         },
                     },
                 });
@@ -190,7 +199,7 @@ public sealed class CheckCertificatePage : FlowPage
 
         if (reading.ListDownloaded is { } downloaded)
         {
-            _answer.Add(new Label { Text = downloaded, FontSize = 12, TextColor = Colors.DimGray });
+            _answer.Add(Ui.Caption(downloaded));
         }
 
         _result.Stroke = ink;

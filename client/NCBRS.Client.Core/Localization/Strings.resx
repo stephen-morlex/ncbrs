@@ -414,9 +414,6 @@
   <data name="Register_Father" xml:space="preserve">
     <value>Father's full name</value>
   </data>
-  <data name="Register_FirstCut" xml:space="preserve">
-    <value>First version of this form, to be reworked with midwives and community health workers.</value>
-  </data>
   <data name="Register_Gestation" xml:space="preserve">
     <value>Gestational age in weeks (optional)</value>
   </data>
@@ -1036,9 +1033,6 @@ A permanent number is given when the tablet syncs.</value>
   <data name="Nav_Sync" xml:space="preserve">
     <value>Sync</value>
   </data>
-  <data name="Nav_Check" xml:space="preserve">
-    <value>Check</value>
-  </data>
   <data name="Nav_More" xml:space="preserve">
     <value>More</value>
   </data>
@@ -1047,9 +1041,6 @@ A permanent number is given when the tablet syncs.</value>
   </data>
   <data name="Brand_Ministry" xml:space="preserve">
     <value>Republic of South Sudan · Ministry of Health</value>
-  </data>
-  <data name="Footer_Status" xml:space="preserve">
-    <value>{0} waiting to sync · {1} numbers left</value>
   </data>
   <data name="Footer_Version" xml:space="preserve">
     <value>Version {0}</value>
@@ -1128,5 +1119,35 @@ A permanent number is given when the tablet syncs.</value>
   </data>
   <data name="Common_Leave" xml:space="preserve">
     <value>Leave</value>
+  </data>
+  <data name="Nav_Records" xml:space="preserve">
+    <value>Records</value>
+  </data>
+  <data name="Records_Title" xml:space="preserve">
+    <value>Records</value>
+  </data>
+  <data name="Records_Subtitle" xml:space="preserve">
+    <value>Births registered on this tablet</value>
+  </data>
+  <data name="Records_Empty" xml:space="preserve">
+    <value>No births are waiting on this tablet. A birth leaves this list once the registry confirms it.</value>
+  </data>
+  <data name="Records_Today" xml:space="preserve">
+    <value>Today</value>
+  </data>
+  <data name="Records_Yesterday" xml:space="preserve">
+    <value>Yesterday</value>
+  </data>
+  <data name="Records_Born" xml:space="preserve">
+    <value>Born {0:d MMM yyyy} · {1}</value>
+  </data>
+  <data name="Badge_Waiting" xml:space="preserve">
+    <value>Waiting to sync</value>
+  </data>
+  <data name="Badge_Refused" xml:space="preserve">
+    <value>Refused</value>
+  </data>
+  <data name="Common_Choose" xml:space="preserve">
+    <value>Choose…</value>
   </data>
 </root>

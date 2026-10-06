@@ -53,7 +53,7 @@ public sealed class RegisterPage : FlowPage
     private readonly Collapsible _proof;
 
     private readonly VerticalStackLayout _late;
-    private readonly Label _lateNote = Ui.Body("", Ui.Warning);
+    private readonly Label _lateNote = Ui.Body("", Ui.Theme.PendingForeground);
     private readonly Picker _evidence = Choice<LateRegistrationEvidenceType>(Strings.Register_Evidence, Enum.GetValues<LateRegistrationEvidenceType>());
     private readonly Entry _evidenceReference = Field(Strings.Register_EvidenceReference);
     private readonly Entry _declarant = Field(Strings.Register_Declarant);
@@ -119,7 +119,6 @@ public sealed class RegisterPage : FlowPage
         // for a mother with no labels are three guesses.
         var form = new View[]
         {
-            Ui.Caption(Strings.Register_FirstCut),
             Ui.Card(
                 Ui.Heading(Strings.Register_Child),
                 Labeled(_childGiven), Labeled(_childSurname),
@@ -135,7 +134,7 @@ public sealed class RegisterPage : FlowPage
                 _proof.Header, _proof.Content),
             ShownWith(Ui.Card(_late), _late),
             Ui.Card(
-                new HorizontalStackLayout { Spacing = 8, Children = { _withStatistics, new Label { Text = Strings.Register_AddStatistics, FontSize = 16, TextColor = Ui.Text, VerticalOptions = LayoutOptions.Center } } },
+                new HorizontalStackLayout { Spacing = Space.Sm, Children = { _withStatistics, new Label { Text = Strings.Register_AddStatistics, FontSize = 16, FontFamily = Ui.Regular, TextColor = Ui.Text, VerticalOptions = LayoutOptions.Center } } },
                 _statistics),
             Status, Busy,
         };
@@ -153,13 +152,13 @@ public sealed class RegisterPage : FlowPage
                 Ui.Notice(Icons.Error,
                     Strings.Register_RefusedBecause + "\n"
                     + string.Join("\n", (reasons ?? []).Select(reason => $"• {Language.Field(reason.Field)}: {reason.Message}")),
-                    Ui.Danger, Ui.DangerSoft),
+                    Tone.Danger),
                 Note(Language.Format(Strings.Register_CorrectNote, correcting.Birth.Brn)),
                 .. form, register, back]);
             return;
         }
 
-        BuildInside(host, Pages.Section.Register, [.. form, register, _result, _printSlip]);
+        BuildInside(host, Pages.Section.Register, [Ui.Title(Strings.Register_Title), .. form, register, _result, _printSlip]);
     }
 
     /// <summary>Leaving the form drops what is typed in it, so a half-typed birth asks first.</summary>
@@ -291,7 +290,6 @@ public sealed class RegisterPage : FlowPage
         _lastSlip = _host.SlipFor(draft, birth);
         _printSlip.IsVisible = _host.Printer is not null;
         Clear();
-        RefreshStatus();
     }
 
     private async Task PrintSlipAsync()
@@ -465,7 +463,7 @@ public sealed class RegisterPage : FlowPage
 
     private static VerticalStackLayout Section(string title, params View[] views)
     {
-        var section = new VerticalStackLayout { Spacing = 10 };
+        var section = new VerticalStackLayout { Spacing = Space.Md };
         section.Add(Ui.Heading(title));
         foreach (var view in views)
         {

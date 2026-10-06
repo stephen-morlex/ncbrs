@@ -15,8 +15,8 @@ public sealed class SyncPage : FlowPage
 {
     private readonly DeviceHost _host;
     private readonly Label _result = Ui.HideWhenEmpty(Ui.Body(""));
-    private readonly Label _waiting = new() { FontSize = 28, FontFamily = "OpenSansSemibold", TextColor = Ui.Primary };
-    private readonly Label _left = new() { FontSize = 28, FontFamily = "OpenSansSemibold", TextColor = Ui.Primary };
+    private readonly Label _waiting = new() { FontSize = 22, FontFamily = Ui.SemiBold, TextColor = Ui.Primary };
+    private readonly Label _left = new() { FontSize = 22, FontFamily = Ui.SemiBold, TextColor = Ui.Primary };
     private readonly Border _refused;
     private readonly Border _exported;
     private readonly Label _refusedText;
@@ -32,20 +32,21 @@ public sealed class SyncPage : FlowPage
         var export = Ui.SecondaryButton(Strings.Tile_UsbTitle);
         export.Clicked += async (_, _) => await RunAsync(ExportAsync);
 
-        _refused = Ui.Notice(Icons.Error, "", Ui.Danger, Ui.DangerSoft, () => _ = Go(new RefusedPage(host)));
-        _refusedText = Inner(_refused);
-        _exported = Ui.Notice(Icons.Usb, "", Ui.Info, Ui.InfoSoft);
-        _exportedText = Inner(_exported);
+        _refused = Ui.Notice(Icons.Error, "", Tone.Danger, () => _ = Go(new RefusedPage(host)));
+        _refusedText = Ui.NoticeText(_refused);
+        _exported = Ui.Notice(Icons.Usb, "", Tone.Primary);
+        _exportedText = Ui.NoticeText(_exported);
 
-        var figures = new Grid { ColumnDefinitions = [new ColumnDefinition(GridLength.Star), new ColumnDefinition(GridLength.Star)], ColumnSpacing = 12 };
-        figures.Add(new VerticalStackLayout { Children = { _waiting, Ui.Caption(Strings.Home_Waiting) } }, 0);
-        figures.Add(new VerticalStackLayout { Children = { _left, Ui.Caption(Strings.Home_NumbersLeft) } }, 1);
+        var figures = Ui.Columns(2,
+            Figure(_waiting, Strings.Home_Waiting),
+            Figure(_left, Strings.Home_NumbersLeft));
 
-        BuildInside(host, Section.Sync,
+        BuildInside(host, Section.Home,
+            Ui.Title(Strings.Nav_Sync),
             _refused,
             Ui.Card(Ui.Heading(Strings.Sync_Heading), Ui.Body(Strings.Sync_Intro, Ui.TextMuted), figures, sync, Busy, _result, Status),
             Ui.Card(
-                new HorizontalStackLayout { Spacing = 10, Children = { Ui.Icon(Icons.Usb, Ui.Info, 24), Ui.Heading(Strings.Sync_NoSignal) } },
+                new HorizontalStackLayout { Spacing = Space.Md, Children = { Ui.IconBox(Icons.Export), Ui.Heading(Strings.Sync_NoSignal) } },
                 Ui.Body(Strings.Sync_NoSignalBody, Ui.TextMuted),
                 export,
                 _exported));
@@ -53,15 +54,22 @@ public sealed class SyncPage : FlowPage
         Refresh();
     }
 
-    private static Label Inner(Border notice)
-        => ((HorizontalStackLayout)notice.Content!).Children.OfType<Label>().First();
+    /// <summary>A figure in a grey box, its value kept to update after a sync.</summary>
+    private static Border Figure(Label value, string label) => new()
+    {
+        BackgroundColor = Ui.Muted,
+        StrokeThickness = 0,
+        StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = Radius.Base },
+        Padding = Space.Md,
+        Content = new VerticalStackLayout { Spacing = Space.Xs, Children = { value, Ui.Caption(label) } },
+    };
 
     private void Refresh()
     {
         var facility = _host.Session?.Facility;
         _waiting.Text = (facility?.SendableCount ?? 0).ToString(Language.Current);
         _left.Text = (facility?.BlockRemaining ?? 0).ToString("N0", Language.Current);
-        _left.TextColor = facility?.NeedsMoreNumbers == true ? Ui.Warning : Ui.Primary;
+        _left.TextColor = facility?.NeedsMoreNumbers == true ? Ui.Theme.PendingForeground : Ui.Primary;
 
         // Never out of sight: a refused birth is one the registry does not have.
         var refused = facility?.Refused.Count ?? 0;
@@ -81,7 +89,6 @@ public sealed class SyncPage : FlowPage
         _result.Text = Describe(report);
         Status.Text = string.Join("\n", report.Problems.Concat(staff));
         Refresh();
-        RefreshStatus();
     }
 
     /// <summary>
@@ -106,7 +113,6 @@ public sealed class SyncPage : FlowPage
 
         _result.Text = Language.Format(Strings.Export_Done, count);
         Refresh();
-        RefreshStatus();
     }
 
     /// <summary>

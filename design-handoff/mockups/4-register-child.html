@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Register a birth: the child</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Noto+Sans+Arabic:wght@500;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#1447E6}a:hover{color:#193CB8}
+</style>
+</helmet>
+<div style="width: 390px; height: 1140px; box-sizing: border-box; background: #FFFFFF; font-family: 'Geist', 'Noto Sans Arabic', 'Segoe UI', system-ui, sans-serif; color: #0A0A0A; position: relative; overflow: hidden">
+<div style="background: #FFFFFF; border-bottom: 1px solid #E5E5E5; padding: 10px 12px 14px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; gap: 8px">
+<a href="Home.dc.html" aria-label="Back to home" style="width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center; color: #0A0A0A">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"></path></svg>
+</a>
+<div style="font-size: 17px; font-weight: 600; flex-grow: 1">Register a birth</div>
+<div style="font-size: 13px; color: #737373; display: flex; align-items: center; gap: 4px; padding-right: 6px">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1447E6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>
+Draft saved</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 0 8px">
+<div style="font-size: 13px; color: #737373"><span style="font-weight: 600; color: #1447E6">Step 1 of 5</span> · The child</div>
+<div aria-hidden="true" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px">
+<span style="height: 6px; border-radius: 3px; background: #1447E6"></span>
+<span style="height: 6px; border-radius: 3px; background: #E5E5E5"></span>
+<span style="height: 6px; border-radius: 3px; background: #E5E5E5"></span>
+<span style="height: 6px; border-radius: 3px; background: #E5E5E5"></span>
+<span style="height: 6px; border-radius: 3px; background: #E5E5E5"></span>
+</div>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 20px; padding: 20px 20px 120px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 600">About the child</h2>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="given" style="font-size: 14px; font-weight: 600">Given names</label>
+<input id="given" type="text" value="Grace" readonly style="height: 52px; box-sizing: border-box; border-radius: 10px; border: 1px solid #1447E6; box-shadow: 0 0 0 3px rgba(20,71,230,0.2); background: #FFFFFF; padding: 0 14px; font-family: inherit; font-size: 16px; color: #0A0A0A">
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="surname" style="font-size: 14px; font-weight: 600">Surname</label>
+<input id="surname" type="text" placeholder="Usually the father's name" style="height: 52px; box-sizing: border-box; border-radius: 10px; border: 1px solid #E5E5E5; box-shadow: 0 1px 2px rgba(0,0,0,0.05); background: #FFFFFF; padding: 0 14px; font-family: inherit; font-size: 16px; color: #0A0A0A">
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="dob" style="font-size: 14px; font-weight: 600">Date of birth</label>
+<div style="display: flex; gap: 8px">
+<button type="button" aria-pressed="true" style="height: 44px; padding: 0 16px; border-radius: 14px; border: 1px solid #1447E6; background: #1447E6; color: #EFF6FF; font-family: inherit; font-size: 15px; font-weight: 600">Today</button>
+<button type="button" style="height: 44px; padding: 0 16px; border-radius: 14px; border: 1px solid #E5E5E5; box-shadow: 0 1px 2px rgba(0,0,0,0.05); background: #FFFFFF; color: #0A0A0A; font-family: inherit; font-size: 15px; font-weight: 500">Yesterday</button>
+<div style="flex-grow: 1; position: relative; display: flex; align-items: center">
+<input id="dob" type="text" value="5 Oct 2026" readonly style="height: 44px; width: 100%; box-sizing: border-box; border-radius: 10px; border: 1px solid #E5E5E5; box-shadow: 0 1px 2px rgba(0,0,0,0.05); background: #FFFFFF; padding: 0 36px 0 12px; font-family: inherit; font-size: 15px; color: #0A0A0A">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#737373" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: absolute; right: 10px"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>
+</div>
+</div>
+</div>
+<fieldset style="border: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
+<legend style="font-size: 14px; font-weight: 600; padding: 0; margin-bottom: 8px">Place of birth</legend>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<button type="button" aria-pressed="true" style="height: 44px; padding: 0 16px; border-radius: 14px; border: 1px solid #1447E6; background: #1447E6; color: #EFF6FF; font-family: inherit; font-size: 15px; font-weight: 600">This hospital</button>
+<button type="button" style="height: 44px; padding: 0 16px; border-radius: 14px; border: 1px solid #E5E5E5; box-shadow: 0 1px 2px rgba(0,0,0,0.05); background: #FFFFFF; color: #0A0A0A; font-family: inherit; font-size: 15px; font-weight: 500">At home</button>
+<button type="button" style="height: 44px; padding: 0 16px; border-radius: 14px; border: 1px solid #E5E5E5; box-shadow: 0 1px 2px rgba(0,0,0,0.05); background: #FFFFFF; color: #0A0A0A; font-family: inherit; font-size: 15px; font-weight: 500">On the way</button>
+<button type="button" style="height: 44px; padding: 0 16px; border-radius: 14px; border: 1px solid #E5E5E5; box-shadow: 0 1px 2px rgba(0,0,0,0.05); background: #FFFFFF; color: #0A0A0A; font-family: inherit; font-size: 15px; font-weight: 500">Somewhere else</button>
+</div>
+</fieldset>
+<fieldset style="border: none; margin: 0; padding: 0">
+<legend style="font-size: 14px; font-weight: 600; padding: 0; margin-bottom: 8px">Sex</legend>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; border: none; border-radius: 10px; background: #F5F5F5; padding: 3px">
+<button type="button" aria-pressed="true" style="height: 44px; border-radius: 7px; border: none; background: #FFFFFF; color: #0A0A0A; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-family: inherit; font-size: 15px; font-weight: 600">Female</button>
+<button type="button" style="height: 44px; border-radius: 7px; border: none; background: transparent; color: #737373; font-family: inherit; font-size: 15px; font-weight: 500">Male</button>
+</div>
+</fieldset>
+<fieldset style="border: none; margin: 0; padding: 0">
+<legend style="font-size: 14px; font-weight: 600; padding: 0; margin-bottom: 8px">How many babies?</legend>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border: none; border-radius: 10px; background: #F5F5F5; padding: 3px">
+<button type="button" aria-pressed="true" style="height: 44px; border-radius: 7px; border: none; background: #FFFFFF; color: #0A0A0A; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-family: inherit; font-size: 15px; font-weight: 600">One</button>
+<button type="button" style="height: 44px; border-radius: 7px; border: none; background: transparent; color: #737373; font-family: inherit; font-size: 15px; font-weight: 500">Twins</button>
+<button type="button" style="height: 44px; border-radius: 7px; border: none; background: transparent; color: #737373; font-family: inherit; font-size: 15px; font-weight: 500">Three or more</button>
+</div>
+</fieldset>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 14px; font-weight: 600">At birth <span style="font-weight: 400; color: #737373">(optional)</span></div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="weight" style="font-size: 13px; color: #737373">Weight</label>
+<div style="position: relative; display: flex; align-items: center">
+<input id="weight" type="text" inputmode="numeric" placeholder="3200" style="height: 52px; width: 100%; box-sizing: border-box; border-radius: 10px; border: 1px solid #E5E5E5; box-shadow: 0 1px 2px rgba(0,0,0,0.05); background: #FFFFFF; padding: 0 40px 0 14px; font-family: inherit; font-size: 16px; color: #0A0A0A">
+<span style="position: absolute; right: 14px; font-size: 14px; color: #737373">g</span>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="weeks" style="font-size: 13px; color: #737373">Pregnancy length</label>
+<div style="position: relative; display: flex; align-items: center">
+<input id="weeks" type="text" inputmode="numeric" placeholder="39" style="height: 52px; width: 100%; box-sizing: border-box; border-radius: 10px; border: 1px solid #E5E5E5; box-shadow: 0 1px 2px rgba(0,0,0,0.05); background: #FFFFFF; padding: 0 64px 0 14px; font-family: inherit; font-size: 16px; color: #0A0A0A">
+<span style="position: absolute; right: 14px; font-size: 14px; color: #737373">weeks</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-top: 1px solid #E5E5E5; padding: 16px 20px 20px">
+<a href="Register-cover.dc.html" style="height: 56px; border-radius: 10px; background: #1447E6; color: #FFFFFF; font-size: 17px; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px">Next: The mother
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg>
+</a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1140}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

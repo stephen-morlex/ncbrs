@@ -22,7 +22,7 @@ public sealed class RegistrarSignInPage : FlowPage
             Flow.Advance(host);
         });
 
-        Build(
+        Build(host,
             Heading(Language.Format(Strings.SignIn_Heading, host.State.Identity?.DeviceId)),
             Note(Language.Format(Strings.SignIn_EnrolledTo, host.EnrolledTo)),
             Note(Strings.SignIn_Intro),
@@ -63,16 +63,11 @@ public sealed class Recovery
 
         View = new VerticalStackLayout
         {
-            Spacing = 10,
-            Margin = new Thickness(0, 24, 0, 0),
+            Spacing = Space.Md,
             Children =
             {
-                new Label { Text = Strings.Recovery_Title, FontAttributes = FontAttributes.Bold },
-                new Label
-                {
-                    FontSize = 13,
-                    Text = Language.Format(Strings.Recovery_Body, host.EnrolledTo),
-                },
+                Ui.Heading(Strings.Recovery_Title),
+                Ui.Caption(Language.Format(Strings.Recovery_Body, host.EnrolledTo)),
                 someoneElse,
                 again,
             },
@@ -98,7 +93,7 @@ public sealed class ProvisionPage : FlowPage
         _pin = new PinForm(host, askCurrent: false, onSet: () => Flow.Advance(host), run: RunAsync, status: Status);
         var retry = Ui.PrimaryButton(Strings.Provision_Retry);
         retry.Clicked += async (_, _) => await RunAsync(ProvisionAsync);
-        Build(
+        Build(host,
             Heading(Strings.Provision_Heading),
             Note(Language.Format(Strings.Provision_Intro, host.EnrolledTo)),
             retry,
@@ -166,12 +161,12 @@ public sealed class PinForm
 
         View = new VerticalStackLayout
         {
-            Spacing = 10,
+            Spacing = Space.Md,
             IsVisible = false,
             Children =
             {
-                new Label { Text = Strings.Pin_Title, FontAttributes = FontAttributes.Bold },
-                new Label { Text = Strings.Pin_Intro, FontSize = 13 },
+                Ui.Heading(Strings.Pin_Title),
+                Ui.Caption(Strings.Pin_Intro),
                 Ui.Labeled(current), Ui.Labeled(pin), Ui.Labeled(again), set,
             },
         };
@@ -233,9 +228,9 @@ public sealed class UnlockPage : FlowPage
         // builds keep the printer setting behind the unlock.
         var printer = Ui.GhostButton("Printer (debug)");
         printer.Clicked += (_, _) => Flow.Show(new PrinterPage(host));
-        Build(Flow.LanguageSwitch(host), Heading(Strings.Unlock_Title), Ui.Card(Ui.Labeled(person), Ui.Labeled(pin), unlock), changePin, pinForm.View, checkCertificate, printer);
+        Build(host, Heading(Strings.Unlock_Title), Ui.Card(Ui.Labeled(person), Ui.Labeled(pin), unlock), changePin, pinForm.View, checkCertificate, printer);
 #else
-        Build(Flow.LanguageSwitch(host), Heading(Strings.Unlock_Title), Ui.Card(Ui.Labeled(person), Ui.Labeled(pin), unlock), changePin, pinForm.View, checkCertificate);
+        Build(host, Heading(Strings.Unlock_Title), Ui.Card(Ui.Labeled(person), Ui.Labeled(pin), unlock), changePin, pinForm.View, checkCertificate);
 #endif
     }
 }

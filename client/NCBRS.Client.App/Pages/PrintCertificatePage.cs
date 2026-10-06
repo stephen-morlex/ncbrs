@@ -19,7 +19,7 @@ public sealed class PrintCertificatePage : FlowPage
         Keyboard = Keyboard.Numeric,
         FlowDirection = FlowDirection.LeftToRight,
     };
-    private readonly Label _done = new() { FontSize = 15 };
+    private readonly Label _done = Ui.Body("");
 
     public PrintCertificatePage(DeviceHost host) : base(Strings.Register_PrintCertificate)
     {
@@ -32,7 +32,7 @@ public sealed class PrintCertificatePage : FlowPage
         back.IsVisible = host.UnlockedAs is null;
         back.Clicked += (_, _) => Flow.Advance(host);
 
-        BuildFor(host, Pages.Section.More, Heading(Strings.Register_PrintCertificate), Note(Strings.Print_CertNote), _brn, print, Status, Busy, _done, back);
+        BuildFor(host, Pages.Section.More, Heading(Strings.Register_PrintCertificate), Note(Strings.Print_CertNote), Ui.Labeled(_brn), print, Status, Busy, _done, back);
     }
 
     private async Task PrintAsync()

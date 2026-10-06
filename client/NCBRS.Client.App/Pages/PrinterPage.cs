@@ -14,15 +14,15 @@ public sealed class PrinterPage : FlowPage
 {
     private readonly DeviceHost _host;
     private readonly Picker _printer = new() { Title = Strings.Printer_Title };
-    private readonly Picker _width = new() { Title = Strings.Printer_Paper };
-    private readonly Label _current = new() { FontSize = 15 };
+    // Two answers that exclude each other: tabs, not a list to open.
+    private readonly Tabs<int> _width = new([(PrinterChoice.Dots58, Strings.Printer_58), (PrinterChoice.Dots80, Strings.Printer_80)]);
+    private readonly Label _current = Ui.Body("");
     private List<(string Name, string? Address)> _choices = [(Strings.Printer_Page, null)];
 
     public PrinterPage(DeviceHost host) : base(Strings.Printer_Title)
     {
         _host = host;
-        _width.ItemsSource = new[] { Strings.Printer_58, Strings.Printer_80 };
-        _width.SelectedIndex = PrinterChoice.Load().WidthDots == PrinterChoice.Dots80 ? 1 : 0;
+        _width.Selected = PrinterChoice.Load().WidthDots == PrinterChoice.Dots80 ? PrinterChoice.Dots80 : PrinterChoice.Dots58;
 
         var save = Ui.PrimaryButton(Strings.Printer_Save);
         save.Clicked += (_, _) => Save();
@@ -33,7 +33,11 @@ public sealed class PrinterPage : FlowPage
         back.IsVisible = host.UnlockedAs is null;
         back.Clicked += (_, _) => Flow.Advance(host);
 
-        var views = new List<View> { Heading(Strings.Printer_Title), _current, Note(Strings.Printer_Note), _printer, _width, save, test };
+        var views = new List<View>
+        {
+            Heading(Strings.Printer_Title), _current, Note(Strings.Printer_Note),
+            Ui.Labeled(_printer), Ui.Labeled(Strings.Printer_Paper, _width), save, test,
+        };
 
 #if DEBUG
         // For checking the thermal layout where no printer is in reach: the
@@ -66,10 +70,12 @@ public sealed class PrinterPage : FlowPage
     private void Save()
     {
         var (name, address) = _choices[Math.Max(0, _printer.SelectedIndex)];
-        var width = _width.SelectedIndex == 1 ? PrinterChoice.Dots80 : PrinterChoice.Dots58;
+        var width = PaperWidth;
         (address is null ? PrinterChoice.Page : new PrinterChoice(address, name, width)).Save();
         ShowCurrent();
     }
+
+    private int PaperWidth => _width.Selected == PrinterChoice.Dots80 ? PrinterChoice.Dots80 : PrinterChoice.Dots58;
 
     private void ShowCurrent()
     {
@@ -98,7 +104,7 @@ public sealed class PrinterPage : FlowPage
     private async Task PreviewAsync()
     {
 #if ANDROID
-        var width = _width.SelectedIndex == 1 ? PrinterChoice.Dots80 : PrinterChoice.Dots58;
+        var width = PaperWidth;
         var path = Path.Combine(FileSystem.CacheDirectory, "thermal-preview.png");
         // The dots, not the drawing: what the printer would actually receive.
         using var drawn = NCBRS.Client.App.ThermalRenderer.Draw(TestPage(), width);

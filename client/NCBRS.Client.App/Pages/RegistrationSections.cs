@@ -60,8 +60,8 @@ internal sealed class Collapsible
         Header.HorizontalOptions = LayoutOptions.Fill;
         Header.Clicked += (_, _) => Open(!_open);
 
-        Content = new VerticalStackLayout { Spacing = 10, IsVisible = false };
-        Content.Add(new Label { Text = Strings.Register_SectionOptional, FontSize = 12, FontAttributes = FontAttributes.Italic });
+        Content = new VerticalStackLayout { Spacing = Space.Md, IsVisible = false };
+        Content.Add(Ui.Caption(Strings.Register_SectionOptional));
         foreach (var view in views)
         {
             Content.Add(view is Entry or Picker ? Ui.Labeled(view) : view);
@@ -97,11 +97,11 @@ internal sealed class OptionalDate
         _known.CheckedChanged += (_, args) => Picker.IsVisible = args.Value;
         View = new VerticalStackLayout
         {
-            Spacing = 4,
+            Spacing = Space.Sm,
             Children =
             {
-                new HorizontalStackLayout { Spacing = 8, Children = { _known, new Label { Text = knownLabel, VerticalOptions = LayoutOptions.Center } } },
-                Picker,
+                new HorizontalStackLayout { Spacing = Space.Sm, Children = { _known, new Label { Text = knownLabel, FontSize = 16, FontFamily = Ui.Regular, VerticalOptions = LayoutOptions.Center } } },
+                Ui.Input(Picker, trailingIcon: Icons.Calendar),
             },
         };
     }

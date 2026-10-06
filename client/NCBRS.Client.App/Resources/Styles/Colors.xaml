@@ -1,16 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!-- The palette, mirrored in Pages/Ui.cs for the views built in code. Around
-     the Ministry green; text and surfaces chosen to pass WCAG AA in sun. -->
+<!-- The palette (the design handoff's shadcn preset, light), mirrored in
+     Pages/Ui.cs as Palette.Light for the views built in code. -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
-    <Color x:Key="Primary">#1B5E20</Color>
-    <Color x:Key="PrimaryDark">#103D14</Color>
-    <Color x:Key="Secondary">#2E7D32</Color>
-    <Color x:Key="Background">#F3F5F4</Color>
-    <Color x:Key="Surface">#FFFFFF</Color>
-    <Color x:Key="Text">#17201A</Color>
-    <Color x:Key="TextMuted">#56625B</Color>
-    <Color x:Key="Border">#D9E0DB</Color>
+    <Color x:Key="Background">#FFFFFF</Color>
+    <Color x:Key="Foreground">#0A0A0A</Color>
+    <Color x:Key="Primary">#1447E6</Color>
+    <Color x:Key="PrimaryForeground">#EFF6FF</Color>
+    <Color x:Key="PrimaryStrong">#193CB8</Color>
+    <Color x:Key="Secondary">#F4F4F5</Color>
+    <Color x:Key="Muted">#F5F5F5</Color>
+    <Color x:Key="MutedForeground">#737373</Color>
+    <Color x:Key="Border">#E5E5E5</Color>
+    <Color x:Key="Ring">#A1A1A1</Color>
+    <Color x:Key="Destructive">#E7000B</Color>
     <Color x:Key="White">#FFFFFF</Color>
     <Color x:Key="Black">#000000</Color>
 </ResourceDictionary>

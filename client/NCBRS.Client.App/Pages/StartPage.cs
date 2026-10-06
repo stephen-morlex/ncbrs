@@ -22,7 +22,7 @@ public sealed class StartPage(DeviceHost host) : ContentPage
 public sealed class UnreadablePage : FlowPage
 {
     public UnreadablePage(DeviceHost host) : base(Strings.Unreadable_Title)
-        => Build(
+        => Build(host,
             Heading(Strings.Unreadable_Heading),
             Note(Strings.Unreadable_Body),
             Note(host.UnreadableReason ?? ""));

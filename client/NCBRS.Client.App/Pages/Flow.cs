@@ -35,33 +35,25 @@ public static class Flow
         Application.Current!.Windows[0].Page = new NavigationPage(page)
         {
             FlowDirection = AppLanguage.Direction,
-            BarBackgroundColor = Ui.PrimaryDark,
+            BarBackgroundColor = Ui.Primary,
         };
         AppLanguage.ApplyToWindow();
     }
 
     /// <summary>
-    /// The English / العربية switch. It rebuilds the page the tablet is on, in
-    /// the other language; <paramref name="confirmFirst"/> lets a page with
-    /// something typed in it ask before that is cleared.
+    /// The English / العربية switch, named in the language it switches to. It
+    /// rebuilds the page the tablet is on, in the other language;
+    /// <paramref name="confirmFirst"/> lets a page with something typed in it
+    /// ask before that is cleared.
     /// </summary>
-    public static Button LanguageSwitch(DeviceHost host, Func<Task<bool>>? confirmFirst = null, bool onDark = false)
+    public static View LanguageSwitch(DeviceHost host, Func<Task<bool>>? confirmFirst = null)
     {
-        var button = new Button
-        {
-            Text = Strings.Language_Switch,
-            BackgroundColor = Colors.Transparent,
-            TextColor = onDark ? Colors.White : Ui.Primary,
-            BorderColor = onDark ? Colors.White.WithAlpha(0.7f) : Ui.Primary,
-            BorderWidth = 1,
-            CornerRadius = 20,
-            FontSize = 15,
-            MinimumHeightRequest = 40,
-            Padding = new Thickness(14, 4),
-            HorizontalOptions = LayoutOptions.End,
-            VerticalOptions = LayoutOptions.Center,
-        };
-        button.Clicked += async (_, _) =>
+        var chip = Ui.ActionChip(Icons.Globe, Strings.Language_Switch, () => _ = SwitchAsync());
+        chip.HorizontalOptions = LayoutOptions.End;
+        chip.VerticalOptions = LayoutOptions.Center;
+        return chip;
+
+        async Task SwitchAsync()
         {
             if (confirmFirst is not null && !await confirmFirst())
             {
@@ -72,29 +64,27 @@ public static class Flow
             // process-wide defaults, not the async-local current culture.
             AppLanguage.Toggle();
             Advance(host);
-        };
-        return button;
+        }
     }
 }
 
-/// <summary>The four places the bottom bar goes, and the menu with everything else.</summary>
+/// <summary>The four places the bottom bar goes; everything else is under More.</summary>
 public enum Section
 {
     Home,
     Register,
-    Sync,
-    Check,
+    Records,
     More,
 }
 
 /// <summary>
 /// Shared layout for the flow's pages.
 ///
-/// Before the tablet is unlocked a page has a branded header and a footer and
-/// nothing else: there is nowhere to go until someone signs in.
-/// After, every page has the same frame -- a title bar, the content, a footer
-/// saying where the births stand, and a bottom bar to every task -- so a
-/// registrar never has to hunt for the way back.
+/// Before the tablet is unlocked a page has the brand, its content and a line
+/// saying which build this is, and nothing else: there is nowhere to go until
+/// someone unlocks. After, every page sits above the same bottom bar, so a
+/// registrar never has to hunt for the way back. Either way a page is one
+/// vertical stack with 20 between its sections.
 /// </summary>
 public abstract class FlowPage : ContentPage
 {
@@ -102,7 +92,7 @@ public abstract class FlowPage : ContentPage
     {
         Title = title;
         BackgroundColor = Ui.Background;
-        Status = Ui.HideWhenEmpty(new Label { FontSize = 15, TextColor = Ui.Danger, FontFamily = "OpenSansSemibold" });
+        Status = Ui.HideWhenEmpty(new Label { FontSize = 15, TextColor = Ui.Danger, FontFamily = Ui.SemiBold });
         Busy = new ActivityIndicator { IsVisible = false, IsRunning = false, Color = Ui.Primary };
     }
 
@@ -119,31 +109,17 @@ public abstract class FlowPage : ContentPage
     public virtual Task<bool> CanLeaveAsync() => Task.FromResult(true);
 
     /// <summary>
-    /// Lays out a page before unlock: the brand, the content, a footer. The
-    /// status line goes at the end unless the page places it itself: on a long
-    /// form it belongs beside the button that produced it, or it lands below
-    /// the fold and the tap appears to do nothing.
+    /// Lays out a page before unlock: the brand with the language switch, the
+    /// content, and the build. The status line goes at the end unless the page
+    /// places it itself: on a long form it belongs beside the button that
+    /// produced it, or it lands below the fold and the tap appears to do nothing.
     /// </summary>
-    protected void Build(params View[] views)
-    {
-        var header = new VerticalStackLayout
-        {
-            BackgroundColor = Ui.Primary,
-            Padding = new Thickness(Ui.Gutter, 20, Ui.Gutter, 18),
-            Spacing = 2,
-            Children =
-            {
-                new Label { Text = Strings.Brand_Name, FontSize = 22, FontFamily = "OpenSansSemibold", TextColor = Colors.White },
-                new Label { Text = Strings.Brand_Ministry, FontSize = 13, TextColor = Colors.White.WithAlpha(0.85f) },
-            },
-        };
-
-        Content = Layout(header, Body(views), Footer());
-    }
+    protected void Build(DeviceHost host, params View[] views)
+        => Content = Body([Brand(host), .. views], Footer());
 
     /// <summary>
-    /// A page reached both before unlock (from the unlock screen) and after: framed
-    /// with the navigation once someone is working, standalone before.
+    /// A page reached both before unlock (from the unlock screen) and after: with
+    /// the bottom bar once someone is working, standalone before.
     /// </summary>
     protected void BuildFor(DeviceHost host, Section section, params View[] views)
     {
@@ -153,50 +129,29 @@ public abstract class FlowPage : ContentPage
         }
         else
         {
-            Build(views);
+            Build(host, views);
         }
     }
 
-    /// <summary>Lays out a page after unlock: title bar, content, status footer and bottom navigation.</summary>
+    /// <summary>Lays out a page after unlock: its content, and the bottom bar.</summary>
     protected void BuildInside(DeviceHost host, Section section, params View[] views)
-    {
-        var bar = new Grid
-        {
-            BackgroundColor = Ui.Primary,
-            Padding = new Thickness(Ui.Gutter, 12),
-            ColumnDefinitions = [new ColumnDefinition(GridLength.Star), new ColumnDefinition(GridLength.Auto)],
-            MinimumHeightRequest = 60,
-        };
-        bar.Add(new Label
-        {
-            Text = Title, FontSize = 20, FontFamily = "OpenSansSemibold", TextColor = Colors.White,
-            VerticalOptions = LayoutOptions.Center, LineBreakMode = LineBreakMode.TailTruncation,
-        }, 0);
-        bar.Add(Flow.LanguageSwitch(host, CanLeaveAsync, onDark: true), 1);
-
-        var bottom = new VerticalStackLayout { Children = { StatusStrip(host), NavBar(host, section) } };
-        Content = Layout(bar, Body(views), bottom);
-    }
-
-    private static Grid Layout(View top, View middle, View end)
     {
         var grid = new Grid
         {
-            RowDefinitions = [new RowDefinition(GridLength.Auto), new RowDefinition(GridLength.Star), new RowDefinition(GridLength.Auto)],
+            RowDefinitions = [new RowDefinition(GridLength.Star), new RowDefinition(GridLength.Auto)],
             BackgroundColor = Ui.Background,
         };
-        grid.Add(top, 0, 0);
-        grid.Add(middle, 0, 1);
-        grid.Add(end, 0, 2);
-        return grid;
+        grid.Add(Body(views), 0, 0);
+        grid.Add(NavBar(host, section), 0, 1);
+        Content = grid;
     }
 
-    private ScrollView Body(View[] views)
+    private ScrollView Body(IEnumerable<View> views, View? end = null)
     {
         var stack = new VerticalStackLayout
         {
-            Padding = new Thickness(Ui.Gutter, 20, Ui.Gutter, 24),
-            Spacing = 14,
+            Padding = Space.Xl,
+            Spacing = Space.Xl,
             MaximumWidthRequest = 840,
         };
         foreach (var view in views)
@@ -204,7 +159,7 @@ public abstract class FlowPage : ContentPage
             stack.Add(view);
         }
 
-        // Unless the page placed them itself -- at the top level or inside a
+        // Unless the page placed them itself, at the top level or inside a
         // card. Added twice, Android refuses: a view has one parent.
         if (Busy.Parent is null)
         {
@@ -216,96 +171,68 @@ public abstract class FlowPage : ContentPage
             stack.Add(Status);
         }
 
+        if (end is not null)
+        {
+            stack.Add(end);
+        }
+
         return Scroller = new ScrollView { Content = stack };
     }
 
-    /// <summary>Who made this, and which build: the first thing support asks.</summary>
-    private static View Footer() => new VerticalStackLayout
+    /// <summary>The service's name and the Ministry's, with the language switch beside them.</summary>
+    private static View Brand(DeviceHost host)
     {
-        Padding = new Thickness(Ui.Gutter, 10),
-        BackgroundColor = Ui.Surface,
-        Children =
+        var logo = new Border
         {
-            new Label
-            {
-                Text = $"{Strings.Brand_Ministry} · {Language.Format(Strings.Footer_Version, AppInfo.Current.VersionString)}",
-                FontSize = 12, TextColor = Ui.TextMuted, HorizontalTextAlignment = TextAlignment.Center,
-            },
-        },
-    };
+            BackgroundColor = Ui.Primary,
+            StrokeThickness = 0,
+            StrokeShape = new RoundRectangle { CornerRadius = Radius.Base },
+            WidthRequest = 40,
+            HeightRequest = 40,
+            Content = Ui.Icon(Icons.Shield, Ui.OnPrimary, 22),
+        };
+
+        var row = new Grid
+        {
+            ColumnDefinitions = [new ColumnDefinition(GridLength.Auto), new ColumnDefinition(GridLength.Star), new ColumnDefinition(GridLength.Auto)],
+            ColumnSpacing = Space.Md,
+        };
+        row.Add(logo, 0);
+        row.Add(new VerticalStackLayout
+        {
+            VerticalOptions = LayoutOptions.Center,
+            Children = { Ui.Heading(Strings.Brand_Name), Ui.Caption(Strings.Brand_Ministry) },
+        }, 1);
+        row.Add(Flow.LanguageSwitch(host), 2);
+        return row;
+    }
+
+    /// <summary>Who made this, and which build: the first thing support asks.</summary>
+    private static View Footer()
+    {
+        var line = Ui.Caption($"{Strings.Brand_Ministry} · {Language.Format(Strings.Footer_Version, AppInfo.Current.VersionString)}");
+        line.HorizontalTextAlignment = TextAlignment.Center;
+        return line;
+    }
 
     /// <summary>
-    /// Where the births stand, on every page: who is working, where, and what
-    /// has not reached the registry. Tapping it goes to Sync. Amber when a
-    /// birth was refused or numbers are running out -- and it says so in
-    /// words, never by colour alone.
+    /// Home, Register, Records and More, each an icon with its word. The
+    /// current one is in the primary colour with a tinted pill behind its icon.
     /// </summary>
-    private View StatusStrip(DeviceHost host)
-    {
-        _stripHost = host;
-        _strip = new Grid
-        {
-            Padding = new Thickness(Ui.Gutter, 8),
-            ColumnDefinitions = [new ColumnDefinition(GridLength.Star), new ColumnDefinition(GridLength.Auto)],
-            ColumnSpacing = 8,
-        };
-
-        var who = new Label
-        {
-            Text = $"{host.EnrolledTo} · {host.UnlockedAs?.DisplayName}",
-            FontSize = 13, FontFamily = "OpenSansSemibold", TextColor = Ui.Text, LineBreakMode = LineBreakMode.TailTruncation,
-        };
-        _stripWhere = new Label { FontSize = 13 };
-        _stripIcon = new ContentView();
-        _strip.Add(new VerticalStackLayout { Spacing = 1, Children = { who, _stripWhere } }, 0);
-        _strip.Add(_stripIcon, 1);
-
-        Ui.Tappable(_strip, () =>
-            _ = Go((host.Session?.Facility?.Refused.Count ?? 0) > 0 ? new RefusedPage(host) : new SyncPage(host)));
-        RefreshStatus();
-        return _strip;
-    }
-
-    private DeviceHost? _stripHost;
-    private Grid? _strip;
-    private Label? _stripWhere;
-    private ContentView? _stripIcon;
-
-    /// <summary>Re-reads where the births stand, after a registration or a sync on this page.</summary>
-    protected void RefreshStatus()
-    {
-        if (_stripHost is null || _strip is null || _stripWhere is null || _stripIcon is null)
-        {
-            return;
-        }
-
-        var facility = _stripHost.Session?.Facility;
-        var refused = facility?.Refused.Count ?? 0;
-        var attention = refused > 0 || facility?.NeedsMoreNumbers == true;
-
-        _strip.BackgroundColor = attention ? Ui.WarningSoft : Ui.PrimarySoft;
-        _stripWhere.Text = refused > 0
-            ? (refused == 1 ? Strings.Register_RefusedOne : Language.Format(Strings.Register_RefusedMany, refused))
-            : Language.Format(Strings.Footer_Status, facility?.SendableCount ?? 0, facility?.BlockRemaining ?? 0);
-        _stripWhere.TextColor = attention ? Ui.Warning : Ui.TextMuted;
-        _stripIcon.Content = Ui.Icon(attention ? Icons.Warning : Icons.Sync, attention ? Ui.Warning : Ui.Primary, 20);
-    }
-
     private View NavBar(DeviceHost host, Section current)
     {
         var items = new (Section Section, string Icon, string Label, Func<Page> Page)[]
         {
             (Section.Home, Icons.Home, Strings.Nav_Home, () => new HomePage(host)),
             (Section.Register, Icons.Add, Strings.Nav_Register, () => new RegisterPage(host)),
-            (Section.Sync, Icons.Sync, Strings.Nav_Sync, () => new SyncPage(host)),
-            (Section.Check, Icons.Verified, Strings.Nav_Check, () => new CheckCertificatePage(host)),
+            (Section.Records, Icons.Records, Strings.Nav_Records, () => new RecordsPage(host)),
             (Section.More, Icons.More, Strings.Nav_More, () => new MorePage(host)),
         };
 
         var grid = new Grid
         {
             BackgroundColor = Ui.Surface,
-            Padding = new Thickness(4, 6, 4, 8),
+            Padding = new Thickness(Space.Sm, Space.Sm, Space.Sm, Space.Md),
             ColumnDefinitions = [.. items.Select(_ => new ColumnDefinition(GridLength.Star))],
         };
 
@@ -317,24 +244,25 @@ public abstract class FlowPage : ContentPage
 
             var pill = new Border
             {
-                BackgroundColor = selected ? Ui.PrimarySoft : Colors.Transparent,
+                BackgroundColor = selected ? Ui.PrimaryTint : Colors.Transparent,
                 StrokeThickness = 0,
-                StrokeShape = new RoundRectangle { CornerRadius = 16 },
-                Padding = new Thickness(16, 4),
+                StrokeShape = new RoundRectangle { CornerRadius = Space.Lg },
+                WidthRequest = 56,
+                HeightRequest = 32,
                 HorizontalOptions = LayoutOptions.Center,
-                Content = Ui.Icon(item.Icon, colour, 24),
+                Content = Ui.Icon(item.Icon, colour, 22),
             };
             var cell = new VerticalStackLayout
             {
-                Spacing = 4,
-                MinimumHeightRequest = Ui.TouchTarget,
+                Spacing = Space.Xs,
+                MinimumHeightRequest = 56,
                 Children =
                 {
                     pill,
                     new Label
                     {
-                        Text = item.Label, FontSize = 12, TextColor = colour, HorizontalTextAlignment = TextAlignment.Center,
-                        FontFamily = selected ? "OpenSansSemibold" : "OpenSansRegular",
+                        Text = item.Label, FontSize = 13, TextColor = colour, HorizontalTextAlignment = TextAlignment.Center,
+                        FontFamily = selected ? Ui.SemiBold : Ui.Regular,
                     },
                 },
             };
@@ -347,7 +275,7 @@ public abstract class FlowPage : ContentPage
             grid.Add(cell, i);
         }
 
-        return grid;
+        return new VerticalStackLayout { Children = { Ui.Divider(), grid } };
     }
 
     /// <summary>Go to another page, asking first if this one holds something typed.</summary>
