@@ -602,14 +602,8 @@
   <data name="Unlock_LockedOut" xml:space="preserve">
     <value>محاولات خاطئة كثيرة. الجهاز مقفل حتى {0:HH:mm}.</value>
   </data>
-  <data name="Unlock_Pin" xml:space="preserve">
-    <value>رمز PIN</value>
-  </data>
   <data name="Unlock_Title" xml:space="preserve">
     <value>فتح القفل</value>
-  </data>
-  <data name="Unlock_Who" xml:space="preserve">
-    <value>من أنت؟</value>
   </data>
   <data name="Unlock_Wrong" xml:space="preserve">
     <value>رمز PIN خاطئ. المحاولات المتبقية قبل قفل الجهاز: {0}.</value>
@@ -1144,5 +1138,29 @@
   </data>
   <data name="Common_Choose" xml:space="preserve">
     <value>اختر…</value>
+  </data>
+  <data name="Unlock_Welcome" xml:space="preserve">
+    <value>مرحبًا بعودتك</value>
+  </data>
+  <data name="Unlock_WhoUsing" xml:space="preserve">
+    <value>من يستخدم هذا الجهاز؟</value>
+  </data>
+  <data name="Unlock_EnterPin" xml:space="preserve">
+    <value>أدخل رمز PIN</value>
+  </data>
+  <data name="Unlock_SomeoneElse" xml:space="preserve">
+    <value>شخص آخر</value>
+  </data>
+  <data name="Unlock_SomeoneElseBody" xml:space="preserve">
+    <value>اسمك غير موجود في القائمة؟ يصل رمز PIN إلى هذا الجهاز عند المزامنة التالية بعد تعيينه. إذا لم تعيّن رمزًا من قبل، فسجّل الدخول هنا بحسابك الخاص أثناء توفر الإشارة، ثم عيّنه. تسجيل الدخول هنا يحل محل الحساب الذي يزامن به هذا الجهاز.</value>
+  </data>
+  <data name="Unlock_Chosen" xml:space="preserve">
+    <value>{0}، تم الاختيار</value>
+  </data>
+  <data name="Unlock_Backspace" xml:space="preserve">
+    <value>حذف آخر رقم</value>
+  </data>
+  <data name="Unlock_Digits" xml:space="preserve">
+    <value>عدد الأرقام المدخلة: {0}</value>
   </data>
 </root>
