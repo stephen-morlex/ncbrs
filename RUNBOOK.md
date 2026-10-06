@@ -190,7 +190,7 @@ does it; the registry refuses the step from anyone else.
    or anyone without a county group). Registrars → Waiting to be added → Add:
    their facility and role. Only roles the account holds in Keycloak are
    offered. They can work at once.
-5. **They set their PIN** on the website (or on the tablet, with signal). The
+5. **They set their PIN** on the tablet, with signal ("Set or change my PIN"). The
    tablet downloads every PIN for its facility at each sync.
 6. **Hand the tablet over** at the facility (a district officer, on the tablet).
    The tablet checks its enrolment against the registry before it counts.
@@ -206,6 +206,14 @@ that tablet's **next sync**, not before: a tablet out of signal cannot be told.
 They stay in the directory, because the records they registered name them.
 Also disable their Keycloak account. A withdrawn account cannot be added again;
 someone returning is given a new account.
+
+**When someone forgets their PIN:** Registrars → the key button beside them →
+Reset PIN (the same people who may withdraw them). You never choose or learn
+the new PIN. They set it themselves on a tablet while there is signal: "Set
+or change my PIN" if the tablet is signed in with their account, or "Someone
+else" if not. Until they do, the directory shows them as "no PIN" and they
+cannot unlock a tablet. Their old PIN stops working on each tablet at that
+tablet's next sync.
 
 ## Incident: a tablet is lost or stolen
 

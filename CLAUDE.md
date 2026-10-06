@@ -303,6 +303,15 @@ Keycloak admin credential.
   why: anyone may resolve a colleague by id, and the reason is an HR matter.
   A withdrawn account cannot be bound again, since subjects are unique per
   registrar; someone returning gets a new account.
+- **A forgotten PIN is reset, never chosen, by an officer**
+  (`ResetPinAsync`, `POST /api/registrars/{id}/reset-device-pin`, 2026-10-06).
+  The reset only clears `CredentialHash`; the registrar then sets a new PIN
+  on a tablet with signal, which needs no current PIN once none is held. So
+  nobody but the registrar ever knows it. The same limits as withdrawal apply
+  (own county, nobody themselves, officers reset facility staff only), and it
+  is audited as `DevicePinReset`. The old PIN keeps unlocking a tablet until
+  that tablet's next sync, like a withdrawal. The directory says only whether
+  a PIN is set (`HasDevicePin`), never anything derived from it.
 - The procedure is in RUNBOOK.md, "Onboarding: a facility, its staff and its
   tablet".
 
@@ -929,14 +938,15 @@ review).**
 **The tablet's design: the handoff in `design-handoff/` (2026-10-05).** The
 user's design reference: one HTML mockup per screen and `DESIGN_HANDOFF.md`,
 built in this order: the kit and navigation (done), unlock (done), home
-with Records (done), the five-step form (done), then an officer PIN reset. Its rules: change the
+with Records (done), the five-step form (done), and an officer PIN reset
+(done). Its rules: change the
 UI only; theme tokens first; mirror everything in Arabic; 48 dp targets; body
 text 16, helper text 13 at least.
 - **Decided with the user:** the mother's step asks only what the registry
   already holds (no age, nationality or phone, though the mockups show them);
   the tablet keeps **30 days** of registered births for Records (minimal
   fields, encrypted, then deleted); the fonts were downloaded; "Forgot PIN?"
-  waits for an officer reset on the registry and web.
+  needed an officer reset on the registry and web first, which now exists.
 - **Decided against the mockups, to keep behaviour:** the PIN keypad's dots
   grow with the PIN (6 to 12 digits, not 4) and there is an Unlock key,
   because every try counts toward the lockout; the full composed BRN is
@@ -954,8 +964,9 @@ text 16, helper text 13 at least.
     tablet at its next sync. Someone with no PIN signs in with their own
     account, and the card says that this replaces the account the tablet
     syncs with, because that is what the existing sign-in does.
-  - **No "Forgot PIN?" yet.** No PIN can be reset today, so the link waits
-    for the officer reset.
+  - **"Forgot PIN?" sits in the keypad's empty cell and only explains**:
+    ask the district officer for a reset, then set a new PIN with signal.
+    It clears nothing itself, so the tablet cannot be talked into it.
 - **The 30-day history (`RecentBirths`, core, tested).** The outbox still
   lets a birth go the moment the registry has it, and that is right for the
   outbox. The history is a separate, short list:

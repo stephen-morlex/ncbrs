@@ -708,6 +708,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/registrars/{registrarId}/reset-device-pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ResetRegistrarDevicePin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/Sync/batches": {
         parameters: {
             query?: never;
@@ -1547,6 +1563,8 @@ export interface components {
             countyCode: string;
             /** Format: date-time */
             withdrawnAtUtc?: null | string;
+            /** @default false */
+            hasDevicePin: boolean;
         };
         /** @enum {string} */
         RegistrarRole: "FacilityRegistrar" | "CommunityHealthWorker" | "DistrictOfficer" | "MinistryAdmin";
@@ -6469,6 +6487,138 @@ export interface operations {
                 "application/*+json": components["schemas"]["ApiRequestOfWithdrawRegistrarRequest"];
             };
         };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["RegistrarResponse"];
+                    };
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+        };
+    };
+    ResetRegistrarDevicePin: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Caller-supplied transaction id (UUID), echoed back in the response meta. Generated by the server when omitted. */
+                "X-Transaction-Id"?: string;
+                /** @description Calling application or channel, e.g. "MobileApp". */
+                "X-Client-Id"?: string;
+            };
+            path: {
+                registrarId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description OK */
             200: {

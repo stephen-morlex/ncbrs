@@ -1258,4 +1258,10 @@ A permanent number is given when the tablet syncs.</value>
   <data name="Unit_Weeks" xml:space="preserve">
     <value>weeks</value>
   </data>
+  <data name="Unlock_Forgot" xml:space="preserve">
+    <value>Forgot PIN?</value>
+  </data>
+  <data name="Unlock_ForgotBody" xml:space="preserve">
+    <value>Ask your district officer to reset your PIN. Then set a new one here while there is signal: with "Set or change my PIN" if this tablet is signed in with your account, or through "Someone else" if it is not.</value>
+  </data>
 </root>

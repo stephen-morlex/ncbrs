@@ -176,7 +176,8 @@ public class RegistrarDirectoryTests : IDisposable
         // bundle a device caches for offline verification -- and no business
         // in a directory. The subject identifies the account to Keycloak, not
         // to anyone here, and publishing it invites callers to key their own
-        // records on it.
+        // records on it. Whether a PIN is set is published (an officer needs it
+        // to know there is one to reset), but nothing derived from the PIN.
         var entry = OkOne(await GetAsync(AuthTestContext.DefaultSubject, [NcbrsRoles.FacilityRegistrar], NurseId));
 
         var published = entry.GetType().GetProperties().Select(property => property.Name).ToList();
@@ -184,7 +185,7 @@ public class RegistrarDirectoryTests : IDisposable
         Assert.DoesNotContain("CredentialHash", published);
         Assert.DoesNotContain("ExternalSubjectId", published);
         Assert.Equal(
-            ["RegistrarId", "DisplayName", "Role", "FacilityId", "FacilityName", "CountyCode", "WithdrawnAtUtc"],
+            ["RegistrarId", "DisplayName", "Role", "FacilityId", "FacilityName", "CountyCode", "WithdrawnAtUtc", "HasDevicePin"],
             published);
     }
 

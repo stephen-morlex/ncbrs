@@ -1,6 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { useAuth } from 'react-oidc-context'
-import { CircleAlert, Search, TriangleAlert, UserMinus, Users } from 'lucide-react'
+import { CircleAlert, KeyRound, Search, TriangleAlert, UserMinus, Users } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -38,6 +38,7 @@ import { PageHeader } from '@/shell/PageHeader'
 import { realmRoles } from '@/auth/claims'
 import { satisfies } from '@/auth/roles'
 import { PendingAccounts } from './PendingAccounts'
+import { ResetPinDialog } from './ResetPinDialog'
 import { WithdrawRegistrarDialog } from './WithdrawRegistrarDialog'
 
 type Registrar = components['schemas']['RegistrarResponse']
@@ -72,6 +73,7 @@ export function RegistrarDirectory() {
   const canManage = satisfies(roles, 'CanManageRegistrars')
   const ministry = satisfies(roles, 'CanManageFacilities')
   const [withdrawing, setWithdrawing] = useState<Registrar | null>(null)
+  const [resetting, setResetting] = useState<Registrar | null>(null)
 
   const [rows, setRows] = useState<Registrar[] | null>(null)
   const [total, setTotal] = useState(0)
@@ -228,6 +230,17 @@ export function RegistrarDirectory() {
         />
       ) : null}
 
+      {resetting ? (
+        <ResetPinDialog
+          registrar={resetting}
+          onClose={() => setResetting(null)}
+          onReset={() => {
+            setResetting(null)
+            void load(null, facilityId, name)
+          }}
+        />
+      ) : null}
+
       {loading && rows === null ? <LoadingDirectory /> : null}
 
       {error ? <Failure error={error} onRetry={() => void load(null, facilityId, name)} /> : null}
@@ -266,7 +279,7 @@ export function RegistrarDirectory() {
                     <TableHead>Role</TableHead>
                     <TableHead>Facility</TableHead>
                     <TableHead>District</TableHead>
-                    {canManage ? <TableHead className="text-right">Withdraw</TableHead> : null}
+                    {canManage ? <TableHead className="text-right">Actions</TableHead> : null}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -279,21 +292,38 @@ export function RegistrarDirectory() {
                           <Badge variant="outline" className="ml-2">
                             withdrawn {new Date(registrar.withdrawnAtUtc).toLocaleDateString()}
                           </Badge>
-                        ) : null}
+                        ) : registrar.hasDevicePin ? null : (
+                          // No PIN yet, or one reset: they cannot unlock a tablet until they set one.
+                          <Badge variant="outline" className="ml-2">
+                            no PIN
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>{registrar.facilityName}</TableCell>
                       <TableCell className="text-muted-foreground">{registrar.countyCode}</TableCell>
                       {canManage ? (
                         <TableCell className="text-right">
                           {registrar.withdrawnAtUtc ? null : (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setWithdrawing(registrar)}
-                              aria-label={`Withdraw ${registrar.displayName}`}
-                            >
-                              <UserMinus />
-                            </Button>
+                            <div className="flex justify-end gap-1">
+                              {registrar.hasDevicePin ? (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => setResetting(registrar)}
+                                  aria-label={`Reset the PIN of ${registrar.displayName}`}
+                                >
+                                  <KeyRound />
+                                </Button>
+                              ) : null}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setWithdrawing(registrar)}
+                                aria-label={`Withdraw ${registrar.displayName}`}
+                              >
+                                <UserMinus />
+                              </Button>
+                            </div>
                           )}
                         </TableCell>
                       ) : null}
