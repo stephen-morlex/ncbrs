@@ -928,8 +928,8 @@ review).**
 
 **The tablet's design: the handoff in `design-handoff/` (2026-10-05).** The
 user's design reference: one HTML mockup per screen and `DESIGN_HANDOFF.md`,
-built in this order: the kit and navigation (done), unlock, home with
-Records, the five-step form, then an officer PIN reset. Its rules: change the
+built in this order: the kit and navigation (done), unlock (done), home
+with Records, the five-step form, then an officer PIN reset. Its rules: change the
 UI only; theme tokens first; mirror everything in Arabic; 48 dp targets; body
 text 16, helper text 13 at least.
 - **Decided with the user:** the mother's step asks only what the registry
@@ -943,6 +943,19 @@ text 16, helper text 13 at least.
   shown, check character included; the stat is "numbers left", not
   "certificate numbers" (a BRN is not a certificate); place of birth keeps the
   registry's four kinds; sex keeps Undetermined and is never preselected.
+- **Unlock (`UnlockPage`):**
+  - Staff are cards, preselected when there is only one.
+  - The PIN is typed on the app's own keypad, never Android's. The keypad
+    and its dots stay left to right in Arabic, as a phone's keypad does; a
+    mirrored one puts 3 where the thumb expects 1.
+  - **Unlock waits for six digits.** Nothing shorter is a PIN, so it must
+    not spend one of the tablet's wrong guesses.
+  - **"Someone else" explains rather than dead-ends.** A PIN reaches the
+    tablet at its next sync. Someone with no PIN signs in with their own
+    account, and the card says that this replaces the account the tablet
+    syncs with, because that is what the existing sign-in does.
+  - **No "Forgot PIN?" yet.** No PIN can be reset today, so the link waits
+    for the officer reset.
 - **The kit:**
   - `Pages/Ui.cs` holds the tokens: `Palette` (every colour is read
     from it, so dark mode is one more instance), `Space` (4, 8, 12, 16, 20
