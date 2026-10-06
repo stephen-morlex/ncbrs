@@ -13,15 +13,6 @@ internal static class Choices
     public static Picker Choice<T>(string title, IEnumerable<T> values) where T : struct, Enum
         => new() { Title = title, ItemsSource = values.Select(value => new Option<T>(value)).ToList(), SelectedIndex = -1 };
 
-    /// <summary>A choice that can be taken back: its first item says "none", so a slip of the finger is not permanent.</summary>
-    public static Picker ChoiceOrNone<T>(string title, string none, IEnumerable<T> values) where T : struct, Enum
-        => new()
-        {
-            Title = title,
-            ItemsSource = new List<object> { new NoneOption(none) }.Concat(values.Select(value => (object)new Option<T>(value))).ToList(),
-            SelectedIndex = -1,
-        };
-
     public static T? Picked<T>(Picker picker) where T : struct, Enum
         => picker.SelectedItem is Option<T> option ? option.Value : null;
 
@@ -31,54 +22,14 @@ internal static class Choices
         picker.SelectedIndex = value is null ? -1 : items.FindIndex(item => item is Option<T> option && option.Value.Equals(value.Value));
     }
 
+    /// <summary>Chips for every value of an enum, each named in the registrar's language.</summary>
+    public static ChoiceChips<T> Chips<T>(IEnumerable<T> values) where T : struct, Enum
+        => new([.. values.Select(value => (value, Language.Name(value)))]);
+
     /// <summary>A coded answer, shown in the registrar's language, carrying its code.</summary>
     public sealed record Option<T>(T Value) where T : struct, Enum
     {
         public override string ToString() => Language.Name(Value);
-    }
-
-    private sealed record NoneOption(string Text)
-    {
-        public override string ToString() => Text;
-    }
-}
-
-/// <summary>
-/// An optional part of the registration, closed until the registrar opens it.
-/// A phone-sized screen cannot show the whole form, and most of it is not asked
-/// at most births; opened, it says so itself.
-/// </summary>
-internal sealed class Collapsible
-{
-    private readonly string _title;
-    private bool _open;
-
-    public Collapsible(string title, params View[] views)
-    {
-        _title = title;
-        Header = Ui.SecondaryButton(string.Empty);
-        Header.HorizontalOptions = LayoutOptions.Fill;
-        Header.Clicked += (_, _) => Open(!_open);
-
-        Content = new VerticalStackLayout { Spacing = Space.Md, IsVisible = false };
-        Content.Add(Ui.Caption(Strings.Register_SectionOptional));
-        foreach (var view in views)
-        {
-            Content.Add(view is Entry or Picker ? Ui.Labeled(view) : view);
-        }
-
-        Open(false);
-    }
-
-    public Button Header { get; }
-
-    public VerticalStackLayout Content { get; }
-
-    public void Open(bool open)
-    {
-        _open = open;
-        Content.IsVisible = open;
-        Header.Text = Language.Format(open ? Strings.Register_HideSection : Strings.Register_AddSection, _title);
     }
 }
 
@@ -95,12 +46,17 @@ internal sealed class OptionalDate
     {
         Picker = new DatePicker { MaximumDate = DateTime.Today, Date = suggested, Format = "d MMM yyyy", IsVisible = false };
         _known.CheckedChanged += (_, args) => Picker.IsVisible = args.Value;
+
+        var label = Ui.Body(knownLabel);
+        label.VerticalOptions = LayoutOptions.Center;
+        Ui.Tappable(label, () => _known.IsChecked = !_known.IsChecked);
+
         View = new VerticalStackLayout
         {
             Spacing = Space.Sm,
             Children =
             {
-                new HorizontalStackLayout { Spacing = Space.Sm, Children = { _known, new Label { Text = knownLabel, FontSize = 16, FontFamily = Ui.Regular, VerticalOptions = LayoutOptions.Center } } },
+                new HorizontalStackLayout { Spacing = Space.Sm, Children = { _known, label } },
                 Ui.Input(Picker, trailingIcon: Icons.Calendar),
             },
         };
@@ -124,10 +80,20 @@ internal sealed class OptionalDate
     }
 }
 
+/// <summary>Which identity document a parent showed, "none" included, so the answer can be taken back.</summary>
+internal enum DocumentChoice
+{
+    None,
+    NationalId,
+    Passport,
+    BirthCertificate,
+    DrivingLicence,
+}
+
 /// <summary>
-/// One parent's details. Every part is optional, but details that are given
-/// must name the parent — the core's rules say so in the registry's words.
-/// Only the mother is asked a maiden surname.
+/// One parent's details, as one step of the form. Every part is optional, but
+/// details that are given must name the parent — the core's rules say so in
+/// the registry's words. Only the mother is asked a maiden surname.
 /// </summary>
 internal sealed class ParentFields
 {
@@ -138,28 +104,56 @@ internal sealed class ParentFields
     private readonly Entry _place = Field(Strings.Register_ParentPlaceOfBirth);
     private readonly Entry _occupation = Field(Strings.Register_Occupation);
     private readonly Entry _address = Field(Strings.Register_Address);
-    private readonly Picker _document = Choices.ChoiceOrNone(Strings.Register_Document, Strings.Register_DocumentNone, Enum.GetValues<IdentityDocumentType>());
+    private readonly ChoiceChips<DocumentChoice> _document = new([
+        (DocumentChoice.None, Strings.Register_DocumentNone),
+        (DocumentChoice.NationalId, Language.Name(IdentityDocumentType.NationalId)),
+        (DocumentChoice.Passport, Language.Name(IdentityDocumentType.Passport)),
+        (DocumentChoice.BirthCertificate, Language.Name(IdentityDocumentType.BirthCertificate)),
+        (DocumentChoice.DrivingLicence, Language.Name(IdentityDocumentType.DrivingLicence)),
+    ]);
     private readonly Entry _documentNumber = Field(Strings.Register_DocumentNumber);
 
-    public ParentFields(string title, bool isMother)
+    public ParentFields(bool isMother)
     {
         _maiden = isMother ? Field(Strings.Register_MaidenSurname) : null;
 
-        var views = new List<View> { _given, _surname };
+        // The number belongs to a document, and only then.
+        _documentNumber.IsVisible = false;
+        _document.SelectionChanged += (_, _) => _documentNumber.IsVisible = Document is not null;
+
+        var fields = new VerticalStackLayout { Spacing = Space.Xl };
+        fields.Add(Ui.Labeled(_given));
+        fields.Add(Ui.Labeled(_surname));
         if (_maiden is not null)
         {
-            views.Add(_maiden);
+            fields.Add(Ui.Labeled(_maiden));
         }
 
-        views.AddRange([_born.View, _place, _occupation, _address, _document, _documentNumber]);
-        Section = new Collapsible(title, [.. views.Select(view => view is Entry or Picker ? Ui.Labeled(view) : view)]);
+        fields.Add(Ui.Group(Strings.Register_DateOfBirth, _born.View));
+        fields.Add(Ui.Labeled(_place));
+        fields.Add(Ui.Labeled(_occupation));
+        fields.Add(Ui.Labeled(_address));
+        fields.Add(Ui.Labeled(Strings.Register_Document, _document));
+        fields.Add(Ui.Labeled(_documentNumber));
+        View = fields;
     }
 
-    public Collapsible Section { get; }
+    public View View { get; }
+
+    private IdentityDocumentType? Document => _document.HasSelection
+        ? _document.Selected switch
+        {
+            DocumentChoice.NationalId => IdentityDocumentType.NationalId,
+            DocumentChoice.Passport => IdentityDocumentType.Passport,
+            DocumentChoice.BirthCertificate => IdentityDocumentType.BirthCertificate,
+            DocumentChoice.DrivingLicence => IdentityDocumentType.DrivingLicence,
+            _ => null,
+        }
+        : null;
 
     private IEnumerable<Entry> Entries => new[] { _given, _surname, _maiden, _place, _occupation, _address, _documentNumber }.OfType<Entry>();
 
-    public bool HasInput => Entries.Any(entry => !string.IsNullOrWhiteSpace(entry.Text)) || _born.HasInput || _document.SelectedIndex > 0;
+    public bool HasInput => Entries.Any(entry => !string.IsNullOrWhiteSpace(entry.Text)) || _born.HasInput || Document is not null;
 
     /// <summary>The parent as the registry takes them, or null when nothing was given.</summary>
     public ParentDetails? Read()
@@ -169,6 +163,7 @@ internal sealed class ParentFields
             return null;
         }
 
+        var document = Document;
         return new ParentDetails
         {
             GivenNames = Text(_given),
@@ -178,8 +173,9 @@ internal sealed class ParentFields
             PlaceOfBirth = Text(_place),
             Occupation = Text(_occupation),
             Address = Text(_address),
-            DocumentType = Choices.Picked<IdentityDocumentType>(_document),
-            DocumentNumber = Text(_documentNumber),
+            DocumentType = document,
+            // A number typed before switching back to "none shown" is not sent.
+            DocumentNumber = document is null ? null : Text(_documentNumber),
         };
     }
 
@@ -203,9 +199,22 @@ internal sealed class ParentFields
         _place.Text = details?.PlaceOfBirth;
         _occupation.Text = details?.Occupation;
         _address.Text = details?.Address;
-        Choices.Select(_document, details?.DocumentType);
+        if (details?.DocumentType is { } type)
+        {
+            _document.Selected = type switch
+            {
+                IdentityDocumentType.Passport => DocumentChoice.Passport,
+                IdentityDocumentType.BirthCertificate => DocumentChoice.BirthCertificate,
+                IdentityDocumentType.DrivingLicence => DocumentChoice.DrivingLicence,
+                _ => DocumentChoice.NationalId,
+            };
+        }
+        else
+        {
+            _document.Clear();
+        }
+
         _documentNumber.Text = details?.DocumentNumber;
-        Section.Open(HasInput);
     }
 
     public void Clear() => Fill(null, null);

@@ -453,6 +453,23 @@ public sealed class DeviceHost(ISignInBrowser browser, IDocumentPrinter? printer
         return (report, staff);
     }
 
+    /// <summary>Keep a registration in progress, replacing the earlier save of the same draft.</summary>
+    public async Task SaveDraftAsync(FormDraft draft)
+    {
+        State.Drafts.RemoveAll(kept => kept.Id == draft.Id);
+        State.Drafts.Add(draft);
+        await SaveAsync();
+    }
+
+    /// <summary>Forget a draft: registered, or discarded by the registrar.</summary>
+    public async Task DiscardDraftAsync(Guid id)
+    {
+        if (State.Drafts.RemoveAll(kept => kept.Id == id) > 0)
+        {
+            await SaveAsync();
+        }
+    }
+
     /// <summary>Note that a birth's certificate was printed here, for its badge in Records.</summary>
     public async Task MarkPrintedAsync(string brn)
     {

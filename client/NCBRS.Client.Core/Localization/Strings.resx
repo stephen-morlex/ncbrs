@@ -336,12 +336,6 @@
   <data name="Refused_Title" xml:space="preserve">
     <value>Refused births</value>
   </data>
-  <data name="Register_AddStatistics" xml:space="preserve">
-    <value>Add maternal statistics</value>
-  </data>
-  <data name="Register_BackNoSave" xml:space="preserve">
-    <value>Back, without saving</value>
-  </data>
   <data name="Register_BlockLow" xml:space="preserve">
     <value>Numbers are running low: sync when there is signal.</value>
   </data>
@@ -357,32 +351,11 @@
   <data name="Register_ChooseSex" xml:space="preserve">
     <value>Choose the child's sex (Undetermined if it cannot be told).</value>
   </data>
-  <data name="Register_ConfirmBody" xml:space="preserve">
-    <value>{0}, {1}, born {2:d MMM yyyy}</value>
-  </data>
   <data name="Register_ConfirmCorrectionBody" xml:space="preserve">
     <value>{0}, born {1:d MMM yyyy}, stays {2}. It is sent again at the next sync.</value>
   </data>
   <data name="Register_ConfirmCorrectionTitle" xml:space="preserve">
     <value>Save this correction?</value>
-  </data>
-  <data name="Register_ConfirmEnd" xml:space="preserve">
-    <value>.</value>
-  </data>
-  <data name="Register_ConfirmLate" xml:space="preserve">
-    <value>. Registered late, with evidence.</value>
-  </data>
-  <data name="Register_ConfirmMother" xml:space="preserve">
-    <value>, mother {0}</value>
-  </data>
-  <data name="Register_ConfirmTitle" xml:space="preserve">
-    <value>Register this birth?</value>
-  </data>
-  <data name="Register_ConfirmYes" xml:space="preserve">
-    <value>Register</value>
-  </data>
-  <data name="Register_CorrectHeading" xml:space="preserve">
-    <value>Correct {0}</value>
   </data>
   <data name="Register_CorrectNote" xml:space="preserve">
     <value>Its number {0} and the time it was first entered stay the same. Put right what the registry refused; it is sent again at the next sync.</value>
@@ -405,23 +378,11 @@
   <data name="Register_EvidenceReference" xml:space="preserve">
     <value>Evidence reference, e.g. card number (optional)</value>
   </data>
-  <data name="Register_Export" xml:space="preserve">
-    <value>No signal? Save births for a USB stick or card</value>
-  </data>
   <data name="Register_ExportedUnconfirmed" xml:space="preserve">
     <value>{0} of the births saved for a USB stick on {1:d MMM} are not yet confirmed by the registry.</value>
   </data>
-  <data name="Register_Father" xml:space="preserve">
-    <value>Father's full name</value>
-  </data>
-  <data name="Register_Gestation" xml:space="preserve">
-    <value>Gestational age in weeks (optional)</value>
-  </data>
   <data name="Register_GestationNumber" xml:space="preserve">
     <value>Gestational age must be a number of weeks.</value>
-  </data>
-  <data name="Register_LanguageClears" xml:space="preserve">
-    <value>Switching language clears what has been typed in the form. Switch anyway?</value>
   </data>
   <data name="Register_Late" xml:space="preserve">
     <value>Registered late</value>
@@ -439,12 +400,6 @@
   <data name="Register_Order" xml:space="preserve">
     <value>Birth order among the twins or triplets (1, 2, 3…)</value>
   </data>
-  <data name="Register_Parents" xml:space="preserve">
-    <value>The parents</value>
-  </data>
-  <data name="Register_Plurality" xml:space="preserve">
-    <value>Single or multiple birth</value>
-  </data>
   <data name="Register_Prenatal" xml:space="preserve">
     <value>Antenatal visits (optional)</value>
   </data>
@@ -456,9 +411,6 @@
 A permanent number is given when the tablet syncs.</value>
     <comment>Must read as clearly provisional: a family holds this slip.</comment>
   </data>
-  <data name="Register_Queue" xml:space="preserve">
-    <value>Waiting to sync: {0}   ·   numbers left: {1}</value>
-  </data>
   <data name="Register_RefusedBecause" xml:space="preserve">
     <value>The registry refused this birth:</value>
   </data>
@@ -467,9 +419,6 @@ A permanent number is given when the tablet syncs.</value>
   </data>
   <data name="Register_RefusedOne" xml:space="preserve">
     <value>1 birth was refused by the registry. Tap to correct it.</value>
-  </data>
-  <data name="Register_Registered" xml:space="preserve">
-    <value>Registered — BRN {0}</value>
   </data>
   <data name="Register_Relationship" xml:space="preserve">
     <value>Declarant's relationship to the child, e.g. mother</value>
@@ -480,9 +429,6 @@ A permanent number is given when the tablet syncs.</value>
   <data name="Register_Sex" xml:space="preserve">
     <value>Sex</value>
   </data>
-  <data name="Register_Statistics" xml:space="preserve">
-    <value>Statistics (optional, never delays the registration)</value>
-  </data>
   <data name="Register_Submit" xml:space="preserve">
     <value>Register this birth</value>
   </data>
@@ -491,12 +437,6 @@ A permanent number is given when the tablet syncs.</value>
   </data>
   <data name="Register_Title" xml:space="preserve">
     <value>Register a birth</value>
-  </data>
-  <data name="Register_Unlocked" xml:space="preserve">
-    <value>Unlocked: {0}</value>
-  </data>
-  <data name="Register_Weight" xml:space="preserve">
-    <value>Birth weight in grams (optional)</value>
   </data>
   <data name="Register_WhatOrder" xml:space="preserve">
     <value>Birth order</value>
@@ -937,12 +877,6 @@ A permanent number is given when the tablet syncs.</value>
   <data name="Register_ProofSection" xml:space="preserve">
     <value>Proof of address</value>
   </data>
-  <data name="Register_AddSection" xml:space="preserve">
-    <value>Add: {0}</value>
-  </data>
-  <data name="Register_HideSection" xml:space="preserve">
-    <value>Hide: {0}</value>
-  </data>
   <data name="Register_SectionOptional" xml:space="preserve">
     <value>Optional. Record what the family can give.</value>
   </data>
@@ -1051,9 +985,6 @@ A permanent number is given when the tablet syncs.</value>
   <data name="Home_NumbersLeft" xml:space="preserve">
     <value>Numbers left</value>
   </data>
-  <data name="Tile_Register" xml:space="preserve">
-    <value>Record a new birth</value>
-  </data>
   <data name="Tile_Sync" xml:space="preserve">
     <value>Send births to the registry</value>
   </data>
@@ -1092,9 +1023,6 @@ A permanent number is given when the tablet syncs.</value>
   </data>
   <data name="More_Language" xml:space="preserve">
     <value>Language</value>
-  </data>
-  <data name="More_SignedIn" xml:space="preserve">
-    <value>{0} at {1}</value>
   </data>
   <data name="More_Tablet" xml:space="preserve">
     <value>This tablet</value>
@@ -1206,5 +1134,128 @@ A permanent number is given when the tablet syncs.</value>
   </data>
   <data name="Unlock_Digits" xml:space="preserve">
     <value>{0} digits entered</value>
+  </data>
+  <data name="Common_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Badge_Draft" xml:space="preserve">
+    <value>Draft · step {0} of {1}</value>
+  </data>
+  <data name="Records_Drafts" xml:space="preserve">
+    <value>Drafts</value>
+  </data>
+  <data name="Records_Continue" xml:space="preserve">
+    <value>Continue</value>
+  </data>
+  <data name="Records_BabyOf" xml:space="preserve">
+    <value>Baby of {0}</value>
+  </data>
+  <data name="Records_UnnamedDraft" xml:space="preserve">
+    <value>Birth not yet named</value>
+  </data>
+  <data name="Register_StepOf" xml:space="preserve">
+    <value>Step {0} of {1} · {2}</value>
+  </data>
+  <data name="Register_StepFamily" xml:space="preserve">
+    <value>Marriage and address</value>
+  </data>
+  <data name="Register_StepReview" xml:space="preserve">
+    <value>Review</value>
+  </data>
+  <data name="Register_AboutChild" xml:space="preserve">
+    <value>About the child</value>
+  </data>
+  <data name="Register_AboutMother" xml:space="preserve">
+    <value>About the mother</value>
+  </data>
+  <data name="Register_AboutFather" xml:space="preserve">
+    <value>About the father</value>
+  </data>
+  <data name="Register_AboutFamily" xml:space="preserve">
+    <value>The parents' marriage and proof of address</value>
+  </data>
+  <data name="Register_ReviewTitle" xml:space="preserve">
+    <value>Check before registering</value>
+  </data>
+  <data name="Register_ReviewNote" xml:space="preserve">
+    <value>Read this back to the family. The birth gets its number only when you register it.</value>
+  </data>
+  <data name="Register_ReviewProblems" xml:space="preserve">
+    <value>Before registering, put these right:</value>
+  </data>
+  <data name="Register_NotGiven" xml:space="preserve">
+    <value>Not given</value>
+  </data>
+  <data name="Register_Next" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="Register_Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="Register_DraftSaved" xml:space="preserve">
+    <value>Draft saved</value>
+  </data>
+  <data name="Register_HowMany" xml:space="preserve">
+    <value>How many babies?</value>
+  </data>
+  <data name="Register_AtBirth" xml:space="preserve">
+    <value>At birth (optional)</value>
+  </data>
+  <data name="Register_GestationShort" xml:space="preserve">
+    <value>Pregnancy length</value>
+  </data>
+  <data name="Register_StatisticsTitle" xml:space="preserve">
+    <value>Maternal statistics</value>
+  </data>
+  <data name="Register_Optional" xml:space="preserve">
+    <value>Optional</value>
+  </data>
+  <data name="Register_Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Register_Discard" xml:space="preserve">
+    <value>Discard this draft</value>
+  </data>
+  <data name="Register_DiscardConfirm" xml:space="preserve">
+    <value>Discard this draft? What was typed for this birth is deleted from the tablet.</value>
+  </data>
+  <data name="Registered_Title" xml:space="preserve">
+    <value>Birth registered</value>
+  </data>
+  <data name="Registered_Body" xml:space="preserve">
+    <value>Saved on this tablet. It goes to the registry at the next sync.</value>
+  </data>
+  <data name="Registered_Number" xml:space="preserve">
+    <value>Registration number</value>
+  </data>
+  <data name="Registered_WriteIt" xml:space="preserve">
+    <value>Write this on the mother's card</value>
+  </data>
+  <data name="Registered_Child" xml:space="preserve">
+    <value>Child</value>
+  </data>
+  <data name="Registered_Born" xml:space="preserve">
+    <value>Born</value>
+  </data>
+  <data name="Registered_Saved" xml:space="preserve">
+    <value>Saved on this tablet</value>
+  </data>
+  <data name="Registered_Reaches" xml:space="preserve">
+    <value>Reaches the registry · at the next sync</value>
+  </data>
+  <data name="Registered_Certificate" xml:space="preserve">
+    <value>Certificate ready to print, once the registry signs it</value>
+  </data>
+  <data name="Registered_Another" xml:space="preserve">
+    <value>Register another birth</value>
+  </data>
+  <data name="Review_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Unit_Grams" xml:space="preserve">
+    <value>g</value>
+  </data>
+  <data name="Unit_Weeks" xml:space="preserve">
+    <value>weeks</value>
   </data>
 </root>
