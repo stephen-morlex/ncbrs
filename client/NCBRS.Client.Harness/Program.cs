@@ -40,9 +40,10 @@ Console.WriteLine("Generated an ECDSA P-256 device key. Enrolment key acceptable
 Section("2. Unlock offline (WS-B3)");
 var credential = OfflinePinLock.CreateCredential("2468", iterations: 10_000);
 var pinLock = new OfflinePinLock(credential, maxAttempts: 3);
-Console.WriteLine($"Wrong PIN: {pinLock.Unlock("0000", now).Outcome} "
-    + $"(attempts remaining {pinLock.Unlock("0000", now).AttemptsRemaining})");
-Console.WriteLine($"Right PIN: {pinLock.Unlock("2468", now).Outcome}");
+var unlockClock = new NCBRS.Client.Time.ProcessMonotonicClock();
+Console.WriteLine($"Wrong PIN: {pinLock.Unlock("0000", unlockClock.Read()).Outcome} "
+    + $"(attempts remaining {pinLock.Unlock("0000", unlockClock.Read()).AttemptsRemaining})");
+Console.WriteLine($"Right PIN: {pinLock.Unlock("2468", unlockClock.Read()).Outcome}");
 
 // 3. Register offline. A deliberately tiny block (three numbers) shows the
 //    low-block warning and the PROV- fallback when it runs dry.

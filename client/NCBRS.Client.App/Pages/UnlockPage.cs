@@ -352,7 +352,9 @@ public sealed class UnlockPage : FlowPage
         }
 
         Status.Text = result.Outcome == UnlockOutcome.LockedOut
-            ? Language.Format(Strings.Unlock_LockedOut, result.LockedUntilUtc?.ToLocalTime())
+            // The cooldown runs on a clock the date setting cannot touch; the
+            // time shown is only for reading against the tablet's own clock.
+            ? Language.Format(Strings.Unlock_LockedOut, DateTime.Now + (result.RetryAfter ?? TimeSpan.Zero))
             : Language.Format(Strings.Unlock_Wrong, result.AttemptsRemaining);
     }
 }

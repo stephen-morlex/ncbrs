@@ -47,6 +47,6 @@ public class PinPolicyParityTests
         var credential = PinCredential.FromServerHash(new DevicePinHasher().Hash("246813", iterations: 1_000))!;
 
         Assert.Equal("246813", typed);
-        Assert.True(new OfflinePinLock(credential).Unlock(typed, DateTime.UtcNow).Unlocked);
+        Assert.True(new OfflinePinLock(credential).Unlock(typed, new NCBRS.Client.Time.ProcessMonotonicClock().Read()).Unlocked);
     }
 }

@@ -90,6 +90,52 @@ public class CentralClientTests
     private static string Header(HttpRequestMessage request, string name)
         => request.Headers.TryGetValues(name, out var values) ? values.Single() : "";
 
+    // --- the registry's time ------------------------------------------------------------------
+
+    private static readonly DateTimeOffset RegistryNoon = new(2026, 11, 25, 12, 0, 0, TimeSpan.Zero);
+
+    private static HttpResponseMessage Dated(HttpResponseMessage response)
+    {
+        response.Headers.Date = RegistryNoon;
+        return response;
+    }
+
+    /// <summary>The registry's answer carries its time, which is what corrects the tablet's clock.</summary>
+    [Fact]
+    public async Task TheRegistrysTimeIsReportedFromItsAnswers()
+    {
+        var (facility, _) = Facility_();
+        facility.RegisterBirth(Birth());
+        var network = new FakeNetwork { Respond = _ => Dated(FakeNetwork.Envelope(BatchResponse(("400000", "Registered")))) };
+        var seen = new List<DateTime>();
+        var client = new CentralClient(new HttpClient(network), new CentralEndpoints(Centre), _ => Task.FromResult<string?>("t"))
+        {
+            RegistryTime = seen.Add,
+        };
+
+        await client.UploadAsync(facility.BuildSignedUpload());
+
+        Assert.Equal([RegistryNoon.UtcDateTime], seen);
+    }
+
+    /// <summary>A District node is a mini-PC with its own clock: its answers never correct the tablet's.</summary>
+    [Fact]
+    public async Task ADistrictNodesTimeIsNotTheRegistrys()
+    {
+        var (facility, _) = Facility_();
+        facility.RegisterBirth(Birth());
+        var network = new FakeNetwork { Respond = _ => Dated(FakeNetwork.FromDistrict("Queued", null, HttpStatusCode.Accepted)) };
+        var seen = new List<DateTime>();
+        var client = new CentralClient(new HttpClient(network), new CentralEndpoints(Centre, District), _ => Task.FromResult<string?>("t"))
+        {
+            RegistryTime = seen.Add,
+        };
+
+        await client.UploadAsync(facility.BuildSignedUpload());
+
+        Assert.Empty(seen);
+    }
+
     // --- what the device sends ---------------------------------------------------------------
 
     /// <summary>
