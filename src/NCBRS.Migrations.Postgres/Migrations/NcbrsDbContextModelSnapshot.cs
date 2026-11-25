@@ -350,6 +350,15 @@ namespace NCBRS.Migrations.Postgres
                     b.Property<Guid>("BirthRecordId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime?>("HandedOverAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("HandedOverByRegistrarId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("HandedOverTo")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("IssueDateUtc")
                         .HasColumnType("timestamp with time zone");
 

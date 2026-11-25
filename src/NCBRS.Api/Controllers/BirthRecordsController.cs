@@ -326,7 +326,9 @@ public class BirthRecordsController(
                 certificate.IssueDateUtc,
                 certificate.WithdrawnAtUtc,
                 certificate.WithdrawnReason,
-                certificate.ReprintCount);
+                certificate.ReprintCount,
+                certificate.HandedOverAtUtc,
+                certificate.HandedOverTo);
     }
 
     /// <summary>

@@ -28,7 +28,8 @@
       "auditTrail": "Audit trail",
       "dashboard": "Dashboard",
       "dhis2Export": "DHIS2 export",
-      "uploadTransfer": "Upload a transfer file"
+      "uploadTransfer": "Upload a transfer file",
+      "certificateQueue": "Certificates to hand out"
     },
     "soon": "soon"
   },
