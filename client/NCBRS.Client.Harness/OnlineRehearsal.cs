@@ -100,8 +100,8 @@ internal static class OnlineRehearsal
             staff.Succeeded && unlocker is not null, Describe(staff));
         Check("the PIN set at the centre unlocks the tablet offline, and a wrong one does not",
             unlocker is not null
-            && !NCBRS.Client.Storage.StaffUnlock.Attempt(deviceState, unlocker.RegistrarId, "975310", DateTime.UtcNow).Unlocked
-            && NCBRS.Client.Storage.StaffUnlock.Attempt(deviceState, unlocker.RegistrarId, pin, DateTime.UtcNow).Unlocked);
+            && !NCBRS.Client.Storage.StaffUnlock.Attempt(deviceState, unlocker.RegistrarId, "975310", new NCBRS.Client.Time.ProcessMonotonicClock().Read()).Unlocked
+            && NCBRS.Client.Storage.StaffUnlock.Attempt(deviceState, unlocker.RegistrarId, pin, new NCBRS.Client.Time.ProcessMonotonicClock().Read()).Unlocked);
 
         var facility = new FacilityClient(
             deviceId, facilityId,

@@ -1,4 +1,5 @@
 using NCBRS.Client.Auth;
+using NCBRS.Client.Time;
 using NCBRS.Models;
 
 namespace NCBRS.Client.Storage;
@@ -15,18 +16,27 @@ namespace NCBRS.Client.Storage;
 /// </summary>
 public static class StaffUnlock
 {
-    public static UnlockResult Attempt(DeviceState state, Guid registrarId, string? pin, DateTime nowUtc)
+    /// <param name="now">The monotonic clock, never the date: the cooldown must not be skippable from Settings.</param>
+    public static UnlockResult Attempt(DeviceState state, Guid registrarId, string? pin, MonotonicReading now)
     {
         var person = state.Staff.Find(staff => staff.RegistrarId == registrarId)
                      ?? throw new ArgumentException("Nobody by that id may unlock this tablet.", nameof(registrarId));
 
+        var attempts = state.Attempts;
+
+        // A lock saved by an older version, on the wall clock: its progress
+        // cannot be trusted, so it restarts in full on the monotonic clock.
+        var lockedAt = attempts.LockedAt ?? (attempts.LockedUntilUtc is not null ? now : null);
+
         var @lock = new OfflinePinLock(
             person.Credential,
-            failedAttempts: state.Attempts.FailedAttempts,
-            lockedUntilUtc: state.Attempts.LockedUntilUtc);
+            failedAttempts: attempts.FailedAttempts,
+            lockouts: attempts.Lockouts,
+            lockedAt: lockedAt,
+            lockedFor: attempts.LockedFor);
 
-        var result = @lock.Unlock(pin, nowUtc);
-        state.Attempts = new PinAttempts(@lock.FailedAttempts, @lock.LockedUntilUtc);
+        var result = @lock.Unlock(pin, now);
+        state.Attempts = new PinAttempts(@lock.FailedAttempts, null, @lock.Lockouts, @lock.LockedAt, @lock.LockedFor);
         return result;
     }
 

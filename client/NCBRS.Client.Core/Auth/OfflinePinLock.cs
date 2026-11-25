@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using NCBRS.Client.Time;
 
 namespace NCBRS.Client.Auth;
 
@@ -50,7 +51,7 @@ public enum UnlockOutcome
 }
 
 public sealed record UnlockResult(
-    UnlockOutcome Outcome, int FailedAttempts, DateTime? LockedUntilUtc, int AttemptsRemaining)
+    UnlockOutcome Outcome, int FailedAttempts, TimeSpan? RetryAfter, int AttemptsRemaining)
 {
     public bool Unlocked => Outcome == UnlockOutcome.Unlocked;
 }
@@ -67,14 +68,27 @@ public sealed record UnlockResult(
 /// PIN is refused; the lock is checked before the PIN is, so guessing cannot
 /// reset the window.
 ///
-/// A pure state machine: the caller persists <see cref="FailedAttempts"/> and
-/// <see cref="LockedUntilUtc"/> to the encrypted store (B2) so the limit
-/// survives the obvious attack of force-quitting between guesses.
+/// <para><b>The cooldown is measured on the monotonic clock, never the date
+/// setting</b> (pilot-readiness §2). Measured on the wall clock, setting the
+/// date forward five minutes reopened the window. The monotonic clock restarts
+/// at a reboot, so a reboot <b>restarts the cooldown in full</b>: rebooting can
+/// only lengthen a lockout, never end one.</para>
+///
+/// <para><b>Each lockout is twice the last</b> (5, 10, 20, 40 minutes, then an
+/// hour each) until the right PIN is entered. A fixed cooldown let a thief try
+/// five PINs every five minutes indefinitely. Capped at an hour, a six-digit PIN
+/// is still years out of reach, and a registrar who mistypes is never locked
+/// out for long.</para>
+///
+/// A pure state machine: the caller persists its state to the encrypted store
+/// (B2) after every attempt, so the limit survives the obvious attack of
+/// force-quitting between guesses.
 /// </summary>
 public sealed class OfflinePinLock
 {
     private const int DefaultIterations = 100_000;
-    private static readonly TimeSpan DefaultLockout = TimeSpan.FromMinutes(5);
+    public static readonly TimeSpan DefaultLockout = TimeSpan.FromMinutes(5);
+    public static readonly TimeSpan MaximumLockout = TimeSpan.FromHours(1);
 
     private readonly PinCredential _credential;
     private readonly int _maxAttempts;
@@ -85,7 +99,9 @@ public sealed class OfflinePinLock
         int maxAttempts = 5,
         TimeSpan lockout = default,
         int failedAttempts = 0,
-        DateTime? lockedUntilUtc = null)
+        int lockouts = 0,
+        MonotonicReading? lockedAt = null,
+        TimeSpan? lockedFor = null)
     {
         ArgumentNullException.ThrowIfNull(credential);
         if (maxAttempts < 1)
@@ -97,12 +113,36 @@ public sealed class OfflinePinLock
         _maxAttempts = maxAttempts;
         _lockout = lockout <= TimeSpan.Zero ? DefaultLockout : lockout;
         FailedAttempts = failedAttempts < 0 ? 0 : failedAttempts;
-        LockedUntilUtc = lockedUntilUtc;
+        Lockouts = lockouts < 0 ? 0 : lockouts;
+        if (lockedAt is not null)
+        {
+            LockedAt = lockedAt;
+            LockedFor = lockedFor is { } span && span > TimeSpan.Zero ? span : _lockout;
+        }
     }
 
     public int FailedAttempts { get; private set; }
 
-    public DateTime? LockedUntilUtc { get; private set; }
+    /// <summary>Lockouts since the right PIN was last entered: what the next cooldown doubles from.</summary>
+    public int Lockouts { get; private set; }
+
+    /// <summary>When the current cooldown began, on the monotonic clock. Null when not locked.</summary>
+    public MonotonicReading? LockedAt { get; private set; }
+
+    /// <summary>How long the current cooldown lasts. Null when not locked.</summary>
+    public TimeSpan? LockedFor { get; private set; }
+
+    /// <summary>The cooldown after <paramref name="lockouts"/> earlier ones: doubled each time, capped.</summary>
+    public TimeSpan CooldownAfter(int lockouts)
+    {
+        var span = _lockout;
+        for (var i = 0; i < lockouts && span < MaximumLockout; i++)
+        {
+            span += span;
+        }
+
+        return span < MaximumLockout ? span : MaximumLockout;
+    }
 
     /// <summary>Provision a credential from a PIN, done online. The PIN is not retained.</summary>
     public static PinCredential CreateCredential(string pin, int iterations = DefaultIterations)
@@ -118,26 +158,38 @@ public sealed class OfflinePinLock
         return new PinCredential(Convert.ToBase64String(salt), iterations, Convert.ToBase64String(hash));
     }
 
-    public UnlockResult Unlock(string? pin, DateTime nowUtc)
+    public UnlockResult Unlock(string? pin, MonotonicReading now)
     {
         // Locked check first: guessing must not even reach the comparison while
         // the cooldown is running, let alone reset it.
-        if (LockedUntilUtc is { } until && nowUtc < until)
+        if (LockedAt is { } at && LockedFor is { } span)
         {
-            return Result(UnlockOutcome.LockedOut);
-        }
+            if (now.Since(at) is not { } elapsed)
+            {
+                // A reboot since the lock began: its progress cannot be
+                // measured, so the cooldown starts again.
+                LockedAt = now;
+                return Result(UnlockOutcome.LockedOut, span);
+            }
 
-        // A cooldown that has elapsed opens a fresh window.
-        if (LockedUntilUtc is not null)
-        {
-            LockedUntilUtc = null;
+            if (elapsed < span)
+            {
+                return Result(UnlockOutcome.LockedOut, span - elapsed);
+            }
+
+            // A cooldown that has elapsed opens a fresh window. The count of
+            // lockouts is kept, so the next one is longer.
+            LockedAt = null;
+            LockedFor = null;
             FailedAttempts = 0;
         }
 
         if (!string.IsNullOrEmpty(pin) && Verify(pin))
         {
             FailedAttempts = 0;
-            LockedUntilUtc = null;
+            Lockouts = 0;
+            LockedAt = null;
+            LockedFor = null;
             return Result(UnlockOutcome.Unlocked);
         }
 
@@ -145,15 +197,17 @@ public sealed class OfflinePinLock
 
         if (FailedAttempts >= _maxAttempts)
         {
-            LockedUntilUtc = nowUtc + _lockout;
-            return Result(UnlockOutcome.LockedOut);
+            LockedFor = CooldownAfter(Lockouts);
+            LockedAt = now;
+            Lockouts++;
+            return Result(UnlockOutcome.LockedOut, LockedFor);
         }
 
         return Result(UnlockOutcome.WrongPin);
     }
 
-    private UnlockResult Result(UnlockOutcome outcome)
-        => new(outcome, FailedAttempts, LockedUntilUtc, Math.Max(0, _maxAttempts - FailedAttempts));
+    private UnlockResult Result(UnlockOutcome outcome, TimeSpan? retryAfter = null)
+        => new(outcome, FailedAttempts, retryAfter, Math.Max(0, _maxAttempts - FailedAttempts));
 
     private bool Verify(string pin)
     {

@@ -1129,6 +1129,26 @@ window and refused every window, forever, and the registrar was never told why.
 - Digits are normalised to ASCII, so a PIN typed on an Arabic keypad is the
   same PIN.
 
+**The tablet never trusts its own clock (pilot-readiness §2, 2026-11-25).**
+Anyone holding a tablet can change the date in Settings, and a flat battery
+resets it.
+- **Use `DeviceHost.Now()` (`TrustedClock`), never `DateTime.UtcNow`,** for
+  anything that matters: capture times, drafts, certificate checks, sync.
+  Its rule is that **time never goes backward from what was trusted**. Only the
+  registry corrects it in either direction, from the `Date` header of its own
+  answers (`CentralClient.RegistryTime`). A District node's clock does not
+  count. Within one boot, time since the last trusted reading is measured on
+  the monotonic clock. A clock behind is detected, shown on Home and never used.
+- **Forward jumps are accepted** without the registry. Forward is the safe
+  direction for revocation staleness and the statutory window, and a tablet
+  cannot tell it from a registrar fixing a clock that was behind. The registry's
+  time undoes one at the next answer.
+- **PIN lockouts never read a date.** They run on Android's elapsed real time,
+  named by boot count (`AndroidMonotonicClock`). A reboot **restarts** the
+  cooldown in full, and each lockout doubles (5, 10, 20, 40, then 60 minutes)
+  until the right PIN is entered. A lock saved by an older app on the wall
+  clock restarts in full.
+
 **Keycloak redirect trap.** `new Uri("scheme://auth").AbsoluteUri` is
 `scheme://auth/`: .NET adds the slash and Keycloak matches exactly, so the
 Android redirect has a path (`ss.gov.ncbrs.client://auth/callback`).

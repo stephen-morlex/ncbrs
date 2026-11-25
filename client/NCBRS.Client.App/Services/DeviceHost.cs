@@ -4,6 +4,7 @@ using NCBRS.Client.Network;
 using NCBRS.Client.Printing;
 using NCBRS.Client.Storage;
 using NCBRS.Client.Sync;
+using NCBRS.Client.Time;
 using NCBRS.Models;
 
 namespace NCBRS.Client.App.Services;
@@ -31,12 +32,28 @@ public enum Stage
 /// do and it saves after every act — the rule the core's state machines rely
 /// on. It holds no registration logic; every act is a call into the core.
 /// </summary>
-public sealed class DeviceHost(ISignInBrowser browser, IDocumentPrinter? printer = null)
+public sealed class DeviceHost(ISignInBrowser browser, IDocumentPrinter? printer = null, IMonotonicClock? monotonic = null)
 {
     /// <summary>Android's print system on the tablet; none on the Windows dev head.</summary>
     public IDocumentPrinter? Printer => printer;
 
     private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(120) };
+    private readonly IMonotonicClock _monotonic = monotonic ?? new ProcessMonotonicClock();
+    private TrustedClock? _clock;
+
+    /// <summary>
+    /// The time to use for anything that matters, and whether the tablet's own
+    /// clock agrees (pilot-readiness §2). Never <c>DateTime.UtcNow</c>: anyone
+    /// holding the tablet can set that, and a flat battery resets it.
+    /// </summary>
+    public ClockReading Now()
+        => Clock.Now();
+
+    private TrustedClock Clock => _clock ??= new TrustedClock(_monotonic, () => DateTime.UtcNow, State.Clock);
+
+    /// <summary>The trusted time as a local calendar date, for date pickers' "today".</summary>
+    public DateTime Today => Now().Utc.ToLocalTime().Date;
+
     private EncryptedStateFile? _store;
     private OfflineTokenSession? _registrar;
 
@@ -62,6 +79,7 @@ public sealed class DeviceHost(ISignInBrowser browser, IDocumentPrinter? printer
         {
             _store = await DeviceStorage.OpenAsync();
             State = await _store.LoadAsync() ?? new DeviceState();
+            _clock = new TrustedClock(_monotonic, () => DateTime.UtcNow, State.Clock);
             RestoreSession();
         }
         catch (StateFileUnreadableException exception)
@@ -81,6 +99,7 @@ public sealed class DeviceHost(ISignInBrowser browser, IDocumentPrinter? printer
         }
 
         Session?.Capture(State);
+        State.Clock = _clock?.State ?? State.Clock;
         await _store.SaveAsync(State);
     }
 
@@ -208,7 +227,11 @@ public sealed class DeviceHost(ISignInBrowser browser, IDocumentPrinter? printer
             });
 
     private CentralClient Centre()
-        => new(_http, new CentralEndpoints(State.Identity!.Centre, State.Identity.SyncVia), Registrar().AccessToken);
+        => new(_http, new CentralEndpoints(State.Identity!.Centre, State.Identity.SyncVia), Registrar().AccessToken)
+        {
+            // Every answer from the registry corrects the tablet's clock.
+            RegistryTime = registry => Clock.ObserveRegistry(registry),
+        };
 
     public async Task<string?> RegistrarSignInAsync()
     {
@@ -280,7 +303,7 @@ public sealed class DeviceHost(ISignInBrowser browser, IDocumentPrinter? printer
         if (Session is not null)
         {
             var report = await new ConnectivityWindow(Session.Facility, centre, Session.Signer, (_, _) => SaveAsync())
-                .RunAsync(Session.Sync, DateTime.UtcNow);
+                .RunAsync(Session.Sync, Now().Utc);
             problems.AddRange(report.Problems);
         }
 
@@ -339,7 +362,7 @@ public sealed class DeviceHost(ISignInBrowser browser, IDocumentPrinter? printer
     /// <summary>Saved after every attempt, right or wrong, so quitting between guesses resets nothing.</summary>
     public async Task<UnlockResult> UnlockAsync(StaffCredential person, string pin)
     {
-        var result = StaffUnlock.Attempt(State, person.RegistrarId, PinPolicy.Normalise(pin), DateTime.UtcNow);
+        var result = StaffUnlock.Attempt(State, person.RegistrarId, PinPolicy.Normalise(pin), _monotonic.Read());
         await SaveAsync();
         if (result.Unlocked)
         {
@@ -378,7 +401,7 @@ public sealed class DeviceHost(ISignInBrowser browser, IDocumentPrinter? printer
         }
 
         var export = Session.Facility.BuildSealedTransferFile(key);
-        var now = DateTime.UtcNow;
+        var now = Now().Utc;
 
         // One export at a time in the cache: an older file carries fewer
         // births, and a copy lying around serves nobody.
@@ -417,7 +440,7 @@ public sealed class DeviceHost(ISignInBrowser browser, IDocumentPrinter? printer
     public async Task<CertificateToPrint> FetchCertificateAsync(string brn)
     {
         var result = await CertificateForPrint.FetchAsync(
-            Centre(), brn.Trim(), State.Identity!.DeviceId, Session!.Signer, Session.Sync.Bundle, DateTime.UtcNow);
+            Centre(), brn.Trim(), State.Identity!.DeviceId, Session!.Signer, Session.Sync.Bundle, Now().Utc);
         await SaveAsync();
         return result;
     }
@@ -433,7 +456,7 @@ public sealed class DeviceHost(ISignInBrowser browser, IDocumentPrinter? printer
         var centre = Centre();
         _staffRefreshed = false;
         var report = await new ConnectivityWindow(Session!.Facility, centre, Session.Signer, (_, _) => SaveAsync())
-            .RunAsync(Session.Sync, DateTime.UtcNow);
+            .RunAsync(Session.Sync, Now().Utc);
         await SaveAsync();
         var staff = report.Upload is CentralOutcome.Unauthorized or CentralOutcome.Unreachable
             ? []
@@ -446,7 +469,7 @@ public sealed class DeviceHost(ISignInBrowser browser, IDocumentPrinter? printer
         if (report.Upload is CentralOutcome.Succeeded || report.BlockGranted is not null || report.BundleRefreshed
             || (report.Upload is null && _staffRefreshed))
         {
-            State.LastSyncedAtUtc = DateTime.UtcNow;
+            State.LastSyncedAtUtc = Now().Utc;
             await SaveAsync();
         }
 

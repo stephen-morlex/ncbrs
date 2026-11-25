@@ -5,6 +5,7 @@ using System.Text.Json;
 using NCBRS.Client.Auth;
 using NCBRS.Client.Network;
 using NCBRS.Client.Storage;
+using NCBRS.Client.Time;
 using NCBRS.Models;
 using Xunit;
 using static NCBRS.Client.Tests.CentralClientTests;
@@ -23,6 +24,7 @@ public class HandoverTests
     private static readonly Guid Facility = Guid.Parse("0199c000-0000-7000-8000-0000000f0003");
     private static readonly Guid Lado = Guid.Parse("0199c000-0000-7000-8000-0000000000b1");
     private static readonly Guid Kenyi = Guid.Parse("0199c000-0000-7000-8000-0000000000b2");
+    private static readonly MonotonicReading Booted = new("boot-1", TimeSpan.FromMinutes(30));
 
     /// <summary>A PIN hashed the way the centre stores it (DevicePinHasher.Hash).</summary>
     private static string ServerHash(string pin, int iterations = 1_000)
@@ -236,7 +238,7 @@ public class HandoverTests
     {
         var state = Staffed();
 
-        var result = StaffUnlock.Attempt(state, Lado, "246813", DateTime.UtcNow);
+        var result = StaffUnlock.Attempt(state, Lado, "246813", Booted);
 
         Assert.True(result.Unlocked);
         Assert.Equal(0, state.Attempts.FailedAttempts);
@@ -244,7 +246,7 @@ public class HandoverTests
 
     [Fact]
     public void AnotherRegistrarsPinDoesNotUnlockAsThem()
-        => Assert.False(StaffUnlock.Attempt(Staffed(), Lado, "975310", DateTime.UtcNow).Unlocked);
+        => Assert.False(StaffUnlock.Attempt(Staffed(), Lado, "975310", Booted).Unlocked);
 
     /// <summary>
     /// The counter is the device's. Moving to the next name on the list must
@@ -254,7 +256,7 @@ public class HandoverTests
     public void WrongGuessesCountForTheDeviceNotThePerson()
     {
         var state = Staffed();
-        var now = DateTime.UtcNow;
+        var now = Booted;
 
         for (var guess = 0; guess < 4; guess++)
         {
@@ -266,14 +268,49 @@ public class HandoverTests
 
         Assert.Equal(UnlockOutcome.LockedOut, fifth.Outcome);
         Assert.Equal(UnlockOutcome.LockedOut, rightPinWhileLocked.Outcome);
-        Assert.NotNull(state.Attempts.LockedUntilUtc);
+        Assert.NotNull(state.Attempts.LockedAt);
+        Assert.Null(state.Attempts.LockedUntilUtc);
+    }
+
+    /// <summary>
+    /// A lock saved by the older app, as a wall-clock time. That time is what
+    /// setting the date defeated, so it is not honoured as written: the lock
+    /// restarts in full on the monotonic clock, and the old field is dropped.
+    /// </summary>
+    [Fact]
+    public void ALockSavedOnTheWallClockRestartsInFull()
+    {
+        var state = Staffed();
+        state.Attempts = new PinAttempts(5, DateTime.UtcNow.AddYears(-1));
+
+        var result = StaffUnlock.Attempt(state, Lado, "246813", Booted);
+
+        Assert.Equal(UnlockOutcome.LockedOut, result.Outcome);
+        Assert.Equal(OfflinePinLock.DefaultLockout, result.RetryAfter);
+        Assert.Equal(Booted, state.Attempts.LockedAt);
+        Assert.Null(state.Attempts.LockedUntilUtc);
+    }
+
+    /// <summary>The whole attempt state survives the store, monotonic readings included.</summary>
+    [Fact]
+    public void TheLockSurvivesTheStore()
+    {
+        var state = Staffed();
+        for (var guess = 0; guess < 5; guess++)
+        {
+            StaffUnlock.Attempt(state, Lado, "000111", Booted);
+        }
+
+        var restored = JsonSerializer.Deserialize<PinAttempts>(JsonSerializer.Serialize(state.Attempts));
+
+        Assert.Equal(state.Attempts, restored);
     }
 
     [Fact]
     public void ARefreshDoesNotForgiveGuesses()
     {
         var state = Staffed();
-        StaffUnlock.Attempt(state, Lado, "000111", DateTime.UtcNow);
+        StaffUnlock.Attempt(state, Lado, "000111", Booted);
 
         StaffUnlock.Provision(state, new DeviceCredentialBundle(Facility, "Terekeka PHCC", DateTime.UtcNow,
             [new DeviceCredentialEntry(Lado, "Nurse Lado", RegistrarRole.FacilityRegistrar, ServerHash("246813"))]));
@@ -302,7 +339,7 @@ public class HandoverTests
 
     [Fact]
     public void SomeoneNotOnTheListCannotAttempt()
-        => Assert.Throws<ArgumentException>(() => StaffUnlock.Attempt(Staffed(), Guid.NewGuid(), "246813", DateTime.UtcNow));
+        => Assert.Throws<ArgumentException>(() => StaffUnlock.Attempt(Staffed(), Guid.NewGuid(), "246813", Booted));
 }
 
 /// <summary>The device id a tablet enrols under.</summary>

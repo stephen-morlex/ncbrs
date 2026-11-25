@@ -547,6 +547,9 @@ A permanent number is given when the tablet syncs.</value>
   <data name="Unlock_LockedOut" xml:space="preserve">
     <value>Too many wrong PINs. Locked until {0:HH:mm}.</value>
   </data>
+  <data name="Clock_Wrong" xml:space="preserve">
+    <value>This tablet's clock is wrong. It says {0:d MMM yyyy, HH:mm}, but the time is about {1:d MMM yyyy, HH:mm}. Set the date and time in Settings. Births are still recorded at the right time.</value>
+  </data>
   <data name="Unlock_Title" xml:space="preserve">
     <value>Unlock</value>
   </data>

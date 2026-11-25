@@ -54,7 +54,7 @@ public static class TabletRecords
             var isRefused = refused.TryGetValue(birth.Brn, out var reasons);
             records.Add(new TabletRecord(
                 birth.Brn, BirthNames.Child(birth), birth.DateOfBirth, birth.Sex,
-                birth.RegisteredAtUtc ?? DateTime.UtcNow,
+                birth.RegisteredAtUtc ?? host.Now().Utc,
                 isRefused ? RecordState.Refused : RecordState.Waiting,
                 Printed: false, held, reasons ?? []));
         }

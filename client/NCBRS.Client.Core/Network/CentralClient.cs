@@ -114,6 +114,15 @@ public sealed class CentralClient(HttpClient http, CentralEndpoints endpoints, A
     public const string TransactionIdHeader = "X-Transaction-Id";
 
     /// <summary>
+    /// Told the registry's time from the <c>Date</c> header of every answer
+    /// the registry itself gives, so the tablet can correct its clock
+    /// (<c>TrustedClock.ObserveRegistry</c>). Not from a District node: its
+    /// clock is a mini-PC's, and the registry's is the one the statutory window
+    /// is measured against.
+    /// </summary>
+    public Action<DateTime>? RegistryTime { get; init; }
+
+    /// <summary>
     /// Enrol a device key against a facility. This is the district officer's
     /// act at handover, so the token is theirs (it needs the right to enrol
     /// devices). Only the public half of the key is sent.
@@ -338,9 +347,16 @@ public sealed class CentralClient(HttpClient http, CentralEndpoints endpoints, A
 
         using (response)
         {
+            if (response.Headers.Date is { } date && FromRegistry(request.RequestUri))
+            {
+                RegistryTime?.Invoke(date.UtcDateTime);
+            }
+
             return Classify<T>(response, body);
         }
     }
+
+    private bool FromRegistry(Uri? uri) => uri is not null && endpoints.Centre.IsBaseOf(uri);
 
     private static CentralResult<T> Classify<T>(HttpResponseMessage response, string body)
     {

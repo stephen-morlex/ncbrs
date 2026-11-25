@@ -21,7 +21,7 @@ public class DevicePinCompatibilityTests
         var credential = PinCredential.FromServerHash(_hasher.Hash("246813", iterations: 1_000));
 
         Assert.NotNull(credential);
-        Assert.True(new OfflinePinLock(credential).Unlock("246813", DateTime.UtcNow).Unlocked);
+        Assert.True(new OfflinePinLock(credential).Unlock("246813", new NCBRS.Client.Time.ProcessMonotonicClock().Read()).Unlocked);
     }
 
     [Fact]
@@ -29,7 +29,7 @@ public class DevicePinCompatibilityTests
     {
         var credential = PinCredential.FromServerHash(_hasher.Hash("246813", iterations: 1_000))!;
 
-        Assert.False(new OfflinePinLock(credential).Unlock("246814", DateTime.UtcNow).Unlocked);
+        Assert.False(new OfflinePinLock(credential).Unlock("246814", new NCBRS.Client.Time.ProcessMonotonicClock().Read()).Unlocked);
     }
 
     /// <summary>The cost travels in the hash, so the tablet verifies at whatever the centre used.</summary>
