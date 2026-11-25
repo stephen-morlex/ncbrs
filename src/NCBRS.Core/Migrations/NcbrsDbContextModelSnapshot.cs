@@ -1124,10 +1124,19 @@ namespace NCBRS.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("DuplicateCount")
+                        .HasColumnType("INTEGER");
+
                     b.Property<Guid>("FacilityId")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("RecordCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("RegisteredCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("RejectedCount")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Status")
