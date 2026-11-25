@@ -9,7 +9,8 @@ namespace NCBRS.Controllers;
 /// <summary>
 /// Births whose certificate has not reached the family (plan §17 item 32): to
 /// issue, to hand over, or waiting on the registry. Facility staff work their
-/// own facility's list; a district officer their county's; the Ministry any.
+/// own facility's list; a district officer their county's; the Ministry any
+/// (<see cref="WorkScope"/>).
 /// </summary>
 [ApiController]
 [Route("api/certificate-queue")]
@@ -18,7 +19,7 @@ namespace NCBRS.Controllers;
 public class CertificateQueueController(
     CertificateQueueService queue,
     CurrentRegistrarService currentRegistrar,
-    ReviewQueueScope queueScope) : ControllerBase
+    WorkScope workScope) : ControllerBase
 {
     /// <summary>
     /// Oldest first, so the family who has waited longest is first. Pass
@@ -42,35 +43,13 @@ public class CertificateQueueController(
                 "registrar", "This account is not linked to a registrar in the registry."));
         }
 
-        string? county = null;
-
-        // Facility staff act for their own facility only, so that is all they
-        // see. Naming another is refused rather than quietly narrowed: a quiet
-        // narrowing would read as "nothing waiting over there".
-        if (!User.IsInRole(NcbrsRoles.DistrictOfficer) && !User.IsInRole(NcbrsRoles.MinistryAdmin))
+        var (refusal, facility, county) = await workScope.ResolveAsync(User, registrar, facilityId, HttpContext.RequestAborted);
+        if (refusal is not null)
         {
-            if (facilityId is not null && facilityId != registrar.FacilityId)
-            {
-                return ApiErrors.Result(ApiErrors.Single(
-                    StatusCodes.Status403Forbidden, "Another facility is not yours to see.", "facilityId",
-                    "Facility staff see their own facility's certificates."));
-            }
-
-            facilityId = registrar.FacilityId;
-        }
-        else
-        {
-            // The officer's county only; the Ministry anywhere (ReviewQueueScope).
-            var (refusal, scoped) = await queueScope.ResolveAsync(User, registrar, facilityId, HttpContext.RequestAborted);
-            if (refusal is not null)
-            {
-                return refusal;
-            }
-
-            county = scoped;
+            return refusal;
         }
 
         return Ok(await queue.ListAsync(
-            facilityId, county, stage, new PageRequest { Limit = limit, After = after }, HttpContext.RequestAborted));
+            facility, county, stage, new PageRequest { Limit = limit, After = after }, HttpContext.RequestAborted));
     }
 }

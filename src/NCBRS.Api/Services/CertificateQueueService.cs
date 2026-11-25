@@ -39,13 +39,7 @@ public class CertificateQueueService(NcbrsDbContext db)
         PageRequest paging,
         CancellationToken cancellationToken = default)
     {
-        var query = db.BirthRecords
-            .AsNoTracking()
-            .Where(record => record.AnnulledAtUtc == null
-                             && record.VitalEventType == VitalEventType.LiveBirth
-                             && record.SupersededByBirthRecordId == null
-                             && (record.LateRegistration == null || record.LateRegistration.Status != LateRegistrationStatus.Rejected)
-                             && !record.Certificates.Any(c => c.WithdrawnAtUtc == null && c.HandedOverAtUtc != null));
+        var query = Outstanding(db.BirthRecords.AsNoTracking());
 
         if (facilityId is not null)
         {
@@ -57,27 +51,10 @@ public class CertificateQueueService(NcbrsDbContext db)
             query = query.Where(record => record.Facility!.CountyCode == countyCode);
         }
 
-        query = stage switch
+        if (stage is { } wanted)
         {
-            CertificateQueueStage.ToHandOver => query.Where(record =>
-                record.Certificates.Any(c => c.WithdrawnAtUtc == null)),
-
-            CertificateQueueStage.AwaitingNumber => query.Where(record =>
-                !record.Certificates.Any(c => c.WithdrawnAtUtc == null)
-                && record.ProvisionalIdentifier != null && record.ReconciledAtUtc == null),
-
-            CertificateQueueStage.AwaitingVerification => query.Where(record =>
-                !record.Certificates.Any(c => c.WithdrawnAtUtc == null)
-                && !(record.ProvisionalIdentifier != null && record.ReconciledAtUtc == null)
-                && record.LateRegistration != null && record.LateRegistration.Status != LateRegistrationStatus.Approved),
-
-            CertificateQueueStage.ToIssue => query.Where(record =>
-                !record.Certificates.Any(c => c.WithdrawnAtUtc == null)
-                && !(record.ProvisionalIdentifier != null && record.ReconciledAtUtc == null)
-                && (record.LateRegistration == null || record.LateRegistration.Status == LateRegistrationStatus.Approved)),
-
-            _ => query,
-        };
+            query = InStage(query, wanted);
+        }
 
         var total = await query.CountAsync(cancellationToken);
 
@@ -135,6 +112,40 @@ public class CertificateQueueService(NcbrsDbContext db)
 
         return page;
     }
+
+    /// <summary>
+    /// Live births whose current certificate has not reached the family. One
+    /// definition, used by the list and by anything that counts it (the
+    /// facility operations view), so the two can never disagree.
+    /// </summary>
+    public static IQueryable<BirthRecord> Outstanding(IQueryable<BirthRecord> records)
+        => records.Where(record => record.AnnulledAtUtc == null
+                                   && record.VitalEventType == VitalEventType.LiveBirth
+                                   && record.SupersededByBirthRecordId == null
+                                   && (record.LateRegistration == null || record.LateRegistration.Status != LateRegistrationStatus.Rejected)
+                                   && !record.Certificates.Any(c => c.WithdrawnAtUtc == null && c.HandedOverAtUtc != null));
+
+    /// <summary>Narrows <see cref="Outstanding"/> to one stage, decided as <see cref="StageOf"/> decides it.</summary>
+    public static IQueryable<BirthRecord> InStage(IQueryable<BirthRecord> outstanding, CertificateQueueStage stage)
+        => stage switch
+        {
+            CertificateQueueStage.ToHandOver => outstanding.Where(record =>
+                record.Certificates.Any(c => c.WithdrawnAtUtc == null)),
+
+            CertificateQueueStage.AwaitingNumber => outstanding.Where(record =>
+                !record.Certificates.Any(c => c.WithdrawnAtUtc == null)
+                && record.ProvisionalIdentifier != null && record.ReconciledAtUtc == null),
+
+            CertificateQueueStage.AwaitingVerification => outstanding.Where(record =>
+                !record.Certificates.Any(c => c.WithdrawnAtUtc == null)
+                && !(record.ProvisionalIdentifier != null && record.ReconciledAtUtc == null)
+                && record.LateRegistration != null && record.LateRegistration.Status != LateRegistrationStatus.Approved),
+
+            _ => outstanding.Where(record =>
+                !record.Certificates.Any(c => c.WithdrawnAtUtc == null)
+                && !(record.ProvisionalIdentifier != null && record.ReconciledAtUtc == null)
+                && (record.LateRegistration == null || record.LateRegistration.Status == LateRegistrationStatus.Approved)),
+        };
 
     /// <summary>The same order of checks as issuing: a certificate first, then the number, then the verification.</summary>
     private static CertificateQueueStage StageOf(

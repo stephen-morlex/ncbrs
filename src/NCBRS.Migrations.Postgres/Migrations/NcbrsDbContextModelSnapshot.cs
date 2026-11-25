@@ -1129,10 +1129,19 @@ namespace NCBRS.Migrations.Postgres
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int?>("DuplicateCount")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("FacilityId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("RecordCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RegisteredCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RejectedCount")
                         .HasColumnType("integer");
 
                     b.Property<string>("Status")

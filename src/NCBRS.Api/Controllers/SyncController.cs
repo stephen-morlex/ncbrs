@@ -231,6 +231,9 @@ public class SyncController(
         // perfect -- the per-record breakdown carries that. Failed is reserved
         // for a batch where nothing at all could be accepted.
         syncBatch.Status = registered + duplicates > 0 ? SyncBatchStatus.Reconciled : SyncBatchStatus.Failed;
+        syncBatch.RegisteredCount = registered;
+        syncBatch.DuplicateCount = duplicates;
+        syncBatch.RejectedCount = rejected;
 
         db.AuditLogs.Add(new AuditLog
         {

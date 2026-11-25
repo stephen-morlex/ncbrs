@@ -782,6 +782,34 @@ like nothing at all.
 - `CertificateState` on the record carries `HandedOverAtUtc`/`HandedOverTo`.
   The web page is "Certificates to hand out" (`/certificates/queue`).
 
+## Facility operations (plan §17 item 35, built)
+One row per facility of what needs someone's attention, for the people keeping
+a pilot running: `GET /api/operations/facilities` (`FacilityOperationsService`)
+and the web's "Facility operations" page (`/operations`).
+
+- **From the registry, not the reporting projection.** The dashboard counts what
+  happened; this counts what is waiting on someone, which only the registry
+  holds.
+- **Each figure is its queue's own definition**, so a row never disagrees with
+  the list it links to. The certificate figures call
+  `CertificateQueueService.Outstanding`/`InStage` themselves. A correction is
+  counted as one request, however many fields it touches.
+- **Refusals at sync come from `SyncBatch.RegisteredCount`/`DuplicateCount`/`RejectedCount`**,
+  kept on the batch since this change (they used to exist only in the event
+  stream). Batches from before carry nulls, and a facility whose window holds
+  only those reports **null**, which the page shows as "—", never 0. Zero would
+  claim those births went cleanly.
+- **Who sees what is `WorkScope`**, shared with the certificate list: facility
+  staff their own facility (naming another is refused), a district officer their
+  county, the Ministry the country.
+- **The page marks what needs a look, in words as well as colour**:
+  - silence past the connectivity profile's threshold (2 / 7 / 21 days, as the
+    device alerts use);
+  - any births refused, provisional or unconfirmed numbers;
+  - a review item older than 7 days;
+  - a family waiting over 30 days for a certificate.
+  It links each figure only to lists the reader's roles may open.
+
 ## Late registration (WS-C1/C2, built)
 A birth registered outside the statutory window (`StatutoryRegistration:WindowDays`,
 default 90 — the number is set in law, which is why it is configuration)
