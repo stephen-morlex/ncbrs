@@ -26,6 +26,7 @@ public class NcbrsDbContext(DbContextOptions<NcbrsDbContext> options) : DbContex
     public DbSet<AmendmentConflict> AmendmentConflicts => Set<AmendmentConflict>();
     public DbSet<Device> Devices => Set<Device>();
     public DbSet<DeviceAlert> DeviceAlerts => Set<DeviceAlert>();
+    public DbSet<DeviceProblemReport> DeviceProblemReports => Set<DeviceProblemReport>();
     public DbSet<AdministrativeArea> AdministrativeAreas => Set<AdministrativeArea>();
     public DbSet<PendingAccount> PendingAccounts => Set<PendingAccount>();
     public DbSet<FacilityBrnSequence> FacilityBrnSequences => Set<FacilityBrnSequence>();
@@ -324,6 +325,11 @@ public class NcbrsDbContext(DbContextOptions<NcbrsDbContext> options) : DbContex
         // reported" -- the district's operational view.
         modelBuilder.Entity<Device>()
             .HasIndex(device => new { device.FacilityId, device.LastSeenAtUtc });
+
+        // Keyed by the id the tablet generated, so a report sent twice is stored once.
+        modelBuilder.Entity<DeviceProblemReport>().HasKey(report => report.DeviceProblemReportId);
+        modelBuilder.Entity<DeviceProblemReport>().HasIndex(report => new { report.CountyCode, report.ResolvedAtUtc });
+        modelBuilder.Entity<DeviceProblemReport>().Property(report => report.DeviceProblemReportId).ValueGeneratedNever();
 
         modelBuilder.Entity<DeviceAlert>().Property(alert => alert.Kind).HasConversion<string>();
         modelBuilder.Entity<DeviceAlert>().Property(alert => alert.Status).HasConversion<string>();

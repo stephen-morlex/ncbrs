@@ -56,6 +56,7 @@ const Pages: { path: string; role: Role; ready: RegExp | string }[] = [
   { path: '/registrars', role: 'ministryAdmin', ready: /registrar/i },
   { path: '/devices', role: 'ministryAdmin', ready: /TERMINAL-JUBA-01/ },
   { path: '/devices/alerts', role: 'ministryAdmin', ready: /alert/i },
+  { path: '/devices/problems', role: 'ministryAdmin', ready: /Problem reports/ },
   { path: '/certificates/verify', role: 'ministryAdmin', ready: /verify/i },
   { path: '/certificates/revocations', role: 'ministryAdmin', ready: /revocation/i },
   { path: '/certificates/queue', role: 'registrar', ready: /Certificates to hand out/ },

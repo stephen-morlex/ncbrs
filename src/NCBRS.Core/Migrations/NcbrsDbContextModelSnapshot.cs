@@ -530,6 +530,54 @@ namespace NCBRS.Migrations
                     b.ToTable("DeviceAlerts");
                 });
 
+            modelBuilder.Entity("NCBRS.Models.DeviceProblemReport", b =>
+                {
+                    b.Property<Guid>("DeviceProblemReportId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CountyCode")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeviceId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DiagnosticsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("FacilityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ReceivedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ReportedByRegistrarId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ResolutionNote")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ResolvedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ResolvedByRegistrarId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("WrittenAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("DeviceProblemReportId");
+
+                    b.HasIndex("CountyCode", "ResolvedAtUtc");
+
+                    b.ToTable("DeviceProblemReports");
+                });
+
             modelBuilder.Entity("NCBRS.Models.DuplicateCandidate", b =>
                 {
                     b.Property<Guid>("DuplicateCandidateId")

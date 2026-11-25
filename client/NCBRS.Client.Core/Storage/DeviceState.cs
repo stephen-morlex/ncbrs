@@ -105,6 +105,13 @@ public sealed class DeviceState
     /// Null in a state saved before it existed, which starts from the clock as it reads.
     /// </summary>
     public ClockState? Clock { get; set; }
+
+    /// <summary>
+    /// Problem reports written and not yet received by the registry
+    /// (<see cref="ProblemReports"/>). Counts and versions only, plus what the
+    /// registrar wrote. Empty in a state saved before they existed.
+    /// </summary>
+    public List<ReportProblemRequest> ProblemReports { get; set; } = [];
 }
 
 /// <summary>

@@ -1708,6 +1708,39 @@ it as base64, on media that passes through several hands. Now a file is
   Confirmed, credited to the registrar who registered them, and audited as
   arriving by sealed transfer. The tablet's next sync settled them.
 
+## Problem reports from tablets (plan §17 item 37, built)
+A post may be days from the district office, and "it doesn't work" over a bad
+phone line is where remote support usually ends. "Report a problem" (More
+menu) sends what the registrar wrote plus the tablet's own state.
+
+- **Counts, versions and times only** (`DeviceDiagnostics`, Contracts):
+  - app version, platform, language
+  - births waiting, refused, drafts
+  - numbers left and provisional numbers issued
+  - last sync, bundle age
+  - the trusted clock's verdict and offset
+  - PIN attempts and lockouts
+  - the last sync's problem messages, capped at 5 × 300 characters
+
+  **No names, no BRNs, no addresses**: a report sits in a queue several people
+  read (`NoNameOrNumberLeavesTheTablet`). The registrar's own words are the
+  one free-text field, and the screen asks them not to write names.
+- **The tablet holds a report until there is signal** (`ClientSyncState.ProblemReports`,
+  persisted) and sends it **last** in a window, after births, numbers and the
+  bundle. A dropped link keeps it. **A registry refusal drops it**, or it would
+  be resent every window forever.
+- **Idempotent by the tablet's report id.** A resend answers with the stored
+  copy. The same id from another device is refused, never answered with
+  someone else's report.
+- **`POST /api/problem-reports` goes through `DeviceChannelGate`** like every
+  write that names a device, and is in `DeviceChannelEverywhereTests`.
+- **`GET` / `resolve` are `CanEnrolDevices`**, county-scoped like the alerts;
+  resolving needs `CanActForFacilityAsync`.
+- **Unlike a silence alert, a report is resolved by a person:** it says what
+  someone saw, and only someone can say it was dealt with. Resolved reports
+  are kept.
+- The web page is "Problem reports" (`/devices/problems`).
+
 ## Device silence alerts (WS-F4, built)
 "A silent device is indistinguishable from a district with no births, and only
 one of those needs intervention" — the plan's own note, and the whole
