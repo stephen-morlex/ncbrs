@@ -253,8 +253,26 @@ Jonglei) and South Sudanese names throughout.
   level at a time (`?parentId=` for children, `?level=` for a whole level,
   neither for the country root). Read-only and open to any signed-in caller:
   it names no person and is the same reference data a registrar and an
-  oversight officer both need. Creating areas is a separate, write-gated
-  concern and is not this endpoint.
+  oversight officer both need.
+- **`POST /api/administrative-areas` adds an area below a county** (plan §17
+  item 31, `AdministrativeAreaService`, `CanManageFacilities`, Ministry only).
+  The official dataset stops at the payam, so without it a village post could
+  only be placed at its payam.
+  - **Only below a county.** States and counties are the official geography,
+    and a county added by hand would be a scope no Keycloak group names.
+  - **The registry gives the code, never the caller:** the parent's code, a
+    hyphen, a level letter and a number among its siblings (`SS010101-B01`,
+    then `SS010101-B01-V03` for a village in that boma). Official p-codes are
+    letters and digits only, so a given code can never collide with one
+    published later, and anyone can tell a recorded place from an official
+    one. Numbers follow the highest code ever given and are never reused.
+  - Strictly lower tier (`CanContain`), and never rural inside urban or the
+    reverse (`MixesRuralAndUrban`): a boma in a block is a mistake about what
+    one of them is. A name is unique among its siblings, case-insensitively.
+  - Audited as `AdministrativeAreaCreated:{code}` with the county. The seed
+    upserts by official code only, so reseeding leaves added areas alone.
+  - The web's "Administrative areas" page offers it to the Ministry, inside
+    the area chosen (`AddAreaForm`, whose `childLevels` restates the rules).
 - **Migrations are per provider, as everywhere** — the new table, FK and
   columns were added to both the SQLite set (Core) and the Postgres set
   (`NCBRS.Migrations.Postgres`).
