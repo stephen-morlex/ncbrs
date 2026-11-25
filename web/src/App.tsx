@@ -100,6 +100,10 @@ const VerifyCertificate = lazy(() =>
   })),
 )
 
+const FacilityOperations = lazy(() =>
+  import('@/operations/FacilityOperations').then((module) => ({ default: module.FacilityOperations })),
+)
+
 const CertificateQueue = lazy(() =>
   import('@/certificates/CertificateQueue').then((module) => ({ default: module.CertificateQueue })),
 )
@@ -110,6 +114,10 @@ const RevocationList = lazy(() =>
 
 const DeviceList = lazy(() =>
   import('@/devices/DeviceList').then((module) => ({ default: module.DeviceList })),
+)
+
+const ProblemReports = lazy(() =>
+  import('@/devices/ProblemReports').then((module) => ({ default: module.ProblemReports })),
 )
 
 const DeviceAlerts = lazy(() =>
@@ -241,6 +249,16 @@ export default function App() {
             </RequireAuth>
           }
         />
+        {/* What needs attention at each facility. Facility staff see their
+            own; the endpoint scopes it, under the same policy. */}
+        <Route
+          path="/operations"
+          element={
+            <RequireAuth policy="CanRegisterBirths">
+              <FacilityOperations />
+            </RequireAuth>
+          }
+        />
 
         {/* Gated by the same policy its navigation entry names. */}
         <Route
@@ -257,6 +275,16 @@ export default function App() {
           element={
             <RequireAuth policy="CanEnrolDevices">
               <DeviceAlerts />
+            </RequireAuth>
+          }
+        />
+
+        {/* Problems reported from tablets: the district's, like the alerts. */}
+        <Route
+          path="/devices/problems"
+          element={
+            <RequireAuth policy="CanEnrolDevices">
+              <ProblemReports />
             </RequireAuth>
           }
         />

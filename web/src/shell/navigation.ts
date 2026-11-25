@@ -1,4 +1,5 @@
 import {
+  Activity,
   BadgeCheck,
   BarChart3,
   BellRing,
@@ -11,6 +12,7 @@ import {
   History,
   Hospital,
   Hourglass,
+  LifeBuoy,
   ListX,
   MapPinned,
   ScrollText,
@@ -131,6 +133,9 @@ export const navigation: NavGroup[] = [
       // Not gated: a facility registrar needs to know their own post is
       // running low on numbers, because they are the one who will be handing
       // out provisional slips when it runs out.
+      // What needs attention at each facility. Facility staff see their own
+      // row, so it is gated only by registering births, like its endpoint.
+      { id: 'operations', to: '/operations', icon: Activity, policy: 'CanRegisterBirths' },
       { id: 'facilities', to: '/facilities', icon: Hospital, policy: null },
       // Not gated: the geography is reference data naming no person, and a
       // registrar recording a facility's location needs the same lists an
@@ -156,6 +161,14 @@ export const navigation: NavGroup[] = [
         id: 'deviceAlerts',
         to: '/devices/alerts',
         icon: BellRing,
+        policy: 'CanEnrolDevices',
+      },
+      // What registrars reported from their tablets, with each tablet's state:
+      // supporting the tablets is the same officers' job as the alerts.
+      {
+        id: 'problemReports',
+        to: '/devices/problems',
+        icon: LifeBuoy,
         policy: 'CanEnrolDevices',
       },
       // Not gated: checking a certificate a family presents is something any

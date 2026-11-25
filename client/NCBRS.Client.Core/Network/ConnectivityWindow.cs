@@ -29,6 +29,13 @@ public sealed class ClientSyncState
     /// file is sealed to. Null until a bundle carrying one is fetched.
     /// </summary>
     public TransferKeyResponse? TransferKey { get; set; }
+
+    /// <summary>
+    /// Problem reports written and not yet received by the registry, oldest
+    /// first. Sent after everything else in a window, because a report about
+    /// the tablet matters less than the births on it.
+    /// </summary>
+    public List<ReportProblemRequest> ProblemReports { get; set; } = [];
 }
 
 /// <summary>What one connectivity window achieved, for the shell to show and act on.</summary>
@@ -40,7 +47,9 @@ public sealed record WindowReport(
     BrnBlockResponse? BlockGranted,
     bool BundleRefreshed,
     /// <summary>Plain-language reasons anything did not happen, for the registrar or the district.</summary>
-    IReadOnlyList<string> Problems);
+    IReadOnlyList<string> Problems,
+    /// <summary>Problem reports the registry received in this window.</summary>
+    int ProblemReportsSent = 0);
 
 /// <summary>
 /// One connectivity window, used in the order that matters when it may last
@@ -125,7 +134,48 @@ public sealed class ConnectivityWindow(
             }
         }
 
-        return new WindowReport(upload, settlements, granted, refreshed, problems);
+        var reported = await SendProblemReportsAsync(state, problems, cancellationToken);
+
+        return new WindowReport(upload, settlements, granted, refreshed, problems, reported);
+    }
+
+    /// <summary>
+    /// 4. <b>Problem reports last.</b> Each is removed once the registry has
+    /// it (a resend is answered with the stored copy, so a dropped link is
+    /// harmless), and dropped if the registry refuses it outright, since a
+    /// refused report would otherwise be resent every window forever. Anything
+    /// else (no signal, the sign-in ended) keeps it for the next window.
+    /// </summary>
+    private async Task<int> SendProblemReportsAsync(
+        ClientSyncState state, List<string> problems, CancellationToken cancellationToken)
+    {
+        var sent = 0;
+
+        while (state.ProblemReports.Count > 0)
+        {
+            var report = state.ProblemReports[0];
+            var result = await central.ReportProblemAsync(report, signer, cancellationToken);
+
+            if (result.Outcome is not (CentralOutcome.Succeeded or CentralOutcome.Refused))
+            {
+                problems.Add(Describe(Strings.Window_ProblemReport, result));
+                break;
+            }
+
+            if (result.Outcome == CentralOutcome.Refused)
+            {
+                problems.Add(Describe(Strings.Window_ProblemReport, result));
+            }
+            else
+            {
+                sent++;
+            }
+
+            state.ProblemReports.RemoveAt(0);
+            await persist(state, cancellationToken);
+        }
+
+        return sent;
     }
 
     private async Task<CentralOutcome?> SyncAsync(

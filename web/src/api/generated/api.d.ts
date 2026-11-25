@@ -628,6 +628,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/operations/facilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetFacilityOperations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/BirthRecords/{brn}/neonatal-outcome": {
         parameters: {
             query?: never;
@@ -654,6 +670,38 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["RecordMaternalOutcome"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/problem-reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetProblemReports"];
+        put?: never;
+        post: operations["ReportProblem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/problem-reports/{reportId}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ResolveProblemReport"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1011,6 +1059,14 @@ export interface components {
             meta?: null | components["schemas"]["RequestMeta"];
             data?: null | components["schemas"]["RegisterBirthRequest"];
         };
+        ApiRequestOfReportProblemRequest: {
+            meta?: null | components["schemas"]["RequestMeta"];
+            data?: null | components["schemas"]["ReportProblemRequest"];
+        };
+        ApiRequestOfResolveProblemReportRequest: {
+            meta?: null | components["schemas"]["RequestMeta"];
+            data?: null | components["schemas"]["ResolveProblemReportRequest"];
+        };
         ApiRequestOfReviewAmendmentConflictRequest: {
             meta?: null | components["schemas"]["RequestMeta"];
             data?: null | components["schemas"]["ReviewAmendmentConflictRequest"];
@@ -1066,6 +1122,12 @@ export interface components {
             transactionId: null | string;
             /** Format: date-time */
             timestampUtc: string;
+        };
+        Backlog: {
+            /** Format: int32 */
+            count: number;
+            /** Format: date-time */
+            oldestAtUtc: null | string;
         };
         BindRegistrarRequest: {
             /** Format: uuid */
@@ -1297,6 +1359,37 @@ export interface components {
             role: components["schemas"]["RegistrarRole"];
             credentialHash: string;
         };
+        DeviceDiagnostics: {
+            appVersion?: string;
+            platform?: string;
+            language?: string;
+            signedIn?: boolean;
+            /** Format: int32 */
+            staffCount?: number;
+            /** Format: int32 */
+            waitingToSync?: number;
+            /** Format: int32 */
+            refused?: number;
+            uploadInFlight?: boolean;
+            /** Format: int32 */
+            drafts?: number;
+            /** Format: int64 */
+            numbersLeft?: null | number;
+            /** Format: int64 */
+            provisionalIssued?: number;
+            /** Format: date-time */
+            lastSyncedAtUtc?: null | string;
+            /** Format: date-time */
+            bundleFetchedAtUtc?: null | string;
+            clockVerdict?: string;
+            /** Format: double */
+            clockOffsetSeconds?: number;
+            /** Format: int32 */
+            failedPinAttempts?: number;
+            /** Format: int32 */
+            pinLockouts?: number;
+            lastSyncProblems?: string[];
+        };
         DeviceResponse: {
             deviceId: string;
             /** Format: uuid */
@@ -1349,6 +1442,46 @@ export interface components {
             brnBlockStart: null | number;
             /** Format: int64 */
             brnBlockEnd: null | number;
+        };
+        FacilityOperations: {
+            /** Format: uuid */
+            facilityId: string;
+            name: string;
+            countyCode: string;
+            tier: components["schemas"]["FacilityTier"];
+            connectivityProfile: components["schemas"]["ConnectivityProfile"];
+            /** Format: int32 */
+            registrationsInWindow: number;
+            /** Format: date-time */
+            lastSyncAtUtc: null | string;
+            /** Format: int32 */
+            activeDevices: number;
+            /** Format: int32 */
+            openDeviceAlerts: number;
+            /** Format: int32 */
+            syncedRecordsInWindow: null | number;
+            /** Format: int32 */
+            refusedRecordsInWindow: null | number;
+            /** Format: int32 */
+            provisionalOpen: number;
+            /** Format: int32 */
+            unconfirmedNumbers: number;
+            pendingCorrections: components["schemas"]["Backlog"];
+            pendingLateRegistrations: components["schemas"]["Backlog"];
+            pendingDuplicates: components["schemas"]["Backlog"];
+            /** Format: int32 */
+            certificatesToIssue: number;
+            /** Format: int32 */
+            certificatesToHandOver: number;
+            /** Format: date-time */
+            oldestUncollectedRegisteredAtUtc: null | string;
+        };
+        FacilityOperationsReport: {
+            /** Format: date-time */
+            generatedAtUtc: string;
+            /** Format: int32 */
+            windowDays: number;
+            facilities: components["schemas"]["FacilityOperations"][];
         };
         FacilityResponse: {
             /** Format: uuid */
@@ -1637,6 +1770,28 @@ export interface components {
         };
         /** @enum {null|string} */
         PlaceOfBirthKind: "ThisFacility" | "OtherHealthFacility" | "Home" | "Elsewhere" | null;
+        ProblemReportResponse: {
+            /** Format: uuid */
+            reportId: string;
+            deviceId: string;
+            /** Format: uuid */
+            facilityId: string;
+            facilityName: string;
+            countyCode: string;
+            /** Format: uuid */
+            reportedByRegistrarId: string;
+            reportedByName: string;
+            /** Format: date-time */
+            writtenAtUtc: string;
+            /** Format: date-time */
+            receivedAtUtc: string;
+            description: null | string;
+            diagnostics: components["schemas"]["DeviceDiagnostics"];
+            /** Format: date-time */
+            resolvedAtUtc: null | string;
+            resolvedByName: null | string;
+            resolutionNote: null | string;
+        };
         ProofOfAddressDetails: {
             kind?: null | string;
             reference?: null | string;
@@ -1719,10 +1874,24 @@ export interface components {
             /** Format: int32 */
             statutoryWindowDays: number;
         };
+        ReportProblemRequest: {
+            /** Format: uuid */
+            reportId?: string;
+            deviceId?: string;
+            /** Format: uuid */
+            facilityId?: string;
+            /** Format: date-time */
+            writtenAtUtc?: string;
+            description?: null | string;
+            diagnostics?: components["schemas"]["DeviceDiagnostics"];
+        };
         RequestMeta: {
             /** Format: uuid */
             transactionId?: null | string;
             clientId?: null | string;
+        };
+        ResolveProblemReportRequest: {
+            note?: null | string;
         };
         ReviewAmendmentConflictRequest: {
             uphold?: boolean;
@@ -6220,6 +6389,81 @@ export interface operations {
             };
         };
     };
+    GetFacilityOperations: {
+        parameters: {
+            query?: {
+                facilityId?: string;
+            };
+            header?: {
+                /** @description Caller-supplied transaction id (UUID), echoed back in the response meta. Generated by the server when omitted. */
+                "X-Transaction-Id"?: string;
+                /** @description Calling application or channel, e.g. "MobileApp". */
+                "X-Client-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["FacilityOperationsReport"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+        };
+    };
     RecordNeonatalOutcome: {
         parameters: {
             query?: never;
@@ -6415,6 +6659,317 @@ export interface operations {
                             timestampUtc: string;
                         };
                         data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+        };
+    };
+    GetProblemReports: {
+        parameters: {
+            query?: {
+                includeResolved?: boolean;
+            };
+            header?: {
+                /** @description Caller-supplied transaction id (UUID), echoed back in the response meta. Generated by the server when omitted. */
+                "X-Transaction-Id"?: string;
+                /** @description Calling application or channel, e.g. "MobileApp". */
+                "X-Client-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ProblemReportResponse"][];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+        };
+    };
+    ReportProblem: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Caller-supplied transaction id (UUID), echoed back in the response meta. Generated by the server when omitted. */
+                "X-Transaction-Id"?: string;
+                /** @description Calling application or channel, e.g. "MobileApp". */
+                "X-Client-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiRequestOfReportProblemRequest"];
+                "text/json": components["schemas"]["ApiRequestOfReportProblemRequest"];
+                "application/*+json": components["schemas"]["ApiRequestOfReportProblemRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ProblemReportResponse"];
+                    };
+                };
+            };
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ProblemReportResponse"];
+                    };
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+        };
+    };
+    ResolveProblemReport: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Caller-supplied transaction id (UUID), echoed back in the response meta. Generated by the server when omitted. */
+                "X-Transaction-Id"?: string;
+                /** @description Calling application or channel, e.g. "MobileApp". */
+                "X-Client-Id"?: string;
+            };
+            path: {
+                reportId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiRequestOfResolveProblemReportRequest"];
+                "text/json": components["schemas"]["ApiRequestOfResolveProblemReportRequest"];
+                "application/*+json": components["schemas"]["ApiRequestOfResolveProblemReportRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ProblemReportResponse"];
                     };
                 };
             };

@@ -189,7 +189,30 @@ public class DeviceChannelEverywhereTests : IDisposable
                 },
             },
             async (t, c, body) => await Outcomes(c).RecordMaternal(Brn, (ApiRequest<RecordMaternalOutcomeRequest>)body)),
+
+        // A problem report names the tablet it came from, and the district
+        // trusts what it says about that tablet: the same proof as any write.
+        ["problem-report"] = new(
+            device => new ApiRequest<ReportProblemRequest>
+            {
+                Data = new ReportProblemRequest
+                {
+                    ReportId = Guid.CreateVersion7(), DeviceId = device ?? "", FacilityId = FacilityId,
+                    WrittenAtUtc = DateTime.UtcNow, Description = "Sync keeps failing.",
+                },
+            },
+            async (t, c, body) => await ProblemReports(c).Report((ApiRequest<ReportProblemRequest>)body)),
     };
+
+    private static ProblemReportsController ProblemReports(Call c)
+        => new(
+            new ProblemReportService(c.Db, new CountyLookup(c.Db), TimeProvider.System),
+            c.Current,
+            new CountyScopeResolver(new CountyLookup(c.Db)),
+            c.Gate)
+        {
+            ControllerContext = new ControllerContext { HttpContext = c.Http },
+        };
 
     public static TheoryData<string> AllEndpoints() => new(Endpoints.Keys);
 

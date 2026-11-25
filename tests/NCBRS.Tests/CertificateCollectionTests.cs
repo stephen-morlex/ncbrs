@@ -291,7 +291,7 @@ public class CertificateCollectionTests : IDisposable
         var db = NewDb();
         var current = AuthTestContext.RegistrarService(db, http);
         var controller = new CertificateQueueController(
-            new CertificateQueueService(db), current, new ReviewQueueScope(new CountyScopeResolver(new CountyLookup(db)), current))
+            new CertificateQueueService(db), current, new WorkScope(new ReviewQueueScope(new CountyScopeResolver(new CountyLookup(db)), current)))
         {
             ControllerContext = new ControllerContext { HttpContext = http },
         };

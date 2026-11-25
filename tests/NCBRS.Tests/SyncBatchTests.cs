@@ -188,6 +188,11 @@ public class SyncBatchTests : IDisposable
         await using var db = NewDb();
         var stored = await db.BirthRecords.Select(record => record.Brn).ToListAsync();
         Assert.Equal(["100001", "100004"], stored.Order());
+
+        // Kept on the batch, so the operations view can show a post whose
+        // births keep bouncing without reading the event stream (plan §17 35).
+        var batch = await db.SyncBatches.SingleAsync();
+        Assert.Equal((4, 2, 0, 2), (batch.RecordCount, batch.RegisteredCount!.Value, batch.DuplicateCount!.Value, batch.RejectedCount!.Value));
     }
 
     [Fact]

@@ -29,7 +29,9 @@
       "dashboard": "Dashboard",
       "dhis2Export": "DHIS2 export",
       "uploadTransfer": "Upload a transfer file",
-      "certificateQueue": "Certificates to hand out"
+      "problemReports": "Problem reports",
+      "certificateQueue": "Certificates to hand out",
+      "operations": "Facility operations"
     },
     "soon": "soon"
   },

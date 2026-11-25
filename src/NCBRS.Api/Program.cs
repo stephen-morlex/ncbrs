@@ -108,8 +108,11 @@ builder.Services.AddScoped<ReviewQueueScope>();
 // registration writes three audit rows against the same facility.
 builder.Services.AddScoped<CountyLookup>();
 builder.Services.AddScoped<FacilityOnboardingService>();
+builder.Services.AddScoped<ProblemReportService>();
 builder.Services.AddScoped<CertificateQueueService>();
 builder.Services.AddScoped<FacilityImportService>();
+builder.Services.AddScoped<FacilityOperationsService>();
+builder.Services.AddScoped<WorkScope>();
 builder.Services.AddScoped<AdministrativeAreaService>();
 builder.Services.AddScoped<RegistrarOnboardingService>();
 builder.Services.AddSingleton(builder.Configuration.GetSection(FacilityOnboardingOptions.SectionName)
@@ -165,7 +168,13 @@ var brnBlock = builder.Configuration.GetSection(BrnBlockOptions.SectionName)
 builder.Services.AddSingleton(brnBlock);
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<DeviceSilenceMonitor>();
-builder.Services.AddHostedService<DeviceSilenceSweepService>();
+// Not under the build-time document generator, like the Consumer's consumer: it
+// starts the host without a database, and a sweep that ran before the generator
+// finished failed the build with "no such table" (lost on CI once, #169).
+if (!generatingOpenApiDocument)
+{
+    builder.Services.AddHostedService<DeviceSilenceSweepService>();
+}
 
 // Keycloak is the identity provider for both users (registrars, district
 // officers, ministry admins) and clients (device app, scanner, dashboard).
@@ -379,7 +388,11 @@ builder.Services.AddDbContext<NcbrsDbContext>(options =>
 // and neither worker can take the registration API down with it.
 builder.Services.Configure<KafkaOptions>(builder.Configuration.GetSection(KafkaOptions.SectionName));
 builder.Services.AddScoped<IEventPublisher, OutboxEventPublisher>();
-builder.Services.AddHostedService<IdempotencyPurgeService>();
+// Likewise not under the document generator (see DeviceSilenceSweepService).
+if (!generatingOpenApiDocument)
+{
+    builder.Services.AddHostedService<IdempotencyPurgeService>();
+}
 
 var app = builder.Build();
 

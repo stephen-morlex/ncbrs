@@ -566,6 +566,33 @@
   <data name="Window_Bundle" xml:space="preserve">
     <value>بيانات التحقق من الشهادات</value>
   </data>
+  <data name="Window_ProblemReport" xml:space="preserve">
+    <value>بلاغ عن مشكلة</value>
+  </data>
+  <data name="Problem_Title" xml:space="preserve">
+    <value>الإبلاغ عن مشكلة</value>
+  </data>
+  <data name="Problem_Tile" xml:space="preserve">
+    <value>أخبر المقاطعة بما حدث</value>
+  </data>
+  <data name="Problem_Note" xml:space="preserve">
+    <value>اذكر ما حدث وما كنت تفعله. لا تكتب أسماءً أو أرقام تسجيل، فالمقاطعة تقرأ هذا.</value>
+  </data>
+  <data name="Problem_What" xml:space="preserve">
+    <value>ما الذي حدث</value>
+  </data>
+  <data name="Problem_Sends" xml:space="preserve">
+    <value>يُرسل معه: إصدار التطبيق، والولادات المنتظرة للمزامنة، والأرقام المتبقية، وآخر مزامنة، وساعة الجهاز. لا شيء عن أي أسرة.</value>
+  </data>
+  <data name="Problem_Send" xml:space="preserve">
+    <value>أرسِل إلى المقاطعة</value>
+  </data>
+  <data name="Problem_Sent" xml:space="preserve">
+    <value>أُرسل. يستطيع مسؤول المقاطعة الاطلاع عليه.</value>
+  </data>
+  <data name="Problem_Saved" xml:space="preserve">
+    <value>حُفظ على هذا الجهاز، وسيُرسل إلى المقاطعة عند المزامنة التالية.</value>
+  </data>
   <data name="Window_Held" xml:space="preserve">
     <value>{0} محفوظ في عقدة المقاطعة وسيصل إلى المركز حين يمكن ذلك. لا تُخبر الأسرة بأن التسجيل مؤكد بعد.</value>
   </data>

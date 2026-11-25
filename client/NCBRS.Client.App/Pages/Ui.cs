@@ -792,6 +792,7 @@ public static class Ui
             Picker => Input(input, trailingIcon: Icons.ChevronDown),
             DatePicker => Input(input, trailingIcon: Icons.Calendar),
             Entry => Input(input, suffix),
+            Editor => Input(input),
             _ => input,
         };
 

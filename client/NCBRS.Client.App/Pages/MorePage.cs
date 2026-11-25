@@ -33,7 +33,8 @@ public sealed class MorePage : FlowPage
             Ui.MenuRow(Icons.Error, Strings.Refused_Heading, null, () => _ = Go(new RefusedPage(host)), Ui.Danger),
             Ui.MenuRow(Icons.ScanLine, Strings.Register_Check, Strings.Tile_Check, () => _ = Go(new CheckCertificatePage(host))),
             Ui.MenuRow(Icons.Print, Strings.Register_PrintCertificate, Strings.Tile_Print, () => _ = Go(new PrintCertificatePage(host))),
-            Ui.MenuRow(Icons.Print, Strings.Printer_Title, Strings.Tile_Printer, () => _ = Go(new PrinterPage(host))));
+            Ui.MenuRow(Icons.Print, Strings.Printer_Title, Strings.Tile_Printer, () => _ = Go(new PrinterPage(host))),
+            Ui.MenuRow(Icons.Alert, Strings.Problem_Title, Strings.Problem_Tile, () => _ = Go(new ReportProblemPage(host))));
 
         var tablet = Ui.ListCard(
             Ui.MenuRow(Icons.Language, Strings.More_Language, Strings.Language_Switch, () =>

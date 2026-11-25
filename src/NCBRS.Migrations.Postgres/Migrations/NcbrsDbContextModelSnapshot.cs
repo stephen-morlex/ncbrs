@@ -535,6 +535,54 @@ namespace NCBRS.Migrations.Postgres
                     b.ToTable("DeviceAlerts");
                 });
 
+            modelBuilder.Entity("NCBRS.Models.DeviceProblemReport", b =>
+                {
+                    b.Property<Guid>("DeviceProblemReportId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CountyCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DeviceId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("DiagnosticsJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("FacilityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ReceivedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ReportedByRegistrarId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ResolutionNote")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ResolvedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ResolvedByRegistrarId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("WrittenAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("DeviceProblemReportId");
+
+                    b.HasIndex("CountyCode", "ResolvedAtUtc");
+
+                    b.ToTable("DeviceProblemReports");
+                });
+
             modelBuilder.Entity("NCBRS.Models.DuplicateCandidate", b =>
                 {
                     b.Property<Guid>("DuplicateCandidateId")
@@ -1129,10 +1177,19 @@ namespace NCBRS.Migrations.Postgres
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int?>("DuplicateCount")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("FacilityId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("RecordCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RegisteredCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RejectedCount")
                         .HasColumnType("integer");
 
                     b.Property<string>("Status")

@@ -36,4 +36,17 @@ public class SyncBatch
     public int RecordCount { get; set; }
 
     public SyncBatchStatus Status { get; set; } = SyncBatchStatus.Pending;
+
+    /// <summary>
+    /// What became of the batch's records, kept on the batch (plan §17 item
+    /// 35). The refusal rate is how a district sees a post whose births keep
+    /// bouncing, and until this it existed only in the event stream. Null on
+    /// batches processed before the counts were kept: "not recorded", never
+    /// zero, which would claim those batches went cleanly.
+    /// </summary>
+    public int? RegisteredCount { get; set; }
+
+    public int? DuplicateCount { get; set; }
+
+    public int? RejectedCount { get; set; }
 }

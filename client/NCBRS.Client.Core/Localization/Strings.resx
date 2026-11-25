@@ -571,6 +571,33 @@ A permanent number is given when the tablet syncs.</value>
   <data name="Window_Bundle" xml:space="preserve">
     <value>The certificate verification bundle</value>
   </data>
+  <data name="Window_ProblemReport" xml:space="preserve">
+    <value>A problem report</value>
+  </data>
+  <data name="Problem_Title" xml:space="preserve">
+    <value>Report a problem</value>
+  </data>
+  <data name="Problem_Tile" xml:space="preserve">
+    <value>Tell your district what is wrong</value>
+  </data>
+  <data name="Problem_Note" xml:space="preserve">
+    <value>Say what happened and what you were doing. Do not write names or registration numbers: your district reads this.</value>
+  </data>
+  <data name="Problem_What" xml:space="preserve">
+    <value>What happened</value>
+  </data>
+  <data name="Problem_Sends" xml:space="preserve">
+    <value>Sent with it: the app version, births waiting to sync, numbers left, the last sync and the tablet's clock. Nothing about any family.</value>
+  </data>
+  <data name="Problem_Send" xml:space="preserve">
+    <value>Send to the district</value>
+  </data>
+  <data name="Problem_Sent" xml:space="preserve">
+    <value>Sent. Your district officer can see it.</value>
+  </data>
+  <data name="Problem_Saved" xml:space="preserve">
+    <value>Saved on this tablet. It goes to your district at the next sync.</value>
+  </data>
   <data name="Window_Held" xml:space="preserve">
     <value>{0} is held at the District node and will reach the centre when it can. Do not tell the family the registration is confirmed yet.</value>
   </data>
