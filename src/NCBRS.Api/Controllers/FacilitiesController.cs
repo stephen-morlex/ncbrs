@@ -169,6 +169,34 @@ public class FacilitiesController(
     }
 
     /// <summary>
+    /// Bring several facilities into the registry from a CSV file (plan §17
+    /// item 38). With <c>apply</c> false, checks every row and adds nothing:
+    /// the Ministry reviews the result first. With it true, adds every row in
+    /// one transaction, or none if any row fails. Each facility is created
+    /// exactly as by "Add a facility".
+    /// </summary>
+    [HttpPost("import", Name = "ImportFacilities")]
+    [Authorize(Policy = NcbrsRoles.CanManageFacilities)]
+    [ProducesResponseType(typeof(ImportFacilitiesResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ImportFacilitiesResponse>> Import(
+        ApiRequest<ImportFacilitiesRequest> envelope,
+        [FromServices] FacilityImportService import)
+    {
+        var caller = await currentRegistrar.GetAsync(HttpContext.RequestAborted);
+
+        if (caller is null)
+        {
+            return NotProvisioned();
+        }
+
+        return await import.ImportAsync(
+            envelope.Data, caller, TransactionContext.Get(HttpContext)?.TransactionId, HttpContext.RequestAborted);
+    }
+
+    /// <summary>
     /// Bring a facility into the registry. The Ministry's act: the registry
     /// places it in its county from the administrative tree and allocates it a
     /// range of registration numbers overlapping no other facility's. Neither

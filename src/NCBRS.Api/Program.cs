@@ -110,6 +110,7 @@ builder.Services.AddScoped<CountyLookup>();
 builder.Services.AddScoped<FacilityOnboardingService>();
 builder.Services.AddScoped<ProblemReportService>();
 builder.Services.AddScoped<CertificateQueueService>();
+builder.Services.AddScoped<FacilityImportService>();
 builder.Services.AddScoped<FacilityOperationsService>();
 builder.Services.AddScoped<WorkScope>();
 builder.Services.AddScoped<AdministrativeAreaService>();

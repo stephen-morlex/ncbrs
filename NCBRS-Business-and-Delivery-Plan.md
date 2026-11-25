@@ -622,8 +622,8 @@ is ever registered during the pilot, that procedure is no longer safe.
 | 28 | **A clock the tablet can trust** (pilot-readiness §2, still open on 2026-11-25: `OfflinePinLock` used the wall clock). A high-water mark of trusted time, the registry's time from every answer, and PIN lockouts measured on elapsed time, escalating on repeats | **Done.** Checked on the emulator 2026-11-25: a lockout held with the date moved a day forward, a reboot restarted it in full, the registry's time flagged the clock on Home, and the form's "today" stayed the true day |
 | 29 | **Role split into permissions** (matrix below), and a CI test that enumerates every endpoint and asserts its policy, so a new endpoint without one fails | D1, D2 |
 | 30 | **Keycloak hardening.** The realm has no brute-force detection, no password policy and no MFA. Add all three, with OTP and shorter sessions for oversight roles | D3 |
-| 31 | **Creating bomas and villages.** `AdministrativeAreasController` is read-only and bomas are not seeded, so a village post can only be placed at payam level. Add a write endpoint and a web page, system admin only | — |
-| 32 | **Certificates awaiting collection.** A birth registered offline leaves the family with a slip. Add a queue per facility and county of births with no certificate yet, to print at the next connected visit or at the district office, with the handover recorded | — |
+| 31 | **Creating bomas and villages.** `AdministrativeAreasController` is read-only and bomas are not seeded, so a village post can only be placed at payam level. Add a write endpoint and a web page, system admin only | **Done** (#167): `POST /api/administrative-areas`, Ministry only; codes given by the registry (`SS010101-B01`), never typed |
+| 32 | **Certificates awaiting collection.** A birth registered offline leaves the family with a slip. Add a queue per facility and county of births with no certificate yet, to print at the next connected visit or at the district office, with the handover recorded | **Done** (#168): `GET /api/certificate-queue` and "Certificates to hand out"; handover recorded by relationship only |
 | 33 | **A test print on a real Bluetooth printer** (B7) | hardware |
 | 34 | Production setup: items 14–16 and 19 below (HSM or secret store, rehearsed point-in-time recovery, database grants applied, a monitor that pages) | infrastructure |
 
@@ -631,10 +631,10 @@ is ever registered during the pilot, that procedure is no longer safe.
 
 | # | Item |
 |---|---|
-| 35 | Pilot operations metrics per facility: refused-birth rate, provisional numbers still open, how long review queues have waited, sync lag, certificates not yet collected |
-| 36 | A facility view for registrars: this week's births, and where their corrections and late registrations stand |
-| 37 | "Report a problem" on the tablet: a diagnostics bundle with no personal data (app version, queue sizes, clock offset, last error) |
-| 38 | Bulk onboarding of facilities and registrars from a CSV, reviewed by the system admin before it is applied |
+| 35 | Pilot operations metrics per facility: refused-birth rate, provisional numbers still open, how long review queues have waited, sync lag, certificates not yet collected **Done** (#169): "Facility operations", refusals kept on each sync batch, unknown shown as "—" never 0 |
+| 36 | A facility view for registrars: this week's births, and where their corrections and late registrations stand **Covered** by 32 and 35: facility staff see their own facility on both pages. Reopen if registrars ask for more |
+| 37 | "Report a problem" on the tablet: a diagnostics bundle with no personal data (app version, queue sizes, clock offset, last error) **Done** (#170): More → "Report a problem"; the district reads and resolves them on "Problem reports" |
+| 38 | Bulk onboarding of facilities and registrars from a CSV, reviewed by the system admin before it is applied **Facilities done** ("Add from a file": checked first, applied whole). Registrars are still bound one by one from the pending queue |
 
 **Go-live**
 

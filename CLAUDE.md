@@ -332,6 +332,26 @@ Keycloak admin credential.
   a PIN is set (`HasDevicePin`), never anything derived from it.
 - The procedure is in RUNBOOK.md, "Onboarding: a facility, its staff and its
   tablet".
+- **Facilities can be added from a CSV file** (plan §17 item 38,
+  `FacilityImportService`, `POST /api/facilities/import`, Ministry only):
+  - Columns `name, tier, connectivity, area` (the area's code) and optional
+    `office_code`, in any order. Commas or semicolons, quotes and a BOM are
+    accepted, because the files come from spreadsheets. At most 500 rows.
+  - **Checked before anything is added**, by the same checks as adding one
+    (`FacilityOnboardingService.CheckAsync`, split out of `CreateAsync` for
+    this), plus what only a file gets wrong: one name twice in a county, one
+    office code twice.
+  - **Applied whole or not at all**, in one transaction. Inside the idempotency
+    filter's transaction, a savepoint stands in. A half-applied file leaves the
+    Ministry working out which rows exist, and re-running it would refuse those
+    as duplicates.
+  - Each facility is created by `CreateAsync`, so its county, range and
+    `FacilityCreated` audit row are exactly as by hand. The file adds one
+    `FacilitiesImported:{n}` row.
+  - The web's "Add from a file" on Facilities checks first and offers "Add N
+    facilities" only for a clean file.
+  - Bulk-binding registrars from the pending queue is not built; they are bound
+    one by one, as before.
 
 ## The fuller registration (2026-10-02, built: registry, web and tablet)
 The registration now records the place of birth, the child's given names and
