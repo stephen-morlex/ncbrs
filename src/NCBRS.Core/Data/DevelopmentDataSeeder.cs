@@ -72,6 +72,9 @@ public static class DevelopmentDataSeeder
     // their own authors.
     private static readonly Guid DistrictNodeId = new("0199c000-0000-7000-8000-0000000000a5");
 
+    // The Ministry's systems role (decision D2); the records role is MinistryId above.
+    private static readonly Guid SystemAdminId = new("0199c000-0000-7000-8000-0000000000a6");
+
     public static async Task SeedAsync(NcbrsDbContext db, CancellationToken cancellationToken = default)
     {
         // Areas are seeded first. Every facility is placed in a payam; without
@@ -115,8 +118,8 @@ public static class DevelopmentDataSeeder
 
         // A facility registrar and a doctor at hospitals; the county officer's
         // county (resolved from their facility) is Juba, where most of the dev
-        // data sits; the ministry admin is national but must belong to a
-        // facility row, so it is placed at the capital's teaching hospital.
+        // data sits; the Ministry's two roles are national but each must belong to a
+        // facility row, so they are placed at the capital's teaching hospital.
         await EnsureRegistrar(db, NurseId, Fac(1),
             "11111111-1111-4111-8111-111111111111", "Alice Lado", RegistrarRole.FacilityRegistrar, cancellationToken);
         await EnsureRegistrar(db, DoctorId, Fac(5),
@@ -124,7 +127,9 @@ public static class DevelopmentDataSeeder
         await EnsureRegistrar(db, CountyOfficerId, Fac(1),
             "33333333-3333-4333-8333-333333333333", "Nyandeng Wani", RegistrarRole.DistrictOfficer, cancellationToken);
         await EnsureRegistrar(db, MinistryId, Fac(1),
-            "44444444-4444-4444-8444-444444444444", "Aluel Lako", RegistrarRole.MinistryAdmin, cancellationToken);
+            "44444444-4444-4444-8444-444444444444", "Aluel Lako", RegistrarRole.RegistrarGeneral, cancellationToken);
+        await EnsureRegistrar(db, SystemAdminId, Fac(1),
+            "66666666-6666-4666-8666-666666666666", "Gatluak Ruach", RegistrarRole.SystemAdmin, cancellationToken);
         await EnsureRegistrar(db, DistrictNodeId, Fac(1),
             "55555555-5555-4555-8555-555555555555", "Juba District node", RegistrarRole.DistrictOfficer, cancellationToken);
 

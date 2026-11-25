@@ -129,7 +129,8 @@ published total is arithmetic, not suppression.
 ## 6. Identity, trust, and the boundaries
 
 - **Callers** authenticate to Keycloak (realm roles: facility-registrar,
-  district-officer, ministry-admin). The API is a pure resource server that
+  community-health-worker, district-officer, and the Ministry's two:
+  registrar-general and system-admin). The API is a pure resource server that
   stores no credentials.
 - **Scope is the county.** A caller sees their own county, resolved by walking
   their facility up the administrative tree (`CountyLookup`); scoping

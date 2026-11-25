@@ -49,7 +49,8 @@ const RolesByRealmRole: { realmRole: string; role: RegistrarRole; label: string;
   { realmRole: 'facility-registrar', role: 'FacilityRegistrar', label: 'Facility registrar', staff: true },
   { realmRole: 'community-health-worker', role: 'CommunityHealthWorker', label: 'Community health worker', staff: true },
   { realmRole: 'district-officer', role: 'DistrictOfficer', label: 'District officer', staff: false },
-  { realmRole: 'ministry-admin', role: 'MinistryAdmin', label: 'Ministry admin', staff: false },
+  { realmRole: 'registrar-general', role: 'RegistrarGeneral', label: 'Registrar-general', staff: false },
+  { realmRole: 'system-admin', role: 'SystemAdmin', label: 'System admin', staff: false },
 ]
 
 const Shown = ['data.facilityId', 'data.role'] as const

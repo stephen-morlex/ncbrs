@@ -99,7 +99,7 @@ public class RegistrarOnboardingService(NcbrsDbContext db, CurrentRegistrarServi
     {
         var query = db.PendingAccounts.AsNoTracking();
 
-        if (!user.IsInRole(NcbrsRoles.MinistryAdmin))
+        if (!NcbrsRoles.IsNational(user))
         {
             var county = await counties.ForRegistrarAsync(caller, cancellationToken);
             if (county == AuditLog.Unknown)
@@ -143,13 +143,20 @@ public class RegistrarOnboardingService(NcbrsDbContext db, CurrentRegistrarServi
                 Detail: "You may onboard staff only for facilities in your own county."), null);
         }
 
-        if (!user.IsInRole(NcbrsRoles.MinistryAdmin) && !FacilityStaff.Contains(request.Role))
+        if (!user.IsInRole(NcbrsRoles.SystemAdmin) && !FacilityStaff.Contains(request.Role))
         {
             return (new(RegistrarOnboardingResult.NotPermitted, Field: "data.role",
                 Detail: "A district officer onboards facility registrars and community health workers. Other roles are the Ministry's to give."), null);
         }
 
-        var realmRole = NcbrsRoles.RealmRoleFor(request.Role);
+        // The single Ministry role was split in two (decision D2); nobody is
+        // bound to it any more, because it names no realm role.
+        if (NcbrsRoles.RealmRoleFor(request.Role) is not { } realmRole)
+        {
+            return (new(RegistrarOnboardingResult.Refused, Field: "data.role",
+                Detail: "The Ministry admin role was split into registrar-general and system-admin. Bind the person as one of those."), null);
+        }
+
         if (!pending.RealmRoles.Split(',').Contains(realmRole))
         {
             return (new(RegistrarOnboardingResult.Refused, Field: "data.role",
@@ -240,7 +247,7 @@ public class RegistrarOnboardingService(NcbrsDbContext db, CurrentRegistrarServi
             return new(RegistrarOnboardingResult.Refused, Field: "registrarId", Detail: "You cannot withdraw yourself; another officer must.");
         }
 
-        if (!user.IsInRole(NcbrsRoles.MinistryAdmin) && !FacilityStaff.Contains(registrar.Role))
+        if (!user.IsInRole(NcbrsRoles.SystemAdmin) && !FacilityStaff.Contains(registrar.Role))
         {
             return new(RegistrarOnboardingResult.NotPermitted, Field: "registrarId",
                 Detail: "A district officer withdraws facility staff. Withdrawing an officer is the Ministry's.");
@@ -303,7 +310,7 @@ public class RegistrarOnboardingService(NcbrsDbContext db, CurrentRegistrarServi
                 Detail: "You cannot reset your own PIN; change it with your current one, or ask another officer.");
         }
 
-        if (!user.IsInRole(NcbrsRoles.MinistryAdmin) && !FacilityStaff.Contains(registrar.Role))
+        if (!user.IsInRole(NcbrsRoles.SystemAdmin) && !FacilityStaff.Contains(registrar.Role))
         {
             return new(RegistrarOnboardingResult.NotPermitted, Field: "registrarId",
                 Detail: "A district officer resets facility staff's PINs. Resetting an officer's is the Ministry's.");

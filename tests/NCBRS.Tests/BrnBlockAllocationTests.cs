@@ -184,7 +184,7 @@ public class BrnBlockAllocationTests
         var options = await SeedAsync(database, TestFacility("Test Clinic", 1000, 5000, 1000));
 
         await using var db = new NcbrsDbContext(options);
-        var controller = CreateController(db, NcbrsRoles.MinistryAdmin);
+        var controller = CreateController(db, NcbrsRoles.RegistrarGeneral);
 
         var result = await controller.RequestBrnBlock(Guid.NewGuid(), Block(200));
 

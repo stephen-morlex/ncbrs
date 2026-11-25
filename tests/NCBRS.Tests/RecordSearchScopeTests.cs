@@ -108,7 +108,7 @@ public class RecordSearchScopeTests : IDisposable
     [Fact]
     public async Task The_ministry_may_search_another_district()
     {
-        var result = await SearchAsync(MinistrySubject, [NcbrsRoles.MinistryAdmin],
+        var result = await SearchAsync(MinistrySubject, [NcbrsRoles.RegistrarGeneral],
             districtId: JubaDistrict);
 
         var page = Assert.IsType<Page<BirthRecordSearchHit>>(Assert.IsType<ActionResult<Page<BirthRecordSearchHit>>>(result).Value);
@@ -120,7 +120,7 @@ public class RecordSearchScopeTests : IDisposable
     [Fact]
     public async Task The_ministry_naming_no_district_searches_nationally()
     {
-        var result = await SearchAsync(MinistrySubject, [NcbrsRoles.MinistryAdmin]);
+        var result = await SearchAsync(MinistrySubject, [NcbrsRoles.RegistrarGeneral]);
 
         var page = Assert.IsType<Page<BirthRecordSearchHit>>(Assert.IsType<ActionResult<Page<BirthRecordSearchHit>>>(result).Value);
 

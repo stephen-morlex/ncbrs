@@ -310,46 +310,13 @@ builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, ApiAuthoriz
 
 builder.Services.AddAuthorization(authorization =>
 {
-    authorization.AddPolicy(NcbrsRoles.CanRegisterBirths, policy =>
-        policy.RequireRole(
-            NcbrsRoles.FacilityRegistrar,
-            NcbrsRoles.CommunityHealthWorker,
-            NcbrsRoles.DistrictOfficer,
-            NcbrsRoles.MinistryAdmin));
-
-    authorization.AddPolicy(NcbrsRoles.CanReviewDuplicates, policy =>
-        policy.RequireRole(NcbrsRoles.DistrictOfficer, NcbrsRoles.MinistryAdmin));
-
-    authorization.AddPolicy(NcbrsRoles.CanApproveAmendments, policy =>
-        policy.RequireRole(NcbrsRoles.DistrictOfficer, NcbrsRoles.MinistryAdmin));
-
-    authorization.AddPolicy(NcbrsRoles.CanApproveLateRegistrations, policy =>
-        policy.RequireRole(NcbrsRoles.DistrictOfficer, NcbrsRoles.MinistryAdmin));
-
-    // Ministry only. A district officer may correct a record or rule on a
-    // duplicate; withdrawing an identity altogether is a level above that.
-    authorization.AddPolicy(NcbrsRoles.CanAnnulRegistrations, policy =>
-        policy.RequireRole(NcbrsRoles.MinistryAdmin));
-
-    // Reading the trail is oversight, and the trail now carries the names
-    // people searched for -- so it sits with the same roles that adjudicate
-    // on records, not with the facility staff whose work it records.
-    authorization.AddPolicy(NcbrsRoles.CanReadAuditTrail, policy =>
-        policy.RequireRole(NcbrsRoles.DistrictOfficer, NcbrsRoles.MinistryAdmin));
-
-    // The district officers who issue and collect the tablets, not the
-    // facility staff holding them.
-    authorization.AddPolicy(NcbrsRoles.CanEnrolDevices, policy =>
-        policy.RequireRole(NcbrsRoles.DistrictOfficer, NcbrsRoles.MinistryAdmin));
-
-    // District officers for their own county (and facility staff only); the
-    // Ministry anywhere. The service applies both limits.
-    authorization.AddPolicy(NcbrsRoles.CanManageRegistrars, policy =>
-        policy.RequireRole(NcbrsRoles.DistrictOfficer, NcbrsRoles.MinistryAdmin));
-
-    // Ministry only: a facility comes with a national range of numbers.
-    authorization.AddPolicy(NcbrsRoles.CanManageFacilities, policy =>
-        policy.RequireRole(NcbrsRoles.MinistryAdmin));
+    // Every policy from the one table of who holds what (NcbrsRoles.Permissions,
+    // plan §17 item 29). Scope -- which facility or county -- stays in the
+    // services: a policy says what someone may do, never where.
+    foreach (var (permission, roles) in NcbrsRoles.Permissions)
+    {
+        authorization.AddPolicy(permission, policy => policy.RequireRole(roles));
+    }
 
     // Nothing is reachable anonymously unless it opts out explicitly.
     authorization.FallbackPolicy = new AuthorizationPolicyBuilder()

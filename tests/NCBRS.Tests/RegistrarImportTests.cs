@@ -68,7 +68,7 @@ public class RegistrarImportTests : IDisposable
         => new(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, subject), new Claim(ClaimTypes.Role, role)], "Test", ClaimTypes.Name, ClaimTypes.Role));
 
     private static readonly ClaimsPrincipal Officer = As(OfficerSubject, NcbrsRoles.DistrictOfficer);
-    private static readonly ClaimsPrincipal Ministry = As(MinistrySubject, NcbrsRoles.MinistryAdmin);
+    private static readonly ClaimsPrincipal Ministry = As(MinistrySubject, NcbrsRoles.SystemAdmin);
 
     private async Task<ImportRegistrarsResponse> ImportAsync(ClaimsPrincipal user, string csv, bool apply)
     {

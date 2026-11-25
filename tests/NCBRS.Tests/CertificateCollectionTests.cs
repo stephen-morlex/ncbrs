@@ -328,7 +328,7 @@ public class CertificateCollectionTests : IDisposable
     [Fact]
     public async Task TheMinistrySeesTheCountry()
     {
-        var national = await AsAsync(AuthTestContext.HttpContextFor(MinistrySubject, null, NcbrsRoles.MinistryAdmin));
+        var national = await AsAsync(AuthTestContext.HttpContextFor(MinistrySubject, null, NcbrsRoles.RegistrarGeneral));
 
         Assert.Equal(8, Brns(national).Count);
         Assert.Contains("200001", Brns(national));

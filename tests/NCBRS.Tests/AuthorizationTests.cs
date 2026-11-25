@@ -174,10 +174,10 @@ public class AuthorizationTests : IDisposable
     }
 
     [Fact]
-    public async Task AMinistryAdmin_ActsNationally()
+    public async Task TheRegistrarGeneral_ActsNationally()
     {
         await using var db = NewDb();
-        var http = AuthTestContext.HttpContextFor(roles: NcbrsRoles.MinistryAdmin);
+        var http = AuthTestContext.HttpContextFor(roles: NcbrsRoles.RegistrarGeneral);
         var service = AuthTestContext.RegistrarService(db, http);
 
         var registrar = await service.GetAsync();
@@ -290,10 +290,10 @@ public class KeycloakRoleClaimsTransformationTests
     public async Task RealmRoles_BecomeRoleClaims()
     {
         var principal = await new KeycloakRoleClaimsTransformation().TransformAsync(
-            PrincipalWith("""{"roles":["facility-registrar","ministry-admin"]}"""));
+            PrincipalWith("""{"roles":["facility-registrar","registrar-general"]}"""));
 
         Assert.True(principal.IsInRole(NcbrsRoles.FacilityRegistrar));
-        Assert.True(principal.IsInRole(NcbrsRoles.MinistryAdmin));
+        Assert.True(principal.IsInRole(NcbrsRoles.RegistrarGeneral));
         Assert.False(principal.IsInRole(NcbrsRoles.DistrictOfficer));
     }
 

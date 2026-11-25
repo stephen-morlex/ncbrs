@@ -29,8 +29,12 @@
         "description": "Oversees the facilities in a district; may act across them. Maps to RegistrarRole.DistrictOfficer."
       },
       {
-        "name": "ministry-admin",
-        "description": "National administration; may act across all facilities. Maps to RegistrarRole.MinistryAdmin."
+        "name": "registrar-general",
+        "description": "The Ministry's records role: national approvals, annulment, the audit trail and reporting. Maps to RegistrarRole.RegistrarGeneral. One half of the retired ministry-admin (decision D2)."
+      },
+      {
+        "name": "system-admin",
+        "description": "The Ministry's systems role: facilities, administrative areas, registrars and devices, nationally. Sees no birth record. Maps to RegistrarRole.SystemAdmin. The other half of the retired ministry-admin (decision D2)."
       }
     ]
   },
@@ -266,10 +270,10 @@
     },
     {
       "id": "44444444-4444-4444-8444-444444444444",
-      "username": "ministry.admin",
+      "username": "registrar.general",
       "firstName": "Aluel",
       "lastName": "Lako",
-      "email": "ministry.admin@ncbrs.test",
+      "email": "registrar.general@ncbrs.test",
       "enabled": true,
       "emailVerified": true,
       "credentials": [
@@ -280,7 +284,26 @@
         }
       ],
       "realmRoles": [
-        "ministry-admin"
+        "registrar-general"
+      ]
+    },
+    {
+      "id": "66666666-6666-4666-8666-666666666666",
+      "username": "system.admin",
+      "firstName": "Gatluak",
+      "lastName": "Ruach",
+      "email": "system.admin@ncbrs.test",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "system-admin"
       ]
     }
   ],

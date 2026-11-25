@@ -140,8 +140,8 @@ on `localhost:5173` — the only origin the realm and the API's CORS allow.
 Infrastructure credentials — PostgreSQL and the Keycloak admin — come from
 `.env`, which is not committed. `.env.example` is the template.
 
-The four registrar accounts (`nurse.banda`, `dr.tembo`, `district.officer`,
-`ministry.admin`, all with the password `password`) are **committed** in
+The registrar accounts (`nurse.lado`, `dr.kenyi`, `district.officer`,
+`registrar.general`, `system.admin`, all with the password `password`) are **committed** in
 `keycloak/ncbrs-realm.json`. They are not in `.env` because Keycloak's realm
 import does not substitute environment variables — that was tested, and a
 placeholder becomes the literal password, which looks secured while being

@@ -69,7 +69,7 @@ beforeEach(() => {
 describe('Facilities — adding one', () => {
   // A facility comes with a national range of numbers: the Ministry's act.
   it('offers to add a facility to the Ministry only', async () => {
-    roles.value = ['ministry-admin']
+    roles.value = ['system-admin']
     renderScreen()
     expect(await screen.findByRole('button', { name: /add a facility/i })).toBeInTheDocument()
   })
@@ -92,7 +92,7 @@ describe('Facilities — office codes', () => {
 
   /** Given once and then never changed: a facility that has one is shown it, not offered another. */
   it('offers the Ministry to give a code only where there is none', async () => {
-    roles.value = ['ministry-admin']
+    roles.value = ['system-admin']
     get.mockResolvedValue(ok(page([facility, { ...facility, facilityId: 'other', name: 'Tali PHCU', officeCode: 'TALI' }])))
     renderScreen()
 
@@ -108,7 +108,7 @@ describe('Facilities — office codes', () => {
   })
 
   it('gives a code, in capitals, after saying it cannot be changed', async () => {
-    roles.value = ['ministry-admin']
+    roles.value = ['system-admin']
     put.mockResolvedValue(ok({ ...facility, officeCode: 'JCC1' }))
 
     const typist = user()
@@ -127,7 +127,7 @@ describe('Facilities — office codes', () => {
   })
 
   it('will not send a code that is not two to six letters or digits', async () => {
-    roles.value = ['ministry-admin']
+    roles.value = ['system-admin']
 
     const typist = user()
     renderScreen()

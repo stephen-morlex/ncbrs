@@ -421,7 +421,7 @@ public class MaternalStatisticsServiceTests : IDisposable
     {
         await using (var annul = NewDb())
         {
-            var http = AuthTestContext.HttpContextFor(AdminSubject, NcbrsRoles.MinistryAdmin);
+            var http = AuthTestContext.HttpContextFor(AdminSubject, NcbrsRoles.RegistrarGeneral);
             var current = AuthTestContext.RegistrarService(annul, http);
             var admin = annul.Registrars.Single(r => r.RegistrarId == AdminId);
 

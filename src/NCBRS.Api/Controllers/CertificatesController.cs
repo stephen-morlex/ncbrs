@@ -20,6 +20,7 @@ public class CertificatesController(
     /// with the Ministry's X.509 key.
     /// </summary>
     [HttpPost(Name = "IssueCertificate")]
+    [Authorize(Policy = NcbrsRoles.CanIssueCertificates)]
     [ProducesResponseType(typeof(CertificateResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -76,6 +77,7 @@ public class CertificatesController(
     /// reprinted repeatedly is worth being able to notice.
     /// </summary>
     [HttpPost("reprint", Name = "ReprintCertificate")]
+    [Authorize(Policy = NcbrsRoles.CanIssueCertificates)]
     [ProducesResponseType(typeof(CertificateResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]

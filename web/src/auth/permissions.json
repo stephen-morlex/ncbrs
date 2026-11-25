@@ -1,0 +1,15 @@
+{
+  "CanRegisterBirths": ["facility-registrar", "community-health-worker", "district-officer", "registrar-general"],
+  "CanIssueCertificates": ["facility-registrar", "district-officer", "registrar-general"],
+  "CanReadRecords": ["facility-registrar", "community-health-worker", "district-officer", "registrar-general"],
+  "CanReviewDuplicates": ["district-officer", "registrar-general"],
+  "CanApproveAmendments": ["district-officer", "registrar-general"],
+  "CanApproveLateRegistrations": ["district-officer", "registrar-general"],
+  "CanAnnulRegistrations": ["registrar-general"],
+  "CanReadAuditTrail": ["district-officer", "registrar-general"],
+  "CanEnrolDevices": ["district-officer", "system-admin"],
+  "CanManageRegistrars": ["district-officer", "system-admin"],
+  "CanManageFacilities": ["system-admin"],
+  "CanReadReporting": ["district-officer", "registrar-general"],
+  "CanExportReporting": ["registrar-general"]
+}

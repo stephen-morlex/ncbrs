@@ -1,8 +1,8 @@
 /**
  * The realm roles, and which of them satisfy each of the API's policies.
  *
- * A mirror of `NcbrsRoles` in `src/NCBRS.Core/Web/NcbrsRoles.cs` and the
- * policies registered in `NCBRS.Api/Program.cs`. It is a second copy, which
+ * A mirror of `NcbrsRoles.Permissions` in `src/NCBRS.Core/Web/NcbrsRoles.cs`,
+ * the one table both services build their policies from. It is a second copy, which
  * is a cost worth naming: if the server adds a role to a policy and this is
  * not updated, the UI hides a queue the user is in fact allowed to work.
  * That failure is visible and annoying. The reverse -- this being more
@@ -18,90 +18,38 @@
  * fail.
  */
 
+import permissions from './permissions.json'
+
 export const NcbrsRoles = {
   FacilityRegistrar: 'facility-registrar',
   CommunityHealthWorker: 'community-health-worker',
   DistrictOfficer: 'district-officer',
-  MinistryAdmin: 'ministry-admin',
+  /** The Ministry's records role: national approvals, annulment, audit, reporting (decision D2). */
+  RegistrarGeneral: 'registrar-general',
+  /** The Ministry's systems role: facilities, areas, registrars, devices. Sees no birth record (decision D2). */
+  SystemAdmin: 'system-admin',
 } as const
 
 export type NcbrsRole = (typeof NcbrsRoles)[keyof typeof NcbrsRoles]
 
-const Oversight: readonly NcbrsRole[] = [NcbrsRoles.DistrictOfficer, NcbrsRoles.MinistryAdmin]
-
 /**
- * Policy name -> the roles that satisfy it, exactly as
- * `AddPolicy(...).RequireRole(...)` has it on the server.
+ * Policy name -> the roles that satisfy it. **Read from the server's own
+ * table**, `NcbrsRoles.Permissions`, through `permissions.json`, which a server
+ * test (`RolePermissionsTests`) holds equal to it, as the OpenAPI drift check
+ * holds the contract. So the two cannot disagree; the reasons for each entry
+ * are documented beside the server's table, where the decision lives.
  */
 export const NcbrsPolicies = {
-  /** Anyone permitted to register a birth. */
-  CanRegisterBirths: [
-    NcbrsRoles.FacilityRegistrar,
-    NcbrsRoles.CommunityHealthWorker,
-    ...Oversight,
-  ],
-
-  /** Whether a citizen has one legal identity or two. Oversight, not the filer. */
-  CanReviewDuplicates: Oversight,
+  ...(permissions as Record<keyof typeof permissions, readonly string[]>),
 
   /**
-   * Which person the register describes. Oversight only -- and the server
-   * additionally refuses an approval by the submitter, whatever their role,
-   * which no UI check can substitute for.
+   * The whole country, or any county by choice: the registrar-general's. A
+   * district officer's dashboard is their county. Decides whether the
+   * dashboard offers an area picker at all. A web-only refinement of
+   * CanReadReporting; the consumer applies it through its scope.
    */
-  CanApproveAmendments: Oversight,
-
-  /** Confirms a date of birth nobody contemporaneous can contradict. */
-  CanApproveLateRegistrations: Oversight,
-
-  /** Withdraws a legal identity outright. A level above the rest: ministry only. */
-  CanAnnulRegistrations: [NcbrsRoles.MinistryAdmin],
-
-  /** Decides which hardware may write to the register at all. */
-  CanEnrolDevices: Oversight,
-
-  /**
-   * Brings a facility into the registry, with a national range of
-   * registration numbers. The Ministry's: two facilities given overlapping
-   * ranges would issue one number to two children.
-   */
-  CanManageFacilities: [NcbrsRoles.MinistryAdmin],
-
-  /**
-   * Adding and withdrawing registrars. District officers for their own
-   * county, and facility staff only; the Ministry anywhere and any role. The
-   * server applies both limits.
-   */
-  CanManageRegistrars: Oversight,
-
-  /**
-   * Reading the audit trail. Its own capability rather than borrowed from
-   * another oversight policy: the trail records what every other endpoint
-   * did, and since W1 it also records the names people searched for, so
-   * trawling it is itself a thing worth being entitled to separately.
-   */
-  CanReadAuditTrail: Oversight,
-
-  /**
-   * Vital statistics. Not a facility registrar's to read -- their work is a
-   * record at a time. Matches the consumer's `ncbrs-reporting`. Within it, a
-   * district officer reads their own county only; the consumer enforces that.
-   */
-  CanReadReporting: Oversight,
-
-  /**
-   * The whole country, or any county by choice. The Ministry's, as the web
-   * plan's role table says; a district officer's dashboard is their county.
-   * Decides whether the dashboard offers an area picker at all.
-   */
-  CanReadNationalReporting: [NcbrsRoles.MinistryAdmin],
-
-  /**
-   * The DHIS2 export: a national dataset for an external system. The
-   * Ministry's alone. Matches the consumer's `ncbrs-export`.
-   */
-  CanExportReporting: [NcbrsRoles.MinistryAdmin],
-} as const satisfies Record<string, readonly NcbrsRole[]>
+  CanReadNationalReporting: [NcbrsRoles.RegistrarGeneral] as readonly string[],
+}
 
 export type NcbrsPolicy = keyof typeof NcbrsPolicies
 
@@ -117,10 +65,12 @@ export function satisfies(roles: readonly string[], policy: NcbrsPolicy): boolea
  * Roles permitted to act beyond a single facility.
  *
  * Beyond one facility is not everywhere: a district officer reaches only the
- * facilities of their own county, and only a ministry admin acts nationally.
- * The server enforces that (CanActForFacilityAsync); this is a courtesy for
- * hiding affordances, never a check.
+ * facilities of their own county, and only the Ministry's two roles act
+ * nationally. The server enforces that (CanActForFacilityAsync); this is a
+ * courtesy for hiding affordances, never a check.
  */
 export function isCrossFacility(roles: readonly string[]): boolean {
-  return Oversight.some((role) => roles.includes(role))
+  return [NcbrsRoles.DistrictOfficer, NcbrsRoles.RegistrarGeneral, NcbrsRoles.SystemAdmin].some((role) =>
+    roles.includes(role),
+  )
 }

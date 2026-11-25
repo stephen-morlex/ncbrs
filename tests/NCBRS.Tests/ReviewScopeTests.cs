@@ -138,7 +138,7 @@ public class ReviewScopeTests : IDisposable
         => AuthTestContext.HttpContextFor(subject, client: null, role);
 
     private static DefaultHttpContext AsOfficer() => As(OfficerSubject, NcbrsRoles.DistrictOfficer);
-    private static DefaultHttpContext AsMinistry() => As(MinistrySubject, NcbrsRoles.MinistryAdmin);
+    private static DefaultHttpContext AsMinistry() => As(MinistrySubject, NcbrsRoles.RegistrarGeneral);
 
     private static T Controller<T>(T controller, DefaultHttpContext http) where T : ControllerBase
     {

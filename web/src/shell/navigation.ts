@@ -62,7 +62,7 @@ export const navigation: NavGroup[] = [
   {
     id: 'register',
     items: [
-      { id: 'findByNumber', to: '/records', icon: Hash, policy: null },
+      { id: 'findByNumber', to: '/records', icon: Hash, policy: 'CanReadRecords' },
 
       // A separate destination, not a mode of the lookup above. Looking up a
       // number a family is holding and searching the register by name are
@@ -70,7 +70,7 @@ export const navigation: NavGroup[] = [
       // the caller's district and recorded in the audit trail. One box that
       // quietly switched between them would hide that difference from the
       // person it applies to.
-      { id: 'searchRegister', to: '/records/search', icon: Search, policy: null },
+      { id: 'searchRegister', to: '/records/search', icon: Search, policy: 'CanReadRecords' },
       {
         id: 'registerBirth',
         to: '/records/new',

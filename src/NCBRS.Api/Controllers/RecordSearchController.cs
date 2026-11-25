@@ -20,7 +20,7 @@ namespace NCBRS.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/birthrecords/search")]
-[Authorize]
+[Authorize(Policy = NcbrsRoles.CanReadRecords)]
 // Matches every other controller. Without it ApiExplorer also advertises
 // text/plain and text/json, which this endpoint never returns -- and the
 // generated client picks a content type off that list, so the document

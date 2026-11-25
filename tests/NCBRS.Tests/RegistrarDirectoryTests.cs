@@ -107,7 +107,7 @@ public class RegistrarDirectoryTests : IDisposable
     [Fact]
     public async Task The_ministry_sees_every_district()
     {
-        var page = Ok(await ListAsync(MinistrySubject, [NcbrsRoles.MinistryAdmin]));
+        var page = Ok(await ListAsync(MinistrySubject, [NcbrsRoles.SystemAdmin]));
 
         Assert.Equal(4, page.Total);
         Assert.Contains(page.Items, entry => entry.CountyCode == JubaDistrict);

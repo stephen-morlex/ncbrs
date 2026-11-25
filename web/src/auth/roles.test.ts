@@ -13,7 +13,7 @@ describe('satisfies', () => {
       NcbrsRoles.FacilityRegistrar,
       NcbrsRoles.CommunityHealthWorker,
       NcbrsRoles.DistrictOfficer,
-      NcbrsRoles.MinistryAdmin,
+      NcbrsRoles.RegistrarGeneral,
     ]) {
       expect(satisfies([role], 'CanRegisterBirths')).toBe(true)
     }
@@ -30,15 +30,15 @@ describe('satisfies', () => {
       expect(satisfies([NcbrsRoles.FacilityRegistrar], policy)).toBe(false)
       expect(satisfies([NcbrsRoles.CommunityHealthWorker], policy)).toBe(false)
       expect(satisfies([NcbrsRoles.DistrictOfficer], policy)).toBe(true)
-      expect(satisfies([NcbrsRoles.MinistryAdmin], policy)).toBe(true)
+      expect(satisfies([NcbrsRoles.RegistrarGeneral], policy)).toBe(true)
     }
   })
 
-  it('keeps annulment at the ministry, a level above the other reviews', () => {
+  it('keeps annulment with the registrar-general, a level above the other reviews', () => {
     // Annulment withdraws a legal identity outright rather than deciding how
     // it reads, so a district officer is not enough.
     expect(satisfies([NcbrsRoles.DistrictOfficer], 'CanAnnulRegistrations')).toBe(false)
-    expect(satisfies([NcbrsRoles.MinistryAdmin], 'CanAnnulRegistrations')).toBe(true)
+    expect(satisfies([NcbrsRoles.RegistrarGeneral], 'CanAnnulRegistrations')).toBe(true)
   })
 
   it('keeps statistics away from a facility registrar', () => {
@@ -46,11 +46,11 @@ describe('satisfies', () => {
     expect(satisfies([NcbrsRoles.DistrictOfficer], 'CanReadReporting')).toBe(true)
   })
 
-  /** The web plan's role table: national figures and exports are the Ministry's. */
-  it('keeps the national view and the export with the Ministry', () => {
+  /** The web plan's role table: national figures and exports are the registrar-general's. */
+  it('keeps the national view and the export with the registrar-general', () => {
     for (const policy of ['CanReadNationalReporting', 'CanExportReporting'] as const) {
       expect(satisfies([NcbrsRoles.DistrictOfficer], policy)).toBe(false)
-      expect(satisfies([NcbrsRoles.MinistryAdmin], policy)).toBe(true)
+      expect(satisfies([NcbrsRoles.RegistrarGeneral], policy)).toBe(true)
     }
   })
 
@@ -72,14 +72,41 @@ describe('satisfies', () => {
   })
 
   it('is satisfied when any one of a user’s roles qualifies', () => {
-    expect(satisfies(['unrelated', NcbrsRoles.MinistryAdmin], 'CanAnnulRegistrations')).toBe(true)
+    expect(satisfies(['unrelated', NcbrsRoles.RegistrarGeneral], 'CanAnnulRegistrations')).toBe(true)
   })
 })
 
+
+/** Decisions D1 and D2 (plan §17 item 29). */
+describe('the role split', () => {
+  it('keeps certificates from community health workers, who record births but do not certify them', () => {
+    expect(satisfies([NcbrsRoles.CommunityHealthWorker], 'CanRegisterBirths')).toBe(true)
+    expect(satisfies([NcbrsRoles.CommunityHealthWorker], 'CanIssueCertificates')).toBe(false)
+    expect(satisfies([NcbrsRoles.FacilityRegistrar], 'CanIssueCertificates')).toBe(true)
+  })
+
+  it('gives the system admin the system and no record', () => {
+    for (const policy of ['CanManageFacilities', 'CanManageRegistrars', 'CanEnrolDevices'] as const) {
+      expect(satisfies([NcbrsRoles.SystemAdmin], policy)).toBe(true)
+      expect(satisfies([NcbrsRoles.RegistrarGeneral], policy)).toBe(false)
+    }
+
+    for (const policy of [
+      'CanReadRecords',
+      'CanRegisterBirths',
+      'CanAnnulRegistrations',
+      'CanReadAuditTrail',
+      'CanReadReporting',
+    ] as const) {
+      expect(satisfies([NcbrsRoles.SystemAdmin], policy)).toBe(false)
+    }
+  })
+})
 describe('isCrossFacility', () => {
   it('is true only for the roles that oversee more than one facility', () => {
     expect(isCrossFacility([NcbrsRoles.DistrictOfficer])).toBe(true)
-    expect(isCrossFacility([NcbrsRoles.MinistryAdmin])).toBe(true)
+    expect(isCrossFacility([NcbrsRoles.RegistrarGeneral])).toBe(true)
+    expect(isCrossFacility([NcbrsRoles.SystemAdmin])).toBe(true)
     expect(isCrossFacility([NcbrsRoles.FacilityRegistrar])).toBe(false)
     expect(isCrossFacility([NcbrsRoles.CommunityHealthWorker])).toBe(false)
     expect(isCrossFacility([])).toBe(false)
