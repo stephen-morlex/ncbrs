@@ -51,6 +51,11 @@ public static class MauiProgram
 #if ANDROID
         builder.Services.AddSingleton<ISignInBrowser, AndroidSignInBrowser>();
         builder.Services.AddSingleton<IDocumentPrinter, ChosenPrinter>();
+
+        // Time the date setting cannot change, for PIN lockouts and for
+        // catching a clock set back (TrustedClock). Elsewhere DeviceHost falls
+        // back to a per-run stopwatch.
+        builder.Services.AddSingleton<NCBRS.Client.Time.IMonotonicClock, AndroidMonotonicClock>();
 #elif WINDOWS
         builder.Services.AddSingleton<ISignInBrowser, LoopbackSignInBrowser>();
 #endif

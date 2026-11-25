@@ -107,6 +107,11 @@ public sealed class RegisterPage : FlowPage
         _host = host;
         _correcting = correcting;
         _draftId = draft?.Id ?? Guid.NewGuid();
+
+        // "Today" is the trusted day, not the tablet's clock: a clock reset by a
+        // flat battery would otherwise make today's birth impossible to pick.
+        _born.MaximumDate = _host.Today;
+        _born.Date = _host.Today;
         _windowDays = RegistrationRules.WindowStatedIn(reasons ?? []) ?? RegistrationRules.DefaultStatutoryWindowDays;
 
         _plurality.Selected = BirthPlurality.Singleton;
@@ -122,21 +127,21 @@ public sealed class RegisterPage : FlowPage
         {
             if (_day.HasSelection)
             {
-                _born.Date = DateTime.Today.AddDays(-_day.Selected);
+                _born.Date = _host.Today.AddDays(-_day.Selected);
             }
         };
         _born.DateSelected += (_, _) =>
         {
-            var date = (_born.Date ?? DateTime.Today).Date;
-            if (date == DateTime.Today && !(_day.HasSelection && _day.Selected == 0))
+            var date = (_born.Date ?? _host.Today).Date;
+            if (date == _host.Today && !(_day.HasSelection && _day.Selected == 0))
             {
                 _day.Selected = 0;
             }
-            else if (date == DateTime.Today.AddDays(-1) && !(_day.HasSelection && _day.Selected == 1))
+            else if (date == _host.Today.AddDays(-1) && !(_day.HasSelection && _day.Selected == 1))
             {
                 _day.Selected = 1;
             }
-            else if (date < DateTime.Today.AddDays(-1) && _day.HasSelection)
+            else if (date < _host.Today.AddDays(-1) && _day.HasSelection)
             {
                 _day.Clear();
             }
@@ -194,7 +199,7 @@ public sealed class RegisterPage : FlowPage
     }
 
     /// <summary>When the birth was captured: now for a new one; for a correction, the original moment, which the window is measured to.</summary>
-    private DateTime CapturedAt => _correcting?.Birth.RegisteredAtUtc ?? DateTime.UtcNow;
+    private DateTime CapturedAt => _correcting?.Birth.RegisteredAtUtc ?? _host.Now().Utc;
 
     // --- the steps -----------------------------------------------------------------------------------
 
@@ -499,7 +504,7 @@ public sealed class RegisterPage : FlowPage
         }
 
         var birth = Read(CapturedAt, []);
-        await _host.SaveDraftAsync(new FormDraft(_draftId, _step, DateTime.UtcNow, birth, _sex.HasSelection, _withStatistics));
+        await _host.SaveDraftAsync(new FormDraft(_draftId, _step, _host.Now().Utc, birth, _sex.HasSelection, _withStatistics));
         _saved.IsVisible = true;
     }
 
@@ -689,7 +694,7 @@ public sealed class RegisterPage : FlowPage
         };
     }
 
-    private DateTime BornOn => DateTime.SpecifyKind((_born.Date ?? DateTime.Today).Date, DateTimeKind.Utc);
+    private DateTime BornOn => DateTime.SpecifyKind((_born.Date ?? _host.Today).Date, DateTimeKind.Utc);
 
     /// <summary>Shown, and required, exactly when the registry will treat the birth as late.</summary>
     private void ShowLateSection()
@@ -716,7 +721,7 @@ public sealed class RegisterPage : FlowPage
         _childGiven.Text = given;
         _childSurname.Text = surname;
         _born.Date = birth.DateOfBirth.Date;
-        var day = (DateTime.Today - birth.DateOfBirth.Date).Days;
+        var day = (_host.Today - birth.DateOfBirth.Date).Days;
         if (day is 0 or 1)
         {
             _day.Selected = day;

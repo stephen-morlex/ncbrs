@@ -542,6 +542,9 @@
   <data name="Unlock_LockedOut" xml:space="preserve">
     <value>محاولات خاطئة كثيرة. الجهاز مقفل حتى {0:HH:mm}.</value>
   </data>
+  <data name="Clock_Wrong" xml:space="preserve">
+    <value>ساعة هذا الجهاز غير صحيحة. فهي تُظهر {0:d MMM yyyy, HH:mm}، والوقت الصحيح نحو {1:d MMM yyyy, HH:mm}. اضبط التاريخ والوقت من الإعدادات. ما زالت الولادات تُسجَّل بالوقت الصحيح.</value>
+  </data>
   <data name="Unlock_Title" xml:space="preserve">
     <value>فتح القفل</value>
   </data>

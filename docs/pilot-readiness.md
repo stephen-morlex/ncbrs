@@ -37,6 +37,14 @@ county, or the Ministry only), and how an account is identified when binding it.
 
 ## 2. Security: the tablet trusts its own clock
 
+> **Fixed 2026-11-25** (plan §17 item 28). `TrustedClock` keeps the latest
+> trusted time and takes the registry's time from the `Date` header of every
+> registry answer. A clock behind a trusted time is detected, shown on Home and
+> never used. PIN lockouts run on Android's elapsed real time, double on each
+> repeat (capped at an hour), and restart in full after a reboot. Registration,
+> drafts, certificate checks and sync all read the trusted time, and "today" on
+> the date picker is the trusted day. What follows is the original finding.
+
 Every time the tablet uses is `DateTime.UtcNow`, the wall clock, which anyone
 holding the tablet can change in Android's settings, and which a cheap tablet
 can lose when its battery runs flat.
