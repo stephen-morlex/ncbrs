@@ -74,6 +74,21 @@ public record AdministrativeAreaResponse(
     Guid? ParentId);
 
 /// <summary>
+/// Adds an area below a county: a payam or block the official dataset lacks, or
+/// a boma, quarter or village, which it never had (plan §17 item 31). The code
+/// is not asked for: the registry gives it (<see cref="AdministrativeLevels.LocalCode"/>).
+/// </summary>
+public record CreateAdministrativeAreaRequest
+{
+    /// <summary>The area it sits in: a county, or an area below one.</summary>
+    public Guid ParentId { get; init; }
+
+    public AdministrativeLevel Level { get; init; }
+
+    public string Name { get; init; } = string.Empty;
+}
+
+/// <summary>
 /// The rules of the hierarchy, kept dependency-light beside the model so the
 /// device app can validate a tree offline exactly as the centre does.
 /// </summary>
@@ -112,6 +127,44 @@ public static class AdministrativeLevels
     /// </summary>
     public static bool CanContain(AdministrativeLevel parent, AdministrativeLevel child)
         => Tier(parent) < Tier(child);
+
+    /// <summary>
+    /// The levels the registry may add. States and counties are the official
+    /// geography and come only from the seed; everything below a county may be
+    /// recorded as it is met, because the official dataset stops at the payam.
+    /// </summary>
+    public static bool IsCreatable(AdministrativeLevel level) => Tier(level) > Tier(AdministrativeLevel.County);
+
+    /// <summary>
+    /// Whether a child would mix the rural and urban branches: a boma inside a
+    /// block, or a quarter inside a payam. A place is one or the other, so such
+    /// a child is a mistake about what one of them is. Villages and the levels
+    /// above the split mix with nothing.
+    /// </summary>
+    public static bool MixesRuralAndUrban(AdministrativeLevel parent, AdministrativeLevel child)
+        => (IsRural(parent) && IsUrban(child)) || (IsUrban(parent) && IsRural(child));
+
+    /// <summary>
+    /// The code the registry gives an area it adds: its parent's code, a hyphen,
+    /// a letter for its level and a number among its siblings, for example
+    /// <c>SS010101-B01</c> for a boma in a payam, or <c>SS010101-B01-V03</c> for
+    /// a village in that boma. Official p-codes are letters and digits only, so
+    /// the hyphen means one of these can never collide with an official code
+    /// published later, and anyone reading it can tell a recorded place from an
+    /// official one.
+    /// </summary>
+    public static string LocalCode(string parentCode, AdministrativeLevel level, int sequence)
+        => $"{parentCode}-{LevelLetter(level)}{sequence:00}";
+
+    private static char LevelLetter(AdministrativeLevel level) => level switch
+    {
+        AdministrativeLevel.Payam => 'P',
+        AdministrativeLevel.Block => 'K',
+        AdministrativeLevel.Boma => 'B',
+        AdministrativeLevel.Quarter => 'Q',
+        AdministrativeLevel.Village => 'V',
+        _ => throw new ArgumentOutOfRangeException(nameof(level), level, "The registry adds only areas below a county."),
+    };
 
     /// <summary>
     /// The nearest ancestor at the given level, walking the loaded parent
