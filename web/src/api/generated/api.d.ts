@@ -196,6 +196,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/certificate-queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetCertificateQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/BirthRecords/{brn}/certificate": {
         parameters: {
             query?: never;
@@ -222,6 +238,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["ReprintCertificate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/BirthRecords/{brn}/certificate/handover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["HandOverCertificate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -971,6 +1003,10 @@ export interface components {
             meta?: null | components["schemas"]["RequestMeta"];
             data?: null | components["schemas"]["EnrolDeviceRequest"];
         };
+        ApiRequestOfHandOverCertificateRequest: {
+            meta?: null | components["schemas"]["RequestMeta"];
+            data?: null | components["schemas"]["HandOverCertificateRequest"];
+        };
         ApiRequestOfIssueCertificateRequest: {
             meta?: null | components["schemas"]["RequestMeta"];
             data?: null | components["schemas"]["IssueCertificateRequest"];
@@ -1143,6 +1179,36 @@ export interface components {
             /** Format: date */
             dateOfLastLiveBirth?: null | string;
         };
+        CertificateHandoverResponse: {
+            /** Format: uuid */
+            certificateId: string;
+            brn: string;
+            /** Format: date-time */
+            handedOverAtUtc: string;
+            handedOverTo: components["schemas"]["CertificateRecipient"];
+            /** Format: uuid */
+            handedOverByRegistrarId: string;
+        };
+        CertificateQueueItem: {
+            /** Format: uuid */
+            birthRecordId: string;
+            brn: string;
+            childFullName: string;
+            /** Format: date-time */
+            dateOfBirth: string;
+            /** Format: uuid */
+            facilityId: string;
+            facilityName: string;
+            /** Format: date-time */
+            registeredAtUtc: string;
+            stage: components["schemas"]["CertificateQueueStage"];
+            /** Format: date-time */
+            certificateIssuedAtUtc: null | string;
+        };
+        /** @enum {string} */
+        CertificateQueueStage: "ToIssue" | "ToHandOver" | "AwaitingNumber" | "AwaitingVerification";
+        /** @enum {null|string} */
+        CertificateRecipient: "Mother" | "Father" | "Guardian" | "OtherRelative" | "Self" | null;
         CertificateResponse: {
             /** Format: uuid */
             certificateId: string;
@@ -1182,6 +1248,9 @@ export interface components {
             withdrawnReason: null | string;
             /** Format: int32 */
             reprintCount: number;
+            /** Format: date-time */
+            handedOverAtUtc?: null | string;
+            handedOverTo?: null | components["schemas"]["CertificateRecipient"];
             isValid?: boolean;
         };
         ChangeDeviceStatusRequest: {
@@ -1339,6 +1408,10 @@ export interface components {
         };
         /** @enum {string} */
         FacilityTier: "Hospital" | "Clinic" | "VillageHealthPost";
+        HandOverCertificateRequest: {
+            deviceId?: string;
+            receivedBy?: null | components["schemas"]["CertificateRecipient"];
+        };
         /** @enum {string} */
         IcdPmTiming: "Antepartum" | "Intrapartum" | "Neonatal";
         /** @enum {null|string} */
@@ -1481,6 +1554,12 @@ export interface components {
         };
         PageOfBirthRecordSearchHit: {
             items: components["schemas"]["BirthRecordSearchHit"][];
+            /** Format: int32 */
+            total: number;
+            nextCursor: null | string;
+        };
+        PageOfCertificateQueueItem: {
+            items: components["schemas"]["CertificateQueueItem"][];
             /** Format: int32 */
             total: number;
             nextCursor: null | string;
@@ -3394,6 +3473,84 @@ export interface operations {
             };
         };
     };
+    GetCertificateQueue: {
+        parameters: {
+            query?: {
+                facilityId?: string;
+                stage?: components["schemas"]["CertificateQueueStage"];
+                limit?: number;
+                after?: string;
+            };
+            header?: {
+                /** @description Caller-supplied transaction id (UUID), echoed back in the response meta. Generated by the server when omitted. */
+                "X-Transaction-Id"?: string;
+                /** @description Calling application or channel, e.g. "MobileApp". */
+                "X-Client-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["PageOfCertificateQueueItem"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+        };
+    };
     GetCertificate: {
         parameters: {
             query?: never;
@@ -3688,6 +3845,125 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+        };
+    };
+    HandOverCertificate: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Caller-supplied transaction id (UUID), echoed back in the response meta. Generated by the server when omitted. */
+                "X-Transaction-Id"?: string;
+                /** @description Calling application or channel, e.g. "MobileApp". */
+                "X-Client-Id"?: string;
+            };
+            path: {
+                brn: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiRequestOfHandOverCertificateRequest"];
+                "text/json": components["schemas"]["ApiRequestOfHandOverCertificateRequest"];
+                "application/*+json": components["schemas"]["ApiRequestOfHandOverCertificateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["CertificateHandoverResponse"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta?: {
+                            /** Format: uuid */
+                            transactionId: string;
+                            clientId: null | string;
+                            transactionIdGenerated: boolean;
+                            /** Format: date-time */
+                            timestampUtc: string;
+                        };
+                        data?: components["schemas"]["ApiErrorResponse"];
+                    };
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

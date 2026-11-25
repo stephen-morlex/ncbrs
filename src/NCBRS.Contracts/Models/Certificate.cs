@@ -37,5 +37,31 @@ public class Certificate
 
     public string? WithdrawnReason { get; set; }
 
+    /// <summary>
+    /// When the printed certificate reached the family (plan §17 item 32).
+    /// Issuing is not delivering: a birth registered at a post offline for
+    /// weeks leaves the family with a slip, and its certificate is printed
+    /// later somewhere with signal. Until this is set, the certificate is on a
+    /// desk somewhere, not in the family's hands.
+    /// </summary>
+    public DateTime? HandedOverAtUtc { get; set; }
+
+    /// <summary>Who received it, by relationship to the child. No name: the record already holds the parents'.</summary>
+    public CertificateRecipient? HandedOverTo { get; set; }
+
+    public Guid? HandedOverByRegistrarId { get; set; }
+
     public bool IsValid => WithdrawnAtUtc is null;
+}
+
+/// <summary>Who took a certificate away, by their relationship to the child.</summary>
+public enum CertificateRecipient
+{
+    Mother,
+    Father,
+    Guardian,
+    OtherRelative,
+
+    /// <summary>The person the certificate is about, registered late as an adult.</summary>
+    Self,
 }

@@ -36,8 +36,19 @@ public enum CertificateResult
     /// after exhausting its BRN block. A certificate cannot be signed over an
     /// identifier that is about to be replaced (draft 6.3).
     /// </summary>
-    AwaitingBrnReconciliation
+    AwaitingBrnReconciliation,
+
+    /// <summary>There is no valid certificate to hand over: none issued yet, or the last one withdrawn.</summary>
+    NoCertificateToHandOver,
+
+    /// <summary>This certificate already reached the family.</summary>
+    AlreadyHandedOver,
 }
+
+public record HandoverOutcome(
+    CertificateResult Result,
+    CertificateHandoverResponse? Response = null,
+    string? Detail = null);
 
 public record CertificateOutcome(
     CertificateResult Result,
@@ -239,6 +250,72 @@ public class CertificateService(
         await db.SaveChangesAsync(cancellationToken);
 
         return new CertificateOutcome(CertificateResult.Issued, ToResponse(record, certificate));
+    }
+
+    /// <summary>
+    /// Records that the printed certificate reached the family (plan §17 item
+    /// 32). Issuing is not delivering: at a post offline for weeks the family
+    /// leaves with a slip, and the certificate is printed later where there is
+    /// signal. Without this, a certificate printed and left on a desk looks
+    /// exactly like one in the family's hands.
+    ///
+    /// Once per certificate. A second handover of the same paper would say it
+    /// reached the family twice; a replacement issued after an amendment is a
+    /// new certificate, and is handed over in its own right.
+    /// </summary>
+    public async Task<HandoverOutcome> HandOverAsync(
+        string brn,
+        CertificateRecipient receivedBy,
+        Registrar registrar,
+        string deviceId,
+        Guid? transactionId,
+        CancellationToken cancellationToken = default)
+    {
+        var record = await LoadAsync(brn, cancellationToken);
+
+        if (record is null)
+        {
+            return new HandoverOutcome(CertificateResult.BirthRecordNotFound, Detail: NotFound(brn).Detail);
+        }
+
+        if (!await currentRegistrar.CanActForFacilityAsync(registrar, record.FacilityId, cancellationToken))
+        {
+            return new HandoverOutcome(CertificateResult.NotPermitted,
+                Detail: "You are not permitted to hand over certificates for this facility.");
+        }
+
+        if (record.AnnulledAtUtc is not null)
+        {
+            return new HandoverOutcome(CertificateResult.RecordAnnulled,
+                Detail: $"BRN '{brn}' was annulled on {record.AnnulledAtUtc:yyyy-MM-dd}. Its certificate is void.");
+        }
+
+        var certificate = await db.Certificates
+            .FirstOrDefaultAsync(c => c.BirthRecordId == record.BirthRecordId && c.WithdrawnAtUtc == null,
+                cancellationToken);
+
+        if (certificate is null)
+        {
+            return new HandoverOutcome(CertificateResult.NoCertificateToHandOver,
+                Detail: $"BRN '{brn}' has no certificate to hand over. Issue and print it first.");
+        }
+
+        if (certificate.HandedOverAtUtc is { } already)
+        {
+            return new HandoverOutcome(CertificateResult.AlreadyHandedOver,
+                Detail: $"The certificate for BRN '{brn}' was handed over on {already:yyyy-MM-dd} "
+                        + $"to the {certificate.HandedOverTo}.");
+        }
+
+        certificate.HandedOverAtUtc = DateTime.UtcNow;
+        certificate.HandedOverTo = receivedBy;
+        certificate.HandedOverByRegistrarId = registrar.RegistrarId;
+        await AuditAsync(brn, $"CertificateHandedOver:{receivedBy}", registrar, deviceId, transactionId, cancellationToken);
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return new HandoverOutcome(CertificateResult.Issued, new CertificateHandoverResponse(
+            certificate.CertificateId, record.Brn, certificate.HandedOverAtUtc.Value, receivedBy, registrar.RegistrarId));
     }
 
     public async Task<CertificateResponse?> GetAsync(string brn, CancellationToken cancellationToken = default)

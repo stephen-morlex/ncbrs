@@ -2,6 +2,7 @@ import {
   BadgeCheck,
   BarChart3,
   BellRing,
+  FileCheck,
   FileDown,
   FileSearch,
   GitCompareArrows,
@@ -81,6 +82,14 @@ export const navigation: NavGroup[] = [
         id: 'uploadTransfer',
         to: '/records/transfer',
         icon: HardDriveUpload,
+        policy: 'CanRegisterBirths',
+      },
+      // Issuing is not delivering: births whose certificate has not reached
+      // the family. Facility staff see their facility, officers their county.
+      {
+        id: 'certificateQueue',
+        to: '/certificates/queue',
+        icon: FileCheck,
         policy: 'CanRegisterBirths',
       },
     ],

@@ -769,6 +769,37 @@ the running number counts from 1 per facility per year, six digits.
   Makuach's first (`800000`), because composed numbers carry the year the
   seed ran in.
 
+## Certificates awaiting collection (plan §17 item 32, built)
+**Issuing is not delivering.** At a post offline for weeks the family leaves
+with a slip, because only the registry signs a certificate; it is printed later
+somewhere with signal and has to find its way back. Nothing tracked that, so a
+birth never certified and a certificate printed and left on a desk both looked
+like nothing at all.
+
+- **`GET /api/certificate-queue`** (`CertificateQueueService`,
+  `CanRegisterBirths`) lists every live birth whose current certificate has not
+  been handed over, oldest first, in four stages: `ToIssue`, `ToHandOver`,
+  `AwaitingNumber` (a `PROV-` record not yet reconciled) and
+  `AwaitingVerification` (late, not yet verified).
+- **Its rules are the issuing rules**, in the same order (`IssueAsync`), so it
+  never promises a certificate that would be refused. Annulled records,
+  stillbirths, a record superseded as a duplicate, and a refused late
+  registration are not on it. **A withdrawn certificate puts the birth back**:
+  the paper the family holds no longer stands.
+- **Who sees what:** facility staff their own facility, and naming another is
+  refused, not narrowed. A district officer sees their county; the Ministry
+  sees the country (`ReviewQueueScope`).
+- **`POST /api/BirthRecords/{brn}/certificate/handover`** records who received
+  it, **by relationship only** (`CertificateRecipient`; the record already
+  holds the parents' names). It goes through the device-channel gate like
+  every write that names a device, and is audited as `CertificateHandedOver:{who}`.
+  - **The recipient is nullable and required:** the enum's first value is
+    Mother, and an omitted field would otherwise record her.
+  - **Once per certificate (409).** A replacement issued after an amendment is
+    a new certificate and is handed over in its own right.
+- `CertificateState` on the record carries `HandedOverAtUtc`/`HandedOverTo`.
+  The web page is "Certificates to hand out" (`/certificates/queue`).
+
 ## Late registration (WS-C1/C2, built)
 A birth registered outside the statutory window (`StatutoryRegistration:WindowDays`,
 default 90 — the number is set in law, which is why it is configuration)

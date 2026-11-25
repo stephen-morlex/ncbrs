@@ -168,6 +168,8 @@ public class NcbrsDbContext(DbContextOptions<NcbrsDbContext> options) : DbContex
             .IsUnique()
             .HasFilter("\"WithdrawnAtUtc\" IS NULL");
 
+        modelBuilder.Entity<Certificate>().Property(c => c.HandedOverTo).HasConversion<string>();
+
         modelBuilder.Entity<BirthRecordAmendment>()
             .HasOne(amendment => amendment.BirthRecord)
             .WithMany(record => record.Amendments)

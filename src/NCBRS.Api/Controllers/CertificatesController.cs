@@ -107,6 +107,57 @@ public class CertificatesController(
         return result.Succeeded ? result.Response! : MapFailure(result);
     }
 
+    /// <summary>
+    /// Records that the printed certificate reached the family, and who took
+    /// it. Issuing is not delivering: a certificate printed for a birth
+    /// registered offline may wait weeks for the family to collect it, and
+    /// this is what takes it off the facility's list.
+    /// </summary>
+    [HttpPost("handover", Name = "HandOverCertificate")]
+    [ProducesResponseType(typeof(CertificateHandoverResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<CertificateHandoverResponse>> HandOver(
+        string brn,
+        ApiRequest<HandOverCertificateRequest> envelope)
+    {
+        var registrar = await currentRegistrar.GetAsync(HttpContext.RequestAborted);
+        if (registrar is null)
+        {
+            return NotProvisioned();
+        }
+
+        var refused = await channelGate.RefuseUnlessPermittedForRecordAsync(
+            HttpContext, registrar, envelope.Data.DeviceId, brn);
+        if (refused is not null)
+        {
+            return refused;
+        }
+
+        var result = await certificates.HandOverAsync(
+            brn,
+            envelope.Data.ReceivedBy!.Value,
+            registrar,
+            envelope.Data.DeviceId,
+            TransactionContext.Get(HttpContext)?.TransactionId,
+            HttpContext.RequestAborted);
+
+        return result.Result switch
+        {
+            CertificateResult.Issued => result.Response!,
+
+            CertificateResult.NoCertificateToHandOver => ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status409Conflict, "No certificate to hand over.", "brn", result.Detail!)),
+
+            CertificateResult.AlreadyHandedOver => ApiErrors.Result(ApiErrors.Single(
+                StatusCodes.Status409Conflict, "Already handed over.", "brn", result.Detail!)),
+
+            _ => MapFailure(new CertificateOutcome(result.Result, Detail: result.Detail)),
+        };
+    }
+
     private static ObjectResult NotProvisioned()
         => ApiErrors.Result(ApiErrors.Single(
             StatusCodes.Status403Forbidden, "Account not provisioned.",

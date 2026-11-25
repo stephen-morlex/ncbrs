@@ -109,6 +109,7 @@ builder.Services.AddScoped<ReviewQueueScope>();
 builder.Services.AddScoped<CountyLookup>();
 builder.Services.AddScoped<FacilityOnboardingService>();
 builder.Services.AddScoped<ProblemReportService>();
+builder.Services.AddScoped<CertificateQueueService>();
 builder.Services.AddScoped<AdministrativeAreaService>();
 builder.Services.AddScoped<RegistrarOnboardingService>();
 builder.Services.AddSingleton(builder.Configuration.GetSection(FacilityOnboardingOptions.SectionName)

@@ -63,7 +63,12 @@ public record CertificateState(
     /// Reprints are counted because a certificate reprinted repeatedly is
     /// worth being able to notice.
     /// </summary>
-    int ReprintCount)
+    int ReprintCount,
+
+    /// <summary>When it reached the family. Null: issued, and still waiting to be collected.</summary>
+    DateTime? HandedOverAtUtc = null,
+
+    CertificateRecipient? HandedOverTo = null)
 {
     /// <summary>
     /// Derived here rather than left to each caller. "Issued and not
@@ -72,6 +77,59 @@ public record CertificateState(
     /// </summary>
     public bool IsValid => WithdrawnAtUtc is null;
 }
+
+/// <summary>Records that a printed certificate reached the family.</summary>
+public record HandOverCertificateRequest
+{
+    /// <summary>The device acting, held to the same proof as every write that names one.</summary>
+    public string DeviceId { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Required, and nullable so it can be: the enum's first value is Mother,
+    /// and a request that left it out would otherwise record her as receiving it.
+    /// </summary>
+    public CertificateRecipient? ReceivedBy { get; init; }
+}
+
+public record CertificateHandoverResponse(
+    Guid CertificateId,
+    string Brn,
+    DateTime HandedOverAtUtc,
+    CertificateRecipient HandedOverTo,
+    Guid HandedOverByRegistrarId);
+
+/// <summary>Where a birth stands on its way to a certificate in the family's hands.</summary>
+public enum CertificateQueueStage
+{
+    /// <summary>Nothing stands in the way: the certificate can be issued and printed now.</summary>
+    ToIssue,
+
+    /// <summary>Printed and signed, not yet collected.</summary>
+    ToHandOver,
+
+    /// <summary>Registered under a provisional identifier; the registry has not yet numbered it.</summary>
+    AwaitingNumber,
+
+    /// <summary>Registered late; a district registrar has not yet verified it.</summary>
+    AwaitingVerification,
+}
+
+/// <summary>One birth whose certificate has not reached the family.</summary>
+public record CertificateQueueItem(
+    Guid BirthRecordId,
+    string Brn,
+    string ChildFullName,
+    DateTime DateOfBirth,
+    Guid FacilityId,
+    string FacilityName,
+
+    /// <summary>When the birth was registered: the device's capture time where it has one.</summary>
+    DateTime RegisteredAtUtc,
+
+    CertificateQueueStage Stage,
+
+    /// <summary>When the certificate waiting to be collected was issued. Null unless <see cref="Stage"/> is ToHandOver.</summary>
+    DateTime? CertificateIssuedAtUtc);
 
 /// <summary>What a scanner sends back to have a certificate checked.</summary>
 public record VerifyCertificateRequest
