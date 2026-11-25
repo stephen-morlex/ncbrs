@@ -451,12 +451,45 @@ public sealed class DeviceHost(ISignInBrowser browser, IDocumentPrinter? printer
         await SaveAsync();
     }
 
+    /// <summary>What the last sync reported as not done, for a problem report. Not saved: it describes this run of the app.</summary>
+    public IReadOnlyList<string> LastSyncProblems { get; private set; } = [];
+
+    private static Storage.AppInfo App()
+        => new(
+            Microsoft.Maui.ApplicationModel.AppInfo.Current.VersionString,
+            $"{DeviceInfo.Current.Platform} {DeviceInfo.Current.VersionString}",
+            (Strings.Culture ?? System.Globalization.CultureInfo.CurrentUICulture).TwoLetterISOLanguageName);
+
+    /// <summary>The tablet's account of itself, as a problem report would carry it: shown before it is sent.</summary>
+    public DeviceDiagnostics Diagnose()
+    {
+        Session?.Capture(State);
+        return ProblemReports.Diagnose(State, App(), Now(), LastSyncProblems);
+    }
+
+    /// <summary>
+    /// Write a problem report and try to send it now, births first, as every
+    /// window does. Without signal it stays on the tablet and goes at the next
+    /// sync. True when the registry has it.
+    /// </summary>
+    public async Task<bool> ReportProblemAsync(string? description)
+    {
+        Session!.Capture(State);
+        var report = ProblemReports.Build(State, App(), Now(), description, LastSyncProblems);
+        Session.Sync.ProblemReports.Add(report);
+        await SaveAsync();
+
+        var (window, _) = await SyncAsync();
+        return window.ProblemReportsSent > 0 && Session.Sync.ProblemReports.TrueForAll(pending => pending.ReportId != report.ReportId);
+    }
+
     public async Task<(WindowReport Report, IReadOnlyList<string> StaffProblems)> SyncAsync()
     {
         var centre = Centre();
         _staffRefreshed = false;
         var report = await new ConnectivityWindow(Session!.Facility, centre, Session.Signer, (_, _) => SaveAsync())
             .RunAsync(Session.Sync, Now().Utc);
+        LastSyncProblems = report.Problems;
         await SaveAsync();
         var staff = report.Upload is CentralOutcome.Unauthorized or CentralOutcome.Unreachable
             ? []

@@ -177,6 +177,18 @@ public sealed class CentralClient(HttpClient http, CentralEndpoints endpoints, A
             cancellationToken);
 
     /// <summary>
+    /// Send a problem report written on the tablet. Signed by the device, like
+    /// every write that names it: the district trusts what the report says
+    /// about this tablet. Sending it again is safe: the registry answers with
+    /// the copy it already holds.
+    /// </summary>
+    public Task<CentralResult<ProblemReportResponse>> ReportProblemAsync(
+        ReportProblemRequest report, DeviceSigner signer, CancellationToken cancellationToken = default)
+        => SendAsync<ProblemReportResponse>(
+            HttpMethod.Post, endpoints.Centre, "api/problem-reports",
+            Envelope(report, Guid.CreateVersion7()), signer, cancellationToken);
+
+    /// <summary>
     /// Have the registry sign a birth's certificate. Signed by the device: the
     /// act is recorded against it, and a stolen token must not be able to
     /// issue certificates as any tablet it names. 409 when one is already

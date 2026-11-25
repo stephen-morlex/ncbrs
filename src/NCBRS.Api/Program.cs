@@ -108,6 +108,7 @@ builder.Services.AddScoped<ReviewQueueScope>();
 // registration writes three audit rows against the same facility.
 builder.Services.AddScoped<CountyLookup>();
 builder.Services.AddScoped<FacilityOnboardingService>();
+builder.Services.AddScoped<ProblemReportService>();
 builder.Services.AddScoped<RegistrarOnboardingService>();
 builder.Services.AddSingleton(builder.Configuration.GetSection(FacilityOnboardingOptions.SectionName)
     .Get<FacilityOnboardingOptions>() ?? new FacilityOnboardingOptions());

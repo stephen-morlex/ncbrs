@@ -73,6 +73,7 @@ public sealed class DeviceSession : IDisposable
         {
             InFlight = state.InFlight,
             TransferKey = state.TransferKey,
+            ProblemReports = [.. state.ProblemReports],
             Bundle = state.Bundle is { } bundle
                 ? CachedVerificationBundle.From(bundle.SigningKeys, bundle.RevocationLists, bundle.FetchedAtUtc)
                 : CachedVerificationBundle.Empty,
@@ -98,6 +99,7 @@ public sealed class DeviceSession : IDisposable
         state.Recent = [.. Facility.Recent.All];
         state.InFlight = Sync.InFlight;
         state.TransferKey = Sync.TransferKey;
+        state.ProblemReports = [.. Sync.ProblemReports];
         state.Bundle = Sync.Bundle is { HasBundle: true, FetchedAtUtc: { } fetchedAt } bundle
             ? new BundleState([.. bundle.SigningKeys], [.. bundle.RevocationLists], fetchedAt)
             : null;

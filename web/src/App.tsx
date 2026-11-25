@@ -108,6 +108,10 @@ const DeviceList = lazy(() =>
   import('@/devices/DeviceList').then((module) => ({ default: module.DeviceList })),
 )
 
+const ProblemReports = lazy(() =>
+  import('@/devices/ProblemReports').then((module) => ({ default: module.ProblemReports })),
+)
+
 const DeviceAlerts = lazy(() =>
   import('@/devices/DeviceAlerts').then((module) => ({ default: module.DeviceAlerts })),
 )
@@ -243,6 +247,16 @@ export default function App() {
           element={
             <RequireAuth policy="CanEnrolDevices">
               <DeviceAlerts />
+            </RequireAuth>
+          }
+        />
+
+        {/* Problems reported from tablets: the district's, like the alerts. */}
+        <Route
+          path="/devices/problems"
+          element={
+            <RequireAuth policy="CanEnrolDevices">
+              <ProblemReports />
             </RequireAuth>
           }
         />

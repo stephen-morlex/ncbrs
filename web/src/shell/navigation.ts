@@ -10,6 +10,7 @@ import {
   History,
   Hospital,
   Hourglass,
+  LifeBuoy,
   ListX,
   MapPinned,
   ScrollText,
@@ -147,6 +148,14 @@ export const navigation: NavGroup[] = [
         id: 'deviceAlerts',
         to: '/devices/alerts',
         icon: BellRing,
+        policy: 'CanEnrolDevices',
+      },
+      // What registrars reported from their tablets, with each tablet's state:
+      // supporting the tablets is the same officers' job as the alerts.
+      {
+        id: 'problemReports',
+        to: '/devices/problems',
+        icon: LifeBuoy,
         policy: 'CanEnrolDevices',
       },
       // Not gated: checking a certificate a family presents is something any
