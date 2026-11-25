@@ -100,6 +100,10 @@ const VerifyCertificate = lazy(() =>
   })),
 )
 
+const FacilityOperations = lazy(() =>
+  import('@/operations/FacilityOperations').then((module) => ({ default: module.FacilityOperations })),
+)
+
 const CertificateQueue = lazy(() =>
   import('@/certificates/CertificateQueue').then((module) => ({ default: module.CertificateQueue })),
 )
@@ -242,6 +246,16 @@ export default function App() {
           element={
             <RequireAuth policy="CanRegisterBirths">
               <CertificateQueue />
+            </RequireAuth>
+          }
+        />
+        {/* What needs attention at each facility. Facility staff see their
+            own; the endpoint scopes it, under the same policy. */}
+        <Route
+          path="/operations"
+          element={
+            <RequireAuth policy="CanRegisterBirths">
+              <FacilityOperations />
             </RequireAuth>
           }
         />
