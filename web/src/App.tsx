@@ -100,6 +100,10 @@ const VerifyCertificate = lazy(() =>
   })),
 )
 
+const CertificateQueue = lazy(() =>
+  import('@/certificates/CertificateQueue').then((module) => ({ default: module.CertificateQueue })),
+)
+
 const RevocationList = lazy(() =>
   import('@/certificates/RevocationList').then((module) => ({ default: module.RevocationList })),
 )
@@ -227,6 +231,16 @@ export default function App() {
             oversight act, and the endpoint behind it is anonymous by design. */}
         <Route path="/certificates/verify" element={<VerifyCertificate />} />
         <Route path="/certificates/revocations" element={<RevocationList />} />
+        {/* Births whose certificate has not reached the family, gated by the
+            same policy as the queue endpoint. */}
+        <Route
+          path="/certificates/queue"
+          element={
+            <RequireAuth policy="CanRegisterBirths">
+              <CertificateQueue />
+            </RequireAuth>
+          }
+        />
 
         {/* Gated by the same policy its navigation entry names. */}
         <Route

@@ -345,6 +345,15 @@ namespace NCBRS.Migrations
                     b.Property<Guid>("BirthRecordId")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("HandedOverAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("HandedOverByRegistrarId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("HandedOverTo")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("IssueDateUtc")
                         .HasColumnType("TEXT");
 
