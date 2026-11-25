@@ -350,8 +350,23 @@ Keycloak admin credential.
     `FacilitiesImported:{n}` row.
   - The web's "Add from a file" on Facilities checks first and offers "Add N
     facilities" only for a clean file.
-  - Bulk-binding registrars from the pending queue is not built; they are bound
-    one by one, as before.
+- **Waiting accounts can be bound from a CSV file too** (`RegistrarImportService`,
+  `POST /api/registrars/import`, `CanManageRegistrars`). It's for a training
+  day, when everyone signs in once and lands in the queue.
+  - Columns `username, facility, role`, optional `display_name`.
+  - **Accounts are named by username**, never by Keycloak subject, which the
+    queue does not publish.
+  - **The facility is its office code or its name.** A name that matches more
+    than one facility the caller may act for asks for the office code.
+  - **A file grants nothing a single binding would not:** every row passes
+    `RegistrarOnboardingService.CheckBindAsync` (split out of `BindAsync`),
+    with the same limits: own county, facility staff only unless the Ministry
+    binds, a role held in Keycloak, a county group that agrees.
+  - Checked first, applied whole, each person bound by `BindAsync`.
+- **Both imports share `CsvTable`** (the reader, `ParseEnum`) and
+  `ImportTransaction` (own transaction, or a savepoint in the idempotency
+  filter's). On the web both share `CsvImportDialog`. The registrar one is
+  "Add from a file" on the waiting-accounts card.
 
 ## The fuller registration (2026-10-02, built: registry, web and tablet)
 The registration now records the place of birth, the child's given names and

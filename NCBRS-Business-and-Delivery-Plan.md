@@ -634,7 +634,7 @@ is ever registered during the pilot, that procedure is no longer safe.
 | 35 | Pilot operations metrics per facility: refused-birth rate, provisional numbers still open, how long review queues have waited, sync lag, certificates not yet collected **Done** (#169): "Facility operations", refusals kept on each sync batch, unknown shown as "—" never 0 |
 | 36 | A facility view for registrars: this week's births, and where their corrections and late registrations stand **Covered** by 32 and 35: facility staff see their own facility on both pages. Reopen if registrars ask for more |
 | 37 | "Report a problem" on the tablet: a diagnostics bundle with no personal data (app version, queue sizes, clock offset, last error) **Done** (#170): More → "Report a problem"; the district reads and resolves them on "Problem reports" |
-| 38 | Bulk onboarding of facilities and registrars from a CSV, reviewed by the system admin before it is applied **Facilities done** ("Add from a file": checked first, applied whole). Registrars are still bound one by one from the pending queue |
+| 38 | Bulk onboarding of facilities and registrars from a CSV, reviewed by the system admin before it is applied **Done**: facilities (#171) and waiting accounts, each "Add from a file", checked first and applied whole, with the same limits as adding one |
 
 **Go-live**
 

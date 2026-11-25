@@ -24,3 +24,38 @@ public record WithdrawRegistrarRequest
 {
     public string Reason { get; init; } = string.Empty;
 }
+
+/// <summary>
+/// Staff to bind from a CSV file (plan §17 item 38): accounts already waiting in
+/// the queue, each to a facility and a role. Checked first; bound only when
+/// asked and only if every row passes.
+/// </summary>
+public record ImportRegistrarsRequest
+{
+    /// <summary>
+    /// The file's text: a header row naming <c>username</c>, <c>facility</c>
+    /// (its office code, or its name) and <c>role</c>, and optionally
+    /// <c>display_name</c>; then one person per row.
+    /// </summary>
+    public string Csv { get; init; } = string.Empty;
+
+    /// <summary>False checks the file and binds nobody. True binds every row, or nobody if any row fails.</summary>
+    public bool Apply { get; init; }
+}
+
+public record ImportRegistrarsResponse(
+    bool Applied,
+    int Valid,
+    int Invalid,
+    IReadOnlyList<RegistrarImportRow> Rows);
+
+/// <param name="Line">The row's line in the file, counting the header as line 1.</param>
+/// <param name="RegistrarId">Set once bound.</param>
+public record RegistrarImportRow(
+    int Line,
+    string Username,
+    string? DisplayName,
+    string? FacilityName,
+    RegistrarRole? Role,
+    IReadOnlyList<string> Problems,
+    Guid? RegistrarId);

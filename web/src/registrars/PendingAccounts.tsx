@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { CircleAlert, UserPlus } from 'lucide-react'
+import { CircleAlert, FileUp, UserPlus } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -38,6 +38,7 @@ import {
   unreachableError,
 } from '@/api/errors'
 import { useApiClient } from '@/api/useApi'
+import { ImportRegistrarsDialog } from './ImportRegistrarsDialog'
 
 type Pending = components['schemas']['PendingAccountResponse']
 type Facility = components['schemas']['FacilityResponse']
@@ -72,6 +73,7 @@ export function PendingAccounts({
   const api = useApiClient()
   const [accounts, setAccounts] = useState<Pending[] | null>(null)
   const [binding, setBinding] = useState<Pending | null>(null)
+  const [importing, setImporting] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -99,6 +101,12 @@ export function PendingAccounts({
           These people have signed in and are not yet linked to a facility. Add each to the
           facility they work at.
         </CardDescription>
+        <div>
+          <Button size="sm" variant="outline" onClick={() => setImporting(true)}>
+            <FileUp />
+            Add from a file
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <Table>
@@ -131,6 +139,16 @@ export function PendingAccounts({
           </TableBody>
         </Table>
       </CardContent>
+
+      {importing ? (
+        <ImportRegistrarsDialog
+          onClose={() => setImporting(false)}
+          onImported={() => {
+            void load()
+            onBound()
+          }}
+        />
+      ) : null}
 
       {binding ? (
         <BindDialog

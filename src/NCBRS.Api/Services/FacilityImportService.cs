@@ -1,4 +1,3 @@
-using System.Text;
 using Microsoft.EntityFrameworkCore;
 using NCBRS.Data;
 using NCBRS.Models;
@@ -24,14 +23,14 @@ namespace NCBRS.Services;
 public class FacilityImportService(NcbrsDbContext db, FacilityOnboardingService onboarding)
 {
     public const int MaxRows = 500;
-    public const int MaxBytes = 256 * 1024;
+    public const int MaxBytes = CsvTable.MaxBytes;
 
     private static readonly string[] Required = ["name", "tier", "connectivity", "area"];
 
     public async Task<ImportFacilitiesResponse> ImportAsync(
         ImportFacilitiesRequest request, Registrar actor, Guid? transactionId, CancellationToken cancellationToken = default)
     {
-        var (rows, fileProblem) = Parse(request.Csv);
+        var (rows, fileProblem) = CsvTable.Read(request.Csv, Required, ["office_code"], "facilities", MaxRows);
         if (fileProblem is not null)
         {
             return new ImportFacilitiesResponse(false, 0, 1, [new FacilityImportRow(1, "", null, null, null, [fileProblem], null, null, null)]);
@@ -45,8 +44,8 @@ public class FacilityImportService(NcbrsDbContext db, FacilityOnboardingService 
         {
             var problems = new List<string>();
             var name = row.Get("name");
-            var tier = ParseEnum<FacilityTier>(row.Get("tier"), "tier", problems);
-            var connectivity = ParseEnum<ConnectivityProfile>(row.Get("connectivity"), "connectivity", problems);
+            var tier = CsvTable.ParseEnum<FacilityTier>(row.Get("tier"), "tier", problems);
+            var connectivity = CsvTable.ParseEnum<ConnectivityProfile>(row.Get("connectivity"), "connectivity", problems);
             var officeCode = row.Get("office_code") is { Length: > 0 } typed ? OfficeCodes.Normalise(typed) : null;
 
             if (name.Length == 0)
@@ -139,30 +138,9 @@ public class FacilityImportService(NcbrsDbContext db, FacilityOnboardingService 
             return new ImportFacilitiesResponse(false, valid, invalid, [.. results.Select(result => result.Row)]);
         }
 
-        // One transaction for the file. A request carrying a transaction id
-        // already runs inside the idempotency filter's, so a savepoint stands
-        // in for our own there.
-        var ambient = db.Database.CurrentTransaction;
-        var own = ambient is null ? await db.Database.BeginTransactionAsync(cancellationToken) : null;
-        var savepoint = $"import_{Guid.NewGuid():N}";
-        if (ambient is not null)
-        {
-            await ambient.CreateSavepointAsync(savepoint, cancellationToken);
-        }
-
-        async Task UndoAsync()
-        {
-            if (own is not null)
-            {
-                await own.RollbackAsync(cancellationToken);
-            }
-            else
-            {
-                await ambient!.RollbackToSavepointAsync(savepoint, cancellationToken);
-            }
-
-            db.ChangeTracker.Clear();
-        }
+        // One transaction for the file (or a savepoint in the request's own;
+        // see ImportTransaction).
+        await using var transaction = await ImportTransaction.BeginAsync(db, cancellationToken);
 
         try
         {
@@ -175,7 +153,7 @@ public class FacilityImportService(NcbrsDbContext db, FacilityOnboardingService 
                 {
                     // Something changed between the check and now (another addition
                     // took the name or the code). Nothing from this file is kept.
-                    await UndoAsync();
+                    await transaction.UndoAsync(cancellationToken);
                     return new ImportFacilitiesResponse(false, valid - 1, invalid + 1,
                         [.. results.Select(result => result.Row.Line == row.Line ? result.Row with { Problems = [outcome.Detail!] } : result.Row)]);
                 }
@@ -195,11 +173,7 @@ public class FacilityImportService(NcbrsDbContext db, FacilityOnboardingService 
                 TransactionId = transactionId,
             });
             await db.SaveChangesAsync(cancellationToken);
-
-            if (own is not null)
-            {
-                await own.CommitAsync(cancellationToken);
-            }
+            await transaction.CommitAsync(cancellationToken);
 
             return new ImportFacilitiesResponse(true, applied.Count, 0, applied);
         }
@@ -207,164 +181,12 @@ public class FacilityImportService(NcbrsDbContext db, FacilityOnboardingService 
         {
             // Another addition landed in the same moment (a range or code taken
             // under us). Every row of the file goes with it.
-            await UndoAsync();
+            await transaction.UndoAsync(cancellationToken);
             return new ImportFacilitiesResponse(false, valid, invalid,
                 [.. results.Select(result => result.Row with
                 {
                     Problems = ["Another facility was added while this file was being applied. Nothing from the file was added; check it again."],
                 })]);
         }
-        finally
-        {
-            if (own is not null)
-            {
-                await own.DisposeAsync();
-            }
-        }
-    }
-
-    private static TEnum? ParseEnum<TEnum>(string value, string column, List<string> problems) where TEnum : struct, Enum
-    {
-        // "Village health post" as well as "VillageHealthPost": the file is typed by people.
-        var compact = value.Replace(" ", "", StringComparison.Ordinal).Replace("_", "", StringComparison.Ordinal);
-        if (compact.Length > 0 && !int.TryParse(compact, out _) && Enum.TryParse<TEnum>(compact, ignoreCase: true, out var parsed))
-        {
-            return parsed;
-        }
-
-        problems.Add($"The {column} must be one of: {string.Join(", ", Enum.GetNames<TEnum>())}.");
-        return null;
-    }
-
-    // --- the file ------------------------------------------------------------------------------
-
-    private sealed record CsvRow(int Line, Dictionary<string, string> Values)
-    {
-        public string Get(string column) => Values.TryGetValue(column, out var value) ? value.Trim() : string.Empty;
-    }
-
-    private static (List<CsvRow> Rows, string? Problem) Parse(string csv)
-    {
-        if (string.IsNullOrWhiteSpace(csv))
-        {
-            return ([], "The file is empty.");
-        }
-
-        if (Encoding.UTF8.GetByteCount(csv) > MaxBytes)
-        {
-            return ([], $"The file is larger than {MaxBytes / 1024} KB.");
-        }
-
-        var lines = ReadRecords(csv.TrimStart('﻿'));
-        if (lines.Count == 0)
-        {
-            return ([], "The file is empty.");
-        }
-
-        var header = lines[0].Fields.Select(field => field.Trim().ToLowerInvariant().Replace(' ', '_')).ToList();
-        var missing = Required.Where(column => !header.Contains(column)).ToList();
-        if (missing.Count > 0)
-        {
-            return ([], $"The first row must name the columns {string.Join(", ", Required)} (and optionally office_code). Missing: {string.Join(", ", missing)}.");
-        }
-
-        var rows = lines.Skip(1)
-            .Where(record => record.Fields.Any(field => !string.IsNullOrWhiteSpace(field)))
-            .Select(record => new CsvRow(
-                record.Line,
-                header.Select((column, index) => (column, value: index < record.Fields.Count ? record.Fields[index] : ""))
-                    .GroupBy(pair => pair.column)
-                    .ToDictionary(group => group.Key, group => group.First().value)))
-            .ToList();
-
-        if (rows.Count == 0)
-        {
-            return ([], "The file has a header row but no facilities.");
-        }
-
-        return rows.Count > MaxRows ? ([], $"The file has {rows.Count} facilities; at most {MaxRows} at a time.") : (rows, null);
-    }
-
-    /// <summary>RFC 4180: commas or semicolons between fields, quotes around a field that holds either or a quote.</summary>
-    private static List<(int Line, List<string> Fields)> ReadRecords(string text)
-    {
-        var separator = DetectSeparator(text);
-        var records = new List<(int, List<string>)>();
-        var fields = new List<string>();
-        var field = new StringBuilder();
-        var quoted = false;
-        var line = 1;
-        var recordLine = 1;
-
-        for (var i = 0; i < text.Length; i++)
-        {
-            var c = text[i];
-            if (quoted)
-            {
-                if (c == '"' && i + 1 < text.Length && text[i + 1] == '"')
-                {
-                    field.Append('"');
-                    i++;
-                }
-                else if (c == '"')
-                {
-                    quoted = false;
-                }
-                else
-                {
-                    if (c == '\n')
-                    {
-                        line++;
-                    }
-
-                    field.Append(c);
-                }
-
-                continue;
-            }
-
-            if (c == '"')
-            {
-                quoted = true;
-            }
-            else if (c == separator)
-            {
-                fields.Add(field.ToString());
-                field.Clear();
-            }
-            else if (c is '\n' or '\r')
-            {
-                if (c == '\r' && i + 1 < text.Length && text[i + 1] == '\n')
-                {
-                    i++;
-                }
-
-                fields.Add(field.ToString());
-                field.Clear();
-                records.Add((recordLine, fields));
-                fields = [];
-                line++;
-                recordLine = line;
-            }
-            else
-            {
-                field.Append(c);
-            }
-        }
-
-        if (field.Length > 0 || fields.Count > 0)
-        {
-            fields.Add(field.ToString());
-            records.Add((recordLine, fields));
-        }
-
-        return records;
-    }
-
-    /// <summary>Spreadsheets set to French or Arabic regional settings save CSV with semicolons.</summary>
-    private static char DetectSeparator(string text)
-    {
-        var header = text.Split('\n', 2)[0];
-        return header.Count(c => c == ';') > header.Count(c => c == ',') ? ';' : ',';
     }
 }

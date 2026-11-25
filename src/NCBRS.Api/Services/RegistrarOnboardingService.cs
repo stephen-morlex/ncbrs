@@ -113,56 +113,78 @@ public class RegistrarOnboardingService(NcbrsDbContext db, CurrentRegistrarServi
         return await query.OrderBy(account => account.FirstSeenAtUtc).ToListAsync(cancellationToken);
     }
 
-    public async Task<RegistrarOnboardingOutcome> BindAsync(
-        BindRegistrarRequest request, Registrar caller, ClaimsPrincipal user, Guid? transactionId,
-        CancellationToken cancellationToken = default)
+    /// <summary>A binding that passed every check, with what the checks found.</summary>
+    public sealed record CheckedBinding(PendingAccount Pending, Facility Facility, string FacilityCounty);
+
+    /// <summary>
+    /// Every check <see cref="BindAsync"/> makes, without binding: the
+    /// registrar import's dry run runs exactly these, so a file that checks
+    /// clean is one that would bind.
+    /// </summary>
+    public async Task<(RegistrarOnboardingOutcome? Refusal, CheckedBinding? Checked)> CheckBindAsync(
+        BindRegistrarRequest request, Registrar caller, ClaimsPrincipal user, CancellationToken cancellationToken = default)
     {
         var pending = await db.PendingAccounts.FindAsync([request.PendingAccountId], cancellationToken);
         if (pending is null)
         {
-            return new(RegistrarOnboardingResult.NotFound, Field: "data.pendingAccountId",
-                Detail: "No account is waiting with that id. The person signs in to the registry once, and then appears here.");
+            return (new(RegistrarOnboardingResult.NotFound, Field: "data.pendingAccountId",
+                Detail: "No account is waiting with that id. The person signs in to the registry once, and then appears here."), null);
         }
 
         var facility = await db.Facilities.FindAsync([request.FacilityId], cancellationToken);
         if (facility is null)
         {
-            return new(RegistrarOnboardingResult.NotFound, Field: "data.facilityId", Detail: "No such facility.");
+            return (new(RegistrarOnboardingResult.NotFound, Field: "data.facilityId", Detail: "No such facility."), null);
         }
 
         if (!await current.CanActForFacilityAsync(caller, facility.FacilityId, cancellationToken))
         {
-            return new(RegistrarOnboardingResult.NotPermitted, Field: "data.facilityId",
-                Detail: "You may onboard staff only for facilities in your own county.");
+            return (new(RegistrarOnboardingResult.NotPermitted, Field: "data.facilityId",
+                Detail: "You may onboard staff only for facilities in your own county."), null);
         }
 
         if (!user.IsInRole(NcbrsRoles.MinistryAdmin) && !FacilityStaff.Contains(request.Role))
         {
-            return new(RegistrarOnboardingResult.NotPermitted, Field: "data.role",
-                Detail: "A district officer onboards facility registrars and community health workers. Other roles are the Ministry's to give.");
+            return (new(RegistrarOnboardingResult.NotPermitted, Field: "data.role",
+                Detail: "A district officer onboards facility registrars and community health workers. Other roles are the Ministry's to give."), null);
         }
 
         var realmRole = NcbrsRoles.RealmRoleFor(request.Role);
         if (!pending.RealmRoles.Split(',').Contains(realmRole))
         {
-            return new(RegistrarOnboardingResult.Refused, Field: "data.role",
-                Detail: $"The account does not hold the {realmRole} role in Keycloak. Give it the role there, have the person sign in again, then bind it.");
+            return (new(RegistrarOnboardingResult.Refused, Field: "data.role",
+                Detail: $"The account does not hold the {realmRole} role in Keycloak. Give it the role there, have the person sign in again, then bind it."), null);
         }
 
         var facilityCounty = await counties.ForFacilityAsync(facility.FacilityId, cancellationToken);
         if (pending.CountyCode is { } accountCounty && !string.Equals(accountCounty, facilityCounty, StringComparison.OrdinalIgnoreCase))
         {
-            return new(RegistrarOnboardingResult.Refused, Field: "data.facilityId",
-                Detail: $"The account is in county {accountCounty} in Keycloak, and this facility is in {facilityCounty}. Correct one or the other first.");
+            return (new(RegistrarOnboardingResult.Refused, Field: "data.facilityId",
+                Detail: $"The account is in county {accountCounty} in Keycloak, and this facility is in {facilityCounty}. Correct one or the other first."), null);
         }
 
         // A district officer's reporting is scoped by their county group; bound
         // without one, they would be refused every dashboard (CLAUDE.md, "Who reads what").
         if (request.Role == RegistrarRole.DistrictOfficer && pending.CountyCode is null)
         {
-            return new(RegistrarOnboardingResult.Refused, Field: "data.role",
-                Detail: "A district officer needs their county group in Keycloak before they are bound. Add it, have them sign in again, then bind.");
+            return (new(RegistrarOnboardingResult.Refused, Field: "data.role",
+                Detail: "A district officer needs their county group in Keycloak before they are bound. Add it, have them sign in again, then bind."), null);
         }
+
+        return (null, new CheckedBinding(pending, facility, facilityCounty));
+    }
+
+    public async Task<RegistrarOnboardingOutcome> BindAsync(
+        BindRegistrarRequest request, Registrar caller, ClaimsPrincipal user, Guid? transactionId,
+        CancellationToken cancellationToken = default)
+    {
+        var (refusal, @checked) = await CheckBindAsync(request, caller, user, cancellationToken);
+        if (refusal is not null)
+        {
+            return refusal;
+        }
+
+        var (pending, facility, facilityCounty) = @checked!;
 
         var registrar = new Registrar
         {
