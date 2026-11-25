@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from 'react-oidc-context'
-import { CircleAlert, CircleCheck, Hospital, Plus, TriangleAlert } from 'lucide-react'
+import { CircleAlert, CircleCheck, FileUp, Hospital, Plus, TriangleAlert } from 'lucide-react'
 import { WebChannelDeviceId } from '@/auth/channel'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -41,6 +41,7 @@ import { satisfies } from '@/auth/roles'
 import { useApiClient } from '@/api/useApi'
 import { PageHeader } from '@/shell/PageHeader'
 import { CreateFacilityDialog } from './CreateFacilityDialog'
+import { ImportFacilitiesDialog } from './ImportFacilitiesDialog'
 import { OfficeCodeDialog } from './OfficeCodeDialog'
 
 type Facility = components['schemas']['FacilityResponse']
@@ -71,6 +72,8 @@ export function Facilities() {
   // server enforces it; hiding the button is a courtesy.
   const canCreate = satisfies(realmRoles(auth.user), 'CanManageFacilities')
   const [creating, setCreating] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [imported, setImported] = useState<number | null>(null)
   const [created, setCreated] = useState<Facility | null>(null)
 
   const [facilities, setFacilities] = useState<Facility[] | null>(null)
@@ -130,10 +133,34 @@ export function Facilities() {
       />
 
       {canCreate ? (
-        <Button onClick={() => setCreating(true)}>
-          <Plus />
-          Add a facility
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => setCreating(true)}>
+            <Plus />
+            Add a facility
+          </Button>
+          <Button variant="outline" onClick={() => setImporting(true)}>
+            <FileUp />
+            Add from a file
+          </Button>
+        </div>
+      ) : null}
+
+      {imported !== null ? (
+        <Alert>
+          <CircleCheck />
+          <AlertTitle>{imported === 1 ? '1 facility added from the file' : `${imported} facilities added from the file`}</AlertTitle>
+          <AlertDescription>Each has its county and its own range of registration numbers.</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {importing ? (
+        <ImportFacilitiesDialog
+          onClose={() => setImporting(false)}
+          onImported={(count) => {
+            setImported(count)
+            void load()
+          }}
+        />
       ) : null}
 
       {created ? (

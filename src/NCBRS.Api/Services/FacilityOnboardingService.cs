@@ -63,15 +63,23 @@ public class FacilityOnboardingService(NcbrsDbContext db, CountyLookup counties,
         AdministrativeLevel.Village,
     ];
 
-    public async Task<FacilityOnboardingOutcome> CreateAsync(
-        CreateFacilityRequest request, Registrar actor, Guid? transactionId, CancellationToken cancellationToken = default)
+    /// <summary>A request that passed every check, with what the checks worked out.</summary>
+    public sealed record CheckedFacility(string Name, AdministrativeArea Area, string CountyCode, string? OfficeCode);
+
+    /// <summary>
+    /// Every check <see cref="CreateAsync"/> makes, without creating anything:
+    /// the facility import's dry run runs exactly these, so a file that checks
+    /// clean is one that would be added.
+    /// </summary>
+    public async Task<(FacilityOnboardingOutcome? Refusal, CheckedFacility? Checked)> CheckAsync(
+        CreateFacilityRequest request, CancellationToken cancellationToken = default)
     {
         var area = await db.AdministrativeAreas.AsNoTracking()
             .FirstOrDefaultAsync(entry => entry.AdministrativeAreaId == request.AdministrativeAreaId, cancellationToken);
 
         if (area is null)
         {
-            return new(FacilityOnboardingResult.AreaNotFound, Detail: "No such administrative area.");
+            return (new(FacilityOnboardingResult.AreaNotFound, Detail: "No such administrative area."), null);
         }
 
         var county = await counties.ForAreaAsync(area.AdministrativeAreaId, cancellationToken);
@@ -80,8 +88,8 @@ public class FacilityOnboardingService(NcbrsDbContext db, CountyLookup counties,
         // would have no county, and county is the scope every officer acts in.
         if (!PlaceableLevels.Contains(area.Level) || county is null)
         {
-            return new(FacilityOnboardingResult.NotInACounty,
-                Detail: $"'{area.Name}' is a {area.Level}. A facility is placed in a county, or a payam, block, boma, quarter or village within one.");
+            return (new(FacilityOnboardingResult.NotInACounty,
+                Detail: $"'{area.Name}' is a {area.Level}. A facility is placed in a county, or a payam, block, boma, quarter or village within one."), null);
         }
 
         var name = request.Name.Trim();
@@ -90,15 +98,29 @@ public class FacilityOnboardingService(NcbrsDbContext db, CountyLookup counties,
 
         if (taken)
         {
-            return new(FacilityOnboardingResult.NameTaken,
-                Detail: $"{county} already has a facility called '{name}'. Two with one name would be told apart by nobody.");
+            return (new(FacilityOnboardingResult.NameTaken,
+                Detail: $"{county} already has a facility called '{name}'. Two with one name would be told apart by nobody."), null);
         }
 
         var officeCode = string.IsNullOrWhiteSpace(request.OfficeCode) ? null : OfficeCodes.Normalise(request.OfficeCode);
         if (officeCode is not null && await OfficeCodeTakenAsync(officeCode, cancellationToken) is { } holder)
         {
-            return new(FacilityOnboardingResult.OfficeCodeTaken, Detail: TakenDetail(officeCode, holder));
+            return (new(FacilityOnboardingResult.OfficeCodeTaken, Detail: TakenDetail(officeCode, holder)), null);
         }
+
+        return (null, new CheckedFacility(name, area, county, officeCode));
+    }
+
+    public async Task<FacilityOnboardingOutcome> CreateAsync(
+        CreateFacilityRequest request, Registrar actor, Guid? transactionId, CancellationToken cancellationToken = default)
+    {
+        var (refusal, @checked) = await CheckAsync(request, cancellationToken);
+        if (refusal is not null)
+        {
+            return refusal;
+        }
+
+        var (name, area, county, officeCode) = @checked!;
 
         for (var attempt = 1; ; attempt++)
         {
