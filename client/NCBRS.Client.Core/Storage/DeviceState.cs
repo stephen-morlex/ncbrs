@@ -1,6 +1,7 @@
 using NCBRS.Certificates;
 using NCBRS.Client.Auth;
 using NCBRS.Client.Sync;
+using NCBRS.Client.Time;
 using NCBRS.Models;
 
 namespace NCBRS.Client.Storage;
@@ -97,6 +98,13 @@ public sealed class DeviceState
     /// counters would give a thief five guesses for every name on the list.
     /// </summary>
     public PinAttempts Attempts { get; set; } = new(0, null);
+
+    /// <summary>
+    /// What the tablet has established about the time (<see cref="TrustedClock"/>):
+    /// the latest time it trusted and the registry's time at its last answer.
+    /// Null in a state saved before it existed, which starts from the clock as it reads.
+    /// </summary>
+    public ClockState? Clock { get; set; }
 }
 
 /// <summary>
@@ -148,7 +156,20 @@ public sealed record BundleState(
 public sealed record StaffCredential(Guid RegistrarId, string DisplayName, RegistrarRole Role, PinCredential Credential);
 
 /// <summary>The device's unlock attempt state, saved after <em>every</em> attempt.</summary>
-public sealed record PinAttempts(int FailedAttempts, DateTime? LockedUntilUtc);
+/// <param name="LockedUntilUtc">
+/// Only read, from a state saved before lockouts moved to the monotonic clock:
+/// such a lock restarts in full. Never written, because a wall-clock time is
+/// what setting the date defeated.
+/// </param>
+/// <param name="Lockouts">Lockouts since the right PIN was last entered; each cooldown doubles.</param>
+/// <param name="LockedAt">When the current cooldown began, on the monotonic clock.</param>
+/// <param name="LockedFor">How long the current cooldown lasts.</param>
+public sealed record PinAttempts(
+    int FailedAttempts,
+    DateTime? LockedUntilUtc,
+    int Lockouts = 0,
+    MonotonicReading? LockedAt = null,
+    TimeSpan? LockedFor = null);
 
 /// <summary>A sealed transfer file written for removable media, and the births on it.</summary>
 public sealed record ExportRecord(DateTime AtUtc, List<string> Brns);

@@ -513,6 +513,68 @@ SELECT has_table_privilege('ncbrs_app', '"AuditLogs"', 'UPDATE'),
        has_table_privilege('ncbrs_app', '"AuditLogs"', 'DELETE');   -- both false
 ```
 
+## Go-live: discarding the pilot's data
+
+*Decided 2026-11-25.* The pilot runs the production system with every
+production feature and control: no training mode, nothing relaxed. **Its births
+are made up, not real families.** At go-live the pilot's data is discarded and
+the register starts empty.
+
+This is safe **only because no real family holds anything from the pilot.** If a
+real birth is ever registered during it, stop: that registration is a legal
+record, and this procedure would delete it. A family would hold a number that
+resolves to nothing, and the number would later be issued to another child.
+
+Discarding the tables is not enough. Pilot data lives in more places than the
+registry, and two pilot artefacts stay trustworthy unless they are withdrawn
+explicitly. Do all of the following, in order:
+
+1. **Stop all writers.** Every tablet syncs one last time, then is collected.
+   Stop the District nodes, Api, Relay and Consumer.
+2. **Back up first, and keep the backup off the production host.** A `pg_dump`
+   of the registry, the Kafka topics if they are needed for the pilot report,
+   and the District stores. This is the pilot's record for its evaluation, not
+   a production backup. Never restore it into production.
+3. **Recreate the registry rather than truncating it.** Drop the database and
+   run the migrations into a new, empty one, then
+   `deploy/postgres/app-role-grants.sql`. Truncating in place would need the
+   `AuditLogs` triggers and grants removed by the owner, which is the act those
+   controls exist to make visible. A fresh database leaves them untouched. It
+   also resets every BRN counter (`BrnBlockNextAvailable`,
+   `FacilityBrnSequence`), which is correct only because no pilot number is in
+   anyone's hands.
+4. **Delete and recreate every Kafka topic**, then delete the Consumer's read
+   model (`ncbrs-readmodel.db`). Otherwise the read model replays the pilot's
+   events straight back into the dashboards.
+5. **Delete each District node's store.** It holds no copy of the register, but
+   it may still hold pilot batches that have not been forwarded.
+6. **Issue a new certificate signing key, with a new `KeyId`, and do not carry
+   the pilot key forward as a retired key.** Retired keys stay trusted
+   (CLAUDE.md, "Signing key rotation"), so a pilot key kept that way would make
+   every pilot certificate verify for ever, offline included. That is the
+   intended effect here, and it is only right because nothing the pilot key
+   signed is genuine. Also issue a new transfer key (`TransferEncryption`), so
+   a pilot USB stick cannot be uploaded into production.
+7. **Wipe and re-provision every tablet.** Uninstall the app (its encrypted
+   store goes with it: queued births, drafts, the 30-day Records history, BRN
+   blocks, the device key) and hand each tablet over again. The device ids are
+   new, because the keys are new.
+8. **Keycloak:** revoke every offline session (Sessions → Offline sessions, or
+   sign out all sessions in the realm), so no pilot tablet token outlives the
+   pilot. Keep the realm, users and county groups if the same people go live.
+   Their registrar bindings went with the database, so each account
+   reappears in the pending queue at its next sign-in and is bound again.
+   Remove any pilot-only test accounts.
+9. **DHIS2:** delete every value the pilot exported, on the DHIS2 side. The
+   export is Ministry-only and monthly, so check whether anything ran at all.
+10. **Recreate the reference data:** administrative areas (seeded on migration),
+    then facilities with their office codes (`POST /api/facilities`). An
+    office code can be reused because the register that used it is gone.
+11. **Check:** `/health` answers `ok`; the signing key's id is the new one
+    (`GET /api/certificates/signing-key`); a pilot certificate checked on a
+    re-provisioned tablet answers *not genuine*; the first production
+    registration at each facility is `…-000001`.
+
 ## Escalation
 
 - Registration path down (API 5xx on register) → highest priority; the offline

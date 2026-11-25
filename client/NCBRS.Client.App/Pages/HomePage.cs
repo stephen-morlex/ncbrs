@@ -29,6 +29,15 @@ public sealed class HomePage : FlowPage
 
         var views = new List<View> { Header(host, name) };
 
+        // Said, not silently corrected: the registrar can fix it in Settings,
+        // and the status bar will otherwise disagree with every time shown here.
+        if (host.Now() is { WallIsWrong: true } clock)
+        {
+            views.Add(Ui.Notice(Icons.Clock,
+                Language.Format(Strings.Clock_Wrong, clock.WallUtc.ToLocalTime(), clock.Utc.ToLocalTime()),
+                Tone.Pending));
+        }
+
         if (refused > 0)
         {
             views.Add(Ui.Notice(Icons.Error,

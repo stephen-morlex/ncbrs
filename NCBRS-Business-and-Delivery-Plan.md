@@ -600,6 +600,103 @@ engineering effort — it is blocked on hardware, agreements, infrastructure,
 people or a decision. The central tier is essentially feature-complete; the
 critical path is still WS-B's device build.
 
+### P. Pilot readiness (reviewed 2026-11-25)
+
+A review of the plans, the code and `docs/pilot-readiness.md` against what a
+pilot district meets on day one. Items are numbered on from 27 so the older
+numbers below stay valid.
+
+**Decided:** the pilot runs the production system with every production feature
+and control. There is no training mode. **The pilot's births are made up, not
+real families,** and all pilot data is discarded at go-live by the RUNBOOK
+procedure "Go-live: discarding the pilot's data": recreate the database rather
+than truncate it, use a new signing key and transfer key (the pilot keys are
+**not** kept as retired keys), clear Kafka and the read model, wipe and re-hand
+the tablets, revoke offline sessions, and delete DHIS2 values. If a real birth
+is ever registered during the pilot, that procedure is no longer safe.
+
+**P0: before the pilot**
+
+| # | Item | Blocked by |
+|---|---|---|
+| 28 | **A clock the tablet can trust** (pilot-readiness §2, still open on 2026-11-25: `OfflinePinLock` used the wall clock). A high-water mark of trusted time, the registry's time from every answer, and PIN lockouts measured on elapsed time, escalating on repeats | **Done.** Checked on the emulator 2026-11-25: a lockout held with the date moved a day forward, a reboot restarted it in full, the registry's time flagged the clock on Home, and the form's "today" stayed the true day |
+| 29 | **Role split into permissions** (matrix below), and a CI test that enumerates every endpoint and asserts its policy, so a new endpoint without one fails | D1, D2 |
+| 30 | **Keycloak hardening.** The realm has no brute-force detection, no password policy and no MFA. Add all three, with OTP and shorter sessions for oversight roles | D3 |
+| 31 | **Creating bomas and villages.** `AdministrativeAreasController` is read-only and bomas are not seeded, so a village post can only be placed at payam level. Add a write endpoint and a web page, system admin only | — |
+| 32 | **Certificates awaiting collection.** A birth registered offline leaves the family with a slip. Add a queue per facility and county of births with no certificate yet, to print at the next connected visit or at the district office, with the handover recorded | — |
+| 33 | **A test print on a real Bluetooth printer** (B7) | hardware |
+| 34 | Production setup: items 14–16 and 19 below (HSM or secret store, rehearsed point-in-time recovery, database grants applied, a monitor that pages) | infrastructure |
+
+**P1: running the pilot well**
+
+| # | Item |
+|---|---|
+| 35 | Pilot operations metrics per facility: refused-birth rate, provisional numbers still open, how long review queues have waited, sync lag, certificates not yet collected |
+| 36 | A facility view for registrars: this week's births, and where their corrections and late registrations stand |
+| 37 | "Report a problem" on the tablet: a diagnostics bundle with no personal data (app version, queue sizes, clock offset, last error) |
+| 38 | Bulk onboarding of facilities and registrars from a CSV, reviewed by the system admin before it is applied |
+
+**Go-live**
+
+| # | Item | Status |
+|---|---|---|
+| 39 | Discard the pilot's data (RUNBOOK, "Go-live: discarding the pilot's data") | **Procedure written** |
+
+**P2: after the pilot, or waiting on others:** rare-word weighting in duplicate
+matching (11e, needs data), SMS confirmations and alert delivery (23, needs a
+provider), the National ID push (20, needs an agreement), and a family's
+request to see their record and who accessed it (needs data-protection law).
+
+**Proposed roles.** Each role holds permissions rather than being listed in
+policies, and county and facility scope stays in the services
+(`CanActForFacilityAsync`, `ReviewQueueScope`): RBAC decides *what*, scope
+decides *where*. Today all four Ministry rows are one role, `ministry-admin`,
+which holds every power at once: registering births, annulling, creating
+facilities, reading the audit trail and exporting.
+
+| Role | Scope | Purpose |
+|---|---|---|
+| `community-health-worker` | own facility | records births, outcomes and statistics, offline. Certificates: D1 |
+| `facility-registrar` | own facility | registers, makes immediate corrections, issues and reprints certificates |
+| `district-officer` | own county | approvals, duplicate review, late-registration verification, devices, onboarding facility staff, county audit trail and dashboards |
+| `registrar-general` | national | annulment, national approvals, cases spanning two counties |
+| `system-admin` | national | facilities, office codes, administrative areas, registrars, devices. **Cannot read records or register births** |
+| `auditor` | national, read-only | audit trail and records; no writes at all |
+| `statistician` | national | dashboards and the DHIS2 export; no search by name |
+| `helpdesk` (optional) | own county | PIN resets and registrar status only |
+
+C create · R read · U update · A approve or decide. "own" is own facility,
+"cty" own county, "nat" national.
+
+| Model | CHW | Fac. reg. | District | Reg.-Gen. | Sys-admin | Auditor | Statistician |
+|---|---|---|---|---|---|---|---|
+| BirthRecord | C·R own | C·R·U own | R·U cty | R·U nat | – | R nat | – |
+| Search by name | own | own | cty | nat | – | nat | – |
+| Amendment approval | – | – | A cty | A nat | – | R | – |
+| LateRegistration | C own | C own | A cty | A nat | – | R | – |
+| DuplicateCandidate | – | – | A cty | A nat | – | R | – |
+| RecordAnnulment | – | – | – | A | – | R | – |
+| Certificate issue/reprint | D1 | own | cty | nat | – | R | – |
+| Neonatal/Maternal outcome | C own | C·U own | cty | nat | – | R | aggregate only |
+| MaternalStatistics | C·U own | C·U own | cty | nat | – | R | aggregate only |
+| Facility / office code | R | R | R cty | R | C·U | R | R |
+| AdministrativeArea | R | R | R | R | C·U | R | R |
+| Registrar / PendingAccount | – | self | C·U cty (facility staff only) | R | C·U nat | R | – |
+| Device / DeviceAlert | – | – | C·U·A cty | R | C·U nat | R | – |
+| AuditLog | – | – | R cty | R nat | – | R nat | – |
+| Dashboard / DHIS2 export | – | – | dashboard cty | dashboard nat | – | – | dashboard + export nat |
+
+Separation of duties: whoever submits never approves (already enforced), and a
+system admin never acts on records.
+
+**Open decisions**
+
+- **D1:** Should CHWs lose the right to issue and reprint certificates?
+  `CertificatesController` uses `CanRegisterBirths`, which includes them.
+- **D2:** Should `ministry-admin` split into four roles, or into two for the
+  pilot (`registrar-general` and `system-admin`)?
+- **D3:** Should OTP be mandatory for every oversight account?
+
 ### A. In the repo, no external blocker
 
 | # | Task | Status | Done when |

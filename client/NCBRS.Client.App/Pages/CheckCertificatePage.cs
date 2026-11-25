@@ -158,7 +158,7 @@ public sealed class CheckCertificatePage : FlowPage
 
         Status.Text = "";
         var bundle = _host.Session?.Sync.Bundle ?? CachedVerificationBundle.Empty;
-        Show(CertificateCheck.Check(bundle, code, DateTime.UtcNow));
+        Show(CertificateCheck.Check(bundle, code, _host.Now().Utc));
     }
 
     private void Show(CertificateReading reading)
