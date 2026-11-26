@@ -256,6 +256,31 @@ public class RegistrarsController(
     }
 
     /// <summary>
+    /// Bind waiting accounts from a CSV file (plan §17 item 38). With
+    /// <c>apply</c> false, checks every row and binds nobody; with it true,
+    /// binds every row in one transaction, or nobody if any row fails. The
+    /// same limits as binding one.
+    /// </summary>
+    [HttpPost("import", Name = "ImportRegistrars")]
+    [Authorize(Policy = NcbrsRoles.CanManageRegistrars)]
+    [ProducesResponseType(typeof(ImportRegistrarsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ImportRegistrarsResponse>> Import(
+        ApiRequest<ImportRegistrarsRequest> envelope, [FromServices] RegistrarImportService import)
+    {
+        var caller = await currentRegistrar.GetAsync(HttpContext.RequestAborted);
+        if (caller is null)
+        {
+            return NotProvisioned();
+        }
+
+        return await import.ImportAsync(
+            envelope.Data, caller, User, TransactionContext.Get(HttpContext)?.TransactionId, HttpContext.RequestAborted);
+    }
+
+    /// <summary>
     /// Withdraw a registrar who has stopped working here. The row stays (the
     /// trail names them); they resolve as unprovisioned from now on, and their
     /// PIN leaves each tablet at its next sync.

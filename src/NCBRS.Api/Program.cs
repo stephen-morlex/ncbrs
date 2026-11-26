@@ -115,6 +115,7 @@ builder.Services.AddScoped<FacilityOperationsService>();
 builder.Services.AddScoped<WorkScope>();
 builder.Services.AddScoped<AdministrativeAreaService>();
 builder.Services.AddScoped<RegistrarOnboardingService>();
+builder.Services.AddScoped<RegistrarImportService>();
 builder.Services.AddSingleton(builder.Configuration.GetSection(FacilityOnboardingOptions.SectionName)
     .Get<FacilityOnboardingOptions>() ?? new FacilityOnboardingOptions());
 
