@@ -312,6 +312,30 @@ changes, rewrite that file from the test's message. A policy says **what**;
   imported the realm before this keeps the old users until it restarts: it
   runs in memory and re-imports the realm on start (`docker compose restart keycloak`).
 
+## Sign-in hardening (plan §17 item 30, decision D3, built)
+The procedure and the production differences are in RUNBOOK.md, "Deployment:
+Keycloak realm". `KeycloakRealmHardeningTests` pins the dev realm.
+- **A one-time code for every role except the two facility roles.** It's
+  expressed as a composite realm role, `otp-required`, which the sign-in
+  flows check with `conditional-user-role`. The test asks the question the
+  safe way round: a new role needs a code unless someone exempts it.
+- **Both the browser flow and the password grant ask for it.** Binding only
+  the browser would leave the password grant as a way round it.
+- **The fixtures sign in with real codes.**
+  - The three oversight accounts carry one fixture secret.
+  - The e2e sign-in (`web/e2e/totp.ts`), the TLS rehearsal, the harness and
+    the load driver each compute the code from it, so CI runs the flow
+    production uses.
+  - A registrar's password grant ignores a `totp` parameter, so callers
+    always send one.
+  - Keycloak keys the HMAC with the secret's own bytes, not base32.
+- **Fixture passwords are imported hashed.** The password policy applies at
+  import, and a plain `"password"` stopped Keycloak starting.
+- **A permanent lockout is refused on purpose.** It would let anyone who knows
+  a username lock an officer out.
+- Two failed sign-ins within a second lock an account for 60 s. This bites any
+  script that tries a wrong credential and then a right one straight away.
+
 ## Onboarding facilities and registrars (pilot readiness §1, built)
 Until this, only the Development seed could create a facility or a registrar,
 so a pilot district's first registrar would have been refused everywhere

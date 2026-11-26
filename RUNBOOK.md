@@ -428,6 +428,53 @@ every batch and logs `District node configuration fault`; nothing is lost.
 With every node on its own client, direct access grants can be turned off on
 `ncbrs-device`.
 
+**Sign-in hardening (plan §17 item 30, decision D3).** The dev realm is the
+reference, and `KeycloakRealmHardeningTests` holds it there.
+- **A one-time code (TOTP) for every role but the two facility roles.** Those
+  roles hold `otp-required` as a composite: `district-officer`,
+  `registrar-general` and `system-admin`. Both sign-in flows check for it:
+  `ncbrs browser` (bound as the browser flow) and `ncbrs direct grant`.
+  - A conditional subflow asks for the code when the user holds that role
+    (`conditional-user-role`, `condUserRole: otp-required`). A new oversight
+    role is given the composite, and the test fails until it is.
+  - Facility registrars and CHWs are not asked. A tablet signs in once and
+    then works for weeks without signal.
+  - **First sign-in:** an officer with no code set up is sent to "Mobile
+    Authenticator Setup" before reaching anything. Have an authenticator app
+    on their phone (FreeOTP, Google Authenticator, Microsoft Authenticator)
+    at onboarding.
+  - **A lost phone:** in the admin console, delete the user's OTP credential
+    under Credentials. They set up a new one at their next sign-in. Confirm
+    who is asking first: this is the one step that bypasses the second factor.
+  - The tablet handover is an officer's browser sign-in, so the officer types
+    a code there too.
+  - Through the password grant, an account that needs a code and has none set
+    up is refused. Keycloak answers that with a 500 (`AuthenticationFlowException`),
+    not a 401. It still fails closed, and production clients have the password
+    grant off anyway.
+- **Production differs from dev in one setting:** `otpPolicyCodeReusable` must
+  be `false`, which is Keycloak's default. Dev sets it to `true` because the
+  TLS rehearsal and the load driver sign the same account in several times
+  within one 30-second code.
+- **Wrong passwords:** after 5, the account is locked for 60 seconds. Each
+  further failure adds 60 more, up to 15 minutes, and the count resets after
+  12 hours. Two failures within one second lock it for 60 seconds.
+  **Never set `permanentLockout`:** anyone who knows an officer's username
+  could then lock them out until an administrator intervenes. Keycloak gives a
+  locked account the same "Invalid user credentials" as a wrong password, and
+  logs `user_temporarily_disabled`. To unlock early, open the user in the
+  admin console: their details show the temporary lock, which can be cleared.
+- **Passwords:** at least 12 characters, at most 128, not the username or
+  email, and none of the last 5. The policy applies when a password is set,
+  **including at realm import**. So the dev fixtures' `"password"` is imported
+  pre-hashed (`secretData`). A plain-text fixture password stops Keycloak
+  starting with `invalidPasswordMinLengthMessage`.
+- **Sessions:** a browser session ends after 30 minutes idle
+  (`ssoSessionIdleTimeout`) or 8 hours in all (`ssoSessionMaxLifespan`, one
+  working day). Keycloak sets these per realm or client, not per role. A
+  registrar on the web site gets the same limits, which costs them little.
+  Tablets are unaffected: they hold offline tokens (60 days idle, 180 in all).
+
 After changing the realm: tokens signed by a new realm key are refused by an
 Api still holding the old key set until it re-fetches it (a few minutes); a
 real key rotation keeps the old key published alongside the new, so this only

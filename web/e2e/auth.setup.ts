@@ -1,4 +1,5 @@
 import { expect, test as setup } from '@playwright/test'
+import { totp } from './totp'
 import { type Role, Users, storageFor } from './users'
 
 const realm = 'http://localhost:8080/realms/ncbrs'
@@ -19,6 +20,15 @@ for (const role of Object.keys(Users) as Role[]) {
     await page.locator('#username').fill(Users[role].username)
     await page.locator('#password').fill(Users[role].password)
     await page.locator('#kc-login').click()
+
+    // Oversight roles are asked for a one-time code next (decision D3). A
+    // registrar is not: the check below that they are back in the app straight
+    // after the password is what shows it.
+    const user: { username: string; otpSecret?: string } = Users[role]
+    if (user.otpSecret) {
+      await page.locator('#otp').fill(totp(user.otpSecret))
+      await page.locator('#kc-login').click()
+    }
 
     // Back in the app, shell rendered: signed in.
     await expect(page).toHaveURL(/localhost:5173\/records/)

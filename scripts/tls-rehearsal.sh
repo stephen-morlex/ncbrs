@@ -209,8 +209,14 @@ wait_until 120 "Consumer projects every registration" projected \
 echo "== Tokens from Keycloak over HTTPS"
 cat > "$WORK/call.mjs" << 'EOF'
 // node call.mjs <kcPort> <user> <url> [forged]  ->  prints the HTTP status
+import { createHmac } from 'node:crypto'
 const [kcPort, user, url, forged] = process.argv.slice(2)
-const form = new URLSearchParams({ grant_type: 'password', client_id: 'ncbrs-device', username: user, password: 'password' })
+// Oversight accounts need a one-time code (decision D3); the dev realm gives
+// them this fixture secret. A registrar's grant ignores the parameter.
+const counter = Buffer.alloc(8); counter.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30000)))
+const hmac = createHmac('sha1', Buffer.from('ncbrs-dev-otp-fixture-not-a-secret')).update(counter).digest()
+const totp = String((hmac.readUInt32BE(hmac[19] & 15) & 0x7fffffff) % 1e6).padStart(6, '0')
+const form = new URLSearchParams({ grant_type: 'password', client_id: 'ncbrs-device', username: user, password: 'password', totp })
 const response = await fetch(`https://localhost:${kcPort}/realms/ncbrs/protocol/openid-connect/token`, { method: 'POST', body: form })
 let token = (await response.json()).access_token
 if (forged) token = token.split('.').slice(0, 2).join('.') + '.' + Buffer.from('not-the-signature').toString('base64url')

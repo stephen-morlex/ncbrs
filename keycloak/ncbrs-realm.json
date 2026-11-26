@@ -10,31 +10,79 @@
   "offlineSessionIdleTimeout": 5184000,
   "offlineSessionMaxLifespanEnabled": true,
   "offlineSessionMaxLifespan": 15552000,
+  "ssoSessionMaxLifespan": 28800,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "failureFactor": 5,
+  "waitIncrementSeconds": 60,
+  "maxFailureWaitSeconds": 900,
+  "maxDeltaTimeSeconds": 43200,
+  "quickLoginCheckMilliSeconds": 1000,
+  "minimumQuickLoginWaitSeconds": 60,
+  "passwordPolicy": "length(12) and maxLength(128) and notUsername and notEmail and passwordHistory(5)",
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyDigits": 6,
+  "otpPolicyPeriod": 30,
+  "otpPolicyLookAheadWindow": 1,
+  "otpPolicyCodeReusable": true,
+  "browserFlow": "ncbrs browser",
+  "directGrantFlow": "ncbrs direct grant",
   "roles": {
     "realm": [
+      {
+        "name": "otp-required",
+        "description": "Holding it requires a one-time code at every sign-in, by browser or password grant (decision D3). Held as a composite of district-officer, registrar-general and system-admin; never granted on its own."
+      },
       {
         "name": "facility-registrar",
         "description": "Registers births at their own facility. Maps to RegistrarRole.FacilityRegistrar. Holds offline_access: a tablet's sign-in must outlive weeks without connectivity.",
         "composite": true,
-        "composites": { "realm": ["offline_access"] }
+        "composites": {
+          "realm": [
+            "offline_access"
+          ]
+        }
       },
       {
         "name": "community-health-worker",
         "description": "Registers births in the community for their facility. Maps to RegistrarRole.CommunityHealthWorker. Holds offline_access, as a registrar.",
         "composite": true,
-        "composites": { "realm": ["offline_access"] }
+        "composites": {
+          "realm": [
+            "offline_access"
+          ]
+        }
       },
       {
         "name": "district-officer",
-        "description": "Oversees the facilities in a district; may act across them. Maps to RegistrarRole.DistrictOfficer."
+        "description": "Oversees the facilities in a district; may act across them. Maps to RegistrarRole.DistrictOfficer.",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "otp-required"
+          ]
+        }
       },
       {
         "name": "registrar-general",
-        "description": "The Ministry's records role: national approvals, annulment, the audit trail and reporting. Maps to RegistrarRole.RegistrarGeneral. One half of the retired ministry-admin (decision D2)."
+        "description": "The Ministry's records role: national approvals, annulment, the audit trail and reporting. Maps to RegistrarRole.RegistrarGeneral. One half of the retired ministry-admin (decision D2).",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "otp-required"
+          ]
+        }
       },
       {
         "name": "system-admin",
-        "description": "The Ministry's systems role: facilities, administrative areas, registrars and devices, nationally. Sees no birth record. Maps to RegistrarRole.SystemAdmin. The other half of the retired ministry-admin (decision D2)."
+        "description": "The Ministry's systems role: facilities, administrative areas, registrars and devices, nationally. Sees no birth record. Maps to RegistrarRole.SystemAdmin. The other half of the retired ministry-admin (decision D2).",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "otp-required"
+          ]
+        }
       }
     ]
   },
@@ -219,8 +267,9 @@
       "credentials": [
         {
           "type": "password",
-          "value": "password",
-          "temporary": false
+          "userLabel": "dev fixture: \"password\"",
+          "secretData": "{\"value\":\"3cmPNdfrjlkkEg5ll51FuCEKizEwDN5tuRkiIm0X8Kt9VvFA+Jt+jGlmpgsfHDASnITLVZId8pGrPO9UkRszKQ==\",\"salt\":\"bmNicnMtZGV2LWZpeHR1cmU=\",\"additionalParameters\":{}}",
+          "credentialData": "{\"hashIterations\":210000,\"algorithm\":\"pbkdf2-sha512\",\"additionalParameters\":{}}"
         }
       ],
       "realmRoles": [
@@ -238,8 +287,9 @@
       "credentials": [
         {
           "type": "password",
-          "value": "password",
-          "temporary": false
+          "userLabel": "dev fixture: \"password\"",
+          "secretData": "{\"value\":\"3cmPNdfrjlkkEg5ll51FuCEKizEwDN5tuRkiIm0X8Kt9VvFA+Jt+jGlmpgsfHDASnITLVZId8pGrPO9UkRszKQ==\",\"salt\":\"bmNicnMtZGV2LWZpeHR1cmU=\",\"additionalParameters\":{}}",
+          "credentialData": "{\"hashIterations\":210000,\"algorithm\":\"pbkdf2-sha512\",\"additionalParameters\":{}}"
         }
       ],
       "realmRoles": [
@@ -257,8 +307,15 @@
       "credentials": [
         {
           "type": "password",
-          "value": "password",
-          "temporary": false
+          "userLabel": "dev fixture: \"password\"",
+          "secretData": "{\"value\":\"3cmPNdfrjlkkEg5ll51FuCEKizEwDN5tuRkiIm0X8Kt9VvFA+Jt+jGlmpgsfHDASnITLVZId8pGrPO9UkRszKQ==\",\"salt\":\"bmNicnMtZGV2LWZpeHR1cmU=\",\"additionalParameters\":{}}",
+          "credentialData": "{\"hashIterations\":210000,\"algorithm\":\"pbkdf2-sha512\",\"additionalParameters\":{}}"
+        },
+        {
+          "type": "otp",
+          "userLabel": "dev fixture",
+          "secretData": "{\"value\":\"ncbrs-dev-otp-fixture-not-a-secret\"}",
+          "credentialData": "{\"subType\":\"totp\",\"digits\":6,\"counter\":0,\"period\":30,\"algorithm\":\"HmacSHA1\"}"
         }
       ],
       "realmRoles": [
@@ -279,8 +336,15 @@
       "credentials": [
         {
           "type": "password",
-          "value": "password",
-          "temporary": false
+          "userLabel": "dev fixture: \"password\"",
+          "secretData": "{\"value\":\"3cmPNdfrjlkkEg5ll51FuCEKizEwDN5tuRkiIm0X8Kt9VvFA+Jt+jGlmpgsfHDASnITLVZId8pGrPO9UkRszKQ==\",\"salt\":\"bmNicnMtZGV2LWZpeHR1cmU=\",\"additionalParameters\":{}}",
+          "credentialData": "{\"hashIterations\":210000,\"algorithm\":\"pbkdf2-sha512\",\"additionalParameters\":{}}"
+        },
+        {
+          "type": "otp",
+          "userLabel": "dev fixture",
+          "secretData": "{\"value\":\"ncbrs-dev-otp-fixture-not-a-secret\"}",
+          "credentialData": "{\"subType\":\"totp\",\"digits\":6,\"counter\":0,\"period\":30,\"algorithm\":\"HmacSHA1\"}"
         }
       ],
       "realmRoles": [
@@ -298,8 +362,15 @@
       "credentials": [
         {
           "type": "password",
-          "value": "password",
-          "temporary": false
+          "userLabel": "dev fixture: \"password\"",
+          "secretData": "{\"value\":\"3cmPNdfrjlkkEg5ll51FuCEKizEwDN5tuRkiIm0X8Kt9VvFA+Jt+jGlmpgsfHDASnITLVZId8pGrPO9UkRszKQ==\",\"salt\":\"bmNicnMtZGV2LWZpeHR1cmU=\",\"additionalParameters\":{}}",
+          "credentialData": "{\"hashIterations\":210000,\"algorithm\":\"pbkdf2-sha512\",\"additionalParameters\":{}}"
+        },
+        {
+          "type": "otp",
+          "userLabel": "dev fixture",
+          "secretData": "{\"value\":\"ncbrs-dev-otp-fixture-not-a-secret\"}",
+          "credentialData": "{\"subType\":\"totp\",\"digits\":6,\"counter\":0,\"period\":30,\"algorithm\":\"HmacSHA1\"}"
         }
       ],
       "realmRoles": [
@@ -318,6 +389,148 @@
           "subGroups": []
         }
       ]
+    }
+  ],
+  "authenticationFlows": [
+    {
+      "alias": "ncbrs browser",
+      "description": "The browser sign-in: the built-in one, plus a one-time code for anyone holding otp-required (decision D3).",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-cookie",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorFlow": true,
+          "flowAlias": "ncbrs browser forms",
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "ncbrs browser forms",
+      "description": "Username and password, then the one-time code where the role requires it.",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-username-password-form",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorFlow": true,
+          "flowAlias": "ncbrs browser otp",
+          "requirement": "CONDITIONAL",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "ncbrs browser otp",
+      "description": "A one-time code for oversight roles. Someone with none set up is made to set one up before going further.",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticatorConfig": "ncbrs otp-required (browser)",
+          "authenticator": "conditional-user-role",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "auth-otp-form",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "ncbrs direct grant",
+      "description": "The password grant (dev and tests only; off on every production client), held to the same one-time code.",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "direct-grant-validate-username",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "direct-grant-validate-password",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorFlow": true,
+          "flowAlias": "ncbrs direct grant otp",
+          "requirement": "CONDITIONAL",
+          "priority": 30,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "ncbrs direct grant otp",
+      "description": "The totp parameter, for oversight roles. Someone with none set up cannot sign in this way at all.",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticatorConfig": "ncbrs otp-required (direct grant)",
+          "authenticator": "conditional-user-role",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "direct-grant-validate-otp",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    }
+  ],
+  "authenticatorConfig": [
+    {
+      "alias": "ncbrs otp-required (browser)",
+      "config": {
+        "condUserRole": "otp-required",
+        "negate": "false"
+      }
+    },
+    {
+      "alias": "ncbrs otp-required (direct grant)",
+      "config": {
+        "condUserRole": "otp-required",
+        "negate": "false"
+      }
     }
   ]
 }

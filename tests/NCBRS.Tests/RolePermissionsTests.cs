@@ -144,7 +144,7 @@ public class RolePermissionsTests
     {
         var names = Endpoints().Select(endpoint => endpoint.Name).ToHashSet();
 
-        Assert.Empty(AnySignedInCaller.Keys.Where(name => !names.Contains(name)));
+        Assert.DoesNotContain(AnySignedInCaller.Keys, name => !names.Contains(name));
     }
 
     private sealed record Endpoint(string Name, IReadOnlyList<string> Policies, bool Anonymous);
