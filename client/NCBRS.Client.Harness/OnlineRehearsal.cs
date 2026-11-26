@@ -239,10 +239,29 @@ internal static class OnlineRehearsal
     {
         using var response = await http.PostAsync(tokenUrl, new FormUrlEncodedContent(new Dictionary<string, string>
         {
-            ["grant_type"] = "password", ["client_id"] = "ncbrs-device", ["username"] = username, ["password"] = "password",
+            ["grant_type"] = "password", ["client_id"] = "ncbrs-device", ["username"] = username, ["password"] = "password", ["totp"] = DevOneTimeCode(),
             ["scope"] = offline ? NCBRS.Client.Auth.OfflineTokenSession.Scope : "openid",
         }));
         return await response.Content.ReadFromJsonAsync<JsonElement>();
+    }
+
+    /// <summary>
+    /// The one-time code for the dev realm's oversight accounts (decision D3),
+    /// from the fixture secret every one of them carries (RFC 6238, as an
+    /// authenticator app computes it). A registrar's grant ignores it.
+    /// </summary>
+    private static string DevOneTimeCode()
+    {
+        var counter = BitConverter.GetBytes(DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 30);
+        if (BitConverter.IsLittleEndian)
+        {
+            Array.Reverse(counter);
+        }
+
+        var hmac = System.Security.Cryptography.HMACSHA1.HashData("ncbrs-dev-otp-fixture-not-a-secret"u8, counter);
+        var offset = hmac[^1] & 0x0f;
+        var value = ((hmac[offset] & 0x7f) << 24) | (hmac[offset + 1] << 16) | (hmac[offset + 2] << 8) | hmac[offset + 3];
+        return (value % 1_000_000).ToString("D6", System.Globalization.CultureInfo.InvariantCulture);
     }
 
     /// <summary>A password-grant token for a dev-realm fixture account, refreshed a minute before it expires.</summary>
@@ -260,7 +279,7 @@ internal static class OnlineRehearsal
 
             using var response = await http.PostAsync(tokenUrl, new FormUrlEncodedContent(new Dictionary<string, string>
             {
-                ["grant_type"] = "password", ["client_id"] = "ncbrs-device", ["username"] = username, ["password"] = "password",
+                ["grant_type"] = "password", ["client_id"] = "ncbrs-device", ["username"] = username, ["password"] = "password", ["totp"] = DevOneTimeCode(),
             }), cancellationToken);
 
             if (!response.IsSuccessStatusCode)

@@ -286,6 +286,21 @@ static async Task<FleetDevice[]> EnrolFleetAsync(
     return fleet;
 }
 
+/// <summary>An RFC 6238 code (HMAC-SHA1, 6 digits, 30 s), keyed as Keycloak keys it: by the secret's own bytes.</summary>
+static string OneTimeCode(string secret)
+{
+    var counter = BitConverter.GetBytes(DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 30);
+    if (BitConverter.IsLittleEndian)
+    {
+        Array.Reverse(counter);
+    }
+
+    var hmac = System.Security.Cryptography.HMACSHA1.HashData(System.Text.Encoding.UTF8.GetBytes(secret), counter);
+    var offset = hmac[^1] & 0x0f;
+    var value = ((hmac[offset] & 0x7f) << 24) | (hmac[offset + 1] << 16) | (hmac[offset + 2] << 8) | hmac[offset + 3];
+    return (value % 1_000_000).ToString("D6", System.Globalization.CultureInfo.InvariantCulture);
+}
+
 static async Task<string> GetTokenAsync(HttpClient http, Config cfg)
 {
     using var response = await http.PostAsync(cfg.TokenUrl, new FormUrlEncodedContent(new Dictionary<string, string>
@@ -294,6 +309,9 @@ static async Task<string> GetTokenAsync(HttpClient http, Config cfg)
         ["client_id"] = cfg.ClientId,
         ["username"] = cfg.Username,
         ["password"] = cfg.Password,
+        // District officers and the Ministry need a one-time code (decision D3).
+        // A registrar's grant ignores it.
+        ["totp"] = OneTimeCode(cfg.OtpSecret),
     }));
 
     var json = await response.Content.ReadAsStringAsync();
@@ -375,6 +393,7 @@ internal sealed record Config(
     string ClientId,
     string Username,
     string Password,
+    string OtpSecret,
     Guid FacilityId,
     string DeviceId,
     int Devices,
@@ -408,6 +427,8 @@ internal sealed record Config(
             ClientId: S("CLIENT_ID", "ncbrs-device"),
             Username: S("USERNAME", "nurse.lado"),
             Password: S("PASSWORD", "password"),
+            // The dev realm's fixture secret for its oversight accounts.
+            OtpSecret: S("OTP_SECRET", "ncbrs-dev-otp-fixture-not-a-secret"),
             FacilityId: Guid.TryParse(S("FACILITY_ID", ""), out var f) ? f : new Guid("0199c000-0000-7000-8000-0000000f0001"),
             DeviceId: S("DEVICE_ID", "TERMINAL-JUBA-01"),
             // A fleet spreads the burst across distinct devices, as a real region
