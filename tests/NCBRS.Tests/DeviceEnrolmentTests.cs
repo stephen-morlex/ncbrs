@@ -123,7 +123,7 @@ public class DeviceEnrolmentTests : IDisposable
         await GivenEnrolledAsync("TERMINAL-JUB-1", OtherFacilityId);
 
         await using var db = NewDb();
-        var devices = (await Devices(db, NcbrsRoles.MinistryAdmin).List()).Value!;
+        var devices = (await Devices(db, NcbrsRoles.SystemAdmin).List()).Value!;
 
         Assert.Equal(2, devices.Count);
     }
@@ -174,7 +174,7 @@ public class DeviceEnrolmentTests : IDisposable
         await GivenEnrolledAsync("TERMINAL-JUB-1", OtherFacilityId);
 
         await using var db = NewDb();
-        var result = await Devices(db, NcbrsRoles.MinistryAdmin).Get("TERMINAL-JUB-1");
+        var result = await Devices(db, NcbrsRoles.SystemAdmin).Get("TERMINAL-JUB-1");
 
         Assert.Equal("TERMINAL-JUB-1", result.Value!.DeviceId);
     }

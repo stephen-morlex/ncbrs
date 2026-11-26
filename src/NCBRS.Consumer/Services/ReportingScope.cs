@@ -36,7 +36,7 @@ public static class ReportingScope
     {
         var requested = string.IsNullOrWhiteSpace(requestedCountyCode) ? null : requestedCountyCode;
 
-        if (user.IsInRole(NcbrsRoles.MinistryAdmin))
+        if (user.IsInRole(NcbrsRoles.RegistrarGeneral))
         {
             // Null is the whole country.
             return new Resolution(true, requested, null);

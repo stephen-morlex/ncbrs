@@ -217,7 +217,7 @@ Jonglei) and South Sudanese names throughout.
   `CountyScopeResolver` resolves the caller's county by walking up their
   facility's area chain, and `CountyLookup` resolves the county code the same
   way (falling back to `Facility.CountyCode`, else `Unknown`) — audit, events
-  and the reporting stamp all carry that resolved county. Ministry admins stay
+  and the reporting stamp all carry that resolved county. The Ministry's two roles stay
   national; scoping still **refuses** rather than silently narrows.
 - **The district → county rename is complete** (PRs #60–#64). `Facility.DistrictId`
   was **renamed to `Facility.CountyCode`, not dropped**: it is the flat, indexed
@@ -276,6 +276,41 @@ Jonglei) and South Sudanese names throughout.
 - **Migrations are per provider, as everywhere** — the new table, FK and
   columns were added to both the SQLite set (Core) and the Postgres set
   (`NCBRS.Migrations.Postgres`).
+
+## Who may do what (plan §17 item 29, decisions D1/D2, built)
+**One table, `NcbrsRoles.Permissions`, says which realm roles hold each
+permission.** Both services build their policies from it (a loop in the Api,
+two lookups in the Consumer). The web reads the same table through
+`web/src/auth/permissions.json`, which `RolePermissionsTests.TheWebReadsTheSameTable`
+holds equal to it, as the OpenAPI drift check holds the contract. When the table
+changes, rewrite that file from the test's message. A policy says **what**;
+**where** (own facility, county, nation) stays in the services.
+
+- **D2: `ministry-admin` is retired**, split into two roles that each hold half:
+  - **`registrar-general`** holds the records nationally: approvals, annulment
+    (alone), the audit trail, the dashboard and the DHIS2 export.
+  - **`system-admin`** holds the system nationally: facilities, areas,
+    registrars and devices. **It sees no birth record:** no lookup, search or
+    history (`CanReadRecords`), and it registers nothing. Its web landing page
+    is Facilities, not the record lookup.
+
+  `RegistrarRole.MinistryAdmin` stays so old rows load; it maps to no realm
+  role (`RealmRoleFor` returns null), so nobody can be bound to it.
+  `NcbrsRoles.IsNational` is "either Ministry role". Each is still held to its
+  own permissions.
+- **D1: community health workers do not certify.** `CanIssueCertificates`
+  (issue, reprint) leaves them out. They still register births, and they can
+  record a handover, because at a post it is often the CHW who hands the
+  printed paper to the family.
+- **Every API endpoint makes an explicit decision**
+  (`RolePermissionsTests.EveryEndpointMakesAnExplicitDecision`): a policy, or
+  `[AllowAnonymous]`, or a named entry with a reason in `AnySignedInCaller`.
+  A new endpoint that forgets fails the build, rather than quietly answering
+  anyone signed in. This is the pre-audit sweep (item 24), automated.
+- **Dev realm:** `ministry.admin` became `registrar.general` (same id, so seeded
+  bindings still resolve), and `system.admin` was added. A Keycloak that
+  imported the realm before this keeps the old users until it restarts: it
+  runs in memory and re-imports the realm on start (`docker compose restart keycloak`).
 
 ## Onboarding facilities and registrars (pilot readiness §1, built)
 Until this, only the Development seed could create a facility or a registrar,
@@ -1653,7 +1688,7 @@ roles used to be national for *writes* while county-scoped for *reads*, so a
 district officer could approve an amendment, verify a late registration,
 issue a certificate or enrol a device for a record in a county they were not
 permitted even to search. `CurrentRegistrarService.CanActForFacilityAsync` now
-applies the read rule to every write: own facility always; ministry admin
+applies the read rule to every write: own facility always; the Ministry's two roles
 nationally; district officer only where both counties resolve and match.
 **It fails closed** — an unresolvable county on either side refuses, because
 "unknown" matching "unknown" would reach every facility the hierarchy cannot

@@ -249,7 +249,7 @@ public class OutcomeTests : IDisposable
     [Fact]
     public async Task AMinistryAdmin_MayRecordAcrossFacilities()
         => Assert.True(
-            (await RecordNeonatalAsync(OtherFacilityBrn, Neonatal(3), NcbrsRoles.MinistryAdmin)).Succeeded);
+            (await RecordNeonatalAsync(OtherFacilityBrn, Neonatal(3), NcbrsRoles.RegistrarGeneral)).Succeeded);
 
     [Fact]
     public async Task ARecordedOutcome_IsAudited()

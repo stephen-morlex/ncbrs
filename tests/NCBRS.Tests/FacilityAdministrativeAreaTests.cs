@@ -98,7 +98,9 @@ public class FacilityAdministrativeAreaTests : IDisposable
             .Select(user => user.GetProperty("id").GetString()!).Order().ToList();
 
         Assert.Equal(realmUsers, subjects.Select(subject => subject ?? "").Order().ToList());
-        Assert.Contains(await db.Registrars.ToListAsync(), r => r.Role == RegistrarRole.MinistryAdmin);
+        var roles = await db.Registrars.Select(r => r.Role).ToListAsync();
+        Assert.Contains(RegistrarRole.RegistrarGeneral, roles);
+        Assert.Contains(RegistrarRole.SystemAdmin, roles);
     }
 
     [Fact]

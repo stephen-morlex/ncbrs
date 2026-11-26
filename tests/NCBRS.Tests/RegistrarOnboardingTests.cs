@@ -76,7 +76,7 @@ public class RegistrarOnboardingTests : IDisposable
 
     private static ClaimsPrincipal Officer => Account(OfficerSubject, [NcbrsRoles.DistrictOfficer], ["/counties/SS0101"], "Officer Kenyi");
 
-    private static ClaimsPrincipal Ministry => Account(MinistrySubject, [NcbrsRoles.MinistryAdmin], name: "Ministry Admin");
+    private static ClaimsPrincipal Ministry => Account(MinistrySubject, [NcbrsRoles.SystemAdmin], name: "Ministry Admin");
 
     private static (RegistrarOnboardingService Service, CurrentRegistrarService Current) For(NcbrsDbContext db, ClaimsPrincipal user)
     {

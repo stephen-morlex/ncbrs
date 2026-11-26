@@ -538,7 +538,7 @@ public class DeviceSilenceTests : IDisposable
         await SweepAsync();
 
         await using var db = NewDb();
-        var queue = (await Devices(db, NcbrsRoles.MinistryAdmin).Alerts()).Value!;
+        var queue = (await Devices(db, NcbrsRoles.SystemAdmin).Alerts()).Value!;
 
         Assert.Equal(2, queue.Count);
     }

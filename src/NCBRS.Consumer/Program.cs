@@ -159,17 +159,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// The dashboard is a district officer's and the Ministry's view. A facility
+// The dashboard is a district officer's and the registrar-general's view. A facility
 // registrar's work is a record at a time, and national figures are not theirs
 // to read — the web plan's role table says as much.
 builder.Services.AddAuthorization(authorization =>
 {
     // Which county, within that, is ReportingScope's decision per request.
     authorization.AddPolicy(ReportingPolicy, policy =>
-        policy.RequireRole(NcbrsRoles.DistrictOfficer, NcbrsRoles.MinistryAdmin));
+        policy.RequireRole(NcbrsRoles.Permissions[NcbrsRoles.CanReadReporting]));
 
     authorization.AddPolicy(ExportPolicy, policy =>
-        policy.RequireRole(NcbrsRoles.MinistryAdmin));
+        policy.RequireRole(NcbrsRoles.Permissions[NcbrsRoles.CanExportReporting]));
 });
 
 // Not under the document generator. It starts the host, so this would open a

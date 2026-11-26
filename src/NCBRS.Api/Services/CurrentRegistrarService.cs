@@ -86,7 +86,7 @@ public class CurrentRegistrarService(
             return false;
         }
 
-        if (user.IsInRole(NcbrsRoles.MinistryAdmin))
+        if (NcbrsRoles.IsNational(user))
         {
             return true;
         }

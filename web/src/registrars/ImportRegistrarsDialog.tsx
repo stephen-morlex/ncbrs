@@ -8,7 +8,10 @@ const RoleLabels: Record<NonNullable<Row['role']>, string> = {
   FacilityRegistrar: 'Facility registrar',
   CommunityHealthWorker: 'Community health worker',
   DistrictOfficer: 'District officer',
-  MinistryAdmin: 'Ministry admin',
+  // Retired by the role split (decision D2); rows bound before it still say so.
+  MinistryAdmin: 'Ministry admin (retired role)',
+  RegistrarGeneral: 'Registrar-general',
+  SystemAdmin: 'System admin',
 }
 
 /**

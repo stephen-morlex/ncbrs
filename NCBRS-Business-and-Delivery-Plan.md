@@ -620,7 +620,7 @@ is ever registered during the pilot, that procedure is no longer safe.
 | # | Item | Blocked by |
 |---|---|---|
 | 28 | **A clock the tablet can trust** (pilot-readiness §2, still open on 2026-11-25: `OfflinePinLock` used the wall clock). A high-water mark of trusted time, the registry's time from every answer, and PIN lockouts measured on elapsed time, escalating on repeats | **Done.** Checked on the emulator 2026-11-25: a lockout held with the date moved a day forward, a reboot restarted it in full, the registry's time flagged the clock on Home, and the form's "today" stayed the true day |
-| 29 | **Role split into permissions** (matrix below), and a CI test that enumerates every endpoint and asserts its policy, so a new endpoint without one fails | D1, D2 |
+| 29 | **Role split into permissions** (matrix below), and a CI test that enumerates every endpoint and asserts its policy, so a new endpoint without one fails | **Done**: one permissions table both services and the web read; `registrar-general` and `system-admin` replace `ministry-admin`; CHWs no longer certify; every endpoint must make an explicit decision (`RolePermissionsTests`) |
 | 30 | **Keycloak hardening.** The realm has no brute-force detection, no password policy and no MFA. Add all three, with OTP and shorter sessions for oversight roles | D3 |
 | 31 | **Creating bomas and villages.** `AdministrativeAreasController` is read-only and bomas are not seeded, so a village post can only be placed at payam level. Add a write endpoint and a web page, system admin only | **Done** (#167): `POST /api/administrative-areas`, Ministry only; codes given by the registry (`SS010101-B01`), never typed |
 | 32 | **Certificates awaiting collection.** A birth registered offline leaves the family with a slip. Add a queue per facility and county of births with no certificate yet, to print at the next connected visit or at the district office, with the handover recorded | **Done** (#168): `GET /api/certificate-queue` and "Certificates to hand out"; handover recorded by relationship only |
@@ -689,13 +689,11 @@ C create · R read · U update · A approve or decide. "own" is own facility,
 Separation of duties: whoever submits never approves (already enforced), and a
 system admin never acts on records.
 
-**Open decisions**
+**Decisions (made 2026-11-25)**
 
-- **D1:** Should CHWs lose the right to issue and reprint certificates?
-  `CertificatesController` uses `CanRegisterBirths`, which includes them.
-- **D2:** Should `ministry-admin` split into four roles, or into two for the
-  pilot (`registrar-general` and `system-admin`)?
-- **D3:** Should OTP be mandatory for every oversight account?
+- **D1:** CHWs do not issue or reprint certificates. They still register births and record a handover.
+- **D2:** `ministry-admin` splits into two roles for the pilot: `registrar-general` (records) and `system-admin` (the system, no records). The auditor and statistician roles in the matrix above come after the pilot.
+- **D3:** A one-time code is required for district officers and both Ministry roles. Facility staff and tablets are unchanged.
 
 ### A. In the repo, no external blocker
 

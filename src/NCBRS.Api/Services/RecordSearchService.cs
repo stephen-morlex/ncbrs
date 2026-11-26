@@ -23,7 +23,7 @@ namespace NCBRS.Services;
 ///    a different one is refused rather than quietly narrowed -- a caller who
 ///    thinks they searched Juba and actually searched their own district
 ///    reads an empty result as "no such child".
-/// 2. **`ministry-admin` is exempt**, because national oversight is their
+/// 2. **The `registrar-general` is exempt**, because national oversight is their
 ///    function. Nobody else is, including a district officer: overseeing
 ///    several facilities is not overseeing several districts.
 /// 3. **Every search is audited**, criteria and result count included. An

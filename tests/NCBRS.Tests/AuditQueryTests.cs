@@ -107,7 +107,7 @@ public class AuditQueryTests : IDisposable
     [Fact]
     public async Task The_ministry_sees_every_district()
     {
-        var page = Ok(await GetAsync(MinistrySubject, [NcbrsRoles.MinistryAdmin]));
+        var page = Ok(await GetAsync(MinistrySubject, [NcbrsRoles.RegistrarGeneral]));
 
         Assert.Contains(page.Items, entry => entry.ActorId == JubaNurseId);
     }
@@ -180,7 +180,7 @@ public class AuditQueryTests : IDisposable
     {
         // A sweep raised it. Null says "not a person here", which is
         // different from a blank name.
-        var page = Ok(await GetAsync(MinistrySubject, [NcbrsRoles.MinistryAdmin],
+        var page = Ok(await GetAsync(MinistrySubject, [NcbrsRoles.RegistrarGeneral],
             entityType: "DeviceAlert"));
 
         var entry = Assert.Single(page.Items);

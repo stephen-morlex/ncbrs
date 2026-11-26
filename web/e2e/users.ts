@@ -15,8 +15,10 @@ export const Users = {
   registrar: { username: 'nurse.lado', password },
   /** district-officer: approves corrections — and must not be the one who asked for them. */
   districtOfficer: { username: 'district.officer', password },
-  /** ministry-admin: the only role that may annul. */
-  ministryAdmin: { username: 'ministry.admin', password },
+  /** registrar-general: the Ministry's records role, and the only one that may annul. */
+  registrarGeneral: { username: 'registrar.general', password },
+  /** system-admin: the Ministry's systems role: facilities, areas, registrars, devices; no record. */
+  systemAdmin: { username: 'system.admin', password },
 } as const
 
 export type Role = keyof typeof Users

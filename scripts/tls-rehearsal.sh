@@ -219,7 +219,7 @@ EOF
 call() { NODE_EXTRA_CA_CERTS="$(hostpath "$WORK/certs/ca.pem")" node "$(hostpath "$WORK/call.mjs")" "$KC_PORT" "$@"; }
 
 expect "HTTPS-realm token accepted by the Api (district officer)" 200 "$(call district.officer "http://localhost:$API_PORT/api/amendments/pending")"
-expect "HTTPS-realm token accepted by the Consumer (Ministry dashboard)" 200 "$(call ministry.admin "http://localhost:$CONSUMER_PORT/api/dashboard/summary")"
+expect "HTTPS-realm token accepted by the Consumer (Ministry dashboard)" 200 "$(call registrar.general "http://localhost:$CONSUMER_PORT/api/dashboard/summary")"
 expect "a forged signature is refused" 401 "$(call district.officer "http://localhost:$API_PORT/api/amendments/pending" forged)"
 
 # #121: an Api that cannot verify Keycloak must refuse -- and must say why.

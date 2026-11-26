@@ -18313,7 +18313,9 @@
           "FacilityRegistrar",
           "CommunityHealthWorker",
           "DistrictOfficer",
-          "MinistryAdmin"
+          "MinistryAdmin",
+          "RegistrarGeneral",
+          "SystemAdmin"
         ],
         "type": "string"
       },

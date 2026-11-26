@@ -75,7 +75,7 @@ test('the Ministry annuls a registration, and it can no longer carry a certifica
   const registrar = await pageAs(browser, 'registrar')
   const brn = await registerBirth(registrar, uniqueChildName())
 
-  const ministry = await pageAs(browser, 'ministryAdmin')
+  const ministry = await pageAs(browser, 'registrarGeneral')
   await ministry.goto('/review/annulments')
   await ministry.getByLabel('Registration number').fill(brn)
   await ministry.getByRole('button', { name: 'Find' }).click()

@@ -358,7 +358,7 @@ public class CertificateServiceTests : IDisposable
 
     [Fact]
     public async Task AMinistryAdmin_MayIssueAcrossFacilities()
-        => Assert.True((await IssueAsync(OtherFacilityBrn, NcbrsRoles.MinistryAdmin)).Succeeded);
+        => Assert.True((await IssueAsync(OtherFacilityBrn, NcbrsRoles.RegistrarGeneral)).Succeeded);
 
     [Fact]
     public async Task IssuingIsAudited()

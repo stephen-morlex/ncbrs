@@ -13,6 +13,9 @@ import {
 import { Spinner } from '@/components/ui/spinner'
 import { AuthCallback } from '@/auth/AuthCallback'
 import { RequireAuth } from '@/auth/RequireAuth'
+import { useAuth } from 'react-oidc-context'
+import { realmRoles } from '@/auth/claims'
+import { satisfies } from '@/auth/roles'
 import { type NavItemId, navigation } from '@/shell/navigation'
 
 /**
@@ -170,9 +173,23 @@ export default function App() {
           </RequireAuth>
         }
       >
-        <Route path="/" element={<Navigate to="/records" replace />} />
-        <Route path="/records" element={<RecordLookup />} />
-        <Route path="/records/search" element={<RecordSearch />} />
+        <Route path="/" element={<Home />} />
+        <Route
+          path="/records"
+          element={
+            <RequireAuth policy="CanReadRecords">
+              <RecordLookup />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/records/search"
+          element={
+            <RequireAuth policy="CanReadRecords">
+              <RecordSearch />
+            </RequireAuth>
+          }
+        />
 
         {/* A correction is an act on a record, not a destination -- reached
             from the record itself, and gated by the same policy as filing
@@ -191,7 +208,7 @@ export default function App() {
         <Route
           path="/records/certificate"
           element={
-            <RequireAuth policy="CanRegisterBirths">
+            <RequireAuth policy="CanIssueCertificates">
               <CertificateManage />
             </RequireAuth>
           }
@@ -442,4 +459,15 @@ function NotFound() {
       </EmptyHeader>
     </Empty>
   )
+}
+
+/**
+ * Where a signed-in person starts: the record lookup for everyone who works
+ * with records, and the facilities for the system admin, who sees no record
+ * (decision D2). A fixed redirect to the lookup sent them straight to a page
+ * that refuses them.
+ */
+function Home() {
+  const auth = useAuth()
+  return <Navigate to={satisfies(realmRoles(auth.user), 'CanReadRecords') ? '/records' : '/facilities'} replace />
 }

@@ -117,7 +117,7 @@ public class AnnulmentServiceTests : IDisposable
         AnnulRecordRequest? request = null, string brn = Brn)
     {
         await using var db = NewDb();
-        var http = AuthTestContext.HttpContextFor(AdminSubject, NcbrsRoles.MinistryAdmin);
+        var http = AuthTestContext.HttpContextFor(AdminSubject, NcbrsRoles.RegistrarGeneral);
         var current = AuthTestContext.RegistrarService(db, http);
         var publisher = new NoOpEventPublisher();
         var admin = db.Registrars.Single(r => r.RegistrarId == AdminId);
@@ -471,7 +471,7 @@ public class AnnulmentServiceTests : IDisposable
     public async Task TheOutboxRow_CommitsWithTheAnnulment()
     {
         await using var db = NewDb();
-        var http = AuthTestContext.HttpContextFor(AdminSubject, NcbrsRoles.MinistryAdmin);
+        var http = AuthTestContext.HttpContextFor(AdminSubject, NcbrsRoles.RegistrarGeneral);
         var current = AuthTestContext.RegistrarService(db, http);
         var admin = db.Registrars.Single(r => r.RegistrarId == AdminId);
 

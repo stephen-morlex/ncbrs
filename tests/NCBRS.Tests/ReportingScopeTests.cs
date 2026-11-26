@@ -74,7 +74,7 @@ public class ReportingScopeTests : IDisposable
         return new ClaimsPrincipal(new ClaimsIdentity(claims, "Test", ClaimTypes.Name, ClaimTypes.Role));
     }
 
-    private static ClaimsPrincipal Ministry() => Caller(NcbrsRoles.MinistryAdmin);
+    private static ClaimsPrincipal Ministry() => Caller(NcbrsRoles.RegistrarGeneral);
     private static ClaimsPrincipal JubaOfficer() => Caller(NcbrsRoles.DistrictOfficer, $"/counties/{Juba}");
 
     private DashboardQueryService Dashboard(ReadModelDbContext db) => new(db, TimeProvider.System);

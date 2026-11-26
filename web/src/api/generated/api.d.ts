@@ -1901,7 +1901,7 @@ export interface components {
             hasDevicePin: boolean;
         };
         /** @enum {string} */
-        RegistrarRole: "FacilityRegistrar" | "CommunityHealthWorker" | "DistrictOfficer" | "MinistryAdmin";
+        RegistrarRole: "FacilityRegistrar" | "CommunityHealthWorker" | "DistrictOfficer" | "MinistryAdmin" | "RegistrarGeneral" | "SystemAdmin";
         RegistrationDetails: {
             childGivenNames: null | string;
             childSurname: null | string;

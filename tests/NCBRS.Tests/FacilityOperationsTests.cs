@@ -269,7 +269,7 @@ public class FacilityOperationsTests : IDisposable
     public async Task AnOfficerSeesTheirCounty_AndTheMinistryTheCountry()
     {
         var county = Names(await AsAsync(AuthTestContext.HttpContextFor(OfficerSubject, null, NcbrsRoles.DistrictOfficer)));
-        var country = Names(await AsAsync(AuthTestContext.HttpContextFor(MinistrySubject, null, NcbrsRoles.MinistryAdmin)));
+        var country = Names(await AsAsync(AuthTestContext.HttpContextFor(MinistrySubject, null, NcbrsRoles.RegistrarGeneral)));
 
         Assert.Equal(3, county.Count);
         Assert.DoesNotContain("Juba Teaching Hospital", county);

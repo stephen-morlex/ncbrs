@@ -179,7 +179,7 @@ public class ProblemReportTests : IDisposable
         await StoreAsync(db, Request(device: "TAB-JUBA", facility: Juba));
 
         var county = Reports(await Controller(db, As(OfficerSubject, NcbrsRoles.DistrictOfficer)).List());
-        var country = Reports(await Controller(db, As(MinistrySubject, NcbrsRoles.MinistryAdmin)).List());
+        var country = Reports(await Controller(db, As(MinistrySubject, NcbrsRoles.SystemAdmin)).List());
 
         Assert.Equal(["TAB-1"], county.Select(report => report.DeviceId));
         Assert.Equal(2, country.Count);

@@ -89,7 +89,7 @@ public class FacilityDirectoryTests : IDisposable
     [Fact]
     public async Task The_ministry_sees_every_district()
     {
-        var page = Ok(await ListAsync(MinistrySubject, [NcbrsRoles.MinistryAdmin]));
+        var page = Ok(await ListAsync(MinistrySubject, [NcbrsRoles.RegistrarGeneral]));
 
         Assert.Equal(3, page.Total);
     }

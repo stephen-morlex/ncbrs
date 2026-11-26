@@ -5,7 +5,20 @@ public enum RegistrarRole
     FacilityRegistrar,
     CommunityHealthWorker,
     DistrictOfficer,
-    MinistryAdmin
+
+    /// <summary>
+    /// Retired by the role split (plan §17 item 29, decision D2): the Ministry
+    /// is now <see cref="RegistrarGeneral"/> or <see cref="SystemAdmin"/>. Kept
+    /// so rows bound before the split still load; nothing is bound to it now,
+    /// and the realm role it named grants nothing.
+    /// </summary>
+    MinistryAdmin,
+
+    /// <summary>The Ministry's records role: national approvals, annulment, the audit trail and reporting.</summary>
+    RegistrarGeneral,
+
+    /// <summary>The Ministry's systems role: facilities, areas, registrars and devices. Sees no birth record.</summary>
+    SystemAdmin,
 }
 
 public class Registrar

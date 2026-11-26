@@ -21,7 +21,7 @@ vi.mock('react-oidc-context', () => ({
 
 // The signed-in user's roles, swapped per test: the Ministry picks an area,
 // a district officer is shown their own county.
-const roles = vi.hoisted(() => ({ value: ['ministry-admin'] as string[] }))
+const roles = vi.hoisted(() => ({ value: ['registrar-general'] as string[] }))
 
 vi.mock('@/auth/claims', () => ({
   realmRoles: () => roles.value,
@@ -112,7 +112,7 @@ function renderScreen() {
 beforeEach(() => {
   vi.useRealTimers()
   get.mockReset()
-  roles.value = ['ministry-admin']
+  roles.value = ['registrar-general']
   respond()
 })
 

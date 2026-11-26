@@ -157,6 +157,7 @@ public class BirthRecordsController(
         };
 
     [HttpGet("{brn}", Name = "GetBirthRecord")]
+    [Authorize(Policy = NcbrsRoles.CanReadRecords)]
     [ProducesResponseType(typeof(BirthRecordResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
@@ -427,6 +428,7 @@ public class BirthRecordsController(
     /// the part a dispute turns on.
     /// </summary>
     [HttpGet("{brn}/amendments", Name = "GetBirthRecordAmendments")]
+    [Authorize(Policy = NcbrsRoles.CanReadRecords)]
     [ProducesResponseType(typeof(IReadOnlyList<AmendmentHistoryEntry>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]

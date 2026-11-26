@@ -13,7 +13,7 @@ namespace NCBRS.Services;
 /// rule is the same wherever it is applied: the caller's county comes from
 /// their registrar's facility, resolved up the administrative hierarchy;
 /// naming a different one is refused rather than narrowed; and only
-/// `ministry-admin` is exempt.
+/// the Ministry's roles (`registrar-general`, `system-admin`) are exempt.
 ///
 /// **Refused rather than narrowed** is the part that must not be
 /// "simplified". Silently substituting the caller's own county answers a
@@ -33,7 +33,7 @@ public class CountyScopeResolver(CountyLookup districts)
         string? requestedCountyCode,
         CancellationToken cancellationToken = default)
     {
-        if (user.IsInRole(NcbrsRoles.MinistryAdmin))
+        if (NcbrsRoles.IsNational(user))
         {
             // The Ministry may narrow to a county, or see the whole register
             // by naming none. National oversight is their function.

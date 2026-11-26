@@ -20,7 +20,7 @@ public class WorkScope(ReviewQueueScope queueScope)
     public async Task<(ObjectResult? Refusal, Guid? FacilityId, string? CountyCode)> ResolveAsync(
         ClaimsPrincipal user, Registrar registrar, Guid? facilityId, CancellationToken cancellationToken = default)
     {
-        if (!user.IsInRole(NcbrsRoles.DistrictOfficer) && !user.IsInRole(NcbrsRoles.MinistryAdmin))
+        if (!user.IsInRole(NcbrsRoles.DistrictOfficer) && !NcbrsRoles.IsNational(user))
         {
             if (facilityId is not null && facilityId != registrar.FacilityId)
             {
