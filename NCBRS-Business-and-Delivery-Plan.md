@@ -313,7 +313,7 @@ Verified against the running codebase. 262 tests passing.
 | MaternalStatistics capture | 6.5 | **Built** | WS-C |
 | District / regional tier | 6.2, 7.2 | **Built** | WS-D |
 | Production database (PostgreSQL) | 6.4 | **Built** — provider behind config, per-provider migration histories, suite green on both | WS-A |
-| Backups & tested disaster recovery | 7.1 | **Drill completed and timed**; WAL archiving on, PITR replay not yet rehearsed | WS-A |
+| Backups & tested disaster recovery | 7.1 | **Drill completed and timed**; WAL archiving on; PITR replay rehearsed in CI | WS-A |
 | Audit log immutability enforced | 4.3 | **Built** — database triggers; off-box append-only storage still needed (A6) | WS-A |
 | Signing key custody & rotation | 6.4, 6.7 | **Built** — multi-key verification | WS-A |
 | Idempotent consumers before read models | 6.4.1 | **Built** — facts keyed by BRN, held out-of-order events | WS-A |
@@ -353,7 +353,7 @@ for A1's hosting target.
 | A3 | Move the signing key to an HSM or secret store | Production refuses to start without a real key |
 | A4 | Support key rotation (verifier accepts a key set; bundle carries several) — **done** | Cert signed by key B verifies on a device holding A and B |
 | A5 | Make consumers idempotent, **then** build read models — **done** | Replaying a partition leaves totals unchanged |
-| A6 | Backups and a tested restore — **drill done; PITR replay drill outstanding** | Restore drill completed and timed; RPO/RTO recorded (see below) |
+| A6 | Backups and a tested restore — **drill done; PITR replay rehearsed on every PR** (`scripts/pitr-rehearsal.sh`) | Restore drill completed and timed; RPO/RTO recorded (see below) |
 | A7 | Load and soak testing (burst shape, not average) — **driver built; national-volume run outstanding** | Sustained concurrent batch syncs at projected volume |
 | A8 | Independent security audit and penetration test | Findings remediated or accepted by the DPO |
 
@@ -444,10 +444,35 @@ What the drill proved beyond the timings: the restored database is *functional*
 the append-only audit triggers were still enforcing after recovery. A restore
 that returns rows but loses the controls protecting them is not a recovery.
 
-**Still outstanding:** the PITR replay itself (restore a base backup, replay WAL
-to a chosen instant) has not been rehearsed. Archiving is verified and the chain
-is intact, so the recovery point exists; what is unproven is the procedure for
-using it under pressure, which needs a staging instance.
+**PITR replay: rehearsed (2026-11-26), and on every pull request since.**
+`scripts/pitr-rehearsal.sh` (CI "Point-in-time recovery rehearsal") runs the
+following on throwaway containers:
+1. Seed the registry and take a base backup with no WAL of its own (`-X none`),
+   so only a complete archive can recover it.
+2. Write an audit row, note the instant, then do what nothing else here can
+   stop: the owner drops `AuditLogs`, and a facility is renamed.
+3. Lose the server, and recover a new one from the backup and the archive to
+   that instant.
+
+Checked afterwards:
+- every birth, and the audit row written after the backup;
+- the trail's triggers enforcing again;
+- the facility's own name;
+- timeline 2, and new writes accepted;
+- the Api starting on the result.
+
+Base backup about 2 s, recovery and promotion about 2 s, at pilot volume, so
+again a floor. Mutation-checked:
+- recovering to the end of the archive replays the mistake, and the trail and
+  name checks fail;
+- a target past the archive makes Postgres refuse to promote ("recovery ended
+  before configured recovery target was reached"), rather than recover less
+  than was asked for.
+
+The procedure is in RUNBOOK.md, "Incident: a mistake on the live database".
+**Still outstanding (infrastructure):** shipping the archive off the host. A
+database owner can reach an archive on the same host, so until it leaves, the
+rehearsal's scenario recovers only from a mistake, not from a hostile owner.
 
 ### WS-B — Facility and village client
 
@@ -756,7 +781,7 @@ row.
 | # | Task | Done when |
 |---|---|---|
 | 14 | A3 — signing key in an HSM or secret store | Production refuses to start without a real key |
-| 15 | A6 — rehearse point-in-time recovery; ship the WAL archive off the host | Restore to a point in time; audit data leaves the box it is written on |
+| 15 | A6 — rehearse point-in-time recovery; ship the WAL archive off the host | **Rehearsal done**, in CI on every PR (`scripts/pitr-rehearsal.sh`; RUNBOOK "Incident: a mistake on the live database"). Off-host shipping is infrastructure |
 | 16 | A2 deployment step — `REVOKE UPDATE, DELETE ON "AuditLogs"` from the application role | **In-repo part done:** `deploy/postgres/app-role-grants.sql` (run as owner after every migration; RUNBOOK "Deployment: database privileges"), proven by `AuditLogLeastPrivilegeTests` on CI's Postgres: the role gets `42501` on UPDATE/DELETE/TRUNCATE and on disabling the trigger. **Remaining:** apply it to the production database and run the services as the app role |
 | 17 | A7 — national-volume run on production-grade Postgres, fleet across several facilities; re-measure the §A6 RTO at that volume | Sustained burst at projected volume |
 | 18 | F1 — reporting replica | Dashboard load leaves registration latency unchanged |

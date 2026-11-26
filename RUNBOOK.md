@@ -74,7 +74,56 @@ the absence of any recovery point is discovered on the day it is needed.
 - The archive is on its own volume, not beside the data. Recovery objectives
   and the restore procedure are in `NCBRS-Business-and-Delivery-Plan.md` (§A6).
   A restore is only a recovery if the append-only audit triggers come back
-  enforcing — the drill checks this, not just that rows returned.
+  enforcing — the drill checks this, not just that rows returned. Recovering
+  to a point in time is the next section.
+
+## Incident: a mistake on the live database (point-in-time recovery)
+
+For a change you can't undo by hand: a table dropped, rows deleted or
+overwritten by a bad script, the audit trail damaged by someone with the
+owner's credentials. The registry is restored from the last base backup, and
+the archived WAL is replayed up to a moment just before the mistake.
+`scripts/pitr-rehearsal.sh` does exactly this on every pull request (CI
+"Point-in-time recovery rehearsal"). Read it alongside these steps.
+
+1. **Stop the writers** (Api, Relay), so nothing more lands on the timeline
+   you are about to abandon. Tablets keep their births and resend them, and
+   District nodes hold theirs.
+2. **Find the instant.** Postgres's log, the audit trail, or whoever made the
+   mistake will give you the time. Take a moment shortly before it, in UTC
+   (`2026-11-26 13:09:34+00`). Everything committed after it is lost and has
+   to be redone. Births come back from the devices on their next sync, because
+   records deduplicate by BRN.
+3. **Force the last segment out:** `SELECT pg_walfile_name(pg_switch_wal());`,
+   then wait until `pg_stat_archiver.last_archived_wal` reaches it. Skip this
+   if the server is gone.
+4. **Build a new data directory** from the latest base backup taken **before**
+   the instant. Don't overwrite the damaged one: it is evidence.
+   Then add `recovery.signal` and these settings to `postgresql.auto.conf`:
+   `restore_command = 'cp /archive/%f %p'` (or the fetch from the off-host
+   archive), `recovery_target_time = '<the instant>'` and
+   `recovery_target_action = 'promote'`.
+5. **Start it and check the log** for `recovery stopping before commit`.
+   - If you see `recovery ended before configured recovery target was reached`
+     and the server stops, the archive doesn't reach the instant you named.
+     Postgres refuses rather than quietly stopping short. Pick an earlier
+     instant, or find the missing segments.
+   - Recovery promotes the server onto a new timeline (2, 3, ...), so the
+     abandoned history can't be replayed into it by mistake.
+6. **Check it before reopening:**
+   - the data from just before the mistake is there;
+   - `UPDATE "AuditLogs" ...` is refused as append-only (the triggers came
+     back);
+   - re-run `deploy/postgres/app-role-grants.sql`;
+   - the Api starts and `/health` answers.
+7. **Take a fresh base backup straight away.** The old one only replays along
+   the abandoned timeline.
+
+Measured by the rehearsal on dev hardware at pilot volume: the base backup
+took about 2 s, and recovery and promotion about 2 s. As with the plan's §A6
+timings, these are a floor. Replay time grows with the WAL since the base
+backup, so take base backups often enough that a replay finishes inside the
+RTO.
 
 ## Incident: offline certificate verification answers "Unknown" for everything
 
