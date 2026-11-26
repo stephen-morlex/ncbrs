@@ -2043,6 +2043,19 @@ Three things worth keeping in mind before changing any of it:
 A restore is only a recovery if the controls come back with the data — the
 drill checks the triggers are enforcing afterwards, not just that rows exist.
 
+**Point-in-time recovery is rehearsed on every pull request**
+(`scripts/pitr-rehearsal.sh`, CI "Point-in-time recovery rehearsal"; the
+procedure is RUNBOOK "Incident: a mistake on the live database"):
+- The base backup is taken with `-X none`, so only a complete archive can
+  recover it. Don't "speed it up" with `-X stream`: the rehearsal would stop
+  proving the archive.
+- The mistake is the owner dropping `AuditLogs`, the one thing triggers and
+  grants can't stop.
+- Recovery must stop **before** the mistake's commit, and the trail, its
+  triggers and a facility's original name must come back.
+- A recovery target past the end of the archive makes Postgres refuse to
+  promote. That is a signal, not a fault to work around.
+
 ## The generated contract (WS-W8)
 Both HTTP services generate an OpenAPI document at build time, committed to
 `web/openapi/`, and the web client's types are generated from it. CI fails if

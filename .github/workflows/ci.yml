@@ -226,6 +226,26 @@ jobs:
       - name: Rehearse
         run: bash scripts/tls-rehearsal.sh
 
+  # Point-in-time recovery (plan §17 item 15): a base backup, a mistake made
+  # on the live registry after it, and a new server replayed from the archive
+  # to the instant before. Checks the data and the controls came back (the
+  # audit triggers, a new timeline) and the Api starts on the result. The
+  # procedure it rehearses is in RUNBOOK.md.
+  pitr-rehearsal:
+    name: Point-in-time recovery rehearsal
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Rehearse
+        run: bash scripts/pitr-rehearsal.sh
+
   # The critical paths end to end -- register, amend and approve, issue,
   # annul -- through the real UI, the real API and the real identity
   # provider. The unit suites prove each piece; this proves they meet.
