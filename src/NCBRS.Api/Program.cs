@@ -116,6 +116,7 @@ builder.Services.AddScoped<WorkScope>();
 builder.Services.AddScoped<AdministrativeAreaService>();
 builder.Services.AddScoped<RegistrarOnboardingService>();
 builder.Services.AddScoped<RegistrarImportService>();
+builder.Services.AddScoped<RegistryBootstrap>();
 builder.Services.AddSingleton(builder.Configuration.GetSection(FacilityOnboardingOptions.SectionName)
     .Get<FacilityOnboardingOptions>() ?? new FacilityOnboardingOptions());
 
@@ -379,6 +380,24 @@ if (!generatingOpenApiDocument)
     app.Services.GetRequiredService<TransferKeyring>();
 }
 
+// `NCBRS.Api bootstrap`: makes a new, empty registry usable, then exits
+// instead of serving (RUNBOOK, "Deployment: a new registry"). After the
+// startup checks above, so it runs only with a configuration the Api itself
+// would accept.
+if (args.Contains(RegistryBootstrap.Verb))
+{
+    using var bootstrapScope = app.Services.CreateScope();
+    var bootstrapOptions = app.Configuration.GetSection(RegistryBootstrapOptions.SectionName).Get<RegistryBootstrapOptions>()
+        ?? new RegistryBootstrapOptions();
+    var bootstrap = await bootstrapScope.ServiceProvider.GetRequiredService<RegistryBootstrap>().RunAsync(bootstrapOptions);
+    foreach (var message in bootstrap.Messages)
+    {
+        Console.WriteLine(message);
+    }
+
+    return bootstrap.Succeeded ? 0 : 1;
+}
+
 // A device signs the bytes it sent, so verification needs those bytes back
 // after model binding has consumed the stream. Buffering is enabled only for
 // requests that actually carry a device signature -- every other request
@@ -477,6 +496,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+return 0;
 
 // How this API serializes, in one place. Applied to MVC (what the API
 // actually sends) and to the OpenAPI generator (what the document says it

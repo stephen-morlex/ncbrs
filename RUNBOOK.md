@@ -579,6 +579,57 @@ its births are not sent. Check that list after every configuration change: an
 empty export with a long `unmapped` list is a map keyed wrongly, not a quiet
 month.
 
+## Deployment: a new registry (the first system admin)
+
+An empty registry cannot be used from the web site. Adding a facility and
+binding an account each need a system admin who is already bound, and there is
+none. The official geography (states, counties, payams) is not loaded either:
+only Development startup seeds it. **`NCBRS.Api bootstrap`** does both. Run it
+once per new registry, at the first install and after the go-live discard.
+
+1. Apply the migrations, then `deploy/postgres/app-role-grants.sql` as usual.
+2. In Keycloak, create the first admin's account with the `system-admin`
+   role and **no** county group (`docs/roles-and-users.md`, section 6.1).
+3. They sign in to the registry web site once and set up their one-time code.
+   They are told they are waiting to be added. That sign-in is what the
+   bootstrap binds, so no id is copied out of Keycloak.
+4. Run the Api's own binary with the Api's production configuration (the same
+   environment as the service), adding the verb and the settings:
+
+   ```
+   NCBRS.Api bootstrap \
+     --Bootstrap:Username=<their keycloak username> \
+     --Bootstrap:FacilityName="Ministry of Health headquarters" \
+     --Bootstrap:Area=SS0101 \
+     --Bootstrap:OfficeCode=MOH
+   ```
+
+   - `Area` is the p-code the facility sits in: a county, or a payam within one.
+   - `Tier` (default `Hospital`) and `Connectivity` (default `AlwaysOn`)
+     are optional.
+   - A facility with that name already in that county is used, not duplicated.
+
+   It prints what it did and exits 0, or why it refused and exits 1. It does
+   not start the web host.
+5. The admin signs out and in again, and can now add facilities and bind
+   everyone else (district officers and the registrar-general from
+   Registrars → Waiting to be added). **Bind a second system admin** straight
+   away, so one can always bind or withdraw the other.
+
+What it refuses, and why:
+- **An active system admin already exists.** From then on, bindings go
+  through the web site, where the limits on who may bind whom apply. If every
+  system admin has been withdrawn, it is allowed again: that is the other way
+  to be locked out.
+- **Migrations not applied:** it never migrates.
+- An account that has not signed in yet, or does not hold `system-admin` in
+  Keycloak, or is in a county group other than the facility's.
+
+Every run reloads the geography, which is idempotent and safe. Run it with no
+`Bootstrap:Username` to do only that, for example after the official dataset
+is corrected. The binding is audited as `SystemAdminBootstrapped:<username>`,
+and the facility's creation is credited to the new admin.
+
 ## Deployment: database privileges (after every migration)
 
 Two roles, never one:
@@ -665,8 +716,9 @@ explicitly. Do all of the following, in order:
    Remove any pilot-only test accounts.
 9. **DHIS2:** delete every value the pilot exported, on the DHIS2 side. The
    export is Ministry-only and monthly, so check whether anything ran at all.
-10. **Recreate the reference data:** administrative areas (seeded on migration),
-    then facilities with their office codes (`POST /api/facilities`). An
+10. **Bootstrap the new registry** ("Deployment: a new registry"): it loads
+    the administrative areas and binds the first system admin. Then recreate
+    the facilities with their office codes (`POST /api/facilities`). An
     office code can be reused because the register that used it is gone.
 11. **Check:** `/health` answers `ok`; the signing key's id is the new one
     (`GET /api/certificates/signing-key`); a pilot certificate checked on a

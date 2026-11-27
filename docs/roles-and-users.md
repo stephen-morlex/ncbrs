@@ -250,17 +250,29 @@ See RUNBOOK, "Deployment: Keycloak realm".
 
 ## 8. The first system admin
 
-> **Gap: not built yet.** Binding a waiting account needs a system admin who is
-> already bound, and so does creating a facility. On a new, empty registry
-> (the first production install, or after the go-live discard), nobody is. The
-> first system admin and their headquarters facility therefore cannot be
-> created through the web site or the API. Only the Development seed creates
-> them today. This needs a one-off bootstrap step before go-live, for example
-> a command that binds one named account as `system-admin` at a new
-> headquarters facility, refused once any registrar exists.
+Binding a waiting account needs a system admin who is already bound, and so
+does creating a facility. On a new, empty registry (the first production
+install, or after the go-live discard), nobody is. So the first one is bound
+from the command line, once:
 
-Once the first system admin exists, everything in §6 works, starting with
-creating facilities.
+1. Create their Keycloak account with `system-admin` and no county group (§6.1).
+2. They sign in to the web site once and set up their one-time code (§6.2).
+3. The deployer runs, with the Api's production configuration:
+
+   ```
+   NCBRS.Api bootstrap --Bootstrap:Username=<username> \
+     --Bootstrap:FacilityName="Ministry of Health headquarters" \
+     --Bootstrap:Area=SS0101 --Bootstrap:OfficeCode=MOH
+   ```
+
+   This loads the official geography, creates the headquarters facility (or
+   uses one already there with that name), and binds them as system admin.
+4. They sign out and in again, then bind a **second** system admin from the
+   web site.
+
+It is refused while any active system admin exists. From then on everything
+in §6 works, starting with creating facilities. The full procedure is in
+RUNBOOK, "Deployment: a new registry".
 
 ---
 
