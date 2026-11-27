@@ -390,7 +390,20 @@ Keycloak admin credential.
   that tablet's next sync, like a withdrawal. The directory says only whether
   a PIN is set (`HasDevicePin`), never anything derived from it.
 - The procedure is in RUNBOOK.md, "Onboarding: a facility, its staff and its
-  tablet".
+  tablet". Roles and a recipe per kind of user are in `docs/roles-and-users.md`.
+- **An empty registry is bootstrapped from the command line**
+  (`NCBRS.Api bootstrap`, `RegistryBootstrap`). Binding and creating a
+  facility each need a system admin already bound, so nothing on the web could
+  start an empty registry. Production also never loaded the geography, because
+  only Development startup seeds it.
+  - It loads the geography every time.
+  - It binds the first system admin from the **pending queue by username**:
+    the account signs in first, as every account does.
+  - **Refused while any active system admin exists**, and when migrations
+    are missing (it never migrates).
+  - It runs after the startup checks and exits instead of serving, so it takes
+    only a configuration the Api itself would accept. RUNBOOK, "Deployment: a
+    new registry".
 - **Facilities can be added from a CSV file** (plan §17 item 38,
   `FacilityImportService`, `POST /api/facilities/import`, Ministry only):
   - Columns `name, tier, connectivity, area` (the area's code) and optional
