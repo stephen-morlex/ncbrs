@@ -219,6 +219,8 @@ are never limited, so registrations are unaffected.
 
 ## Onboarding: a facility, its staff and its tablet
 
+Roles, permissions and a recipe per kind of user are in `docs/roles-and-users.md`.
+
 What a pilot district does on its first day, in this order. Each step names who
 does it; the registry refuses the step from anyone else.
 
